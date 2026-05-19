@@ -2643,6 +2643,65 @@ function switchDrScorePeriod(days){
   if(w) w.innerHTML=renderSleepScorePanel(filtered.length>=3?filtered:all);
 }
 
+
+function updatePillarBars(entries){
+  if(!entries||!entries.length) return;
+  const sorted=[...entries].sort((a,b)=>a.diary_date>b.diary_date?1:-1);
+  function timeToOffset(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
+  function meanStd(arr){if(!arr.length)return null;const m=arr.reduce((a,b)=>a+b,0)/arr.length;const s=Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);return{m,s};}
+  const bedOffsets=sorted.map(e=>e.bedtime?timeToOffset(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
+  const bedStats=meanStd(bedOffsets);
+  function computePillarScore(e){
+    const mins=e.sleep_minutes||0;
+    let qty=0;
+    if(mins>=420&&mins<=540)qty=50;
+    else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);
+    else if(mins>540&&mins<=600)qty=Math.round(50*(600-mins)/60);
+    else if(mins>=300)qty=Math.round(50*(mins-240)/180);
+    qty=Math.max(0,Math.min(50,qty));
+    const awk=e.awakenings||0;
+    const frag=Math.max(0,20-awk*5);
+    return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
+  }
+  const pillarData=sorted.map(e=>{
+    const p=computePillarScore(e);
+    let regPct=0;
+    if(e.bedtime&&bedStats){
+      const sdMin=bedStats.s*60;
+      const devMin=Math.abs(timeToOffset(e.bedtime.slice(0,5))-bedStats.m)*60;
+      const groupScore=Math.max(0,100-(sdMin/60)*40);
+      const nightScore=Math.max(0,100-(devMin/45)*30);
+      regPct=Math.round(groupScore*0.6+nightScore*0.4);
+    }
+    return{qty:p.qty_pct,frag:p.frag_pct,reg:regPct};
+  });
+  const lastN=Math.min(pillarData.length,7);
+  const recent=pillarData.slice(-lastN);
+  const avgQtyP=lastN?Math.round(recent.reduce((a,p)=>a+p.qty,0)/lastN):0;
+  const avgFragP=lastN?Math.round(recent.reduce((a,p)=>a+p.frag,0)/lastN):0;
+  const avgRegP=lastN?Math.round(recent.reduce((a,p)=>a+p.reg,0)/lastN):0;
+  function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
+  function pillarBar(v,color){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+color+';width:'+v+'%;transition:width .6s ease"></div></div>';}
+  const pillarsEl=document.getElementById('diary-pillar-bars');
+  if(!pillarsEl) return;
+  const nLabel=lastN===pillarData.length?'Todo':lastN+' noches';
+  pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
+    [{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:'7–9h recomendado'},
+     {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
+     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub:'SRI — variabilidad'}
+    ].map(p=>{
+      const c=pillarColor(p.val);
+      const status=p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención';
+      return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.color+'">'+
+        '<div style="font-size:10px;font-weight:700;color:'+p.color+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.label+'</div>'+
+        '<div style="font-size:22px;font-weight:700;color:'+c+';margin:2px 0">'+p.val+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div>'+
+        '<div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+status+'</div>'+
+        pillarBar(p.val,c)+
+        '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+p.sub+'</div>'+
+        '</div>';
+    }).join('')+'</div>';
+}
+
 function switchScorePeriod(days){
   const all = window._graficosSubjEntries||[];
   let filtered;
@@ -2652,6 +2711,7 @@ function switchScorePeriod(days){
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-days);
     filtered = all.filter(e=>new Date(e.diary_date)>=cutoff);
   }
+  const useEntries = filtered.length>=3 ? filtered : all;
   // Update button styles
   ['7','30','all'].forEach(p=>{
     const btn=document.getElementById('score-period-'+p);
@@ -2661,7 +2721,9 @@ function switchScorePeriod(days){
     else { btn.style.background= p==='all'?'transparent':'#e8f0eb'; btn.style.color=p==='all'?'var(--label-2)':'#1a4a3a'; }
   });
   const wrap = document.getElementById('score-panel-wrap');
-  if(wrap) wrap.innerHTML = renderSleepScorePanel(filtered.length>=3?filtered:all);
+  if(wrap) wrap.innerHTML = renderSleepScorePanel(useEntries);
+  // Also update pillar bars for same period
+  updatePillarBars(useEntries);
 }
 
 function setDayType(t){
@@ -3633,7 +3695,13 @@ async function showDiaryTab_(tab){
         const energyEmoji=['','🔋','🔋','⚡','⚡','🔥'][e.energy||0];
         const qualBar=`<div class="sleep-bar-outer"><div class="sleep-bar-inner" style="width:${(e.sleep_quality||0)*20}%"></div></div>`;
         return`<div class="diary-day">
-          <div class="diary-date">${new Date(e.diary_date).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+            <div class="diary-date" style="margin-bottom:0">${new Date(e.diary_date).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
+            <div style="display:flex;gap:6px">
+              <button onclick="editDiaryEntry('${e.id}')" style="border:none;background:rgba(26,74,58,0.1);color:#1a4a3a;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">✏️ Editar</button>
+              <button onclick="deleteDiaryEntry('${e.id}')" style="border:none;background:rgba(220,38,38,0.1);color:#dc2626;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">🗑</button>
+            </div>
+          </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div><span style="font-size:20px;font-weight:500;color:var(--g800)">${hrs}h ${m>0?m+'min':''}</span></div>
             <div style="font-size:18px">${moodEmoji} ${energyEmoji}</div>
@@ -3753,7 +3821,11 @@ async function showDiaryTab_(tab){
         '</div>'+
         '<div id="score-panel-wrap">'+renderSleepScorePanel(scoreEntries)+'</div>'
       +`
-        <div class="sec-title" style="margin-top:4px">Actograma — horarios de sueño</div>
+        <div class="sec-title" style="margin-top:12px">Pilares del sueño</div>
+        <div id="diary-pillar-bars" style="margin-bottom:8px"></div>
+        <div class="chart-wrap" style="height:180px;margin-top:8px"><canvas id="diary-chart-pillars"></canvas></div>
+        <div style="height:8px"></div>
+        <div class="sec-title" style="margin-top:12px">Actograma — horarios de sueño</div>
         <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
         <div style="overflow-x:auto;padding-bottom:4px">
           <canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas>
@@ -3761,10 +3833,8 @@ async function showDiaryTab_(tab){
         <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 14px">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,165,0,0.2);border:1px solid #f59e0b;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
         </div>
-        <div class="sec-title" style="margin-top:12px">Pilares del sueño</div>
-        <div id="diary-pillar-bars" style="margin-bottom:8px"></div>
-        <div class="chart-wrap" style="height:180px;margin-top:8px"><canvas id="diary-chart-pillars"></canvas></div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
         killChart('ds');killChart('dm');killChart('acto');killChart('dp');
@@ -3793,7 +3863,7 @@ async function showDiaryTab_(tab){
         ctxA=document.getElementById('diary-chart-actogram');
         if(ctxA){
           // Store stats for afterDraw
-          ctxA._bedStats=bedStats; ctxA._wakeStats=wakeStats;
+          ctxA._bedStats=bedStats; ctxA._wakeStats=wakeStats; ctxA._weekendRows=weekendRows;
           const chartH=Math.max(180,sorted.length*28+60);
           ctxA.style.height=chartH+'px';ctxA.height=chartH;
           S.charts.acto=new Chart(ctxA,{
@@ -3993,6 +4063,38 @@ function addAlcItem(){const sel=document.getElementById('d-alc-type');const qty=
 function removeAlcItem(i){alcItems.splice(i,1);renderAlcItems();}
 function renderAlcItems(){const cont=document.getElementById('alcohol-items');if(!cont)return;const total=Math.round(alcItems.reduce((a,x)=>a+x.ua,0)*10)/10;cont.innerHTML=alcItems.map((x,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${x.label} <span style="color:var(--ink3)">(${x.ua} UA)</span></span><button onclick="removeAlcItem(${i})" style="border:none;background:none;color:var(--ink4);cursor:pointer;font-size:18px;line-height:1">✕</button></div>`).join('');const totalEl=document.getElementById('alc-total');if(totalEl)totalEl.innerHTML=alcItems.length?'Total: '+total+' unidades de alcohol':'';const hid=document.getElementById('d-alc');if(hid)hid.value=Math.round(total);}
 
+
+async function editDiaryEntry(id){
+  try{
+    const rows = await db.get('sleep_diary?id=eq.'+id+'&select=*');
+    if(!rows||!rows.length){toast('No se encontró el registro');return;}
+    const e = rows[0];
+    // Open new diary form pre-filled with existing data
+    S._editingDiaryId = id;
+    showDiaryNew();
+    // Wait for form to render then fill values
+    setTimeout(()=>{
+      const dateEl=document.getElementById('d-date'); if(dateEl) dateEl.value=e.diary_date;
+      const bedEl=document.getElementById('d-bed'); if(bedEl) bedEl.value=e.bedtime?e.bedtime.slice(0,5):'';
+      const wakeEl=document.getElementById('d-wake'); if(wakeEl) wakeEl.value=e.wake_time?e.wake_time.slice(0,5):'';
+      const latEl=document.getElementById('d-latency'); if(latEl&&e.sleep_latency_mins){
+        const opts=[3,10,22,45,90,150];
+        const closest=opts.reduce((a,b)=>Math.abs(b-e.sleep_latency_mins)<Math.abs(a-e.sleep_latency_mins)?b:a);
+        latEl.value=closest;
+      }
+      setDayType(e.day_type||'work');
+      if(e.awakenings>0){setYesAwakenings();}else{setNoAwakenings();}
+      if(e.sleep_quality){const q=document.querySelector('#d-qual'); if(q){q.value=e.sleep_quality;const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-qual"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.sleep_quality)b.classList.add('sel');});}}
+      if(e.mood){const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-mood"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.mood)b.classList.add('sel');});const hid=document.getElementById('d-mood');if(hid)hid.value=e.mood;}
+      if(e.energy){const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-energy"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.energy)b.classList.add('sel');});const hid=document.getElementById('d-energy');if(hid)hid.value=e.energy;}
+      const notesEl=document.getElementById('d-notes'); if(notesEl&&e.notes) notesEl.value=e.notes;
+      // Update save button text
+      const saveBtn=document.getElementById('save-diary-btn');
+      if(saveBtn) saveBtn.textContent='Actualizar registro';
+    }, 150);
+  }catch(err){toast('Error: '+err.message);}
+}
+
 function showDiaryNew(){
   resetDiaryHelpers();showScreen('diary-new');
   // Wake date = today (the date you woke up, not when you went to sleep)
@@ -4125,15 +4227,7 @@ function showDiaryNew(){
     <div class="sec-title">Notas (opcional)</div>
 <div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Notas adicionales</div>
     <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..." style="margin-bottom:14px"></textarea>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--sep);margin-bottom:12px">
-      <div>
-        <div style="font-size:14px;font-weight:500">Tipo de día</div>
-        <div style="font-size:12px;color:var(--label-3)">¿Era un día laboral?</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button id="dtype-work" onclick="setDayType('work')" style="padding:7px 14px;border:1.5px solid #1a4a3a;border-radius:8px;background:#1a4a3a;color:#fff;font-size:13px;font-weight:600;cursor:pointer">💼 Laboral</button>
-        <button id="dtype-free" onclick="setDayType('free')" style="padding:7px 14px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#666;font-size:13px;cursor:pointer">🌅 Libre</button>
-      </div>
+
     </div>
     <button class="btn btn-g" onclick="saveDiary()" id="save-diary-btn" style="margin-bottom:28px">Guardar registro</button>
   `;
@@ -4208,6 +4302,8 @@ async function editDiaryEntry(id){
   }catch(ex){ toast('Error: '+ex.message); }
 }
 async function saveDiary(){
+  // Check if editing existing entry
+  const editId = window._editingDiaryId;
   const bed=document.getElementById('d-bed').value;const wake=document.getElementById('d-wake').value;
   if(!bed||!wake){toast('Ingresá el horario de acostarte y levantarte ⏰');return;}
   if(hasAwakenings===null){toast('Indicá si tuviste despertares nocturnos');return;}
