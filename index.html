@@ -1919,6 +1919,15 @@ function checkAdminAccess(){
   if(!S.user||!S.user.email) return false;
   return getAdminEmails().includes(S.user.email.toLowerCase());
 }
+function getAdminEmails(){
+  return JSON.parse(localStorage.getItem('dm_admin_emails')||'[]').map(e=>e.toLowerCase());
+}
+function revokeAdmin(email){
+  const emails=getAdminEmails().filter(e=>e!==email.toLowerCase());
+  localStorage.setItem('dm_admin_emails',JSON.stringify(emails));
+  toast('Acceso de administrador revocado: '+email);
+  loadAdminTab('stats');
+}
 function showAdminSetup(){
   // Modal to enter setup code and grant admin access to current user
   if(!S.user){toast('Iniciá sesión primero');return;}
@@ -1943,7 +1952,6 @@ function showAdminSetup(){
   _activeReminderModal=modal;
   document.body.appendChild(modal);
   modal.onclick=e=>{if(e.target===modal){modal.remove();_activeReminderModal=null;}}
-}
 
 function dismissPVTBanner(){
   var b=document.getElementById('pvt-reminder-banner');
@@ -2210,16 +2218,6 @@ async function saveDrRegisterForm(){
     toast('✓ Datos guardados correctamente.');
   }catch(e){toast('Error: '+e.message);}
 }
-function getAdminEmails(){
-  return JSON.parse(localStorage.getItem('dm_admin_emails')||'[]').map(e=>e.toLowerCase());
-}
-function revokeAdmin(email){
-  const emails=getAdminEmails().filter(e=>e!==email.toLowerCase());
-  localStorage.setItem('dm_admin_emails',JSON.stringify(emails));
-  toast('Acceso de administrador revocado: '+email);
-  loadAdminTab('stats');
-}
-;
   document.getElementById('admin-setup-cancel').onclick=()=>{modal.remove();_activeReminderModal=null;};
   document.getElementById('admin-setup-confirm').onclick=()=>{
     const stored=localStorage.getItem('dm_admin_code');
