@@ -1952,6 +1952,32 @@ function showAdminSetup(){
   _activeReminderModal=modal;
   document.body.appendChild(modal);
   modal.onclick=e=>{if(e.target===modal){modal.remove();_activeReminderModal=null;}}
+  document.getElementById('admin-setup-cancel').onclick=()=>{modal.remove();_activeReminderModal=null;};
+  document.getElementById('admin-setup-confirm').onclick=()=>{
+    const stored=localStorage.getItem('dm_admin_code');
+    const inputCode=document.getElementById('admin-code-input').value;
+    const errEl=document.getElementById('admin-setup-error');
+    if(!stored){
+      // First setup
+      const newCode=document.getElementById('admin-code-new')?.value||'';
+      if(newCode.length<6){errEl.textContent='El código debe tener al menos 6 caracteres.';errEl.style.display='block';return;}
+      if(newCode!==inputCode){errEl.textContent='Los códigos no coinciden.';errEl.style.display='block';return;}
+      localStorage.setItem('dm_admin_code',newCode);
+    } else {
+      if(inputCode!==stored){errEl.style.display='block';return;}
+    }
+    // Grant admin
+    const emails=getAdminEmails();
+    if(!emails.includes(S.user.email.toLowerCase())){
+      emails.push(S.user.email.toLowerCase());
+      localStorage.setItem('dm_admin_emails',JSON.stringify(emails));
+    }
+    modal.remove();_activeReminderModal=null;
+    toast('✅ Acceso de administrador activado para '+S.user.email);
+    // Reload doctor home to show admin button
+    if(S.role==='doctor') showDoctorHome();
+  };
+}
 
 function dismissPVTBanner(){
   var b=document.getElementById('pvt-reminder-banner');
@@ -2218,32 +2244,7 @@ async function saveDrRegisterForm(){
     toast('✓ Datos guardados correctamente.');
   }catch(e){toast('Error: '+e.message);}
 }
-  document.getElementById('admin-setup-cancel').onclick=()=>{modal.remove();_activeReminderModal=null;};
-  document.getElementById('admin-setup-confirm').onclick=()=>{
-    const stored=localStorage.getItem('dm_admin_code');
-    const inputCode=document.getElementById('admin-code-input').value;
-    const errEl=document.getElementById('admin-setup-error');
-    if(!stored){
-      // First setup
-      const newCode=document.getElementById('admin-code-new')?.value||'';
-      if(newCode.length<6){errEl.textContent='El código debe tener al menos 6 caracteres.';errEl.style.display='block';return;}
-      if(newCode!==inputCode){errEl.textContent='Los códigos no coinciden.';errEl.style.display='block';return;}
-      localStorage.setItem('dm_admin_code',newCode);
-    } else {
-      if(inputCode!==stored){errEl.style.display='block';return;}
-    }
-    // Grant admin
-    const emails=getAdminEmails();
-    if(!emails.includes(S.user.email.toLowerCase())){
-      emails.push(S.user.email.toLowerCase());
-      localStorage.setItem('dm_admin_emails',JSON.stringify(emails));
-    }
-    modal.remove();_activeReminderModal=null;
-    toast('✅ Acceso de administrador activado para '+S.user.email);
-    // Reload doctor home to show admin button
-    if(S.role==='doctor') showDoctorHome();
-  };
-}
+
 async function showAdminPanel(){
   if(!checkAdminAccess()){ toast('Acceso no autorizado'); return; }
   const _mn=document.getElementById('main-nav');if(_mn)_mn.style.setProperty('display','none','important');
