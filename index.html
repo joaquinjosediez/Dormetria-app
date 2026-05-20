@@ -859,7 +859,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
       <button class="topbar-btn" onclick="doLogout()" style="color:var(--ios-red)">Salir</button>
     </div>
   </div>
-  <div class="hero" style="padding:10px 16px 14px">
+  <div class="hero" style="padding:8px 16px 14px">
+    <!-- Qué es Dormetria - top of hero -->
+    <button onclick="toggleHomeBanner()" style="width:100%;border:none;background:rgba(255,255,255,0.15);color:#fff;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--font);margin-bottom:10px">
+      <span>🌙 ¿Qué es Dormetria?</span>
+      <span id="banner-chev" style="font-size:13px;opacity:0.7;transition:transform 0.2s">›</span>
+    </button>
     <!-- Row 1: name + code key -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
       <div style="min-width:0;flex:1">
@@ -867,7 +872,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
         <div class="hero-name" id="home-name" style="font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
         <div class="hero-meta" id="home-meta" style="font-size:11px;margin-top:2px">—</div>
       </div>
-      <button onclick="showPatientCode()" style="flex-shrink:0;border:none;background:rgba(255,255,255,0.15);color:#fff;border-radius:10px;padding:8px 12px;font-size:20px;cursor:pointer" title="Mi código de vinculación">🔑</button>
+      <button onclick="showPatientCode()" style="flex-shrink:0;border:none;background:rgba(255,255,255,0.2);color:#fff;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:16px">🔑</span><span style="font-size:10px;opacity:0.85">Código</span></button>
     </div>
     <!-- Row 2: child profiles pills -->
     <div id="home-profile-pills" style="display:none;margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap">
@@ -880,19 +885,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
     <!-- Linked child profiles (hidden, for reference) -->
     <div id="home-children" style="display:none"></div>
-    <!-- 1. QUÉ ES DORMETRIA banner -->
-    <div style="margin:12px 16px 0">
-      <button onclick="toggleHomeBanner()" style="width:100%;border:none;background:linear-gradient(135deg,#1a4a3a,#2d6b55);color:#fff;border-radius:14px;padding:13px 16px;font-size:14px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--font)">
-        <span>🌙 ¿Qué es Dormetria?</span>
-        <span id="banner-chev" style="font-size:16px;transition:transform 0.2s">›</span>
-      </button>
-      <div id="banner-body" style="display:none;background:var(--bg-secondary);border-radius:0 0 14px 14px;padding:14px 16px;border:1px solid var(--sep);border-top:none">
-        <p style="font-size:13px;color:var(--label-2);line-height:1.65;margin-bottom:8px">Plataforma de seguimiento clínico del sueño y la salud mental con <strong>escalas validadas autoadministrables</strong>. Todos los cuestionarios tienen scoring automático y pueden ser accedidos por tu médico en tiempo real.</p>
-        <div style="padding:10px;background:#f0fdf4;border-radius:10px;font-size:12px;color:#374151;line-height:1.65">
-          🔔 <strong>Recordatorios:</strong> Configurá avisos para el diario de sueño y los tests de alerta desde cada sección.
-        </div>
-      </div>
+    <!-- Banner body (expandable) -->
+    <div id="banner-body" style="display:none;margin:0 16px;background:var(--bg-secondary);border-radius:0 0 14px 14px;padding:14px 16px;border:1px solid var(--sep);border-top:none">
+      <p style="font-size:13px;color:var(--label-2);line-height:1.65;margin-bottom:8px">Plataforma de seguimiento clínico del sueño y la salud mental con <strong>escalas validadas autoadministrables</strong>. Todos los cuestionarios tienen scoring automático y pueden ser accedidos por tu médico en tiempo real.</p>
+      <div style="padding:10px;background:#f0fdf4;border-radius:10px;font-size:12px;color:#374151;line-height:1.65">🔔 <strong>Recordatorios:</strong> Configurá avisos para el diario de sueño y los tests de alerta desde cada sección.</div>
     </div>
+
 
     <!-- 2. CONSULTA + MIS PROFESIONALES block -->
     <div style="margin:12px 16px 0;background:var(--bg-secondary);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
@@ -914,7 +912,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
     <!-- 3. AYUDANOS A MEJORAR -->
     <div style="margin:10px 16px 0">
-      <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:#fef9c3;color:#92400e;border-radius:12px;padding:11px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:8px">
+      <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:#1a4a3a;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
         💡 Ayudanos a mejorar Dormetria
       </button>
     </div>
@@ -3148,7 +3146,7 @@ function renderScales(targetId){
       banner.onclick = () => showConsultDir();
       banner.innerHTML = '<div style="font-size:24px;flex-shrink:0">⚠️</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#fff">Resultado que requiere atención</div><div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px">' + pathScales.map(s=>s.name).join(', ') + ' · Consultá un especialista</div></div><div style="color:rgba(255,255,255,0.6);font-size:18px">›</div>';
       list.insertBefore(banner, list.firstChild);
-      if(pathoWrap) pathoWrap.innerHTML = banner.outerHTML;
+      if(pathoWrap) { try{ pathoWrap.innerHTML = banner.outerHTML; }catch(e){} }
     } else if(pathoWrap) {
       pathoWrap.innerHTML = '';
     }
@@ -6660,18 +6658,18 @@ function renderSleepScorePanel(entries){
   }
 
   return `
-    <div style="background:\${sc.bg};border-radius:16px;padding:16px 20px 14px;margin-bottom:14px;text-align:center">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:\${sc.color};margin-bottom:4px">Score de sueño</div>
-      <div style="font-size:60px;font-weight:300;color:\${sc.color};line-height:1;letter-spacing:-0.03em">\${sc.total}</div>
-      <div style="font-size:14px;color:var(--label-2);margin-top:3px">/ 100 — <span style="color:\${sc.color};font-weight:700">\${sc.label}</span></div>
-      <div style="height:5px;background:rgba(0,0,0,0.08);border-radius:3px;margin:10px 0 6px"><div style="height:100%;border-radius:3px;background:\${sc.color};width:\${sc.total}%"></div></div>
-      <div style="font-size:11px;color:var(--label-2)">Basado en \${sc.nNights} noches de registro</div>
+    <div style="background:${sc.bg};border-radius:16px;padding:16px 20px 14px;margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${sc.color};margin-bottom:4px">Score de sueño</div>
+      <div style="font-size:60px;font-weight:300;color:${sc.color};line-height:1;letter-spacing:-0.03em">${sc.total}</div>
+      <div style="font-size:14px;color:var(--label-2);margin-top:3px">/ 100 — <span style="color:${sc.color};font-weight:700">${sc.label}</span></div>
+      <div style="height:5px;background:rgba(0,0,0,0.08);border-radius:3px;margin:10px 0 6px"><div style="height:100%;border-radius:3px;background:${sc.color};width:${sc.total}%"></div></div>
+      <div style="font-size:11px;color:var(--label-2)">Basado en ${sc.nNights} noches de registro</div>
     </div>
     
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-      \${pillarCard('Cantidad',sc.avgQty,50,'#2d9e6b','Duración del sueño. Meta: 7–9 horas.')}
-      \${pillarCard('Fragmentación',sc.avgFrag,20,'#0e7490','Despertares nocturnos. 0 = sin despertares.')}
-      \${pillarCard('Regularidad',sc.regularity,30,'#e67e22','Consistencia del horario de dormir.')}
+      ${pillarCard('Cantidad',sc.avgQty,50,'#2d9e6b','Duración del sueño. Meta: 7–9 horas.')}
+      ${pillarCard('Fragmentación',sc.avgFrag,20,'#0e7490','Despertares nocturnos. 0 = sin despertares.')}
+      ${pillarCard('Regularidad',sc.regularity,30,'#e67e22','Consistencia del horario de dormir.')}
     </div>
 
     <details style="background:#eef8f5;border-radius:12px;margin-bottom:12px;overflow:hidden">
@@ -6692,11 +6690,11 @@ function renderSleepScorePanel(entries){
       <div style="font-size:13px;font-weight:600;color:var(--label);margin-bottom:10px">Métricas clínicas</div>
       <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--sep)">
         <span style="font-size:14px;color:var(--label-2)">Jet lag social</span>
-        <span style="font-size:14px;font-weight:500;color:\${sjlColor}">\${sjlStr}</span>
+        <span style="font-size:14px;font-weight:500;color:${sjlColor}">${sjlStr}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding:7px 0">
         <span style="font-size:14px;color:var(--label-2)">Noches con menos de 7 horas</span>
-        <span style="font-size:14px;font-weight:500;color:\${sc.insufficiencyPct>30?'#FF3B30':sc.insufficiencyPct>15?'#FF9500':'#34C759'}">\${sc.insufficiencyPct}% de las noches</span>
+        <span style="font-size:14px;font-weight:500;color:${sc.insufficiencyPct>30?'#FF3B30':sc.insufficiencyPct>15?'#FF9500':'#34C759'}">${sc.insufficiencyPct}% de las noches</span>
       </div>
     </div>`;
   setTimeout(initProfileEditExtras,0);
@@ -7904,7 +7902,13 @@ async function showConsultDir(fromResult){
         const allD=await db.get('doctors?select=name,lname,email,specialty,sex,mat&order=name.asc').catch(()=>[]);
         const _ap=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
         const apEmails=Object.keys(_ap).filter(e=>_ap[e]);
-        docs=apEmails.length?(allD||[]).filter(d=>apEmails.includes(d.email)):(allD||[]).filter(d=>d.specialty&&d.specialty!=='physician'&&d.specialty!=='');
+        // Show: DB-approved OR localStorage-approved OR any doctor with specialty
+        const dbAll = allD || [];
+        if(apEmails.length){
+          docs = dbAll.filter(d => apEmails.includes(d.email) || (d.specialty && d.specialty !== ''));
+        } else {
+          docs = dbAll.filter(d => d.specialty && d.specialty !== '');
+        }
       }
     }catch(e){}
     if(!docs.length){
