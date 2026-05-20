@@ -770,7 +770,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     <div class="login-logo">
       <div class="login-icon"><svg width="38" height="38" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.81 3.58A9 9 0 1 1 8.81 20.42 8.5 8.5 0 0 0 8.81 3.58z" fill="white" transform="rotate(150 12 12)"/></svg></div>
       <div class="login-title">Dormetria</div>
-      <div class="login-sub">Seguimiento profesional de medicina del sueño para niños y adultos</div>
+      <div class="login-sub">Seguimiento profesional<br>de medicina del sueño<br>para niños y adultos</div>
     </div>
     <div class="mode-tabs">
       <button class="mode-tab active" onclick="setMode('patient',this)">Paciente</button>
@@ -2715,6 +2715,28 @@ function updatePillarBars(entries){
     }).join('')+'</div>';
 }
 
+
+function updateClinicalMetrics(entries){
+  const el = document.getElementById('diary-clinical-metrics');
+  if(!el) return;
+  const sc = calcSleepScore(entries);
+  if(!sc){ el.innerHTML=''; return; }
+  const sjlStr = sc.socialJetLag !== null
+    ? (sc.socialJetLag < 30 ? 'Mínimo (<30 min)' : sc.socialJetLag < 60 ? 'Leve ('+sc.socialJetLag+' min)' : sc.socialJetLag < 90 ? 'Moderado ('+sc.socialJetLag+' min)' : 'Alto ('+sc.socialJetLag+' min)')
+    : 'Sin datos';
+  const sjlColor = sc.socialJetLag === null ? 'var(--label-2)' : sc.socialJetLag < 30 ? '#14532d' : sc.socialJetLag < 60 ? '#d97706' : '#dc2626';
+  const insufColor = sc.insufficiencyPct > 30 ? '#dc2626' : sc.insufficiencyPct > 15 ? '#d97706' : '#14532d';
+  el.innerHTML = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:10px">Métricas clínicas</div>' +
+    '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--sep)">' +
+    '<span style="font-size:14px;color:var(--label-2)">Jet lag social</span>' +
+    '<span style="font-size:14px;font-weight:500;color:'+sjlColor+'">'+sjlStr+'</span></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:7px 0">' +
+    '<span style="font-size:14px;color:var(--label-2)">Noches con menos de 7 horas</span>' +
+    '<span style="font-size:14px;font-weight:500;color:'+insufColor+'">'+sc.insufficiencyPct+'% de las noches</span></div>' +
+    '</div>';
+}
+
 function switchScorePeriod(days){
   const all = window._graficosSubjEntries||[];
   let filtered;
@@ -2737,6 +2759,8 @@ function switchScorePeriod(days){
   if(wrap) wrap.innerHTML = renderSleepScorePanel(useEntries);
   // Also update pillar bars for same period
   updatePillarBars(useEntries);
+  // Update clinical metrics
+  updateClinicalMetrics(useEntries);
 }
 
 function setDayType(t){
@@ -2900,7 +2924,10 @@ async function showHome(){
 }
 function renderMetrics(){
   const r=S.records;const last=r.length?new Date(r[r.length-1].created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}):'—';
-  const totalScales=SCALES.length;document.getElementById('home-metrics').innerHTML=`<div class="metric"><div class="metric-val">${r.length}</div><div class="metric-lbl">Evaluac.</div></div><div class="metric"><div class="metric-val" style="font-size:15px">${new Set(r.map(x=>x.scale_id)).size}/${totalScales}</div><div class="metric-lbl">Escalas</div></div>`;
+  const totalScales=SCALES.length;
+  const metricsEl=document.getElementById('home-metrics');
+  if(!metricsEl) return; // home-metrics removed from new layout
+  metricsEl.innerHTML=`<div class="metric"><div class="metric-val">${r.length}</div><div class="metric-lbl">Evaluac.</div></div><div class="metric"><div class="metric-val" style="font-size:15px">${new Set(r.map(x=>x.scale_id)).size}/${totalScales}</div><div class="metric-lbl">Escalas</div></div>`;
 }
 // ── GASQ SUGGESTION LOGIC ──
 const GASQ_SUGGESTIONS = {
@@ -3882,6 +3909,7 @@ async function showDiaryTab_(tab){
         <div id="diary-pillar-bars" style="margin-bottom:8px"></div>
         <div class="chart-wrap" style="height:180px;margin-top:8px"><canvas id="diary-chart-pillars"></canvas></div>
         <div style="height:8px"></div>
+        <div id="diary-clinical-metrics" style="margin:8px 0"></div>
         <div class="sec-title" style="margin-top:12px">Actograma — horarios de sueño</div>
         <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
         <div style="overflow-x:auto;padding-bottom:4px">
@@ -3940,6 +3968,25 @@ async function showDiaryTab_(tab){
               plugins:{
                 legend:{display:false},
                 afterDraw:(chart)=>{
+                  // Shade free/non-work day rows with grey
+                  const freeRowIdxs=chart.canvas?._weekendRows||[];
+                  if(freeRowIdxs.length){
+                    const actCtx=chart.ctx;
+                    const yScale=chart.scales.y;
+                    const xScale=chart.scales.x;
+                    actCtx.save();
+                    actCtx.fillStyle='rgba(0,0,0,0.06)';
+                    freeRowIdxs.forEach(rowI=>{
+                      try{
+                        const nTicks=yScale.ticks.length;
+                        if(rowI>=nTicks) return;
+                        const barH=(chart.chartArea.bottom-chart.chartArea.top)/nTicks;
+                        const yCenter=yScale.getPixelForTick(rowI);
+                        actCtx.fillRect(xScale.left,yCenter-barH/2,xScale.right-xScale.left,barH);
+                      }catch(e){}
+                    });
+                    actCtx.restore();
+                  }
                   const bedStats=chart.canvas?._bedStats; const wakeStats=chart.canvas?._wakeStats; if(!bedStats&&!wakeStats) return;
                   const ctx=chart.ctx;
                   const xScale=chart.scales.x;
@@ -4084,6 +4131,8 @@ async function showDiaryTab_(tab){
           });
         }
       },100);
+      // Update clinical metrics after charts render
+      setTimeout(()=>updateClinicalMetrics(scoreEntries),150);
     } // end graficos
     } // end tab===graficos
   }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar registros</div>';}
@@ -6686,17 +6735,7 @@ function renderSleepScorePanel(entries){
       </div>
     </details>
     
-    <div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-      <div style="font-size:13px;font-weight:600;color:var(--label);margin-bottom:10px">Métricas clínicas</div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--sep)">
-        <span style="font-size:14px;color:var(--label-2)">Jet lag social</span>
-        <span style="font-size:14px;font-weight:500;color:${sjlColor}">${sjlStr}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0">
-        <span style="font-size:14px;color:var(--label-2)">Noches con menos de 7 horas</span>
-        <span style="font-size:14px;font-weight:500;color:${sc.insufficiencyPct>30?'#FF3B30':sc.insufficiencyPct>15?'#FF9500':'#34C759'}">${sc.insufficiencyPct}% de las noches</span>
-      </div>
-    </div>`;
+`;
   setTimeout(initProfileEditExtras,0);
 }
 
