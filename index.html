@@ -4243,7 +4243,7 @@ async function showDiaryTab_(tab){
 
 // DIARY HELPERS (global state)
 let caffItems=[];let alcItems=[];let awakeningList=[];let hasAwakenings=null;let hasNap=null;
-function resetDiaryHelpers(){caffItems=[];alcItems=[];awakeningList=[];hasAwakenings=null;hasNap=null;_medModalMeds=[];}
+function resetDiaryHelpers(){caffItems=[];alcItems=[];awakeningList=[];hasAwakenings=null;hasNap=null;_medModalMeds=[];_periodActive=false;}
 function selEmoji(el,targetId){const row=el.closest('.emoji-row');row.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');document.getElementById(targetId).value=el.dataset.val;}
 function selNum(el,targetId){selEmoji(el,targetId);}
 function addAwakening(){awakeningList.push({time:'',duration:''});renderAwakenings();}
@@ -4305,7 +4305,7 @@ async function editDiaryEntry(id){
 }
 
 function showDiaryNew(){
-  resetDiaryHelpers();showScreen('diary-new');
+  resetDiaryHelpers();showScreen('diary-new');setTimeout(showPeriodSectionIfFemale,100);
   // Wake date = today (the date you woke up, not when you went to sleep)
   const n=new Date();const today=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
   document.getElementById('diary-form-content').innerHTML=`
@@ -4434,6 +4434,14 @@ function showDiaryNew(){
     <input type="hidden" id="d-alc" value="0">
     <div class="sec-title">Pantallas antes de dormir 📱</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><input class="form-input" type="number" id="d-screen" min="0" value="0" style="max-width:90px"><span style="font-size:13px;color:var(--ink3)">minutos</span></div>
+    <div id="period-section" style="display:none;margin-bottom:14px">
+      <div class="sec-title">Ciclo menstrual</div>
+      <button type="button" id="period-btn" onclick="togglePeriod()" style="display:flex;align-items:center;gap:10px;background:var(--bg-secondary);border:1.5px solid var(--sep-opaque);border-radius:12px;padding:12px 16px;width:100%;cursor:pointer;font-family:var(--font)">
+        <span style="font-size:20px">🩸</span>
+        <span id="period-btn-label" style="font-size:14px;color:var(--label);font-weight:500">Estoy en mi período menstrual</span>
+        <span id="period-check" style="margin-left:auto;font-size:18px">⬜</span>
+      </button>
+    </div>
     <div class="sec-title">Notas (opcional)</div>
 <div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Notas adicionales</div>
     <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..." style="margin-bottom:14px"></textarea>
@@ -4460,6 +4468,83 @@ function setDayType(type, btn){
 }
 function getMedications(){
   return _medModalMeds.length ? JSON.stringify(_medModalMeds) : '';
+}
+
+async function saveDiary(){
+  if(!S.user){toast('Sesión no iniciada');return;}
+  const date=document.getElementById('d-date')?.value;
+  if(!date){toast('Completá la fecha');return;}
+  const bed=document.getElementById('d-bed')?.value||null;
+  const wake=document.getElementById('d-wake')?.value||null;
+  const latency=parseInt(document.getElementById('d-latency')?.value)||null;
+  const dayType=document.getElementById('d-daytype')?.value||'work';
+  const quality=parseInt(document.getElementById('d-qual')?.value)||null;
+  const mood=parseInt(document.getElementById('d-mood')?.value)||null;
+  const energy=parseInt(document.getElementById('d-energy')?.value)||null;
+  const exerciseMins=parseInt(document.getElementById('d-exercise-mins')?.value)||null;
+  const exerciseTime=document.getElementById('d-exercise-time')?.value||null;
+  const screenMins=parseInt(document.getElementById('d-screen')?.value)||null;
+  const notes=document.getElementById('d-notes')?.value||'';
+  const meds=getMedications();
+  const napStart=document.getElementById('d-nap-start')?.value||null;
+  const napDur=parseInt(document.getElementById('d-nap-dur')?.value)||null;
+  // Calculate sleep minutes
+  let sleepMins=null;
+  if(bed&&wake){
+    const [bh,bm]=bed.split(':').map(Number);
+    const [wh,wm]=wake.split(':').map(Number);
+    let mins=(wh*60+wm)-(bh*60+bm);
+    if(mins<0) mins+=1440;
+    if(latency) mins=Math.max(0,mins-latency);
+    sleepMins=mins;
+  }
+  // Awakenings
+  const awakList=awakeningList||[];
+  const wasoMins=awakList.reduce((a,b)=>a+(parseInt(b.duration)||0),0)||null;
+  // Caffeine & alcohol
+  const caffTotal=caffItems.reduce((a,b)=>a+(parseInt(b.qty)||0),0)||null;
+  const alcTotal=alcItems.reduce((a,b)=>a+(parseFloat(b.qty)||0),0)||null;
+  const payload={
+    patient_email:S.user.email,
+    diary_date:date,
+    bedtime:bed,
+    wake_time:wake,
+    sleep_minutes:sleepMins,
+    sleep_latency_mins:latency,
+    day_type:dayType,
+    awakenings:awakList.length||0,
+    waso_mins:wasoMins,
+    sleep_quality:quality,
+    mood:mood,
+    morning_energy:energy,
+    exercise_mins:exerciseMins,
+    exercise_time:exerciseTime,
+    screen_mins:screenMins,
+    coffee_cups:caffTotal,
+    alcohol_units:alcTotal,
+    medications:meds,
+    notes:notes,
+    period_day:_periodActive||false,
+    nap_start:napStart,
+    nap_minutes:napDur,
+  };
+  const btn=document.getElementById('save-diary-btn');
+  if(btn) btn.disabled=true;
+  try{
+    let ok;
+    if(S._editingDiaryId){
+      ok=await db.patch('sleep_diary?id=eq.'+S._editingDiaryId,payload);
+    } else {
+      ok=await db.post('sleep_diary',payload);
+    }
+    S._editingDiaryId=null;
+    showSuccessBanner(S._editingDiaryId?'Registro actualizado':'Registro guardado');
+    showScreen('diary');
+    setTimeout(()=>showDiary('registros'),300);
+  }catch(e){
+    toast('Error al guardar: '+e.message);
+    if(btn) btn.disabled=false;
+  }
 }
 
 function getCircRef(h,sleep){return Math.round((CIRC_RT[h]||270)+Math.max(0,7-(sleep||7))*15);}
@@ -8449,6 +8534,33 @@ function getMedicationsValue(){
 function resetMedModal(){
   _medModalMeds=[];
   renderMedList();
+}
+
+// ── PERIOD TRACKING ──
+let _periodActive = false;
+
+function togglePeriod(){
+  _periodActive = !_periodActive;
+  const btn = document.getElementById('period-btn');
+  const lbl = document.getElementById('period-btn-label');
+  const chk = document.getElementById('period-check');
+  if(_periodActive){
+    btn.style.borderColor = '#e11d48';
+    btn.style.background = '#fff1f2';
+    if(lbl) lbl.style.color = '#e11d48';
+    if(chk) chk.textContent = '✅';
+  } else {
+    btn.style.borderColor = 'var(--sep-opaque)';
+    btn.style.background = 'var(--bg-secondary)';
+    if(lbl) lbl.style.color = 'var(--label)';
+    if(chk) chk.textContent = '⬜';
+  }
+}
+
+function showPeriodSectionIfFemale(){
+  const sex = S.profile && S.profile.sex;
+  const el = document.getElementById('period-section');
+  if(el) el.style.display = (sex === 'Femenino') ? 'block' : 'none';
 }
 
 </script>
