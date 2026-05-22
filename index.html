@@ -3657,6 +3657,7 @@ function renderProfileView(){
     <div class="info-row"><span class="info-label">Alcohol</span><span class="info-val">${u.alcohol||'-'}</span></div>
     <div class="info-row"><span class="info-label">Tabaco</span><span class="info-val">${u.tobacco||'-'}</span></div>
     <div class="info-row"><span class="info-label">Actividad física</span><span class="info-val">${u.physical_activity||'-'}</span></div>
+    <div class="info-row"><span class="info-label">Tipo de trabajo</span><span class="info-val">${u.work_schedule?({'diurno':'Diurno fijo','remoto':'Remoto/flexible','guardias':'Guardias','nocturno':'Nocturno fijo','rotativo':'Turnos rotativos','freelance':'Freelance','estudiante':'Estudiante','jubilado':'Jubilado/a','desocupado':'Sin actividad','otro':'Otro'}[u.work_schedule]||u.work_schedule):'-'}</span></div>
     <div style="margin-top:20px"><button class="btn btn-g" onclick="toggleProfileEdit()">Editar perfil</button>
       <button class="btn btn-s" onclick="showSuggestionsModal()" style="margin-top:8px">💡 Ayudanos a mejorar</button>
     </div>
@@ -3793,20 +3794,27 @@ function renderProfileEdit(){
         ${['Sedentario/a','Leve (1–2 días/sem)','Moderada (3–4 días/sem)','Intensa (5+ días/sem)'].map(v=>`<option value="${v}"${u.physical_activity===v?' selected':''}>${v}</option>`).join('')}
       </select></div>
     <div id="pf-work-schedule-section" style="margin-top:4px">
-      <div class="form-group"><label class="form-label">Horario laboral</label>
-        <select class="form-select" id="pf-work-schedule" onchange="updateWorkScheduleHint()">
-          <option value="">Seleccionar</option>
-          <option value="diurno"${u.work_schedule==='diurno'?' selected':''}>Horario diurno fijo</option>
-          <option value="remoto"${u.work_schedule==='remoto'?' selected':''}>Trabajo remoto / flexible</option>
-          <option value="guardias"${u.work_schedule==='guardias'?' selected':''}>Guardias (ej. 24hs)</option>
-          <option value="nocturno"${u.work_schedule==='nocturno'?' selected':''}>Trabajo nocturno fijo</option>
-          <option value="rotativo"${u.work_schedule==='rotativo'?' selected':''}>Turnos rotativos</option>
-          <option value="estudiante"${u.work_schedule==='estudiante'?' selected':''}>Estudiante</option>
-          <option value="jubilado"${u.work_schedule==='jubilado'?' selected':''}>Jubilado/a</option>
-          <option value="otro"${u.work_schedule==='otro'?' selected':''}>Otro</option>
-        </select>
-        <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:6px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:none">
-          ⚠️ Tu horario puede afectar tu ritmo circadiano. Se activarán escalas específicas de cronodisrupción.
+      <div class="form-group"><label class="form-label">Tipo de trabajo</label>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px" id="pf-work-schedule-group">
+          ${[
+            {v:'diurno', label:'🌅 Horario diurno fijo'},
+            {v:'remoto', label:'💻 Trabajo remoto / flexible'},
+            {v:'guardias', label:'🏥 Guardias (ej. 24hs)'},
+            {v:'nocturno', label:'🌙 Trabajo nocturno fijo'},
+            {v:'rotativo', label:'🔄 Turnos rotativos'},
+            {v:'freelance', label:'📋 Freelance / por proyectos'},
+            {v:'estudiante', label:'🎓 Estudiante'},
+            {v:'jubilado', label:'🏖️ Jubilado/a'},
+            {v:'desocupado', label:'⏸️ Sin actividad laboral actual'},
+            {v:'otro', label:'➕ Otro'},
+          ].map(opt=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid \${u.work_schedule===opt.v?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:\${u.work_schedule===opt.v?'#f0fdf4':'var(--bg-secondary)'}">
+            <input type="radio" name="pf-work-sched-radio" value="\${opt.v}" \${u.work_schedule===opt.v?'checked':''} onchange="selectWorkSchedule(this)" style="display:none">
+            <span style="font-size:14px">\${opt.label}</span>
+          </label>`).join('')}
+        </div>
+        <input type="hidden" id="pf-work-schedule" value="\${u.work_schedule||''}">
+        <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:8px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:\${['guardias','nocturno','rotativo'].includes(u.work_schedule)?'block':'none'}">
+          ⚠️ Tu tipo de trabajo puede afectar tu ritmo circadiano. Se activarán escalas específicas de cronodisrupción.
         </div>
       </div>
     </div>
@@ -4130,7 +4138,8 @@ async function showDiaryTab_(tab){
                   const ca=chart.chartArea;
                   const nLabels=chart.data.labels.length;
                   if(!nLabels) return;
-                  const barH=(ca.bottom-ca.top)/nLabels;
+                  // Use scale's actual pixel size per tick
+                  const barH=yS.getPixelForValue(1)-yS.getPixelForValue(0);
                   // ── Shade free/weekend rows ──
                   if(freeRows.length){
                     cx.save();
@@ -8756,6 +8765,22 @@ function updateWorkScheduleHint(){
   if(!hint) return;
   const shift=['guardias','nocturno','rotativo'];
   hint.style.display=shift.includes(v)?'block':'none';
+}
+
+function selectWorkSchedule(radio){
+  const v=radio.value;
+  document.getElementById('pf-work-schedule').value=v;
+  // Update visual state of all radio labels
+  document.querySelectorAll('[name="pf-work-sched-radio"]').forEach(r=>{
+    const lbl=r.closest('label');
+    if(!lbl) return;
+    const selected=r.value===v;
+    lbl.style.borderColor=selected?'#1a4a3a':'var(--sep-opaque)';
+    lbl.style.background=selected?'#f0fdf4':'var(--bg-secondary)';
+  });
+  // Show/hide hint
+  const hint=document.getElementById('pf-work-schedule-hint');
+  if(hint) hint.style.display=['guardias','nocturno','rotativo'].includes(v)?'block':'none';
 }
 
 </script>
