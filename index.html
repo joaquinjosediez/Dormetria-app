@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3742,29 +3741,6 @@ function renderProfileEdit(){
       <div class="form-group"><label class="form-label">Altura (cm) <span style="color:#dc2626">*</span></label><input class="form-input" type="number" id="pf-height" value="${u.height_cm||''}" placeholder="170"></div>
       <div class="form-group"><label class="form-label">Peso (kg) <span style="color:#dc2626">*</span></label><input class="form-input" type="number" id="pf-weight" value="${u.weight_kg||''}" placeholder="70"></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Actividad principal</label>
-      <select class="form-select" id="pf-activity-type">
-        <option value="">Seleccioná...</option>
-        <option value="child">Niño/a (&lt;12 años)</option>
-        <option value="teen">Adolescente (12–18 años)</option>
-        <option value="student">Estudiante universitario</option>
-        <option value="athlete">Deportista / Atleta</option>
-        <option value="shift">Trabajador en turnos</option>
-        <option value="night">Trabajador nocturno</option>
-        <option value="healthcare">Profesional de salud</option>
-        <option value="office">Trabajo de oficina</option>
-        <option value="remote">Trabajo remoto</option>
-        <option value="retired">Jubilado/a</option>
-        <option value="other">Otro (especificá abajo)</option>
-      </select>
-    </div>
-    <div id="pf-activity-other-wrap" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Especificá tu actividad</label>
-        <input class="form-input" type="text" id="pf-activity-other" placeholder="Ej: Músico, Docente...">
-      </div>
-    </div>
     <div class="divider"></div>
     <div class="sec-title">Patologías</div>
     <div id="pf-paths-tags" style="margin-bottom:8px">${selPaths.map(p=>`<span class="tag">${p}<span class="tag-rm" onclick="removePath('${p}')">✕</span></span>`).join('')}</div>
@@ -3843,6 +3819,12 @@ function renderProfileEdit(){
         </div>
       </div>
     </div>
+    
+    <div class="form-group" style="margin-top:8px">
+      <label class="form-label">Actividad principal <span style="font-size:11px;color:var(--label-3);font-weight:400">(podés elegir más de una)</span></label>
+      <div id="pf-acttype-group" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+      <input type="hidden" id="pf-activity-type">
+    </div>
     <div id="pf-female-section" style="display:${u.sex==='Femenino'?'block':'none'}">
       <div class="sec-title" style="margin-top:8px">Salud reproductiva</div>
       <div class="form-group"><label class="form-label">¿Ya tuviste tu primera menstruación (menarca)?</label>
@@ -3872,24 +3854,15 @@ function addPath(){const s=document.getElementById('pf-path-sel');const v=s.valu
 function addPathOther(){const inp=document.getElementById('pf-path-other');const v=inp.value.trim();if(!v)return;const cur=getPfPaths();if(!cur.includes(v)){cur.push(v);document.getElementById('pf-paths-tags').innerHTML=cur.map(p=>`<span class="tag">${p}<span class="tag-rm" onclick="removePath('${p}')">✕</span></span>`).join('');}inp.value='';}
 function removePath(p){const cur=getPfPaths().filter(x=>x!==p);document.getElementById('pf-paths-tags').innerHTML=cur.map(x=>`<span class="tag">${x}<span class="tag-rm" onclick="removePath('${x}')">✕</span></span>`).join('');}
 function initProfileEditExtras(){
-  let tries=0;
-  function tryInit(){
-    const actSel=document.getElementById("pf-activity-type");
-    const actWrap=document.getElementById("pf-activity-other-wrap");
-    if(!actSel && tries++<12){ setTimeout(tryInit,80); return; }
-    if(!actSel) return;
-    if(S.user && S.user.activity_type) actSel.value=S.user.activity_type;
-    // Also set dob value via JS (more reliable than HTML template for date inputs)
-    const dobEl2=document.getElementById('pf-dob');
-    if(dobEl2 && S.user && S.user.dob) dobEl2.value=S.user.dob.split('T')[0];
-    if(actWrap) actWrap.style.display=actSel.value==="other"?"block":"none";
-    actSel.addEventListener("change",function(){
-      if(actWrap) actWrap.style.display=this.value==="other"?"block":"none";
-    });
-    const otherInput=document.getElementById("pf-activity-other");
-    if(otherInput && S.user && S.user.activity_other) otherInput.value=S.user.activity_other;
-  }
-  setTimeout(tryInit, 50);
+  // Render activity type multi-select
+  const actVal = S.user && S.user.activity_type;
+  renderActivityTypeField(Array.isArray(actVal)?actVal:(actVal?actVal.split(',').filter(Boolean):[]));
+  // Set dob
+  const dobEl2=document.getElementById('pf-dob');
+  if(dobEl2 && S.user && S.user.dob) dobEl2.value=S.user.dob.split('T')[0];
+  // Init work schedule selection
+  const wsVal = S.user && S.user.work_schedule;
+  if(wsVal) selectWorkSchedule(wsVal);
 }
 
 function previewPhoto(input){
@@ -3933,7 +3906,7 @@ async function saveProfile(){
   const paths=getPfPaths();
   const photoData=document.getElementById('prof-photo-data');
   const photoVal=photoData?photoData.value:'';
-  const actTypeEl=document.getElementById('pf-activity-type');const dobEl=document.getElementById('pf-dob');const upd={dob:dobEl?dobEl.value||null:null,sex:document.getElementById('pf-sex').value,height_cm:parseFloat(document.getElementById('pf-height').value)||null,weight_kg:parseFloat(document.getElementById('pf-weight').value)||null,pathologies:paths,medications:document.getElementById('pf-meds').value.trim(),alcohol:document.getElementById('pf-alcohol').value,tobacco:document.getElementById('pf-tobacco').value,physical_activity:document.getElementById('pf-activity').value,activity_type:actTypeEl?actTypeEl.value||null:null,work_schedule:document.getElementById('pf-work-schedule')?.value||null,has_menarche:(()=>{const v=document.getElementById('pf-menarche')?.value;return v===''||v===undefined?null:v==='true';})()||null,has_menopause:(()=>{const v=document.getElementById('pf-menopause')?.value;return v===''||v===undefined?null:v==='true';})()||null,
+  const actTypeEl=document.getElementById('pf-activity-type');const dobEl=document.getElementById('pf-dob');const upd={dob:dobEl?dobEl.value||null:null,sex:document.getElementById('pf-sex').value,height_cm:parseFloat(document.getElementById('pf-height').value)||null,weight_kg:parseFloat(document.getElementById('pf-weight').value)||null,pathologies:paths,medications:document.getElementById('pf-meds').value.trim(),alcohol:document.getElementById('pf-alcohol').value,tobacco:document.getElementById('pf-tobacco').value,physical_activity:document.getElementById('pf-activity').value,activity_type:(()=>{const el=document.getElementById('pf-activity-type');if(!el||!el.value)return null;const vals=el.value.split(',').filter(Boolean);return vals.length===1?vals[0]:vals.length>1?vals:null;})(),work_schedule:document.getElementById('pf-work-schedule')?.value||null,has_menarche:(()=>{const v=document.getElementById('pf-menarche')?.value;return v===''||v===undefined?null:v==='true';})()||null,has_menopause:(()=>{const v=document.getElementById('pf-menopause')?.value;return v===''||v===undefined?null:v==='true';})()||null,
     activity_other:(()=>{const el=document.getElementById('pf-activity-other');return el&&actTypeEl&&actTypeEl.value==='other'?el.value.trim()||null:null;})(),
     photo_url:photoVal||null};
   try{
@@ -8816,6 +8789,65 @@ function selectWorkSchedule(v){
   if(lbl_otro){lbl_otro.style.borderColor=v==='otro'?'#1a4a3a':'var(--sep-opaque)';lbl_otro.style.background=v==='otro'?'#f0fdf4':'var(--bg-secondary)';lbl_otro.querySelector('span').textContent=v==='otro'?'✅':'⬜';}
   const hint=document.getElementById('pf-work-schedule-hint');
   if(hint) hint.style.display=['guardias','nocturno','rotativo'].includes(v)?'block':'none';
+}
+
+function toggleActivityType(v, lbl){
+  const inp = document.getElementById('pf-activity-type');
+  if(!inp) return;
+  let cur = inp.value ? inp.value.split(',').filter(Boolean) : [];
+  const idx = cur.indexOf(v);
+  if(idx >= 0){ cur.splice(idx,1); } else { cur.push(v); }
+  inp.value = cur.join(',');
+  const sel = cur.includes(v);
+  lbl.style.borderColor = sel ? '#1a4a3a' : 'var(--sep-opaque)';
+  lbl.style.background = sel ? '#f0fdf4' : 'var(--bg-secondary)';
+  lbl.querySelector('span').textContent = sel ? '✅' : '⬜';
+}
+
+// Activity type multi-select options
+const ACTTYPE_OPTS=[
+  {v:'student',l:'🎓 Estudiante'},
+  {v:'athlete',l:'🏃 Deportista / Atleta'},
+  {v:'healthcare',l:'🏥 Profesional de salud'},
+  {v:'office',l:'🏢 Trabajo de oficina'},
+  {v:'remote',l:'💻 Trabajo remoto'},
+  {v:'teacher',l:'📚 Docente / Educador'},
+  {v:'retired',l:'🏖️ Jubilado/a'},
+  {v:'homemaker',l:'🏠 Ama/o de casa'},
+  {v:'unemployed',l:'⏸️ Sin actividad laboral'},
+  {v:'other',l:'➕ Otro'},
+];
+
+function renderActivityTypeField(currentVal){
+  const grp=document.getElementById('pf-acttype-group');
+  const inp=document.getElementById('pf-activity-type');
+  if(!grp||!inp) return;
+  const cur=Array.isArray(currentVal)?currentVal:(currentVal?currentVal.split(',').filter(Boolean):[]);
+  inp.value=cur.join(',');
+  grp.innerHTML=ACTTYPE_OPTS.map(o=>{
+    const sel=cur.includes(o.v);
+    const border=sel?'#1a4a3a':'var(--sep-opaque)';
+    const bg=sel?'#f0fdf4':'var(--bg-secondary)';
+    const icon=sel?'✅':'⬜';
+    return `<label id="pf-atl-${o.v}" onclick="toggleActivityType('${o.v}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${border};border-radius:12px;cursor:pointer;background:${bg}"><span style="font-size:16px;flex-shrink:0">${icon}</span><span style="font-size:14px;color:var(--label)">${o.l}</span></label>`;
+  }).join('');
+}
+
+function toggleActivityType(v){
+  const inp=document.getElementById('pf-activity-type');
+  if(!inp) return;
+  let cur=inp.value?inp.value.split(',').filter(Boolean):[];
+  const idx=cur.indexOf(v);
+  if(idx>=0){cur.splice(idx,1);}else{cur.push(v);}
+  inp.value=cur.join(',');
+  const sel=cur.includes(v);
+  const lbl=document.getElementById('pf-atl-'+v);
+  if(lbl){
+    lbl.style.borderColor=sel?'#1a4a3a':'var(--sep-opaque)';
+    lbl.style.background=sel?'#f0fdf4':'var(--bg-secondary)';
+    const icon=lbl.querySelector('span');
+    if(icon) icon.textContent=sel?'✅':'⬜';
+  }
 }
 
 </script>
