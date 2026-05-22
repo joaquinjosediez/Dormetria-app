@@ -4513,20 +4513,17 @@ async function saveDiary(){
     sleep_latency_mins:latency,
     day_type:dayType,
     awakenings:awakList.length||0,
-    waso_mins:wasoMins,
+    wake_in_bed_mins:wasoMins,
     sleep_quality:quality,
     mood:mood,
-    morning_energy:energy,
+    energy:energy,
     exercise_mins:exerciseMins,
     exercise_time:exerciseTime,
-    screen_mins:screenMins,
+    screen_minutes:screenMins,
     coffee_cups:caffTotal,
-    alcohol_units:alcTotal,
+    alcohol_drinks:alcTotal,
     medications:meds,
     notes:notes,
-    period_day:_periodActive||false,
-    nap_start:napStart,
-    nap_minutes:napDur,
   };
   const btn=document.getElementById('save-diary-btn');
   if(btn) btn.disabled=true;
@@ -8587,4 +8584,3 @@ function showPeriodSectionIfFemale(){
 </body>
 </html>
 
- 
