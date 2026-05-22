@@ -3795,26 +3795,51 @@ function renderProfileEdit(){
       </select></div>
     <div id="pf-work-schedule-section" style="margin-top:4px">
       <div class="form-group"><label class="form-label">Tipo de trabajo</label>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px" id="pf-work-schedule-group">
-          ${[
-            {v:'diurno', label:'🌅 Horario diurno fijo'},
-            {v:'remoto', label:'💻 Trabajo remoto / flexible'},
-            {v:'guardias', label:'🏥 Guardias (ej. 24hs)'},
-            {v:'nocturno', label:'🌙 Trabajo nocturno fijo'},
-            {v:'rotativo', label:'🔄 Turnos rotativos'},
-            {v:'freelance', label:'📋 Freelance / por proyectos'},
-            {v:'estudiante', label:'🎓 Estudiante'},
-            {v:'jubilado', label:'🏖️ Jubilado/a'},
-            {v:'desocupado', label:'⏸️ Sin actividad laboral actual'},
-            {v:'otro', label:'➕ Otro'},
-          ].map(opt=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid \${u.work_schedule===opt.v?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:\${u.work_schedule===opt.v?'#f0fdf4':'var(--bg-secondary)'}">
-            <input type="radio" name="pf-work-sched-radio" value="\${opt.v}" \${u.work_schedule===opt.v?'checked':''} onchange="selectWorkSchedule(this)" style="display:none">
-            <span style="font-size:14px">\${opt.label}</span>
-          </label>`).join('')}
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+          <label onclick="selectWorkSchedule('diurno')" id="pf-ws-lbl-diurno" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='diurno'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='diurno'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='diurno'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">🌅 Horario diurno fijo</span>
+          </label>
+          <label onclick="selectWorkSchedule('remoto')" id="pf-ws-lbl-remoto" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='remoto'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='remoto'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='remoto'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">💻 Trabajo remoto / flexible</span>
+          </label>
+          <label onclick="selectWorkSchedule('guardias')" id="pf-ws-lbl-guardias" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='guardias'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='guardias'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='guardias'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">🏥 Guardias (ej. 24hs)</span>
+          </label>
+          <label onclick="selectWorkSchedule('nocturno')" id="pf-ws-lbl-nocturno" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='nocturno'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='nocturno'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='nocturno'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">🌙 Trabajo nocturno fijo</span>
+          </label>
+          <label onclick="selectWorkSchedule('rotativo')" id="pf-ws-lbl-rotativo" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='rotativo'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='rotativo'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='rotativo'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">🔄 Turnos rotativos</span>
+          </label>
+          <label onclick="selectWorkSchedule('freelance')" id="pf-ws-lbl-freelance" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='freelance'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='freelance'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='freelance'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">📋 Freelance / por proyectos</span>
+          </label>
+          <label onclick="selectWorkSchedule('estudiante')" id="pf-ws-lbl-estudiante" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='estudiante'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='estudiante'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='estudiante'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">🎓 Estudiante</span>
+          </label>
+          <label onclick="selectWorkSchedule('jubilado')" id="pf-ws-lbl-jubilado" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='jubilado'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='jubilado'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='jubilado'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">🏖️ Jubilado/a</span>
+          </label>
+          <label onclick="selectWorkSchedule('desocupado')" id="pf-ws-lbl-desocupado" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='desocupado'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='desocupado'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='desocupado'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">⏸️ Sin actividad laboral</span>
+          </label>
+          <label onclick="selectWorkSchedule('otro')" id="pf-ws-lbl-otro" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='otro'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='otro'?'#f0fdf4':'var(--bg-secondary)'}">
+            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='otro'?'✅':'⬜'}</span>
+            <span style="font-size:14px;color:var(--label)">➕ Otro</span>
+          </label>
         </div>
-        <input type="hidden" id="pf-work-schedule" value="\${u.work_schedule||''}">
-        <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:8px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:\${['guardias','nocturno','rotativo'].includes(u.work_schedule)?'block':'none'}">
-          ⚠️ Tu tipo de trabajo puede afectar tu ritmo circadiano. Se activarán escalas específicas de cronodisrupción.
+        <input type="hidden" id="pf-work-schedule" value="${u.work_schedule||''}">
+        <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:8px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:${['guardias','nocturno','rotativo'].includes(u.work_schedule)?'block':'none'}">
+          ⚠️ Este tipo de trabajo puede afectar tu ritmo circadiano. Se activarán escalas de cronodisrupción.
         </div>
       </div>
     </div>
@@ -4123,7 +4148,7 @@ async function showDiaryTab_(tab){
             options:{
               indexAxis:'y',
               responsive:true,
-              layout:{padding:{top:52,bottom:8}},
+              layout:{padding:{top:60,bottom:4}},
               maintainAspectRatio:false,
               plugins:{
                 legend:{display:false},
@@ -4177,33 +4202,33 @@ async function showDiaryTab_(tab){
                   }
                   // ── Summary box above chart ──
                   if(bedStats||wakeStats){
-                    const pad=12,bxH=40,bxY=4;
+                    const pad=10,bxH=38;
+                    const bxY=ca.top-bxH-6;
+                    if(bxY<0) return; // not enough space
                     cx.save();
                     cx.fillStyle='#f8fafc';
-                    cx.strokeStyle='#e2e8f0';
-                    cx.lineWidth=1;
+                    cx.strokeStyle='#cbd5e1';
+                    cx.lineWidth=1.5;
+                    cx.shadowColor='rgba(0,0,0,0.08)';cx.shadowBlur=4;
                     cx.beginPath();
                     if(cx.roundRect){cx.roundRect(ca.left,bxY,ca.right-ca.left,bxH,8);}
                     else{cx.rect(ca.left,bxY,ca.right-ca.left,bxH);}
-                    cx.fill();cx.stroke();
-                    cx.font='bold 12px system-ui';cx.textBaseline='middle';
+                    cx.fill();cx.shadowBlur=0;cx.stroke();
+                    cx.font='600 12px system-ui';cx.textBaseline='middle';
                     const mid=bxY+bxH/2;
                     if(bedStats&&bedStats.m!=null){
-                      // orange dot
-                      cx.fillStyle='rgba(217,119,6,1)';
+                      cx.fillStyle='#d97706';
                       cx.beginPath();cx.arc(ca.left+pad+5,mid,5,0,Math.PI*2);cx.fill();
-                      cx.fillStyle='#374151';
+                      cx.fillStyle='#1e293b';
                       cx.fillText('Acostarse  '+toHHMM(bedStats.m),ca.left+pad+14,mid);
                     }
                     if(wakeStats&&wakeStats.m!=null){
                       const label='Levantarse  '+toHHMM(wakeStats.m);
-                      cx.font='bold 12px system-ui';
-                      const lw=cx.measureText(label).width;
-                      // blue dot
-                      cx.fillStyle='rgba(45,90,158,1)';
-                      cx.beginPath();cx.arc(ca.right-lw-pad-14,mid,5,0,Math.PI*2);cx.fill();
-                      cx.fillStyle='#374151';
-                      cx.fillText(label,ca.right-lw-pad,mid);
+                      const lw=cx.measureText(label).width+24;
+                      cx.fillStyle='#1d4ed8';
+                      cx.beginPath();cx.arc(ca.right-lw+5,mid,5,0,Math.PI*2);cx.fill();
+                      cx.fillStyle='#1e293b';
+                      cx.fillText(label,ca.right-lw+14,mid);
                     }
                     cx.restore();
                   }
@@ -5457,7 +5482,7 @@ async function showDrPTab_(tab){
           if(bS){annots.bM={type:'line',xMin:bS.m,xMax:bS.m,borderColor:'rgba(217,119,6,0.9)',borderWidth:2,borderDash:[5,3]};annots.bLo={type:'box',xMin:bS.m-bS.s,xMax:bS.m+bS.s,backgroundColor:'rgba(217,119,6,0.08)',borderColor:'transparent'};}
           if(wS){annots.wM={type:'line',xMin:wS.m,xMax:wS.m,borderColor:'rgba(45,90,158,0.9)',borderWidth:2,borderDash:[5,3]};annots.wLo={type:'box',xMin:wS.m-wS.s,xMax:wS.m+wS.s,backgroundColor:'rgba(45,90,158,0.08)',borderColor:'transparent'};}
           ctxA._bedStats=bS;ctxA._wakeStats=wS;
-          S.charts['dr-acto']=new Chart(ctxA,{type:'bar',data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:'#1a4a3acc',borderColor:'#1a4a3a',borderWidth:1,borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,layout:{padding:{top:52,bottom:8}},plugins:{legend:{display:false},afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');},annotation:{annotations:annots}},scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+          S.charts['dr-acto']=new Chart(ctxA,{type:'bar',data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:'#1a4a3acc',borderColor:'#1a4a3a',borderWidth:1,borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,layout:{padding:{top:60,bottom:4}},plugins:{legend:{display:false},afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');},annotation:{annotations:annots}},scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
         }
         // Pillars
         const bedOffs=sorted.map(e=>e.bedtime?toOff(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
@@ -8767,18 +8792,28 @@ function updateWorkScheduleHint(){
   hint.style.display=shift.includes(v)?'block':'none';
 }
 
-function selectWorkSchedule(radio){
-  const v=radio.value;
+function selectWorkSchedule(v){
   document.getElementById('pf-work-schedule').value=v;
-  // Update visual state of all radio labels
-  document.querySelectorAll('[name="pf-work-sched-radio"]').forEach(r=>{
-    const lbl=r.closest('label');
-    if(!lbl) return;
-    const selected=r.value===v;
-    lbl.style.borderColor=selected?'#1a4a3a':'var(--sep-opaque)';
-    lbl.style.background=selected?'#f0fdf4':'var(--bg-secondary)';
-  });
-  // Show/hide hint
+  const lbl_diurno=document.getElementById('pf-ws-lbl-diurno');
+  const lbl_remoto=document.getElementById('pf-ws-lbl-remoto');
+  const lbl_guardias=document.getElementById('pf-ws-lbl-guardias');
+  const lbl_nocturno=document.getElementById('pf-ws-lbl-nocturno');
+  const lbl_rotativo=document.getElementById('pf-ws-lbl-rotativo');
+  const lbl_freelance=document.getElementById('pf-ws-lbl-freelance');
+  const lbl_estudiante=document.getElementById('pf-ws-lbl-estudiante');
+  const lbl_jubilado=document.getElementById('pf-ws-lbl-jubilado');
+  const lbl_desocupado=document.getElementById('pf-ws-lbl-desocupado');
+  const lbl_otro=document.getElementById('pf-ws-lbl-otro');
+  if(lbl_diurno){lbl_diurno.style.borderColor=v==='diurno'?'#1a4a3a':'var(--sep-opaque)';lbl_diurno.style.background=v==='diurno'?'#f0fdf4':'var(--bg-secondary)';lbl_diurno.querySelector('span').textContent=v==='diurno'?'✅':'⬜';}
+  if(lbl_remoto){lbl_remoto.style.borderColor=v==='remoto'?'#1a4a3a':'var(--sep-opaque)';lbl_remoto.style.background=v==='remoto'?'#f0fdf4':'var(--bg-secondary)';lbl_remoto.querySelector('span').textContent=v==='remoto'?'✅':'⬜';}
+  if(lbl_guardias){lbl_guardias.style.borderColor=v==='guardias'?'#1a4a3a':'var(--sep-opaque)';lbl_guardias.style.background=v==='guardias'?'#f0fdf4':'var(--bg-secondary)';lbl_guardias.querySelector('span').textContent=v==='guardias'?'✅':'⬜';}
+  if(lbl_nocturno){lbl_nocturno.style.borderColor=v==='nocturno'?'#1a4a3a':'var(--sep-opaque)';lbl_nocturno.style.background=v==='nocturno'?'#f0fdf4':'var(--bg-secondary)';lbl_nocturno.querySelector('span').textContent=v==='nocturno'?'✅':'⬜';}
+  if(lbl_rotativo){lbl_rotativo.style.borderColor=v==='rotativo'?'#1a4a3a':'var(--sep-opaque)';lbl_rotativo.style.background=v==='rotativo'?'#f0fdf4':'var(--bg-secondary)';lbl_rotativo.querySelector('span').textContent=v==='rotativo'?'✅':'⬜';}
+  if(lbl_freelance){lbl_freelance.style.borderColor=v==='freelance'?'#1a4a3a':'var(--sep-opaque)';lbl_freelance.style.background=v==='freelance'?'#f0fdf4':'var(--bg-secondary)';lbl_freelance.querySelector('span').textContent=v==='freelance'?'✅':'⬜';}
+  if(lbl_estudiante){lbl_estudiante.style.borderColor=v==='estudiante'?'#1a4a3a':'var(--sep-opaque)';lbl_estudiante.style.background=v==='estudiante'?'#f0fdf4':'var(--bg-secondary)';lbl_estudiante.querySelector('span').textContent=v==='estudiante'?'✅':'⬜';}
+  if(lbl_jubilado){lbl_jubilado.style.borderColor=v==='jubilado'?'#1a4a3a':'var(--sep-opaque)';lbl_jubilado.style.background=v==='jubilado'?'#f0fdf4':'var(--bg-secondary)';lbl_jubilado.querySelector('span').textContent=v==='jubilado'?'✅':'⬜';}
+  if(lbl_desocupado){lbl_desocupado.style.borderColor=v==='desocupado'?'#1a4a3a':'var(--sep-opaque)';lbl_desocupado.style.background=v==='desocupado'?'#f0fdf4':'var(--bg-secondary)';lbl_desocupado.querySelector('span').textContent=v==='desocupado'?'✅':'⬜';}
+  if(lbl_otro){lbl_otro.style.borderColor=v==='otro'?'#1a4a3a':'var(--sep-opaque)';lbl_otro.style.background=v==='otro'?'#f0fdf4':'var(--bg-secondary)';lbl_otro.querySelector('span').textContent=v==='otro'?'✅':'⬜';}
   const hint=document.getElementById('pf-work-schedule-hint');
   if(hint) hint.style.display=['guardias','nocturno','rotativo'].includes(v)?'block':'none';
 }
