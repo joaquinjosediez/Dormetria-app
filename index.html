@@ -1339,6 +1339,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     <button class="tab active" onclick="showDrTab('patients',this)">Mis pacientes</button>
     <button class="tab" id="dr-alerts-tab" onclick="showDrTab('alerts',this)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:10px;border-radius:8px;padding:1px 5px;margin-left:3px">!</span></button>
     <button class="tab" onclick="showDrTab('link',this)">Vincular</button>
+    <button class="tab" onclick="showDrTab('drprofile',this)">Mi perfil</button>
   </div>
   <div class="scroll"><div id="dr-content" style="padding:0 16px"></div></div>
 </div>
@@ -5102,10 +5103,72 @@ async function showDrTab_(tab){
         let u=await db.get(`patients?email=eq.${encodeURIComponent(pEmail)}&select=*`).then(d=>d&&d[0]||null).catch(()=>null);
         if(!u) u=await db.get(`doctors?email=eq.${encodeURIComponent(pEmail)}&select=*`).then(d=>d&&d[0]||null).catch(()=>null);
         return u||{name:pEmail.split('@')[0],lname:'',email:pEmail,_placeholder:true};
-      }));const validPts=pts.filter(Boolean);
-      cont.innerHTML='<div class="sec-title" style="margin-top:14px">Pacientes vinculados ('+validPts.length+')</div>'+validPts.map(u=>{if(!u)return'';const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';const nameDisplay=u._placeholder?u.email:(u.name+' '+(u.lname||'')).trim();return`<div class="pat-row" onclick="viewPatient('${u.email}')" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--sep)"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${u.email}</div></div><div class="chev">›</div></div>`;}).join('');}catch(e){cont.innerHTML='<div class="empty-state">Error al cargar pacientes</div>';}
+      }));const validPts=pts.filter(Boolean).sort((a,b)=>{
+        const na=(a.name+' '+(a.lname||'')).trim().toLowerCase();
+        const nb=(b.name+' '+(b.lname||'')).trim().toLowerCase();
+        return na.localeCompare(nb,'es');
+      });
+      function renderPatientList(filter){
+        const f=(filter||'').toLowerCase();
+        const filtered=validPts.filter(u=>{
+          const name=(u.name+' '+(u.lname||'')).trim().toLowerCase();
+          return !f||name.includes(f)||u.email.toLowerCase().includes(f);
+        });
+        const rows=filtered.map(u=>{
+          if(!u)return'';
+          const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
+          const nameDisplay=u._placeholder?u.email:(u.name+' '+(u.lname||'')).trim();
+          return`<div class="pat-row" onclick="viewPatient('${u.email}')" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--sep)"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${u.email}</div></div><div class="chev">›</div></div>`;
+        }).join('');
+        document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">Sin resultados</div>';
+        document.getElementById('dr-patient-count').textContent='Pacientes vinculados ('+filtered.length+')';
+      }
+      cont.innerHTML=`<div style="position:sticky;top:0;background:var(--bg);z-index:10;padding:10px 0 6px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="sec-title" id="dr-patient-count" style="margin:0">Pacientes vinculados (${validPts.length})</div>
+        </div>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--label-3)">🔍</span>
+          <input type="text" placeholder="Buscar paciente..." oninput="renderPatientList(this.value)" style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--sep-opaque);border-radius:12px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label);box-sizing:border-box">
+        </div>
+      </div>
+      <div id="dr-patient-list"></div>`;
+      renderPatientList('');}catch(e){cont.innerHTML='<div class="empty-state">Error al cargar pacientes</div>';}
   }else if(tab==='consult_req'){
     loadConsultRequests();
+    return;
+  }
+  if(tab==='drprofile'){
+    // Load doctor profile for editing
+    try{
+      const u=S.user;
+      const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiología',general:'Clínica Gral',physician:'Médico/a'};
+      const dr=await db.get('doctors?email=eq.'+encodeURIComponent(u.email)+'&select=*').then(d=>d&&d[0]||{});
+      cont.innerHTML=`<div style="padding:16px 0">
+        <div class="sec-title" style="margin-bottom:12px">Datos del perfil profesional</div>
+        <div class="form-group"><label class="form-label">Nombre <span style="color:#dc2626">*</span></label>
+          <input class="form-input" id="dr-edit-name" value="${dr.name||''}" placeholder="Nombre"></div>
+        <div class="form-group"><label class="form-label">Apellido <span style="color:#dc2626">*</span></label>
+          <input class="form-input" id="dr-edit-lname" value="${dr.lname||''}" placeholder="Apellido"></div>
+        <div class="form-group"><label class="form-label">Especialidad</label>
+          <select class="form-select" id="dr-edit-specialty">
+            <option value="">Seleccionar</option>
+            ${Object.entries(sL).map(([k,v])=>`<option value="${k}"${dr.specialty===k?' selected':''}>${v}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label class="form-label">Matrícula</label>
+          <input class="form-input" id="dr-edit-mat" value="${dr.mat||''}" placeholder="MN 000000"></div>
+        <div class="form-group"><label class="form-label">Institución</label>
+          <input class="form-input" id="dr-edit-inst" value="${dr.inst||''}" placeholder="Hospital / Clínica"></div>
+        <div class="form-group"><label class="form-label">Sexo</label>
+          <select class="form-select" id="dr-edit-sex">
+            <option value="">Seleccionar</option>
+            <option value="Masculino"${dr.sex==='Masculino'?' selected':''}>Masculino</option>
+            <option value="Femenino"${dr.sex==='Femenino'?' selected':''}>Femenino</option>
+            <option value="No binario"${dr.sex==='No binario'?' selected':''}>No binario</option>
+          </select></div>
+        <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:8px">Guardar cambios</button>
+      </div>`;
+    }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
     return;
   }
   if(tab==='alerts'){
@@ -8570,6 +8633,29 @@ function showPeriodSectionIfFemale(){
   const sex = S.profile && S.profile.sex;
   const el = document.getElementById('period-section');
   if(el) el.style.display = (sex === 'Femenino') ? 'block' : 'none';
+}
+
+async function saveDrProfile(){
+  const name=(document.getElementById('dr-edit-name')?.value||'').trim();
+  const lname=(document.getElementById('dr-edit-lname')?.value||'').trim();
+  if(!name||!lname){toast('Completá nombre y apellido');return;}
+  const upd={
+    name,lname,
+    specialty:document.getElementById('dr-edit-specialty')?.value||'',
+    mat:document.getElementById('dr-edit-mat')?.value||'',
+    inst:document.getElementById('dr-edit-inst')?.value||'',
+    sex:document.getElementById('dr-edit-sex')?.value||'',
+  };
+  try{
+    await db.patch('doctors?email=eq.'+encodeURIComponent(S.user.email),upd);
+    // Update local state
+    S.user={...S.user,...upd};
+    showSuccessBanner('Perfil actualizado');
+    // Refresh doctor home display
+    const drName=document.getElementById('dr-name');
+    const title=upd.sex==='Masculino'?'Dr.':upd.sex==='Femenino'?'Dra.':'Dr/a.';
+    if(drName) drName.textContent=title+' '+name+' '+lname;
+  }catch(e){toast('Error al guardar: '+e.message);}
 }
 
 </script>
