@@ -2527,7 +2527,7 @@ async function renderLinkedDoctors(){
   lsLinks.forEach(e=>{if(!linkedDrs.includes(e)) linkedDrs.push(e);});
   if(!linkedDrs.length){el.innerHTML='<div style="font-size:13px;color:var(--label-3);padding:8px 0">Ningún profesional te sigue todavía.</div>';return;}
   const specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter. Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
-  Promise.all(linkedDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,sex').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
+  Promise.all(linkedDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,gender').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
     el.innerHTML=drs.map(d=>{
       const rating=JSON.parse(localStorage.getItem('dm_dr_rating_'+d.email)||'null');
       const title=d.sex==='Masculino'?'Dr.':d.sex==='Femenino'?'Dra.':(d.specialty==='psychology'||d.specialty==='speech'||d.specialty==='ot'?'Lic.':'Dr/a.');
@@ -2913,7 +2913,7 @@ async function loadHomeDoctors(){
     if(card) card.style.display='block';
     const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiol.',general:'Clínica Gral',physician:'Médico/a'};
     const drs = await Promise.all(links.map(l=>
-      db.get('doctors?email=eq.'+encodeURIComponent(l.doctor_email)+'&select=name,lname,specialty,sex,photo_url').then(d=>d&&d[0]||{email:l.doctor_email,name:l.doctor_email.split('@')[0]}).catch(()=>({email:l.doctor_email,name:l.doctor_email.split('@')[0]}))
+      db.get('doctors?email=eq.'+encodeURIComponent(l.doctor_email)+'&select=name,lname,specialty,gender,photo_url').then(d=>d&&d[0]||{email:l.doctor_email,name:l.doctor_email.split('@')[0]}).catch(()=>({email:l.doctor_email,name:l.doctor_email.split('@')[0]}))
     ));
     if(list) list.innerHTML = drs.map(d=>{
       const title=d.sex==='Masculino'?'Dr.':d.sex==='Femenino'?'Dra.':'Dr/a.';
@@ -3389,7 +3389,7 @@ async function showPatientCode(){
     lsLkDrs.forEach(e=>{if(!lkDrs.includes(e)) lkDrs.push(e);});
     if(!lkDrs.length){codeDrEl.innerHTML='<div style="font-size:13px;color:var(--label-3)">Ningún profesional te sigue todavía.</div>';}
     else{
-      Promise.all(lkDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,sex').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
+      Promise.all(lkDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,gender').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
         const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiol.',general:'Clínica Gral',physician:'Médico'};
         codeDrEl.innerHTML=drs.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-secondary);border-radius:10px;margin-bottom:6px"><div><div style="font-size:13px;font-weight:600">${d.sex==='Masculino'?'Dr.':d.sex==='Femenino'?'Dra.':'Dr/a.'} ${d.name} ${d.lname||''}</div><div style="font-size:11px;color:var(--label-2)">${sL[d.specialty]||d.specialty||'Especialista'}</div></div><button data-eml="${d.email}" class="code-unlink-btn" style="padding:5px 12px;border:none;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;cursor:pointer">Revocar</button></div>`).join('');
         codeDrEl.querySelectorAll('.code-unlink-btn').forEach(b=>b.addEventListener('click',()=>{if(confirm('¿Revocar acceso a '+b.closest('div').querySelector('div>div').textContent+'?')){unlinkDoctor(b.dataset.eml);b.closest('div[style]').remove();}}));
@@ -3769,62 +3769,49 @@ function renderProfileEdit(){
         <option value="">Seleccionar</option>
         ${['Sedentario/a','Leve (1–2 días/sem)','Moderada (3–4 días/sem)','Intensa (5+ días/sem)'].map(v=>`<option value="${v}"${u.physical_activity===v?' selected':''}>${v}</option>`).join('')}
       </select></div>
-    <div id="pf-work-schedule-section" style="margin-top:4px">
-      <div class="form-group"><label class="form-label">Tipo de trabajo</label>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
-          <label onclick="selectWorkSchedule('diurno')" id="pf-ws-lbl-diurno" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='diurno'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='diurno'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='diurno'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">🌅 Horario diurno fijo</span>
-          </label>
-          <label onclick="selectWorkSchedule('remoto')" id="pf-ws-lbl-remoto" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='remoto'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='remoto'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='remoto'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">💻 Trabajo remoto / flexible</span>
-          </label>
-          <label onclick="selectWorkSchedule('guardias')" id="pf-ws-lbl-guardias" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='guardias'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='guardias'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='guardias'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">🏥 Guardias (ej. 24hs)</span>
-          </label>
-          <label onclick="selectWorkSchedule('nocturno')" id="pf-ws-lbl-nocturno" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='nocturno'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='nocturno'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='nocturno'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">🌙 Trabajo nocturno fijo</span>
-          </label>
-          <label onclick="selectWorkSchedule('rotativo')" id="pf-ws-lbl-rotativo" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='rotativo'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='rotativo'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='rotativo'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">🔄 Turnos rotativos</span>
-          </label>
-          <label onclick="selectWorkSchedule('freelance')" id="pf-ws-lbl-freelance" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='freelance'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='freelance'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='freelance'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">📋 Freelance / por proyectos</span>
-          </label>
-          <label onclick="selectWorkSchedule('estudiante')" id="pf-ws-lbl-estudiante" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='estudiante'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='estudiante'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='estudiante'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">🎓 Estudiante</span>
-          </label>
-          <label onclick="selectWorkSchedule('jubilado')" id="pf-ws-lbl-jubilado" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='jubilado'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='jubilado'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='jubilado'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">🏖️ Jubilado/a</span>
-          </label>
-          <label onclick="selectWorkSchedule('desocupado')" id="pf-ws-lbl-desocupado" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='desocupado'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='desocupado'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='desocupado'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">⏸️ Sin actividad laboral</span>
-          </label>
-          <label onclick="selectWorkSchedule('otro')" id="pf-ws-lbl-otro" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${u.work_schedule==='otro'?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer;background:${u.work_schedule==='otro'?'#f0fdf4':'var(--bg-secondary)'}">
-            <span style="font-size:18px;flex-shrink:0">${u.work_schedule==='otro'?'✅':'⬜'}</span>
-            <span style="font-size:14px;color:var(--label)">➕ Otro</span>
-          </label>
+    <div class="form-group" style="margin-top:4px">
+      <label class="form-label">Actividad principal</label>
+      <select class="form-select" id="pf-activity-type" onchange="onActivityTypeChange(this.value)">
+        <option value="">Seleccioná...</option>
+        <option value="child"${u.activity_type==='child'||u.activity_type?.includes?.('child')?' selected':''}>Niño/a (&lt;12 años)</option>
+        <option value="teen"${u.activity_type==='teen'||u.activity_type?.includes?.('teen')?' selected':''}>Adolescente (12–18 años)</option>
+        <option value="student_morning"${u.activity_type==='student_morning'?' selected':''}>Estudiante — turno mañana</option>
+        <option value="student_afternoon"${u.activity_type==='student_afternoon'?' selected':''}>Estudiante — turno tarde</option>
+        <option value="student_evening"${u.activity_type==='student_evening'?' selected':''}>Estudiante — turno noche</option>
+        <option value="athlete"${u.activity_type==='athlete'?' selected':''}>Deportista / Atleta</option>
+        <option value="healthcare"${u.activity_type==='healthcare'?' selected':''}>Profesional de salud</option>
+        <option value="office"${u.activity_type==='office'?' selected':''}>Trabajo de oficina</option>
+        <option value="remote"${u.activity_type==='remote'?' selected':''}>Trabajo remoto</option>
+        <option value="retired"${u.activity_type==='retired'?' selected':''}>Jubilado/a</option>
+        <option value="other"${u.activity_type==='other'?' selected':''}>Otro (especificá abajo)</option>
+      </select>
+      <div id="pf-activity-other-wrap" style="display:${u.activity_type==='other'?'block':'none'};margin-top:8px">
+        <div class="form-group">
+          <label class="form-label">Especificá tu actividad</label>
+          <input class="form-input" type="text" id="pf-activity-other" placeholder="Ej: Músico, Docente..." value="${u.activity_other||''}">
         </div>
-        <input type="hidden" id="pf-work-schedule" value="${u.work_schedule||''}">
-        <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:8px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:${['guardias','nocturno','rotativo'].includes(u.work_schedule)?'block':'none'}">
+      </div>
+    </div>
+    <div id="pf-work-schedule-section" style="margin-top:8px">
+      <div class="form-group"><label class="form-label">Tipo de trabajo <span style="font-size:11px;color:var(--label-3);font-weight:400">(podés elegir más de una)</span></label>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+          <label id="pf-ws-lbl-guardias" onclick="toggleWorkSchedule('guardias')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('guardias')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('guardias')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('guardias')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🏥 Guardias (ej. 24hs)</span></label>
+          <label id="pf-ws-lbl-nocturno" onclick="toggleWorkSchedule('nocturno')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('nocturno')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('nocturno')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('nocturno')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🌙 Trabajo nocturno fijo</span></label>
+          <label id="pf-ws-lbl-rotativo" onclick="toggleWorkSchedule('rotativo')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('rotativo')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('rotativo')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('rotativo')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🔄 Turnos rotativos</span></label>
+          <label id="pf-ws-lbl-diurno" onclick="toggleWorkSchedule('diurno')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('diurno')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('diurno')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('diurno')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🌅 Horario diurno fijo</span></label>
+          <label id="pf-ws-lbl-remoto" onclick="toggleWorkSchedule('remoto')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('remoto')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('remoto')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('remoto')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">💻 Trabajo remoto / flexible</span></label>
+          <label id="pf-ws-lbl-freelance" onclick="toggleWorkSchedule('freelance')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('freelance')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('freelance')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('freelance')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">📋 Freelance / por proyectos</span></label>
+          <label id="pf-ws-lbl-jubilado" onclick="toggleWorkSchedule('jubilado')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('jubilado')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('jubilado')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('jubilado')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🏖️ Jubilado/a</span></label>
+          <label id="pf-ws-lbl-desocupado" onclick="toggleWorkSchedule('desocupado')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('desocupado')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('desocupado')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('desocupado')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">⏸️ Sin actividad laboral</span></label>
+          <label id="pf-ws-lbl-otro_trabajo" onclick="toggleWorkSchedule('otro_trabajo')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('otro_trabajo')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('otro_trabajo')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('otro_trabajo')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">➕ Otro</span></label>
+        </div>
+        <input type="hidden" id="pf-work-schedule" value="${Array.isArray(u.work_schedule)?u.work_schedule.join(','):(u.work_schedule||'')}">
+        <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:8px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:${(Array.isArray(u.work_schedule)?u.work_schedule:u.work_schedule?.split(',')||[]).some(v=>['guardias','nocturno','rotativo'].includes(v))?'block':'none'}">
           ⚠️ Este tipo de trabajo puede afectar tu ritmo circadiano. Se activarán escalas de cronodisrupción.
         </div>
       </div>
     </div>
-    
-    <div class="form-group" style="margin-top:8px">
-      <label class="form-label">Actividad principal <span style="font-size:11px;color:var(--label-3);font-weight:400">(podés elegir más de una)</span></label>
-      <div id="pf-acttype-group" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
-      <input type="hidden" id="pf-activity-type">
-    </div>
+
     <div id="pf-female-section" style="display:${u.sex==='Femenino'?'block':'none'}">
       <div class="sec-title" style="margin-top:8px">Salud reproductiva</div>
       <div class="form-group"><label class="form-label">¿Ya tuviste tu primera menstruación (menarca)?</label>
@@ -3854,15 +3841,24 @@ function addPath(){const s=document.getElementById('pf-path-sel');const v=s.valu
 function addPathOther(){const inp=document.getElementById('pf-path-other');const v=inp.value.trim();if(!v)return;const cur=getPfPaths();if(!cur.includes(v)){cur.push(v);document.getElementById('pf-paths-tags').innerHTML=cur.map(p=>`<span class="tag">${p}<span class="tag-rm" onclick="removePath('${p}')">✕</span></span>`).join('');}inp.value='';}
 function removePath(p){const cur=getPfPaths().filter(x=>x!==p);document.getElementById('pf-paths-tags').innerHTML=cur.map(x=>`<span class="tag">${x}<span class="tag-rm" onclick="removePath('${x}')">✕</span></span>`).join('');}
 function initProfileEditExtras(){
-  // Render activity type multi-select
-  const actVal = S.user && S.user.activity_type;
-  renderActivityTypeField(Array.isArray(actVal)?actVal:(actVal?actVal.split(',').filter(Boolean):[]));
   // Set dob
   const dobEl2=document.getElementById('pf-dob');
   if(dobEl2 && S.user && S.user.dob) dobEl2.value=S.user.dob.split('T')[0];
-  // Init work schedule selection
-  const wsVal = S.user && S.user.work_schedule;
-  if(wsVal) selectWorkSchedule(wsVal);
+  // Init activity type select
+  const actEl=document.getElementById('pf-activity-type');
+  if(actEl && S.user && S.user.activity_type){
+    const v=Array.isArray(S.user.activity_type)?S.user.activity_type[0]:S.user.activity_type;
+    actEl.value=v||'';
+    onActivityTypeChange(actEl.value);
+  }
+  // Init work schedule multi-select checkboxes
+  const wsVal=S.user&&S.user.work_schedule;
+  if(wsVal){
+    const vals=Array.isArray(wsVal)?wsVal:wsVal.split(',').filter(Boolean);
+    const inp=document.getElementById('pf-work-schedule');
+    if(inp) inp.value=vals.join(',');
+    vals.forEach(v=>toggleWorkSchedule(v));
+  }
 }
 
 function previewPhoto(input){
@@ -3906,7 +3902,7 @@ async function saveProfile(){
   const paths=getPfPaths();
   const photoData=document.getElementById('prof-photo-data');
   const photoVal=photoData?photoData.value:'';
-  const actTypeEl=document.getElementById('pf-activity-type');const dobEl=document.getElementById('pf-dob');const upd={dob:dobEl?dobEl.value||null:null,sex:document.getElementById('pf-sex').value,height_cm:parseFloat(document.getElementById('pf-height').value)||null,weight_kg:parseFloat(document.getElementById('pf-weight').value)||null,pathologies:paths,medications:document.getElementById('pf-meds').value.trim(),alcohol:document.getElementById('pf-alcohol').value,tobacco:document.getElementById('pf-tobacco').value,physical_activity:document.getElementById('pf-activity').value,activity_type:(()=>{const el=document.getElementById('pf-activity-type');if(!el||!el.value)return null;const vals=el.value.split(',').filter(Boolean);return vals.length===1?vals[0]:vals.length>1?vals:null;})(),work_schedule:document.getElementById('pf-work-schedule')?.value||null,has_menarche:(()=>{const v=document.getElementById('pf-menarche')?.value;return v===''||v===undefined?null:v==='true';})()||null,has_menopause:(()=>{const v=document.getElementById('pf-menopause')?.value;return v===''||v===undefined?null:v==='true';})()||null,
+  const actTypeEl=document.getElementById('pf-activity-type');const dobEl=document.getElementById('pf-dob');const upd={dob:dobEl?dobEl.value||null:null,sex:document.getElementById('pf-sex').value,height_cm:parseFloat(document.getElementById('pf-height').value)||null,weight_kg:parseFloat(document.getElementById('pf-weight').value)||null,pathologies:paths,medications:document.getElementById('pf-meds').value.trim(),alcohol:document.getElementById('pf-alcohol').value,tobacco:document.getElementById('pf-tobacco').value,physical_activity:document.getElementById('pf-activity').value,activity_type:(()=>{const el=document.getElementById('pf-activity-type');if(!el||!el.value)return null;const vals=el.value.split(',').filter(Boolean);return vals.length===1?vals[0]:vals.length>1?vals:null;})(),work_schedule:(()=>{const el=document.getElementById('pf-work-schedule');if(!el||!el.value)return null;const v=el.value.split(',').filter(Boolean);return v.length===0?null:v.length===1?v[0]:v;})(),has_menarche:(()=>{const v=document.getElementById('pf-menarche')?.value;return v===''||v===undefined?null:v==='true';})()||null,has_menopause:(()=>{const v=document.getElementById('pf-menopause')?.value;return v===''||v===undefined?null:v==='true';})()||null,
     activity_other:(()=>{const el=document.getElementById('pf-activity-other');return el&&actTypeEl&&actTypeEl.value==='other'?el.value.trim()||null:null;})(),
     photo_url:photoVal||null};
   try{
@@ -4176,8 +4172,7 @@ async function showDiaryTab_(tab){
                   // ── Summary box above chart ──
                   if(bedStats||wakeStats){
                     const pad=10,bxH=38;
-                    const bxY=ca.top-bxH-6;
-                    if(bxY<0) return; // not enough space
+                    const bxY=Math.max(2, ca.top-bxH-6);
                     cx.save();
                     cx.fillStyle='#f8fafc';
                     cx.strokeStyle='#cbd5e1';
@@ -5139,7 +5134,7 @@ async function showDoctorHome(){
     if(cached) Object.assign(S.user,cached);
     // Refresh from DB to get latest listed status
     try{
-      const fresh=await db.get('doctors?email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,sex,specialty,mat,listed');
+      const fresh=await db.get('doctors?email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,gender,specialty,mat,listed');
       if(fresh&&fresh[0]) Object.assign(S.user,fresh[0]);
     }catch(e){}
     localStorage.setItem('dm_dr_profile_'+(S.user.email||''),JSON.stringify(S.user));
@@ -8165,12 +8160,12 @@ async function showConsultDir(fromResult){
     try{
       // Try DB listed=true (works if column exists)
       // Try listed=true filter first
-      let dbDocs=await db.get('doctors?listed=eq.true&select=name,lname,email,specialty,sex,mat&order=name.asc').catch(()=>[]);
+      let dbDocs=await db.get('doctors?listed=eq.true&select=name,lname,email,specialty,gender,mat,city,country,bio&order=name.asc').catch(()=>[]);
       if(dbDocs&&dbDocs.length){docs=dbDocs;}
       else{
         // Fallback: show all doctors (listed column may not be populated)
         // filter by localStorage approved list OR show all with specialty
-        const allD=await db.get('doctors?select=name,lname,email,specialty,sex,mat&order=name.asc').catch(()=>[]);
+        const allD=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio&order=name.asc').catch(()=>[]);
         const _ap=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
         const apEmails=Object.keys(_ap).filter(e=>_ap[e]);
         // Show: DB-approved OR localStorage-approved OR any doctor with specialty
@@ -8184,7 +8179,7 @@ async function showConsultDir(fromResult){
     }catch(e){}
     if(!docs.length){
       // Column doesn't exist OR no one approved yet: get all doctors with a specialty filled
-      const allDoctors=await db.get('doctors?select=name,lname,email,specialty,sex,mat&order=name.asc').catch(()=>[]);
+      const allDoctors=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio&order=name.asc').catch(()=>[]);
       const _approved=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _approvedEmails=Object.keys(_approved).filter(e=>_approved[e]);
       if(_approvedEmails.length){
@@ -8765,30 +8760,28 @@ function updateWorkScheduleHint(){
   hint.style.display=shift.includes(v)?'block':'none';
 }
 
-function selectWorkSchedule(v){
-  document.getElementById('pf-work-schedule').value=v;
-  const lbl_diurno=document.getElementById('pf-ws-lbl-diurno');
-  const lbl_remoto=document.getElementById('pf-ws-lbl-remoto');
-  const lbl_guardias=document.getElementById('pf-ws-lbl-guardias');
-  const lbl_nocturno=document.getElementById('pf-ws-lbl-nocturno');
-  const lbl_rotativo=document.getElementById('pf-ws-lbl-rotativo');
-  const lbl_freelance=document.getElementById('pf-ws-lbl-freelance');
-  const lbl_estudiante=document.getElementById('pf-ws-lbl-estudiante');
-  const lbl_jubilado=document.getElementById('pf-ws-lbl-jubilado');
-  const lbl_desocupado=document.getElementById('pf-ws-lbl-desocupado');
-  const lbl_otro=document.getElementById('pf-ws-lbl-otro');
-  if(lbl_diurno){lbl_diurno.style.borderColor=v==='diurno'?'#1a4a3a':'var(--sep-opaque)';lbl_diurno.style.background=v==='diurno'?'#f0fdf4':'var(--bg-secondary)';lbl_diurno.querySelector('span').textContent=v==='diurno'?'✅':'⬜';}
-  if(lbl_remoto){lbl_remoto.style.borderColor=v==='remoto'?'#1a4a3a':'var(--sep-opaque)';lbl_remoto.style.background=v==='remoto'?'#f0fdf4':'var(--bg-secondary)';lbl_remoto.querySelector('span').textContent=v==='remoto'?'✅':'⬜';}
-  if(lbl_guardias){lbl_guardias.style.borderColor=v==='guardias'?'#1a4a3a':'var(--sep-opaque)';lbl_guardias.style.background=v==='guardias'?'#f0fdf4':'var(--bg-secondary)';lbl_guardias.querySelector('span').textContent=v==='guardias'?'✅':'⬜';}
-  if(lbl_nocturno){lbl_nocturno.style.borderColor=v==='nocturno'?'#1a4a3a':'var(--sep-opaque)';lbl_nocturno.style.background=v==='nocturno'?'#f0fdf4':'var(--bg-secondary)';lbl_nocturno.querySelector('span').textContent=v==='nocturno'?'✅':'⬜';}
-  if(lbl_rotativo){lbl_rotativo.style.borderColor=v==='rotativo'?'#1a4a3a':'var(--sep-opaque)';lbl_rotativo.style.background=v==='rotativo'?'#f0fdf4':'var(--bg-secondary)';lbl_rotativo.querySelector('span').textContent=v==='rotativo'?'✅':'⬜';}
-  if(lbl_freelance){lbl_freelance.style.borderColor=v==='freelance'?'#1a4a3a':'var(--sep-opaque)';lbl_freelance.style.background=v==='freelance'?'#f0fdf4':'var(--bg-secondary)';lbl_freelance.querySelector('span').textContent=v==='freelance'?'✅':'⬜';}
-  if(lbl_estudiante){lbl_estudiante.style.borderColor=v==='estudiante'?'#1a4a3a':'var(--sep-opaque)';lbl_estudiante.style.background=v==='estudiante'?'#f0fdf4':'var(--bg-secondary)';lbl_estudiante.querySelector('span').textContent=v==='estudiante'?'✅':'⬜';}
-  if(lbl_jubilado){lbl_jubilado.style.borderColor=v==='jubilado'?'#1a4a3a':'var(--sep-opaque)';lbl_jubilado.style.background=v==='jubilado'?'#f0fdf4':'var(--bg-secondary)';lbl_jubilado.querySelector('span').textContent=v==='jubilado'?'✅':'⬜';}
-  if(lbl_desocupado){lbl_desocupado.style.borderColor=v==='desocupado'?'#1a4a3a':'var(--sep-opaque)';lbl_desocupado.style.background=v==='desocupado'?'#f0fdf4':'var(--bg-secondary)';lbl_desocupado.querySelector('span').textContent=v==='desocupado'?'✅':'⬜';}
-  if(lbl_otro){lbl_otro.style.borderColor=v==='otro'?'#1a4a3a':'var(--sep-opaque)';lbl_otro.style.background=v==='otro'?'#f0fdf4':'var(--bg-secondary)';lbl_otro.querySelector('span').textContent=v==='otro'?'✅':'⬜';}
+function toggleWorkSchedule(v){
+  const inp=document.getElementById('pf-work-schedule');
+  if(!inp) return;
+  let cur=inp.value?inp.value.split(',').filter(Boolean):[];
+  const idx=cur.indexOf(v);
+  if(idx>=0){cur.splice(idx,1);}else{cur.push(v);}
+  inp.value=cur.join(',');
+  const sel=cur.includes(v);
+  const lbl=document.getElementById('pf-ws-lbl-'+v);
+  if(lbl){
+    lbl.style.borderColor=sel?'#1a4a3a':'var(--sep-opaque)';
+    lbl.style.background=sel?'#f0fdf4':'var(--bg-secondary)';
+    const icon=lbl.querySelector('span');
+    if(icon) icon.textContent=sel?'✅':'⬜';
+  }
   const hint=document.getElementById('pf-work-schedule-hint');
-  if(hint) hint.style.display=['guardias','nocturno','rotativo'].includes(v)?'block':'none';
+  if(hint) hint.style.display=cur.some(x=>['guardias','nocturno','rotativo'].includes(x))?'block':'none';
+}
+
+function onActivityTypeChange(v){
+  const wrap=document.getElementById('pf-activity-other-wrap');
+  if(wrap) wrap.style.display=v==='other'?'block':'none';
 }
 
 function toggleActivityType(v, lbl){
