@@ -786,7 +786,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
           <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="reg-name" placeholder="María"></div>
           <div class="form-group"><label class="form-label">Apellido</label><input class="form-input" id="reg-lname" placeholder="García"></div>
         </div>
-        <div class="form-group"><label class="form-label">Fecha de nacimiento</label><input class="form-input" type="date" id="reg-dob"></div>
+        <div class="form-group"><label class="form-label">Fecha de nacimiento <span style="color:#dc2626">*</span></label><input class="form-input" type="date" id="reg-dob"></div>
       </div>
       <div class="form-group" id="reg-activity-wrap" style="display:none">
         <label class="form-label">Actividad principal</label>
@@ -3695,7 +3695,7 @@ function renderProfileEdit(){
     <div class="form-group"><label class="form-label">Fecha de nacimiento</label>
       <input class="form-input" type="date" id="pf-dob">
     </div>
-    <div class="form-group"><label class="form-label">Sexo biológico</label>
+    <div class="form-group"><label class="form-label">Sexo biológico <span style="color:#dc2626">*</span></label>
       <select class="form-select" id="pf-sex">
         <option value="">Seleccionar</option>
         <option value="Femenino"${u.sex==='Femenino'?' selected':''}>Femenino</option>
@@ -3729,8 +3729,8 @@ function renderProfileEdit(){
       </select>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Altura (cm)</label><input class="form-input" type="number" id="pf-height" value="${u.height_cm||''}" placeholder="170"></div>
-      <div class="form-group"><label class="form-label">Peso (kg)</label><input class="form-input" type="number" id="pf-weight" value="${u.weight_kg||''}" placeholder="70"></div>
+      <div class="form-group"><label class="form-label">Altura (cm) <span style="color:#dc2626">*</span></label><input class="form-input" type="number" id="pf-height" value="${u.height_cm||''}" placeholder="170"></div>
+      <div class="form-group"><label class="form-label">Peso (kg) <span style="color:#dc2626">*</span></label><input class="form-input" type="number" id="pf-weight" value="${u.weight_kg||''}" placeholder="70"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Actividad principal</label>
@@ -3843,6 +3843,15 @@ function previewPhoto(input){
 }
 
 async function saveProfile(){
+  // Validate required fields
+  const sexVal=document.getElementById('pf-sex')?.value;
+  const dobVal=document.getElementById('pf-dob')?.value;
+  const weightVal=document.getElementById('pf-weight')?.value;
+  const heightVal=document.getElementById('pf-height')?.value;
+  if(!sexVal){toast('Por favor completá el sexo biológico');return;}
+  if(!dobVal){toast('Por favor completá la fecha de nacimiento');return;}
+  if(!weightVal){toast('Por favor completá el peso');return;}
+  if(!heightVal){toast('Por favor completá la altura');return;}
   setBtn('save-profile-btn',true);
   const paths=getPfPaths();
   const photoData=document.getElementById('prof-photo-data');
@@ -4285,7 +4294,9 @@ async function editDiaryEntry(id){
     setTimeout(()=>{
       const dateEl=document.getElementById('d-date'); if(dateEl) dateEl.value=e.diary_date;
       const bedEl=document.getElementById('d-bed'); if(bedEl) bedEl.value=e.bedtime?e.bedtime.slice(0,5):'';
+      if(e.bedtime){const[bh,bm]=e.bedtime.slice(0,5).split(':');const bhs=document.getElementById('d-bed-h');const bms=document.getElementById('d-bed-m');if(bhs)bhs.value=bh;if(bms&&bm){const closest=['00','05','10','15','20','25','30','35','40','45','50','55'].reduce((a,b)=>Math.abs(parseInt(b)-parseInt(bm))<Math.abs(parseInt(a)-parseInt(bm))?b:a);bms.value=closest;}}
       const wakeEl=document.getElementById('d-wake'); if(wakeEl) wakeEl.value=e.wake_time?e.wake_time.slice(0,5):'';
+      if(e.wake_time){const[wh,wm]=e.wake_time.slice(0,5).split(':');const whs=document.getElementById('d-wake-h');const wms=document.getElementById('d-wake-m');if(whs)whs.value=wh;if(wms&&wm){const closest=['00','05','10','15','20','25','30','35','40','45','50','55'].reduce((a,b)=>Math.abs(parseInt(b)-parseInt(wm))<Math.abs(parseInt(a)-parseInt(wm))?b:a);wms.value=closest;}}
       const latEl=document.getElementById('d-latency'); if(latEl&&e.sleep_latency_mins){
         const opts=[3,10,22,45,90,150];
         const closest=opts.reduce((a,b)=>Math.abs(b-e.sleep_latency_mins)<Math.abs(a-e.sleep_latency_mins)?b:a);
@@ -4306,6 +4317,14 @@ async function editDiaryEntry(id){
 
 function showDiaryNew(){
   resetDiaryHelpers();showScreen('diary-new');setTimeout(showPeriodSectionIfFemale,100);
+  setTimeout(()=>{
+    const bh=document.getElementById('d-bed-h');const bm=document.getElementById('d-bed-m');
+    const wh=document.getElementById('d-wake-h');const wm=document.getElementById('d-wake-m');
+    if(bh&&!bh.value) bh.value='23';
+    if(bm&&!bm.value) bm.value='00';
+    if(wh&&!wh.value) wh.value='07';
+    if(wm&&!wm.value) wm.value='00';
+  },150);
   // Wake date = today (the date you woke up, not when you went to sleep)
   const n=new Date();const today=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
   document.getElementById('diary-form-content').innerHTML=`
@@ -4320,8 +4339,40 @@ function showDiaryNew(){
     <input type="hidden" id="d-daytype" value="work">
     <div class="sec-title" style="margin-top:4px">Sueño nocturno <span style="color:#dc2626">*</span></div>
     <div class="form-row" style="margin-bottom:14px">
-      <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
-      <div class="form-group"><label class="form-label">Me levanté ⏰</label><input class="form-input" type="time" id="d-wake"></div>
+      <div class="form-group">
+        <label class="form-label">Me acosté 🛏</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1;position:relative">
+            <select class="form-select" id="d-bed-h" style="height:48px;font-size:18px;font-weight:600;text-align:center">
+              ${Array.from({length:24},(_,i)=>`<option value="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</option>`).join('')}
+            </select>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:var(--label)">:</span>
+          <div style="flex:1;position:relative">
+            <select class="form-select" id="d-bed-m" style="height:48px;font-size:18px;font-weight:600;text-align:center">
+              ${['00','05','10','15','20','25','30','35','40','45','50','55'].map(m=>`<option value="${m}">${m}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <input type="hidden" id="d-bed">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Me levanté ⏰</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1;position:relative">
+            <select class="form-select" id="d-wake-h" style="height:48px;font-size:18px;font-weight:600;text-align:center">
+              ${Array.from({length:24},(_,i)=>`<option value="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</option>`).join('')}
+            </select>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:var(--label)">:</span>
+          <div style="flex:1;position:relative">
+            <select class="form-select" id="d-wake-m" style="height:48px;font-size:18px;font-weight:600;text-align:center">
+              ${['00','05','10','15','20','25','30','35','40','45','50','55'].map(m=>`<option value="${m}">${m}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <input type="hidden" id="d-wake">
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">¿Cuánto tardé en dormirme? <span style="color:#dc2626">*</span><span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">Desde que apagaste la luz o tuviste intención de dormir</span></label>
@@ -4474,6 +4525,13 @@ async function saveDiary(){
   if(!S.user){toast('Sesión no iniciada');return;}
   const date=document.getElementById('d-date')?.value;
   if(!date){toast('Completá la fecha');return;}
+  // Sync time selects to hidden inputs
+  const bh=document.getElementById('d-bed-h')?.value;
+  const bm=document.getElementById('d-bed-m')?.value;
+  const wh=document.getElementById('d-wake-h')?.value;
+  const wm=document.getElementById('d-wake-m')?.value;
+  if(bh&&bm){const bi=document.getElementById('d-bed');if(bi)bi.value=bh+':'+bm;}
+  if(wh&&wm){const wi=document.getElementById('d-wake');if(wi)wi.value=wh+':'+wm;}
   const bed=document.getElementById('d-bed')?.value||null;
   const wake=document.getElementById('d-wake')?.value||null;
   const latency=parseInt(document.getElementById('d-latency')?.value)||null;
