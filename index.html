@@ -4091,10 +4091,13 @@ async function showDiaryTab_(tab){
                   // ── Shade free/weekend rows ──
                   if(freeRows.length){
                     cx.save();
-                    cx.fillStyle='rgba(99,102,241,0.10)';
+                    cx.fillStyle='rgba(99,102,241,0.12)';
                     freeRows.forEach(i=>{
-                      const yTop=ca.top+i*barH;
-                      cx.fillRect(ca.left,yTop,ca.right-ca.left,barH);
+                      try{
+                        // Chart.js 4: use getPixelForValue on y scale
+                        const yMid=yS.getPixelForValue(i);
+                        cx.fillRect(ca.left,yMid-barH/2,ca.right-ca.left,barH);
+                      }catch(e){}
                     });
                     cx.restore();
                   }
@@ -4122,22 +4125,32 @@ async function showDiaryTab_(tab){
                   }
                   // ── Summary box above chart ──
                   if(bedStats||wakeStats){
-                    const pad=10,gap=12,bxH=36,bxY=ca.top-bxH-8;
+                    const pad=12,bxH=40,bxY=4;
                     cx.save();
-                    cx.fillStyle='rgba(255,255,255,0.92)';
-                    cx.shadowColor='rgba(0,0,0,0.10)';cx.shadowBlur=6;
-                    cx.beginPath();cx.roundRect(ca.left,bxY,ca.right-ca.left,bxH,8);cx.fill();
-                    cx.shadowBlur=0;
-                    cx.font='bold 11px system-ui';cx.textBaseline='middle';
+                    cx.fillStyle='#f8fafc';
+                    cx.strokeStyle='#e2e8f0';
+                    cx.lineWidth=1;
+                    cx.beginPath();
+                    if(cx.roundRect){cx.roundRect(ca.left,bxY,ca.right-ca.left,bxH,8);}
+                    else{cx.rect(ca.left,bxY,ca.right-ca.left,bxH);}
+                    cx.fill();cx.stroke();
+                    cx.font='bold 12px system-ui';cx.textBaseline='middle';
                     const mid=bxY+bxH/2;
                     if(bedStats&&bedStats.m!=null){
+                      // orange dot
                       cx.fillStyle='rgba(217,119,6,1)';
-                      cx.fillText('🌙 Acostarse: '+toHHMM(bedStats.m),ca.left+pad,mid);
+                      cx.beginPath();cx.arc(ca.left+pad+5,mid,5,0,Math.PI*2);cx.fill();
+                      cx.fillStyle='#374151';
+                      cx.fillText('Acostarse  '+toHHMM(bedStats.m),ca.left+pad+14,mid);
                     }
                     if(wakeStats&&wakeStats.m!=null){
-                      const label='☀️ Levantarse: '+toHHMM(wakeStats.m);
-                      cx.fillStyle='rgba(45,90,158,1)';
+                      const label='Levantarse  '+toHHMM(wakeStats.m);
+                      cx.font='bold 12px system-ui';
                       const lw=cx.measureText(label).width;
+                      // blue dot
+                      cx.fillStyle='rgba(45,90,158,1)';
+                      cx.beginPath();cx.arc(ca.right-lw-pad-14,mid,5,0,Math.PI*2);cx.fill();
+                      cx.fillStyle='#374151';
                       cx.fillText(label,ca.right-lw-pad,mid);
                     }
                     cx.restore();
