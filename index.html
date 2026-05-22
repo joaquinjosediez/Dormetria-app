@@ -5159,13 +5159,22 @@ async function showDrTab_(tab){
           <input class="form-input" id="dr-edit-mat" value="${dr.mat||''}" placeholder="MN 000000"></div>
         <div class="form-group"><label class="form-label">Institución</label>
           <input class="form-input" id="dr-edit-inst" value="${dr.inst||''}" placeholder="Hospital / Clínica"></div>
-        <div class="form-group"><label class="form-label">Sexo</label>
-          <select class="form-select" id="dr-edit-sex">
+        <div class="form-group"><label class="form-label">Género</label>
+          <select class="form-select" id="dr-edit-gender">
             <option value="">Seleccionar</option>
-            <option value="Masculino"${dr.sex==='Masculino'?' selected':''}>Masculino</option>
-            <option value="Femenino"${dr.sex==='Femenino'?' selected':''}>Femenino</option>
-            <option value="No binario"${dr.sex==='No binario'?' selected':''}>No binario</option>
+            <option value="Masculino"${dr.gender==='Masculino'?' selected':''}>Masculino</option>
+            <option value="Femenino"${dr.gender==='Femenino'?' selected':''}>Femenino</option>
+            <option value="No binario"${dr.gender==='No binario'?' selected':''}>No binario</option>
           </select></div>
+        <div class="form-group"><label class="form-label">Ciudad</label>
+          <input class="form-input" id="dr-edit-city" value="${dr.city||''}" placeholder="Buenos Aires"></div>
+        <div class="form-group"><label class="form-label">País 🌍</label>
+          <select class="form-select" id="dr-edit-country">
+            <option value="">Seleccionar</option>
+            ${[['🇦🇷','Argentina'],['🇪🇸','España'],['🇲🇽','México'],['🇨🇱','Chile'],['🇺🇾','Uruguay'],['🇨🇴','Colombia'],['🇵🇪','Perú'],['🇻🇪','Venezuela'],['🇧🇴','Bolivia'],['🇵🇾','Paraguay'],['🇪🇨','Ecuador'],['🇺🇸','Estados Unidos'],['🇧🇷','Brasil'],['🇵🇹','Portugal'],['🇮🇹','Italia'],['🇫🇷','Francia'],['🇩🇪','Alemania'],['🇬🇧','Reino Unido']].map(([f,n])=>`<option value="${n}"${dr.country===n?' selected':''}>${f} ${n}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label class="form-label">Biografía profesional</label>
+          <textarea class="form-input" id="dr-edit-bio" rows="3" placeholder="Breve descripción de tu práctica clínica..." style="resize:none">${dr.bio||''}</textarea></div>
         <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:8px">Guardar cambios</button>
       </div>`;
     }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
@@ -8134,7 +8143,7 @@ function renderConsultList(docs){
   }
   list.innerHTML=docs.map(d=>{
     const specLabel=SPEC[d.specialty]||d.specialty||'Especialista';
-    const title=d.sex==='Masculino'?'Dr.':d.sex==='Femenino'?'Dra.':'Dr/a.';
+    const title=d.gender==='Masculino'?'Dr.':d.gender==='Femenino'?'Dra.':'Dr/a.';
     const city=d.city||'';
     const country=d.country||d.pais||'';
     const flag=FLAGS[country]||'';
@@ -8644,7 +8653,10 @@ async function saveDrProfile(){
     specialty:document.getElementById('dr-edit-specialty')?.value||'',
     mat:document.getElementById('dr-edit-mat')?.value||'',
     inst:document.getElementById('dr-edit-inst')?.value||'',
-    sex:document.getElementById('dr-edit-sex')?.value||'',
+    bio:document.getElementById('dr-edit-bio')?.value||'',
+    city:document.getElementById('dr-edit-city')?.value||'',
+    country:document.getElementById('dr-edit-country')?.value||'',
+    gender:document.getElementById('dr-edit-gender')?.value||'',
   };
   try{
     await db.patch('doctors?email=eq.'+encodeURIComponent(S.user.email),upd);
@@ -8653,7 +8665,7 @@ async function saveDrProfile(){
     showSuccessBanner('Perfil actualizado');
     // Refresh doctor home display
     const drName=document.getElementById('dr-name');
-    const title=upd.sex==='Masculino'?'Dr.':upd.sex==='Femenino'?'Dra.':'Dr/a.';
+    const title=upd.gender==='Masculino'?'Dr.':upd.gender==='Femenino'?'Dra.':'Dr/a.';
     if(drName) drName.textContent=title+' '+name+' '+lname;
   }catch(e){toast('Error al guardar: '+e.message);}
 }
