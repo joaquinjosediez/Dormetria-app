@@ -3183,15 +3183,23 @@ function renderScales(targetId){
       
       // Always suggest SATED as health overview
       suggestedIds.add('sated');
-      // Suggest scales based on patient activity type
-      const activity = S.user && S.user.activity_type;
-      if(activity === 'athlete' || activity === 'student'){
-        suggestedIds.add('perfso'); // Performance impact
+      // ── PROFILE-BASED RULES ──
+      const workSched = S.profile && S.profile.work_schedule;
+      const shiftWork = ['guardias','nocturno','rotativo'].includes(workSched);
+      if(shiftWork){
+        // Shift work / circadian disruption → MCTq + MEQ + FSS + ISI
+        ['mctq','meq','fss','isi','psqi'].forEach(s=>suggestedIds.add(s));
       }
-      if(activity === 'shift' || activity === 'night'){
-        suggestedIds.add('swi');  // Shift work index
-        suggestedIds.add('crsq'); // Circadian disruption
-        suggestedIds.add('perfso');
+      // Female-specific scales
+      const isFemale = S.profile && S.profile.sex === 'Femenino';
+      const hasMenarche = S.profile && S.profile.has_menarche === true;
+      const hasMenopause = S.profile && S.profile.has_menopause === true;
+      if(isFemale && hasMenarche && !hasMenopause){
+        suggestedIds.add('psst'); // Premenstrual symptoms
+      }
+      if(isFemale && hasMenopause){
+        suggestedIds.add('mrs'); // Menopause Rating Scale
+        suggestedIds.add('isi'); // Insomnia common in menopause
       }
       // Suggest PSAS when insomnia or anxiety present
       if(gq(0)>=2 || gq(8)>=1 || (isiRec.length && isiRec[isiRec.length-1].score >= 8)){
@@ -3697,7 +3705,7 @@ function renderProfileEdit(){
       <input class="form-input" type="date" id="pf-dob">
     </div>
     <div class="form-group"><label class="form-label">Sexo biológico <span style="color:#dc2626">*</span></label>
-      <select class="form-select" id="pf-sex">
+      <select class="form-select" id="pf-sex" onchange="document.getElementById('pf-female-section').style.display=this.value==='Femenino'?'block':'none'">
         <option value="">Seleccionar</option>
         <option value="Femenino"${u.sex==='Femenino'?' selected':''}>Femenino</option>
         <option value="Masculino"${u.sex==='Masculino'?' selected':''}>Masculino</option>
@@ -3784,6 +3792,41 @@ function renderProfileEdit(){
         <option value="">Seleccionar</option>
         ${['Sedentario/a','Leve (1–2 días/sem)','Moderada (3–4 días/sem)','Intensa (5+ días/sem)'].map(v=>`<option value="${v}"${u.physical_activity===v?' selected':''}>${v}</option>`).join('')}
       </select></div>
+    <div id="pf-work-schedule-section" style="margin-top:4px">
+      <div class="form-group"><label class="form-label">Horario laboral</label>
+        <select class="form-select" id="pf-work-schedule" onchange="updateWorkScheduleHint()">
+          <option value="">Seleccionar</option>
+          <option value="diurno"${u.work_schedule==='diurno'?' selected':''}>Horario diurno fijo</option>
+          <option value="remoto"${u.work_schedule==='remoto'?' selected':''}>Trabajo remoto / flexible</option>
+          <option value="guardias"${u.work_schedule==='guardias'?' selected':''}>Guardias (ej. 24hs)</option>
+          <option value="nocturno"${u.work_schedule==='nocturno'?' selected':''}>Trabajo nocturno fijo</option>
+          <option value="rotativo"${u.work_schedule==='rotativo'?' selected':''}>Turnos rotativos</option>
+          <option value="estudiante"${u.work_schedule==='estudiante'?' selected':''}>Estudiante</option>
+          <option value="jubilado"${u.work_schedule==='jubilado'?' selected':''}>Jubilado/a</option>
+          <option value="otro"${u.work_schedule==='otro'?' selected':''}>Otro</option>
+        </select>
+        <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:6px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:none">
+          ⚠️ Tu horario puede afectar tu ritmo circadiano. Se activarán escalas específicas de cronodisrupción.
+        </div>
+      </div>
+    </div>
+    <div id="pf-female-section" style="display:${u.sex==='Femenino'?'block':'none'}">
+      <div class="sec-title" style="margin-top:8px">Salud reproductiva</div>
+      <div class="form-group"><label class="form-label">¿Ya tuviste tu primera menstruación (menarca)?</label>
+        <select class="form-select" id="pf-menarche">
+          <option value="">Seleccionar</option>
+          <option value="true"${u.has_menarche===true?' selected':''}>Sí</option>
+          <option value="false"${u.has_menarche===false?' selected':''}>No</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">¿Ya tuviste la menopausia?</label>
+        <select class="form-select" id="pf-menopause">
+          <option value="">Seleccionar</option>
+          <option value="true"${u.has_menopause===true?' selected':''}>Sí</option>
+          <option value="false"${u.has_menopause===false?' selected':''}>No</option>
+        </select>
+      </div>
+    </div>
     <div style="display:flex;gap:10px;margin-top:8px;padding-bottom:24px">
       <button class="btn btn-s" onclick="toggleProfileEdit()" style="flex:1">Cancelar</button>
       <button class="btn btn-g" onclick="saveProfile()" style="flex:1" id="save-profile-btn">Guardar</button>
@@ -3857,7 +3900,7 @@ async function saveProfile(){
   const paths=getPfPaths();
   const photoData=document.getElementById('prof-photo-data');
   const photoVal=photoData?photoData.value:'';
-  const actTypeEl=document.getElementById('pf-activity-type');const dobEl=document.getElementById('pf-dob');const upd={dob:dobEl?dobEl.value||null:null,sex:document.getElementById('pf-sex').value,height_cm:parseFloat(document.getElementById('pf-height').value)||null,weight_kg:parseFloat(document.getElementById('pf-weight').value)||null,pathologies:paths,medications:document.getElementById('pf-meds').value.trim(),alcohol:document.getElementById('pf-alcohol').value,tobacco:document.getElementById('pf-tobacco').value,physical_activity:document.getElementById('pf-activity').value,activity_type:actTypeEl?actTypeEl.value||null:null,
+  const actTypeEl=document.getElementById('pf-activity-type');const dobEl=document.getElementById('pf-dob');const upd={dob:dobEl?dobEl.value||null:null,sex:document.getElementById('pf-sex').value,height_cm:parseFloat(document.getElementById('pf-height').value)||null,weight_kg:parseFloat(document.getElementById('pf-weight').value)||null,pathologies:paths,medications:document.getElementById('pf-meds').value.trim(),alcohol:document.getElementById('pf-alcohol').value,tobacco:document.getElementById('pf-tobacco').value,physical_activity:document.getElementById('pf-activity').value,activity_type:actTypeEl?actTypeEl.value||null:null,work_schedule:document.getElementById('pf-work-schedule')?.value||null,has_menarche:(()=>{const v=document.getElementById('pf-menarche')?.value;return v===''||v===undefined?null:v==='true';})()||null,has_menopause:(()=>{const v=document.getElementById('pf-menopause')?.value;return v===''||v===undefined?null:v==='true';})()||null,
     activity_other:(()=>{const el=document.getElementById('pf-activity-other');return el&&actTypeEl&&actTypeEl.value==='other'?el.value.trim()||null:null;})(),
     photo_url:photoVal||null};
   try{
@@ -8673,9 +8716,12 @@ function togglePeriod(){
 }
 
 function showPeriodSectionIfFemale(){
-  const sex = S.profile && S.profile.sex;
+  const p = S.profile;
   const el = document.getElementById('period-section');
-  if(el) el.style.display = (sex === 'Femenino') ? 'block' : 'none';
+  if(!el) return;
+  // Show only if: female, has had menarche, has NOT had menopause
+  const show = p && p.sex === 'Femenino' && p.has_menarche === true && p.has_menopause !== true;
+  el.style.display = show ? 'block' : 'none';
 }
 
 async function saveDrProfile(){
@@ -8702,6 +8748,14 @@ async function saveDrProfile(){
     const title=upd.gender==='Masculino'?'Dr.':upd.gender==='Femenino'?'Dra.':'Dr/a.';
     if(drName) drName.textContent=title+' '+name+' '+lname;
   }catch(e){toast('Error al guardar: '+e.message);}
+}
+
+function updateWorkScheduleHint(){
+  const v=document.getElementById('pf-work-schedule')?.value;
+  const hint=document.getElementById('pf-work-schedule-hint');
+  if(!hint) return;
+  const shift=['guardias','nocturno','rotativo'];
+  hint.style.display=shift.includes(v)?'block':'none';
 }
 
 </script>
