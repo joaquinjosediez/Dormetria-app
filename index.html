@@ -1559,7 +1559,14 @@ const SCALES=[
   {t:'El niño/a rechinar los dientes al dormir',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
   {t:'El niño/a roncó o respiró con ruido',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
   {t:'El niño/a se quedó dormido/a en el auto en trayectos cortos',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
-  {t:'El niño/a orinó en la cama durante la noche',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]}
+  {t:'El niño/a orinó en la cama durante la noche',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
+  {t:'Al niño/a le cuesta despertarse por la mañana',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
+  {t:'El niño/a tarda mucho en estar espabilado/a por la mañana',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
+  {t:'El niño/a parece cansado/a al despertarse',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
+  {t:'El niño/a parece somnoliento/a durante el día',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
+  {t:'El niño/a se queda dormido/a viendo televisión',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
+  {t:'El niño/a se queda dormido/a en el auto',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]},
+  {t:'El niño/a tiene dificultad para mantenerse despierto/a en actividades tranquilas',opts:['Raramente','A veces','Habitualmente'],sc:[1,2,3]}
  ],
  interp:s=>s<=41?{l:'Sin alteraciones clínicas significativas',c:'#14532d',bg:'#f0fdf4'}:s<=48?{l:'Riesgo moderado — evaluación recomendada',c:'#92400e',bg:'#fef3c7'}:{l:'Trastorno probable — consulta especialista',c:'#991b1b',bg:'#fef2f2'}
 },
@@ -1815,7 +1822,8 @@ const SCALES=[
   {t:'Siento el tiempo muy lento mientras intento dormir',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
   {t:'Intento suprimir pensamientos para dormir',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
   {t:'Busco distracciones (teléfono, TV) para dejar de pensar',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Pienso en síntomas físicos que podrían interferir con el sueño',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]}
+  {t:'Pienso en síntomas físicos que podrían interferir con el sueño',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
+  {t:'No puedo dejar de pensar en problemas o preocupaciones antes de dormir',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]}
  ],
  interp:s=>s<=25?{l:'Activación baja',c:'#15803d',bg:'#dcfce7'}:s<=45?{l:'Activación moderada',c:'#92400e',bg:'#fef3c7'}:{l:'Activación alta',c:'#991b1b',bg:'#fee2e2'}},
 {id:'rbdq',ref:'Li SX et al. (2010). RBD Questionnaire. Sleep Med, 11(1), 43-48.',name:'Conductas en el sueño REM (RBD-SQ)',cat:'parasomnia',max:13,desc:'Cribado de trastorno de conducta en sueño REM',
@@ -1851,18 +1859,34 @@ const SCALES=[
   {t:'Ansiedad, agitación o depresión nocturna',opts:['0','1','2','3','4','5','6','7','8','9','10'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
   {t:'Somnolencia diurna excesiva',opts:['0','1','2','3','4','5','6','7','8','9','10'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
   {t:'Congelamiento al levantarse o caminar',opts:['0','1','2','3','4','5','6','7','8','9','10'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
-  {t:'Temblores que afectan la calidad del sueño',opts:['0','1','2','3','4','5','6','7','8','9','10'],sc:[0,1,2,3,4,5,6,7,8,9,10]}
+  {t:'Temblores que afectan la calidad del sueño',opts:['0','1','2','3','4','5','6','7','8','9','10'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Calidad general del sueño durante la semana pasada (0=muy mala, 10=excelente)',opts:['0','1','2','3','4','5','6','7','8','9','10'],sc:[0,1,2,3,4,5,6,7,8,9,10]}
  ],
  interp:s=>s>=120?{l:'Buen sueño',c:'#15803d',bg:'#dcfce7'}:s>=90?{l:'Sueño moderado',c:'#92400e',bg:'#fef3c7'}:{l:'Sueño severamente alterado',c:'#991b1b',bg:'#fee2e2'}},
-{id:'sassv',ref:'Benbadis SR et al. Sleep Apnea Symptom Score.',name:'Síntomas de apnea (SASS)',cat:'apnea',max:40,desc:'Cuestionario de síntomas de apnea del sueño',
- qs:Array.from({length:10},(_,i)=>({t:'Ítem '+(i+1)+' SASS',opts:['Nunca','Raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3,4]})),
- interp:s=>s<=10?{l:'Bajo riesgo',c:'#15803d',bg:'#dcfce7'}:s<=20?{l:'Riesgo moderado',c:'#92400e',bg:'#fef3c7'}:{l:'Alto riesgo',c:'#991b1b',bg:'#fee2e2'}},
-{id:'iief',ref:'Rosen RC et al. (1997). International Index of Erectile Function. Urology.',name:'Función eréctil (IIEF-5)',cat:'sexual',max:25,desc:'Evaluación de la función eréctil en hombres',
- qs:Array.from({length:5},(_,i)=>({t:'Ítem '+(i+1)+' IIEF',opts:['Sin actividad sexual','Muy baja','Baja','Moderada','Alta','Muy alta'],sc:[0,1,2,3,4,5]})),
+{id:'sassv',ref:'Netzer NC, Stoohs RA, Netzer CM, Clark K, Strohl KP. (1999). Using the Berlin Questionnaire to identify patients at risk for the sleep apnea syndrome. Ann Intern Med, 131(7), 485–491.',name:'Síntomas de apnea (SASS)',cat:'apnea',max:40,desc:'Evaluación clínica de síntomas de apnea del sueño. Cuestionario adaptado para cribado.',
+ qs:[
+   {t:'¿Ronca?',opts:['Nunca','Raramente','A veces','Frecuentemente','Siempre o casi siempre'],sc:[0,1,2,3,4]},
+   {t:'Sus ronquidos son:',opts:['No ronca','Ligeramente ruidosos','Ruidosos','Muy ruidosos','Muy ruidosos y molestos para otros'],sc:[0,1,2,3,4]},
+   {t:'¿Con qué frecuencia ronca?',opts:['Nunca','1–2 noches por semana','3–4 noches por semana','5 o más noches','Casi todas las noches'],sc:[0,1,2,3,4]},
+   {t:'¿Sus ronquidos molestan a otras personas?',opts:['No ronco','No','A veces','Frecuentemente','Sí, mucho'],sc:[0,0,1,2,3]},
+   {t:'¿Alguien ha notado que deja de respirar mientras duerme?',opts:['Nunca','A veces','Frecuentemente','Casi todas las noches','Vive solo/a'],sc:[0,1,2,3,0]},
+   {t:'¿Con qué frecuencia se siente cansado/a o somnoliento/a después de dormir?',opts:['Nunca','Raramente','A veces (1–2 veces/sem)','Frecuentemente (3–4 veces/sem)','Casi siempre (5+ veces/sem)'],sc:[0,1,2,3,4]},
+   {t:'¿Se ha quedado dormido/a mientras conducía?',opts:['No conduzco o nunca','Una vez','Raramente','A veces','Frecuentemente'],sc:[0,1,2,3,4]},
+   {t:'¿Tiene presión arterial alta diagnosticada?',opts:['No','No sé','Sí, controlada con medicación','Sí, no controlada'],sc:[0,0,2,4]},
+   {t:'¿Tiene sobrepeso u obesidad (IMC ≥25)?',opts:['No','Sobrepeso leve (IMC 25–29)','Obesidad (IMC ≥30)'],sc:[0,2,4]},
+   {t:'Edad (factor de riesgo)',opts:['Menos de 30 años','30–50 años','Más de 50 años'],sc:[0,1,2]},
+ ],
+ interp:s=>s<=10?{l:'Bajo riesgo de apnea',c:'#15803d',bg:'#dcfce7'}:s<=20?{l:'Riesgo moderado — evaluación recomendada',c:'#854d0e',bg:'#fefce8'}:{l:'Alto riesgo de apnea — derivar a especialista',c:'#991b1b',bg:'#fee2e2'}},
+{id:'iief',ref:'Rosen RC, Riley A, Wagner G, Osterloh IH, Kirkpatrick J, Mishra A. (1997). The international index of erectile function (IIEF): a multidimensional scale for assessment of erectile dysfunction. Urology, 49(6), 822–830.',name:'Función eréctil (IIEF-5)',cat:'sexual',max:25,desc:'Evalúa disfunción eréctil en 5 ítems. Corte diagnóstico ≤21. Cuanto mayor el puntaje, mejor la función eréctil.',
+ qs:[
+   {t:'¿Con qué frecuencia pudo lograr una erección durante la actividad sexual?',opts:['Sin actividad sexual','Casi nunca o nunca','Pocas veces (menos del 50%)','A veces (alrededor del 50%)','La mayoría de las veces (más del 50%)','Casi siempre o siempre'],sc:[0,1,2,3,4,5]},
+   {t:'Cuando tuvo erecciones por estimulación sexual, ¿con qué frecuencia fueron suficientemente rígidas para la penetración?',opts:['Sin actividad sexual','Casi nunca o nunca','Pocas veces (menos del 50%)','A veces (alrededor del 50%)','La mayoría de las veces (más del 50%)','Casi siempre o siempre'],sc:[0,1,2,3,4,5]},
+   {t:'Cuando intentó la relación sexual, ¿con qué frecuencia pudo penetrar a su pareja?',opts:['No intentó relación sexual','Casi nunca o nunca','Pocas veces (menos del 50%)','A veces (alrededor del 50%)','La mayoría de las veces (más del 50%)','Casi siempre o siempre'],sc:[0,1,2,3,4,5]},
+   {t:'Durante la relación sexual, ¿con qué frecuencia pudo mantener la erección después de haber penetrado a su pareja?',opts:['No intentó relación sexual','Casi nunca o nunca','Pocas veces (menos del 50%)','A veces (alrededor del 50%)','La mayoría de las veces (más del 50%)','Casi siempre o siempre'],sc:[0,1,2,3,4,5]},
+   {t:'¿Cómo calificaría su confianza en poder lograr y mantener una erección?',opts:['Muy baja','Baja','Moderada','Alta','Muy alta'],sc:[1,2,3,4,5]},
+ ],
  interp:s=>s>=22?{l:'Sin disfunción',c:'#15803d',bg:'#dcfce7'}:s>=17?{l:'Leve',c:'#92400e',bg:'#fef3c7'}:s>=12?{l:'Leve-moderada',c:'#d97706',bg:'#fef3c7'}:s>=8?{l:'Moderada',c:'#c2410c',bg:'#ffedd5'}:{l:'Severa',c:'#991b1b',bg:'#fee2e2'}},
-{id:'fsfi',ref:'Rosen R et al. (2000). Female Sexual Function Index. J Sex Marital Ther.',name:'Función sexual femenina (FSFI)',cat:'sexual',max:36,desc:'Evaluación de la función sexual en mujeres',
- qs:Array.from({length:19},(_,i)=>({t:'Ítem '+(i+1)+' FSFI',opts:['0','1','2','3','4','5'],sc:[0,1,2,3,4,5]})),
- interp:s=>s>=26?{l:'Sin disfunción',c:'#15803d',bg:'#dcfce7'}:s>=19?{l:'Leve',c:'#92400e',bg:'#fef3c7'}:{l:'Disfunción significativa',c:'#991b1b',bg:'#fee2e2'}},
+
 {id:'bisq',ref:'Sadeh A. (2004). A brief screening questionnaire for infant sleep problems (BISQ). Pediatrics.',name:'Sueño infantil (BISQ)',cat:'pediatric',max:8,desc:'Cribado de problemas del sueño en bebés (2-24 meses)',
  qs:[
   {t:'¿Cuántas horas duerme su hijo/a por la noche (entre las 10pm y las 6am)?',opts:['Menos de 5h','5-6h','6-7h','7-8h','8-9h','Más de 9h'],sc:[3,2,2,1,0,0]},
@@ -1872,7 +1896,12 @@ const SCALES=[
   {t:'¿Cómo se queda dormido/a?',opts:['Solo/a en su cuna','Al pecho o biberón','Con un adulto cerca','En brazos'],sc:[0,1,1,2]},
   {t:'¿Cuándo se despierta de noche, cuánto tarda en volver a dormirse?',opts:['Menos de 5 min','5-15 min','15-30 min','Más de 30 min'],sc:[0,1,2,3]},
   {t:'¿Cuántas siestas hace por día?',opts:['0 (sin siestas)','1','2','3 o más'],sc:[2,0,0,1]},
-  {t:'¿Tiene problemas para que su hijo/a se quede dormido/a al acostarlo?',opts:['Nunca','A veces','Frecuentemente','Siempre'],sc:[0,0,1,2]}
+  {t:'¿Tiene problemas para que su hijo/a se quede dormido/a al acostarlo?',opts:['Nunca','A veces','Frecuentemente','Siempre'],sc:[0,0,1,2]},
+  {t:'¿Tiene problemas con los despertares nocturnos de su hijo/a?',opts:['Nunca','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3]},
+  {t:'¿Cuánto tiempo duerme su hijo/a durante el día (siestas)?',opts:['Más de 3 horas','2–3 horas','1–2 horas','Menos de 1 hora','No hace siesta'],sc:[0,0,1,2,3]},
+  {t:'¿Necesita su hijo/a ser alimentado/a para dormirse?',opts:['Nunca o raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3]},
+  {t:'¿Necesita su hijo/a ser cargado/a o mecido/a para dormirse?',opts:['Nunca o raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3]},
+  {t:'¿Considera que el sueño de su hijo/a es un problema?',opts:['No es un problema','Un problema menor','Un problema moderado','Un problema serio'],sc:[0,1,2,3]}
  ],
  interp:s=>s<=2?{l:'Sueño adecuado',c:'#15803d',bg:'#dcfce7'}:s<=5?{l:'Posibles problemas',c:'#92400e',bg:'#fef3c7'}:{l:'Problemas de sueño',c:'#991b1b',bg:'#fee2e2'}},
 {id:'mctq',ref:'Roenneberg T et al. (2003). Life between Clocks: Daily Temporal Patterns of Human Chronotypes. J Biol Rhythms.',name:'Cronótipo (MCTq)',cat:'circadian',max:4,desc:'Punto medio del sueño en días libres como medida objetiva del cronótipo',
@@ -3601,7 +3630,14 @@ async function finishScale(){
   try{
     // Store answers as JSON string for history display
     const answersJson=JSON.stringify(S.answers);
-    const evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({patient_email:S.user.email,scale_id:sc.id,scale_name:sc.name,score,max_score:sc.max,answers:answersJson})});
+    // Try saving with answers column first, fall back without if column doesn't exist
+    const payload={patient_email:S.user.email,scale_id:sc.id,scale_name:sc.name,score,max_score:sc.max,answers:answersJson};
+    let evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    if(evalResp.status===400){
+      // answers column may not exist - retry without it
+      const {answers:_,...payloadNoAnswers}=payload;
+      evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payloadNoAnswers)});
+    }
     if(!evalResp.ok&&evalResp.status!==201){const ed=await evalResp.json().catch(()=>({}));throw new Error(ed.message||evalResp.status);}
     // Check if score is pathological and create doctor alert
     const thr=ALERT_THR[sc.id];
