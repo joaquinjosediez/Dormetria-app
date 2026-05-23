@@ -4276,6 +4276,26 @@ async function showDiaryTab_(tab){
 ,
           plugins:[{
             id:'actoOverlay',
+            beforeDatasetsDraw:(chart)=>{
+                  // Shade free/weekend rows (draws behind bars)
+                  const cv2=chart.canvas;
+                  const freeRows2=cv2?._weekendRows||[];
+                  const yS2=chart.scales.y;
+                  const ca2=chart.chartArea;
+                  const barH2=Math.abs(yS2.getPixelForValue(1)-yS2.getPixelForValue(0));
+                  if(freeRows2.length){
+                    const cx2=chart.ctx;
+                    cx2.save();
+                    cx2.fillStyle='rgba(0,0,0,0.05)';
+                    freeRows2.forEach(i=>{
+                      try{
+                        const yMid2=yS2.getPixelForValue(i);
+                        cx2.fillRect(ca2.left,yMid2-barH2/2,ca2.right-ca2.left,barH2);
+                      }catch(e){}
+                    });
+                    cx2.restore();
+                  }
+                },
             afterDraw:(chart)=>{
                   const cv=chart.canvas;
                   const freeRows=cv?._weekendRows||[];
@@ -4288,20 +4308,8 @@ async function showDiaryTab_(tab){
                   const nLabels=chart.data.labels.length;
                   if(!nLabels) return;
                   // Use scale's actual pixel size per tick
-                  const barH=yS.getPixelForValue(1)-yS.getPixelForValue(0);
+                  const barH=Math.abs(yS.getPixelForValue(1)-yS.getPixelForValue(0));
                   // ── Shade free/weekend rows ──
-                  if(freeRows.length){
-                    cx.save();
-                    cx.fillStyle='rgba(99,102,241,0.12)';
-                    freeRows.forEach(i=>{
-                      try{
-                        // Chart.js 4: use getPixelForValue on y scale
-                        const yMid=yS.getPixelForValue(i);
-                        cx.fillRect(ca.left,yMid-barH/2,ca.right-ca.left,barH);
-                      }catch(e){}
-                    });
-                    cx.restore();
-                  }
                   // ── Average vertical lines ──
                   function toHHMM(offset){
                     const h=Math.floor(((offset%24)+24)%24);
@@ -4343,10 +4351,10 @@ async function showDiaryTab_(tab){
                       cx.fillStyle='#d97706';
                       cx.beginPath();cx.arc(ca.left+pad+5,mid,5,0,Math.PI*2);cx.fill();
                       cx.fillStyle='#1e293b';
-                      cx.fillText('Acostarse  '+toHHMM(bedStats.m),ca.left+pad+14,mid);
+                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),ca.left+pad+14,mid);
                     }
                     if(wakeStats&&wakeStats.m!=null){
-                      const label='Levantarse  '+toHHMM(wakeStats.m);
+                      const label='Prom. levantarse  '+toHHMM(wakeStats.m);
                       const lw=cx.measureText(label).width+24;
                       cx.fillStyle='#1d4ed8';
                       cx.beginPath();cx.arc(ca.right-lw+5,mid,5,0,Math.PI*2);cx.fill();
