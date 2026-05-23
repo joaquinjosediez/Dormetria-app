@@ -4120,8 +4120,22 @@ async function showDiaryTab_(tab){
               layout:{padding:{top:60,bottom:4}},
               maintainAspectRatio:false,
               plugins:{
-                legend:{display:false},
-                afterDraw:(chart)=>{
+                legend:{display:false}
+              },
+              scales:{
+                x:{
+                  min:0,max:24,
+                  ticks:{font:{size:10},stepSize:2,callback:function(v){var h=(v+12)%24;return(h<10?'0':'')+h+':00';}},
+                  grid:{color:function(c){return c.tick.value===12?'rgba(0,0,0,0.3)':'rgba(0,0,0,0.06)';}},
+                  border:{dash:function(c){return c.tick.value===12?[4,4]:[]; }}
+                },
+                y:{ticks:{font:{size:10}},grid:{display:false}}
+              }
+            }
+,
+          plugins:[{
+            id:'actoOverlay',
+            afterDraw:(chart)=>{
                   const cv=chart.canvas;
                   const freeRows=cv?._weekendRows||[];
                   const bedStats=cv?._bedStats;
@@ -4200,30 +4214,8 @@ async function showDiaryTab_(tab){
                     }
                     cx.restore();
                   }
-                },
-                tooltip:{
-                  callbacks:{
-                    label:function(ctx){
-                      var v=ctx.raw;
-                      if(!v||v[0]===v[1])return '';
-                      function toTime(o){var h=Math.floor((o+12)%24);var m=Math.round((o-Math.floor(o))*60);return(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}
-                      var dur=v[1]-v[0];
-                      return toTime(v[0])+' a '+toTime(v[1])+' ('+Math.floor(dur)+'h '+(Math.round((dur%1)*60)||'')+'min)';
-                    }
-                  }
                 }
-              },
-              scales:{
-                x:{
-                  min:0,max:24,
-                  ticks:{font:{size:10},stepSize:2,callback:function(v){var h=(v+12)%24;return(h<10?'0':'')+h+':00';}},
-                  grid:{color:function(c){return c.tick.value===12?'rgba(0,0,0,0.3)':'rgba(0,0,0,0.06)';}},
-                  border:{dash:function(c){return c.tick.value===12?[4,4]:[]; }}
-                },
-                y:{ticks:{font:{size:10}},grid:{display:false}}
-              }
-            }
-          });
+          }]          });
         }
         const labels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}));
 
