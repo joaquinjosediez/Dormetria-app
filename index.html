@@ -1563,7 +1563,7 @@ const SCALES=[
  ],
  interp:s=>s<=41?{l:'Sin alteraciones clínicas significativas',c:'#14532d',bg:'#f0fdf4'}:s<=48?{l:'Riesgo moderado — evaluación recomendada',c:'#92400e',bg:'#fef3c7'}:{l:'Trastorno probable — consulta especialista',c:'#991b1b',bg:'#fef2f2'}
 },
-{id:'gasq',ref:'Dormetria — Cuestionario de Cribado General de Sueño (GASQ). Instrumento de evaluación clínica interna.',name:'GASQ — Evaluación inicial',cat:'sleep',max:null,desc:'Cuestionario de evaluación inicial del sueño',
+{id:'gasq',ref:'Roth T, Zammit G, Kushida C, Doghramji K, Mathias SD, Wong JM, Buysse DJ. (2002). A new questionnaire to detect sleep disorders. Sleep Medicine, 3(2), 99–108. doi:10.1016/S1389-9457(01)00131-9',name:'GASQ — Evaluación inicial',cat:'sleep',max:null,desc:'Cuestionario de evaluación inicial del sueño',
  qs:[
   {t:'En las últimas 2 semanas, ¿con qué frecuencia tuvo poco interés o placer en hacer cosas?',note:'Pensá en las últimas 2 semanas.',opts:['Para nada','Varios días','Más de la mitad de los días','Casi todos los días'],sc:[0,1,2,3]},
   {t:'Dificultad para quedarse dormido/a',opts:['Nada','Poco','Bastante','Mucho'],sc:[0,1,2,3]},
@@ -1908,7 +1908,7 @@ const SCALES=[
    {t:'Tengo mi smartphone en mente incluso cuando no lo estoy usando',opts:['Totalmente en desacuerdo','En desacuerdo','Ni acuerdo ni desacuerdo','De acuerdo','Totalmente de acuerdo'],sc:[1,2,3,4,5]},
  ]
 },
-,{id:'mrs',ref:'Heinemann K et al. (2004). The Menopause Rating Scale (MRS) scale. Health Qual Life Outcomes.',
+,{id:'mrs',cat_group:'female',ref:'Heinemann K et al. (2004). The Menopause Rating Scale (MRS) scale. Health Qual Life Outcomes.',
  name:'Escala de Rating de Menopausia (MRS)',cat:'qol',max:44,
  desc:'Evalúa síntomas climatéricos en 3 dominios: somático-vegetativo, psicológico y urogenital. Incluye alteraciones del sueño.',
  interp:s=>{
@@ -1931,7 +1931,7 @@ const SCALES=[
    {t:'Dolores articulares y musculares',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
  ]
 },
-{id:'psst',ref:'Steiner M et al. (2003). The Premenstrual Symptoms Screening Tool (PSST). Arch Women Ment Health.',
+{id:'psst',cat_group:'female',ref:'Steiner M et al. (2003). The Premenstrual Symptoms Screening Tool (PSST). Arch Women Ment Health.',
  name:'Screening Síndrome Premenstrual (PSST)',cat:'qol',max:52,
  desc:'Identifica síndrome disfórico premenstrual (SDPM). Evalúa síntomas afectivos, físicos y de funcionalidad.',
  interp:s=>{
@@ -1989,6 +1989,147 @@ const SCALES=[
    {t:'¿Se queda dormido/a involuntariamente durante el día?',opts:['Nunca','Raramente','A veces','Frecuentemente'],sc:[0,1,2,3]},
    {t:'¿Duerme a horas muy distintas cada día?',opts:['No','A veces','Frecuentemente','Casi siempre'],sc:[0,1,2,3]},
    {t:'¿Su sueño le deja sintiéndose descansado/a?',opts:['Siempre','Casi siempre','Pocas veces','Nunca'],sc:[0,1,2,3]},
+ ]
+}
+,{id:'flep',ref:'Provini F, Plazzi G, Tinuper P, Vandi S, Lugaresi E, Montagna P. (1999). Nocturnal frontal lobe epilepsy: a clinical and polygraphic overview of 100 consecutive cases. Brain, 122, 1017–1031. Validación diagnóstica: Manni R, Terzaghi M, Repetto A. (2008). The FLEP scale in diagnosing nocturnal frontal lobe epilepsy, NREM and REM parasomnias. Epilepsia, 49(9), 1581–1585.',
+ name:'FLEP — Epilepsia Frontal Nocturna',cat:'parasomnia',max:10,
+ desc:'Diferencia episodios nocturnos de epilepsia frontal (NFLE) vs parasomnias NREM y REM. Score ≥4 sugiere NFLE; <4 sugiere parasomnia.',
+ interp:s=>{
+   if(s<=-4) return {t:'Muy sugestivo de parasomnia NREM/REM',c:'#166534',bg:'#f0fdf4'};
+   if(s<0)   return {t:'Sugestivo de parasomnia',c:'#065f46',bg:'#ecfdf5'};
+   if(s<=3)  return {t:'Zona indeterminada — evaluación clínica requerida',c:'#854d0e',bg:'#fefce8'};
+   return {t:'Sugestivo de epilepsia frontal nocturna (NFLE)',c:'#991b1b',bg:'#fee2e2'};
+ },
+ qs:[
+   {t:'¿Los episodios son estereotipados (siempre iguales)?',opts:['No','Sí'],sc:[-1,2]},
+   {t:'¿Ocurren múltiples veces por noche?',opts:['No','Sí'],sc:[-1,1]},
+   {t:'¿Duran menos de 2 minutos?',opts:['No','Sí'],sc:[-1,1]},
+   {t:'¿Hay posturas distónicas o movimientos hiperkinéticos?',opts:['No','Sí'],sc:[-2,2]},
+   {t:'¿El paciente recuerda los episodios?',opts:['No','Sí'],sc:[0,-1]},
+   {t:'¿Hay antecedentes de convulsiones tónico-clónicas durante el sueño?',opts:['No','Sí'],sc:[-1,1]},
+   {t:'¿Hay vocalización no estructurada durante el episodio?',opts:['No','Sí'],sc:[-1,1]},
+   {t:'¿El paciente siente un aura antes del episodio motor?',opts:['No','Sí'],sc:[-1,1]},
+ ]
+},
+{id:'hamd',ref:'Hamilton M. (1960). A rating scale for depression. Journal of Neurology, Neurosurgery & Psychiatry, 23(1), 56–62. doi:10.1136/jnnp.23.1.56. Escala de dominio público.',
+ name:'Hamilton — Depresión (HAM-D 17)',cat:'mental',max:52,
+ desc:'Escala clínica de 17 ítems para medir severidad de depresión. Puntaje de corte: leve ≥8, moderada ≥14, severa ≥19, muy severa ≥23. Diseñada para administración clínica.',
+ interp:s=>{
+   if(s<=7)  return {t:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
+   if(s<=13) return {t:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=18) return {t:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
+   if(s<=22) return {t:'Depresión severa',c:'#9a3412',bg:'#fff7ed'};
+   return {t:'Depresión muy severa',c:'#991b1b',bg:'#fee2e2'};
+ },
+ qs:[
+   {t:'Estado de ánimo deprimido (tristeza, desesperanza, inutilidad)',opts:['Ausente','Estas emociones solo al preguntar','Las expresa espontáneamente','Las comunica no verbalmente','Casi todo el tiempo'],sc:[0,1,2,3,4]},
+   {t:'Sentimientos de culpa',opts:['Ausente','Se culpa, cree haber defraudado','Ideas de culpa o rumiación de errores pasados','Enfermedad actual como castigo; delirios de culpa','Voces acusatorias o condenatorias; alucinaciones visuales de culpa'],sc:[0,1,2,3,4]},
+   {t:'Suicidio',opts:['Ausente','Siente que la vida no vale la pena','Desearía estar muerto; pensamientos de muerte propia','Ideas o gestos suicidas','Intentos de suicidio'],sc:[0,1,2,3,4]},
+   {t:'Insomnio de conciliación',opts:['Sin dificultad','Quejas ocasionales de dificultad para dormirse','Quejas frecuentes (>30 min)'],sc:[0,1,2]},
+   {t:'Insomnio de mantenimiento (medio)',opts:['Sin dificultad','Inquieto durante la noche','Despertares durante la noche'],sc:[0,1,2]},
+   {t:'Insomnio terminal (madrugada)',opts:['Sin dificultad','Se despierta de madrugada pero vuelve a dormir','No puede volver a dormirse'],sc:[0,1,2]},
+   {t:'Trabajo y actividades',opts:['Sin dificultad','Ideas y sentimientos de incapacidad','Pérdida de interés en hobbies/trabajo','Disminución del tiempo dedicado','Ha dejado de trabajar por la depresión'],sc:[0,1,2,3,4]},
+   {t:'Retardo (enlentecimiento motor y cognitivo)',opts:['Normal','Leve enlentecimiento','Enlentecimiento moderado','Entrevista dificultosa','Estupor completo'],sc:[0,1,2,3,4]},
+   {t:'Agitación psicomotriz',opts:['Ninguna','Inquietud','Manoseo de manos, cabello, etc.','Movimiento constante, incapaz de permanecer sentado','Se retuerce las manos, se muerde las uñas, tira del pelo'],sc:[0,1,2,3,4]},
+   {t:'Ansiedad psíquica',opts:['Sin dificultad','Tensión subjetiva e irritabilidad','Preocupación por asuntos menores','Actitud aprensiva aparente en expresión o habla','Miedos expresados sin preguntar'],sc:[0,1,2,3,4]},
+   {t:'Ansiedad somática (manifestaciones físicas de ansiedad)',opts:['Ausente','Leve','Moderada','Severa','Incapacitante'],sc:[0,1,2,3,4]},
+   {t:'Síntomas somáticos gastrointestinales',opts:['Ninguno','Pérdida de apetito pero come sin presión','Dificultad para comer sin ser estimulado; solicita laxantes'],sc:[0,1,2]},
+   {t:'Síntomas somáticos generales',opts:['Ninguno','Pesadez en extremidades, espalda o cabeza; dolor de espalda','Cualquier síntoma somático claro adicional'],sc:[0,1,2]},
+   {t:'Síntomas genitales (pérdida de libido, trastornos menstruales)',opts:['Ausente','Leve','Severo'],sc:[0,1,2]},
+   {t:'Hipocondría',opts:['Ausente','Absorto en sí mismo','Preocupación por la salud','Quejas frecuentes, solicita ayuda','Delirios hipocondríacos'],sc:[0,1,2,3,4]},
+   {t:'Pérdida de peso (según historia)',opts:['Sin pérdida','Probable pérdida de peso asociada con enfermedad actual','Pérdida de peso definida'],sc:[0,1,2]},
+   {t:'Conciencia de enfermedad',opts:['Reconoce estar deprimido','Reconoce estar enfermo pero lo atribuye a mala alimentación, clima, exceso de trabajo','Niega estar enfermo'],sc:[0,1,2]},
+ ]
+},
+{id:'hama',ref:'Hamilton M. (1959). The assessment of anxiety states by rating. British Journal of Medical Psychology, 32(1), 50–55. doi:10.1111/j.2044-8341.1959.tb00467.x. Escala de dominio público.',
+ name:'Hamilton — Ansiedad (HAM-A)',cat:'mental',max:56,
+ desc:'Escala clínica de 14 ítems para cuantificar severidad de ansiedad. Puntaje de corte: <17 leve, 18–24 moderada, 25–30 moderada-severa, >30 severa. Diseñada para administración clínica.',
+ interp:s=>{
+   if(s<=7)  return {t:'Ansiedad mínima o ausente',c:'#166534',bg:'#f0fdf4'};
+   if(s<=17) return {t:'Ansiedad leve',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=24) return {t:'Ansiedad moderada',c:'#854d0e',bg:'#fefce8'};
+   if(s<=30) return {t:'Ansiedad moderada-severa',c:'#9a3412',bg:'#fff7ed'};
+   return {t:'Ansiedad severa',c:'#991b1b',bg:'#fee2e2'};
+ },
+ qs:[
+   {t:'Estado de ánimo ansioso (preocupación, anticipación del peor resultado, aprensión)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Tensión (sensación de tensión, fatigabilidad, respuesta de sobresalto, llanto fácil, temblor)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Miedos (a la oscuridad, a extraños, a quedarse solo, a animales, al tráfico, a las multitudes)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Insomnio (dificultad para dormirse, sueño interrumpido, sueño no reparador, sueños vívidos, pesadillas)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Funciones intelectuales/cognitivas (dificultad de concentración, mala memoria)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Estado de ánimo deprimido (pérdida de interés, anhedonía)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Síntomas somáticos musculares (dolor muscular, rigidez, espasmos, bruxismo)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Síntomas somáticos sensoriales (tinnitus, visión borrosa, sofocos, sensación de debilidad)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Síntomas cardiovasculares (taquicardia, palpitaciones, dolor en el pecho)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Síntomas respiratorios (opresión torácica, sensación de ahogo)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Síntomas gastrointestinales (dificultad para tragar, náuseas, dolor abdominal, colon irritable)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Síntomas genitourinarios (frecuencia urinaria, frigidez, eyaculación precoz, amenorrea)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Síntomas autonómicos (boca seca, enrojecimiento, palidez, sudoración, mareos, cefalea tensional)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {t:'Comportamiento en la entrevista (inquieto, agitado, tembloroso, palidez, suspiros frecuentes)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+ ]
+},
+{id:'bdi2',ref:'Beck AT, Steer RA, Brown GK. (1996). BDI-II Manual. San Antonio, TX: The Psychological Corporation. Copyright © 1996 Aaron T. Beck. Propiedad de Pearson Assessments — requiere licencia para uso clínico.',
+ name:'Beck — Depresión (BDI-II) ⚠️',cat:'mental',max:63,
+ desc:'Inventario de 21 ítems para medir severidad de síntomas depresivos. Cortes: mínima 0–13, leve 14–19, moderada 20–28, severa 29–63. ⚠️ Escala con copyright de Pearson: requiere autorización para uso.',
+ interp:s=>{
+   if(s<=13) return {t:'Depresión mínima',c:'#166534',bg:'#f0fdf4'};
+   if(s<=19) return {t:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=28) return {t:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
+   return {t:'Depresión severa',c:'#991b1b',bg:'#fee2e2'};
+ },
+ qs:[
+   {t:'Tristeza',opts:['No me siento triste','Me siento triste gran parte del tiempo','Me siento triste continuamente','Me siento tan triste o desgraciado/a que no puedo soportarlo'],sc:[0,1,2,3]},
+   {t:'Pesimismo',opts:['No estoy desanimado acerca del futuro','Me siento más desanimado que antes','No espero que las cosas mejoren','El futuro es desesperado, solo puede ir a peor'],sc:[0,1,2,3]},
+   {t:'Fracasos en el pasado',opts:['No me siento como un fracasado','He fracasado más de lo que hubiera debido','Cuando miro atrás veo muchos fracasos','Soy un fracaso total como persona'],sc:[0,1,2,3]},
+   {t:'Pérdida de placer',opts:['Obtengo tanta satisfacción como antes','No disfruto de las cosas como antes','Obtengo muy poca satisfacción de las cosas','No puedo obtener ninguna satisfacción de las cosas'],sc:[0,1,2,3]},
+   {t:'Sentimientos de culpa',opts:['No me siento culpable','Me siento culpable de muchas cosas','Me siento bastante culpable la mayor parte del tiempo','Me siento culpable en todo momento'],sc:[0,1,2,3]},
+   {t:'Sentimientos de castigo',opts:['No creo que esté siendo castigado','Siento que puedo ser castigado','Espero ser castigado','Siento que estoy siendo castigado'],sc:[0,1,2,3]},
+   {t:'Insatisfacción conmigo mismo',opts:['Tengo la misma opinión que antes de mí mismo','He perdido confianza en mí mismo','Estoy decepcionado conmigo mismo','No me gusto'],sc:[0,1,2,3]},
+   {t:'Autocrítica',opts:['No me critico más que antes','Me critico más que antes','Me critico por todas mis faltas','Me culpo por todo lo malo que sucede'],sc:[0,1,2,3]},
+   {t:'Pensamientos suicidas',opts:['No tengo ningún pensamiento de matarme','He tenido pensamientos de matarme pero no lo llevaría a cabo','Querría matarme','Me mataría si tuviera la oportunidad'],sc:[0,1,2,3]},
+   {t:'Llanto',opts:['No lloro más que antes','Lloro más que antes','Lloro por cualquier pequeñez','Tengo ganas de llorar pero no puedo'],sc:[0,1,2,3]},
+   {t:'Agitación',opts:['No estoy más agitado que antes','Me siento más agitado que antes','Estoy tan agitado que me es difícil quedarme quieto','Estoy tan agitado que tengo que estar constantemente en movimiento'],sc:[0,1,2,3]},
+   {t:'Pérdida de interés',opts:['No he perdido el interés en otras personas o actividades','Me intereso menos que antes por otras personas o cosas','He perdido la mayor parte de mi interés en los demás','Me es difícil interesarme en algo'],sc:[0,1,2,3]},
+   {t:'Indecisión',opts:['Tomo mis propias decisiones tan bien como siempre','Me resulta más difícil que antes tomar decisiones','Tengo mucha más dificultad en tomar decisiones','Tengo problemas para tomar cualquier decisión'],sc:[0,1,2,3]},
+   {t:'Inutilidad',opts:['No me siento inútil','No me considero tan valioso como antes','Me siento más inútil que los demás','Me siento completamente inútil'],sc:[0,1,2,3]},
+   {t:'Pérdida de energía',opts:['Tengo tanta energía como siempre','Tengo menos energía que antes','No tengo energía suficiente para hacer muchas cosas','Tengo tanta poca energía que no puedo hacer nada'],sc:[0,1,2,3]},
+   {t:'Cambios en los patrones de sueño',opts:['No he experimentado ningún cambio en mis patrones de sueño','Duermo un poco más/menos que antes','Duermo bastante más/menos que antes','Duermo la mayor parte del día / Me despierto 1–2 horas antes'],sc:[0,1,2,3]},
+   {t:'Irritabilidad',opts:['No estoy más irritable que antes','Estoy más irritable que antes','Estoy mucho más irritable que antes','Estoy irritable continuamente'],sc:[0,1,2,3]},
+   {t:'Cambios en el apetito',opts:['No he experimentado ningún cambio en mi apetito','Mi apetito es un poco mayor/menor que antes','Mi apetito es bastante mayor/menor que antes','No tengo nada de apetito / Quiero comer todo el día'],sc:[0,1,2,3]},
+   {t:'Dificultad de concentración',opts:['Puedo concentrarme tan bien como siempre','No puedo concentrarme tan bien como antes','Me es difícil mantener la mente en algo por mucho tiempo','No puedo concentrarme en nada'],sc:[0,1,2,3]},
+   {t:'Cansancio o fatiga',opts:['No estoy más cansado que antes','Me canso más fácilmente que antes','Estoy demasiado cansado para hacer muchas cosas','Estoy demasiado cansado para hacer la mayoría de las cosas'],sc:[0,1,2,3]},
+   {t:'Pérdida de interés en el sexo',opts:['No he notado ningún cambio reciente en mi interés por el sexo','Estoy menos interesado en el sexo que antes','Estoy mucho menos interesado en el sexo ahora','He perdido completamente el interés en el sexo'],sc:[0,1,2,3]},
+ ]
+},
+{id:'fsfi',ref:'Rosen R, Brown C, Heiman J, Leiblum S, Meston C, Shabsigh R, et al. (2000). The Female Sexual Function Index (FSFI): a multidimensional self-report instrument for the assessment of female sexual function. J Sex Marital Ther, 26(2), 191–208.',
+ name:'Función Sexual Femenina (FSFI)',cat:'sexual',max:36,
+ desc:'Evalúa 6 dominios de la función sexual femenina: deseo, excitación, lubricación, orgasmo, satisfacción y dolor. Corte diagnóstico ≤26.55 sugiere disfunción sexual femenina.',
+ interp:s=>{
+   if(s===0)  return {t:'No ha tenido actividad sexual en el último mes',c:'#374151',bg:'#f9fafb'};
+   if(s<=15)  return {t:'Disfunción sexual severa',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=20)  return {t:'Disfunción sexual moderada',c:'#9a3412',bg:'#fff7ed'};
+   if(s<=26.55) return {t:'Disfunción sexual leve — por debajo del corte diagnóstico',c:'#854d0e',bg:'#fefce8'};
+   return {t:'Función sexual dentro del rango normal',c:'#166534',bg:'#f0fdf4'};
+ },
+ qs:[
+   {t:'En las últimas 4 semanas, ¿con qué frecuencia sintió deseo o interés sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
+   {t:'¿Cómo calificaría su nivel de deseo o interés sexual?',opts:['Sin actividad sexual','Muy bajo o ninguno','Bajo','Moderado','Alto','Muy alto'],sc:[0,1,2,3,4,5]},
+   {t:'¿Con qué frecuencia se sintió excitada sexualmente durante la actividad sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
+   {t:'¿Cómo calificaría su nivel de excitación sexual?',opts:['Sin actividad sexual','Muy bajo o ninguno','Bajo','Moderado','Alto','Muy alto'],sc:[0,1,2,3,4,5]},
+   {t:'¿Cuánta confianza tuvo en poder excitarse durante la actividad sexual?',opts:['Sin actividad sexual','Ninguna confianza','Poca confianza','Algo de confianza','Alta confianza','Muy alta confianza'],sc:[0,1,2,3,4,5]},
+   {t:'¿Con qué frecuencia se satisfizo con su excitación durante la actividad sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
+   {t:'¿Con qué frecuencia se lubricó durante la actividad sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
+   {t:'¿Le resultó difícil lubricarse durante la actividad sexual?',opts:['Sin actividad sexual','Extremadamente difícil o imposible','Muy difícil','Difícil','Algo difícil','Sin dificultad'],sc:[0,1,2,3,4,5]},
+   {t:'¿Con qué frecuencia mantuvo la lubricación hasta el final de la actividad sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
+   {t:'¿Le resultó difícil mantener la lubricación hasta el final?',opts:['Sin actividad sexual','Extremadamente difícil o imposible','Muy difícil','Difícil','Algo difícil','Sin dificultad'],sc:[0,1,2,3,4,5]},
+   {t:'¿Con qué frecuencia alcanzó el orgasmo durante la actividad sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
+   {t:'¿Le resultó difícil alcanzar el orgasmo?',opts:['Sin actividad sexual','Extremadamente difícil o imposible','Muy difícil','Difícil','Algo difícil','Sin dificultad'],sc:[0,1,2,3,4,5]},
+   {t:'¿Quedó satisfecha con su capacidad para alcanzar el orgasmo?',opts:['Sin actividad sexual','Muy insatisfecha','Moderadamente insatisfecha','Igualmente satisfecha e insatisfecha','Moderadamente satisfecha','Muy satisfecha'],sc:[0,1,2,3,4,5]},
+   {t:'¿Cuánta satisfacción sintió con la cercanía emocional con su pareja durante la actividad sexual?',opts:['Sin actividad sexual','Muy insatisfecha','Moderadamente insatisfecha','Igualmente satisfecha e insatisfecha','Moderadamente satisfecha','Muy satisfecha'],sc:[0,1,2,3,4,5]},
+   {t:'¿Cuánta satisfacción sintió con su vida sexual en general?',opts:['Sin actividad sexual','Muy insatisfecha','Moderadamente insatisfecha','Igualmente satisfecha e insatisfecha','Moderadamente satisfecha','Muy satisfecha'],sc:[0,1,2,3,4,5]},
+   {t:'¿Con qué frecuencia sintió dolor durante la penetración vaginal?',opts:['Sin actividad sexual','Casi siempre / siempre','A menudo','A veces','Pocas veces','Casi nunca / nunca'],sc:[0,1,2,3,4,5]},
+   {t:'¿Con qué frecuencia sintió dolor después de la penetración vaginal?',opts:['Sin actividad sexual','Casi siempre / siempre','A menudo','A veces','Pocas veces','Casi nunca / nunca'],sc:[0,1,2,3,4,5]},
+   {t:'¿Cómo calificaría el nivel de dolor durante o después de la penetración vaginal?',opts:['Sin actividad sexual','Muy alto','Alto','Moderado','Bajo','Muy bajo o ninguno'],sc:[0,1,2,3,4,5]},
  ]
 }
 ];
