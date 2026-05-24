@@ -204,7 +204,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   -webkit-backdrop-filter:blur(20px) saturate(180%);
   backdrop-filter:blur(20px) saturate(180%);
   border-top:0.5px solid var(--sep-opaque);
-  padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-bottom:max(env(safe-area-inset-bottom,0px), 8px);
+  padding-top:4px;
   flex-shrink:0;
 }
 .bnav{
@@ -2121,7 +2122,7 @@ const SCALES=[
  name:'Beck — Depresión (BDI-II) ⚠️',cat:'mental',max:63,
  desc:'Inventario de 21 ítems para medir severidad de síntomas depresivos. Cortes: mínima 0–13, leve 14–19, moderada 20–28, severa 29–63. ⚠️ Escala con copyright de Pearson: requiere autorización para uso.',
  interp:s=>{
-   if(s<=13) return {l:'Depresión mínima',c:'#166534',bg:'#f0fdf4'};
+   if(s<=13) return {l:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
    if(s<=19) return {l:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
    if(s<=28) return {l:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
    return {l:'Depresión severa',c:'#991b1b',bg:'#fee2e2'};
@@ -3616,7 +3617,7 @@ function startScale(id){
 function renderQ(){
   const sc=S.scale;const q=sc.qs[S.qIdx];
   document.getElementById('q-prog').style.width=Math.round(S.qIdx/sc.qs.length*100)+'%';
-  let html=`<div class="q-num">Pregunta ${S.qIdx+1} de ${sc.qs.length}</div>${q.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:4px;font-style:italic">'+q.note+'</div>':''}${S.scale&&S.scale.id==='bdi2'?'<div style="font-size:12px;color:var(--label-3);font-style:italic;padding:6px 0 2px">¿Con cuál de estas afirmaciones se siente más identificado/a?</div>':''}<div class="q-text">${q.t}</div>`;
+  let html=`${S.qIdx===0&&sc.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:10px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;line-height:1.5;font-style:italic">'+ sc.note +'</div>':''}<div class="q-num">Pregunta ${S.qIdx+1} de ${sc.qs.length}</div>${q.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:4px;font-style:italic">'+q.note+'</div>':''}${S.scale&&S.scale.id==='bdi2'?'<div style="font-size:12px;color:var(--label-3);font-style:italic;padding:6px 0 2px">¿Con cuál de estas afirmaciones se siente más identificado/a?</div>':''}<div class="q-text">${q.t}</div>`;
   q.opts.forEach((o,i)=>html+=`<button class="opt${S.answers[S.qIdx]===i?' sel':''}" onclick="pickOpt(${i})">${o}</button>`);
   document.getElementById('q-area').innerHTML=html;
   let nav='';if(S.qIdx>0)nav+=`<button class="btn btn-s" onclick="prevQ()">← Anterior</button>`;
@@ -4411,33 +4412,35 @@ async function showDiaryTab_(tab){
                     }
                     cx.restore();
                   }
-                  // ── Summary box above chart - stacked rows for mobile ──
+                  // ── Summary box: side by side, full width ──
                   if(bedStats||wakeStats){
-                    const pad=10,rowH=20,rows=(bedStats&&wakeStats)?2:1;
-                    const bxH=rows*rowH+10;
+                    const bxH=34;
                     const bxY=Math.max(2,ca.top-bxH-4);
+                    const W=ca.right-ca.left;
                     cx.save();
                     cx.fillStyle='#f8fafc';
-                    cx.strokeStyle='#cbd5e1';cx.lineWidth=1;
-                    if(cx.roundRect){cx.roundRect(ca.left,bxY,ca.right-ca.left,bxH,6);}
-                    else{cx.rect(ca.left,bxY,ca.right-ca.left,bxH);}
+                    cx.strokeStyle='#e2e8f0';cx.lineWidth=1;
+                    if(cx.roundRect){cx.roundRect(ca.left,bxY,W,bxH,6);}
+                    else{cx.rect(ca.left,bxY,W,bxH);}
                     cx.fill();cx.stroke();
                     cx.font='600 11px system-ui';cx.textBaseline='middle';
-                    let row=0;
+                    const mid=bxY+bxH/2;
+                    const half=W/2;
                     if(bedStats&&bedStats.m!=null){
-                      const y=bxY+6+row*rowH;
+                      const x=ca.left+8;
                       cx.fillStyle='#d97706';
-                      cx.beginPath();cx.arc(ca.left+pad+4,y,4,0,Math.PI*2);cx.fill();
-                      cx.fillStyle='#1e293b';
-                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),ca.left+pad+12,y);
-                      row++;
+                      cx.beginPath();cx.arc(x+4,mid,4,0,Math.PI*2);cx.fill();
+                      cx.fillStyle='#334155';
+                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),x+12,mid);
                     }
                     if(wakeStats&&wakeStats.m!=null){
-                      const y=bxY+6+row*rowH;
+                      const label='Prom. levantarse  '+toHHMM(wakeStats.m);
+                      const lw=cx.measureText(label).width;
+                      const x=ca.right-8-lw-12;
                       cx.fillStyle='#1d4ed8';
-                      cx.beginPath();cx.arc(ca.left+pad+4,y,4,0,Math.PI*2);cx.fill();
-                      cx.fillStyle='#1e293b';
-                      cx.fillText('Prom. levantarse  '+toHHMM(wakeStats.m),ca.left+pad+12,y);
+                      cx.beginPath();cx.arc(x+4,mid,4,0,Math.PI*2);cx.fill();
+                      cx.fillStyle='#334155';
+                      cx.fillText(label,x+12,mid);
                     }
                     cx.restore();
                   }
@@ -4616,6 +4619,25 @@ async function editDiaryEntry(id){
 
 function showDiaryNew(){
   resetDiaryHelpers();showScreen('diary-new');setTimeout(showPeriodSectionIfFemale,100);
+  // Check if yesterday had medications and offer to copy
+  setTimeout(()=>{
+    const recs=S.records||[];
+    const yesterday=recs[recs.length-1];
+    if(yesterday&&yesterday.medications&&yesterday.medications!=='[]'&&yesterday.medications!==''){
+      try{
+        const yMeds=JSON.parse(yesterday.medications);
+        if(Array.isArray(yMeds)&&yMeds.length>0){
+          const banner=document.getElementById('same-meds-banner');
+          if(banner){
+            const names=yMeds.map(m=>m.name||(typeof m==='string'?m:'')).filter(Boolean).join(', ');
+            banner.innerHTML='<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:13px;color:#166534;display:flex;align-items:center;gap:10px"><span style="flex:1">💊 Ayer tomaste: <strong>'+names+'</strong><br><span style="font-size:12px;color:#15803d">¿Tomaste la misma medicación esta noche?</span></span><button type="button" onclick="copySameMeds()" style="background:#1a4a3a;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Sí, copiar</button></div>';
+            banner.style.display='block';
+            window._yesterdayMeds=yMeds;
+          }
+        }
+      }catch(e){}
+    }
+  },200);
   
   // Wake date = today (the date you woke up, not when you went to sleep)
   const n=new Date();const today=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
@@ -4647,13 +4669,14 @@ function showDiaryNew(){
       </select>
     </div>
 
-<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Medicación (opcional)</div>
-    <div id="med-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
-    <div style="background:#fffbeb;border-radius:10px;padding:10px 13px;margin-bottom:12px;font-size:13px;color:#92400e">
-      💡 La <strong>latencia de sueño</strong> es el tiempo que tardaste en dormirte desde el apagado de luces (o desde que tuviste la intención de dormir). Permite calcular el sueño real, no solo el tiempo en cama.
+<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Medicación (opcional)</div>
+    <div id="same-meds-banner" style="display:none"></div>
+    <div id="med-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+    <div id="med-inline-picker" style="display:none;background:var(--bg-secondary);border-radius:12px;padding:12px;margin-bottom:8px">
+      <div id="med-inline-content"></div>
     </div>
-    <div id="med-list" style="margin-bottom:8px"></div>
-    <button type="button" onclick="openMedModal()" style="background:none;border:1px dashed var(--sep-opaque);border-radius:8px;padding:9px 14px;color:#1a4a3a;font-size:14px;cursor:pointer;font-family:var(--font);width:100%;text-align:left;margin-bottom:14px">+ Agregar medicamento</button>
+    <button type="button" id="med-toggle-btn" onclick="toggleMedPicker()" style="background:none;border:1.5px dashed var(--sep-opaque);border-radius:10px;padding:9px 14px;color:#1a4a3a;font-size:14px;cursor:pointer;font-family:var(--font);width:100%;text-align:left;margin-bottom:14px">+ Agregar medicamento</button>
+
 
         <div class="sec-title" style="margin-top:8px">Despertares <span style="color:#dc2626">*</span></div>
     <div style="display:flex;gap:10px;margin-bottom:10px">
@@ -8851,31 +8874,40 @@ const COMMON_MEDS = [
 
 let _medModalMeds = [];
 
-function openMedModal(){
-  const modal = document.getElementById('med-modal');
-  if(!modal) return;
-  const ql = document.getElementById('med-quick-list');
-  if(ql){
-    const cats = [...new Set(COMMON_MEDS.map(m=>m.cat))];
-    let html = '';
-    cats.forEach(cat=>{
-      const meds = COMMON_MEDS.filter(m=>m.cat===cat);
-      html += '<div style="width:100%;font-size:11px;color:var(--label-3);margin-top:10px;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">'+cat+'</div>';
-      meds.forEach(m=>{
-        const existing = _medModalMeds.find(x=>x.name===m.name);
-        const active = !!existing;
-        const dose = existing ? existing.dose||'' : '';
-        const id = 'medq-'+m.name.replace(/ /g,'_');
-        const safeN = m.name.replace(/'/g,"\'");
-        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
-          '<button id="'+id+'" onclick="toggleQuickMed(\''+safeN+'\',\''+id+'\')" style="flex:1;padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font);border:1.5px solid '+(active?'#1a4a3a':'var(--sep-opaque)')+';background:'+(active?'#1a4a3a':'var(--bg-secondary)')+';color:'+(active?'#fff':'var(--label)')+';text-align:left">'+m.name+'</button>'+
-          (active ? '<input id="dose-'+id+'" type="text" placeholder="dosis" value="'+dose+'" oninput="updateMedDose(\''+safeN+'\',this.value)" style="width:80px;padding:8px;border:1.5px solid var(--sep-opaque);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--bg-secondary);color:var(--label)">' : '') +
-          '</div>';
-      });
+function toggleMedPicker(){
+  const picker = document.getElementById('med-inline-picker');
+  const btn = document.getElementById('med-toggle-btn');
+  if(!picker) return;
+  const open = picker.style.display !== 'none';
+  picker.style.display = open ? 'none' : 'block';
+  if(!open) renderMedInline();
+  if(btn) btn.textContent = open ? '+ Agregar medicamento' : '▲ Cerrar selector';
+}
+
+function renderMedInline(){
+  const cont = document.getElementById('med-inline-content');
+  if(!cont) return;
+  const cats = [...new Set(COMMON_MEDS.map(m=>m.cat))];
+  let html = '';
+  cats.forEach(cat=>{
+    const meds = COMMON_MEDS.filter(m=>m.cat===cat);
+    html += '<div style="font-size:10px;color:var(--label-3);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:8px 0 4px">'+cat+'</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px">';
+    meds.forEach(m=>{
+      const active = _medModalMeds.some(x=>x.name===m.name);
+      const safeN = m.name.replace(/'/g,"\'");
+      html += `<button type="button" onclick="toggleInlineMed('${safeN}')" style="padding:7px 12px;border-radius:20px;font-size:13px;cursor:pointer;font-family:var(--font);border:1.5px solid ${active?'#1a4a3a':'var(--sep-opaque)'};background:${active?'#1a4a3a':'var(--bg-secondary)'};color:${active?'#fff':'var(--label)'}">${m.name}</button>`;
     });
-    ql.innerHTML = html;
-  }
-  modal.style.display = 'block';
+    html += '</div>';
+  });
+  cont.innerHTML = html;
+}
+
+function toggleInlineMed(name){
+  const idx = _medModalMeds.findIndex(m=>m.name===name);
+  if(idx >= 0){ _medModalMeds.splice(idx,1); } else { _medModalMeds.push({name, dose:''}); }
+  renderMedInline();
+  renderMedList();
 }
 
 function closeMedModal(){
@@ -9097,6 +9129,14 @@ function isScaleVisibleForProfile(sc){
 function toggleDrInstructivo(){
   const el=document.getElementById('dr-instructivo');
   if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function copySameMeds(){
+  if(!window._yesterdayMeds) return;
+  _medModalMeds = window._yesterdayMeds.map(m=>({name:m.name||(typeof m==='string'?m:''), dose:m.dose||''})).filter(m=>m.name);
+  renderMedList();
+  const banner = document.getElementById('same-meds-banner');
+  if(banner) banner.innerHTML='<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 14px;margin-bottom:8px;font-size:13px;color:#166534">✅ Medicación copiada de ayer</div>';
 }
 
 </script>
