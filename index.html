@@ -859,7 +859,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   <div class="hero" style="padding:8px 16px 14px">
     <!-- Qué es Dormetria - top of hero -->
     <button onclick="toggleHomeBanner()" style="width:100%;border:none;background:#1a4a3a;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:10px;text-align:center;display:block">
-      ¿Qué es Dormetria?
+      ¿Qué es y cómo se usa Dormetria?
       <span id="banner-chev" style="font-size:11px;opacity:0.6;margin-left:6px">›</span>
     </button>
     <!-- Row 1: name + code key -->
@@ -1958,7 +1958,7 @@ const SCALES=[
    {t:'Tengo mi smartphone en mente incluso cuando no lo estoy usando',opts:['Totalmente en desacuerdo','En desacuerdo','Ni acuerdo ni desacuerdo','De acuerdo','Totalmente de acuerdo'],sc:[1,2,3,4,5]},
  ]
 },
-,{id:'mrs',cat_group:'female',ref:'Heinemann K et al. (2004). The Menopause Rating Scale (MRS) scale. Health Qual Life Outcomes.',
+{id:'mrs',cat_group:'female',ref:'Heinemann K et al. (2004). The Menopause Rating Scale (MRS) scale. Health Qual Life Outcomes.',
  name:'Escala de Rating de Menopausia (MRS)',cat:'qol',max:44,
  desc:'Evalúa síntomas climatéricos en 3 dominios: somático-vegetativo, psicológico y urogenital. Incluye alteraciones del sueño.',
  interp:s=>{
@@ -7168,10 +7168,10 @@ function renderSleepScorePanel(entries){
       </summary>
       <div style="padding:0 16px 14px;font-size:13px;color:#2d6b56;line-height:1.7">
         El score combina los tres pilares del sueño saludable:<br>
-        <strong>Cantidad (50 pts):</strong> idealmente entre 7 y 9 horas por noche.<br>
-        <strong>Fragmentación (20 pts):</strong> penalización por despertares nocturnos.<br>
+        <strong>Cantidad (50 pts):</strong> óptimo entre 7 y 9 horas. Por debajo de 7h baja gradualmente hasta 0; por encima de 9h también decrece (el exceso de sueño se asocia a peor calidad). A las 10h el puntaje cae a ~50%. A las 5h o menos el puntaje es 0.<br>
+        <strong>Fragmentación (20 pts):</strong> se restan 5 puntos por cada despertar nocturno reportado.<br>
         <strong>Regularidad (30 pts):</strong> consistencia en el horario de acostarse (Sleep Regularity Index, Phillips et al. 2017).<br><br>
-        <em style="font-size:12px;color:#555">⚠️ El tiempo desde acostarse hasta levantarse sobrestima el sueño real — habitualmente hay ~10% de tiempo despierto durante la noche.</em>
+        <em style="font-size:12px;color:#555">⚠️ El tiempo entre acostarse y levantarse sobrestima el sueño real — el registro incluye tiempo en cama pero no necesariamente dormido.</em>
       </div>
     </details>`;
   setTimeout(initProfileEditExtras,0);
