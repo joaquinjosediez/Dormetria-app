@@ -952,10 +952,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
 <!-- SCALE -->
 <div id="screen-scale" class="screen">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Salir</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="scale-title">Escala</div></div>
-    <div style="width:70px"></div>
+  <div class="topbar" style="justify-content:flex-start;gap:12px">
+    <button class="topbar-btn" onclick="showHome()" style="flex-shrink:0">← Salir</button>
+    <div style="font-size:13px;font-weight:600;color:#e8f5f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="scale-title">Escala</div>
   </div>
   <div class="q-prog"><div class="q-prog-fill" id="q-prog" style="width:0%"></div></div>
   <div class="q-area" id="q-area"></div>
@@ -1404,13 +1403,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     </div>
     <button class="topbar-btn" onclick="showChildMenu()" style="font-size:18px">⋯</button>
   </div>
-  <div id="ch-panel-home" class="scroll" style="padding:12px">
-    <div id="ch-age-banner" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);border-radius:14px;padding:16px;margin-bottom:16px;color:#fff">
+  <div id="ch-panel-home" class="scroll" style="padding:12px;display:flex;flex-direction:column;gap:0;height:calc(100vh - 120px)">
+    <div id="ch-age-banner" style="background:#1a4a3a;border-radius:12px;padding:14px 16px;margin-bottom:12px;color:#fff;flex-shrink:0">
       <div id="ch-age-label" style="font-size:13px;opacity:0.8;margin-bottom:2px"></div>
       <div id="ch-sleep-norm" style="font-size:15px;font-weight:600"></div>
-      <div id="ch-sleep-note" style="font-size:12px;opacity:0.75;margin-top:4px;line-height:1.5"></div>
+      <div id="ch-sleep-note" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;line-height:1.5"></div>
     </div>
-    <div id="ch-quick-actions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+    <div id="ch-quick-actions" style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0"></div>
     <div style="margin-bottom:16px">
       <button onclick="showConsultDir()" style="width:100%;background:#1a4a3a;border:none;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
         <div style="font-size:22px;filter:brightness(0) invert(1)">🩺</div>
@@ -3617,7 +3616,7 @@ function startScale(id){
 function renderQ(){
   const sc=S.scale;const q=sc.qs[S.qIdx];
   document.getElementById('q-prog').style.width=Math.round(S.qIdx/sc.qs.length*100)+'%';
-  let html=`<div class="q-num">Pregunta ${S.qIdx+1} de ${sc.qs.length}</div>${q.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:4px;font-style:italic">'+q.note+'</div>':''}<div class="q-text">${q.t}</div>`;
+  let html=`<div class="q-num">Pregunta ${S.qIdx+1} de ${sc.qs.length}</div>${q.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:4px;font-style:italic">'+q.note+'</div>':''}${S.scale&&S.scale.id==='bdi2'?'<div style="font-size:12px;color:var(--label-3);font-style:italic;padding:6px 0 2px">¿Con cuál de estas afirmaciones se siente más identificado/a?</div>':''}<div class="q-text">${q.t}</div>`;
   q.opts.forEach((o,i)=>html+=`<button class="opt${S.answers[S.qIdx]===i?' sel':''}" onclick="pickOpt(${i})">${o}</button>`);
   document.getElementById('q-area').innerHTML=html;
   let nav='';if(S.qIdx>0)nav+=`<button class="btn btn-s" onclick="prevQ()">← Anterior</button>`;
@@ -3671,8 +3670,14 @@ async function finishScale(){
     }
     markSuggestionCompleted(sc.id);
     const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(S.user.email)}&order=created_at.asc&select=*`);
-    S.records=recs||[];showResult(sc,score);
-  }catch(e){toast('Error al guardar. Revisá tu conexión.');}
+    S.records=recs||[];
+    try{ showResult(sc,score); }catch(re){ console.error('showResult error:',re); toast('Guardado. Error al mostrar resultado: '+re.message); }
+  }catch(e){
+    if(e.message && !e.message.includes('showResult')){
+      console.error('finishScale save error:',e);
+      toast('Error al guardar: '+e.message.slice(0,80));
+    }
+  }
 }
 function showResult(sc,score){
   const i=sc.interp(score);document.getElementById('r-title').textContent=sc.name;
@@ -7919,7 +7924,7 @@ function renderChildQuickActions(){
     {icon:'🧡', label:'Info para padres', sub:'Guía de sueño saludable', fn:"showChildTab('info',document.getElementById('ch-tab-info'))", color:'#1a4a3a'}
   ];
   el.innerHTML = actions.map(a =>
-    `<button onclick="${a.fn}" style="background:#1a4a3a;border:none;border-radius:14px;padding:14px 18px;text-align:left;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:14px;width:100%">
+    `<button onclick="${a.fn}" style="background:#1a4a3a;border:none;border-radius:14px;padding:16px 18px;text-align:left;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:14px;width:100%;min-height:72px">
       <div style="font-size:26px">${a.icon}</div>
       <div><div style="font-size:15px;font-weight:600;color:#fff">${a.label}</div><div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:1px">${a.sub}</div></div>
     </button>`
