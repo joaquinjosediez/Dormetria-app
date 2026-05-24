@@ -2519,7 +2519,7 @@ async function saveDrRegisterForm(){
     const dbSafeUpd={
       name:upd.name||u.name,
       lname:upd.lname||u.lname||'',
-      sex:upd.sex||u.sex||'',
+      gender:upd.gender||u.gender||'',
       specialty:upd.specialty||u.specialty||'',
       mat:upd.mat||u.mat||'',
     };
@@ -3140,9 +3140,7 @@ function trackUsage(){
   if(!usage.days.includes(today)) usage.days.push(today);
   if(usage.days.length>90) usage.days=usage.days.slice(-90);
   localStorage.setItem(key,JSON.stringify(usage));
-  // Try to save to DB (best effort)
-  const t=S.role==='patient'?'patients':'doctors';
-  db.patch(t+'?email=eq.'+encodeURIComponent(S.user.email),{last_login:now,login_count:usage.logins}).catch(()=>{});
+  // Usage tracking in localStorage only (DB columns not available)
 }
 
 function doLogout(){S.user=null;localStorage.removeItem('dm_s');Object.keys(S.charts).forEach(k=>killChart(k));pvtStop();showScreen('login');}
@@ -3660,7 +3658,11 @@ async function finishScale(){
       const {answers:_,...payloadNoAnswers}=payload;
       evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payloadNoAnswers)});
     }
-    if(!evalResp.ok&&evalResp.status!==201){const ed=await evalResp.json().catch(()=>({}));throw new Error(ed.message||evalResp.status);}
+    if(!evalResp.ok&&evalResp.status!==201){
+      const ed=await evalResp.json().catch(()=>({}));
+      console.error('Scale save error:', evalResp.status, ed);
+      throw new Error((ed.message||ed.hint||ed.details||evalResp.status)+'');
+    }
     // Check if score is pathological and create doctor alert
     const thr=ALERT_THR[sc.id];
     if(thr && score>=thr.score){
