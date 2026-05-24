@@ -1410,11 +1410,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
       <div id="ch-sleep-norm" style="font-size:15px;font-weight:600"></div>
       <div id="ch-sleep-note" style="font-size:12px;opacity:0.75;margin-top:4px;line-height:1.5"></div>
     </div>
-    <div id="ch-quick-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"></div>
+    <div id="ch-quick-actions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
     <div style="margin-bottom:16px">
-      <button onclick="showConsultDir()" style="width:100%;background:linear-gradient(135deg,#1a4a3a,#2d6b56);border:none;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left">
-        <div style="font-size:24px">🩺</div>
-        <div><div style="font-size:14px;font-weight:600;color:#fff">Consultar especialista</div><div style="font-size:11px;color:rgba(255,255,255,0.75)">Especialistas en sueño infantil</div></div>
+      <button onclick="showConsultDir()" style="width:100%;background:#1a4a3a;border:none;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
+        <div style="font-size:22px;filter:brightness(0) invert(1)">🩺</div>
+        <div style="font-size:15px;font-weight:600;color:#fff">Consultar especialista</div>
       </button>
     </div>
   </div>
@@ -1910,7 +1910,7 @@ const SCALES=[
 
 {id:'bisq',ref:'Sadeh A. (2004). A brief screening questionnaire for infant sleep problems (BISQ). Pediatrics.',name:'Sueño infantil (BISQ)',cat:'pediatric',max:8,desc:'Cribado de problemas del sueño en bebés (2-24 meses)',
  qs:[
-  {t:'¿Cuántas horas duerme su hijo/a por la noche (entre las 10pm y las 6am)?',opts:['Menos de 5h','5-6h','6-7h','7-8h','8-9h','Más de 9h'],sc:[3,2,2,1,0,0]},
+  {l:'¿Cuántas horas duerme su hijo/a por la noche (entre las 10pm y las 6am)?',opts:['Menos de 5h','5-6h','6-7h','7-8h','8-9h','Más de 9h'],sc:[3,2,2,1,0,0]},
   {t:'¿Cuántas veces se despierta por la noche en promedio?',opts:['Nunca','1 vez','2-3 veces','4-5 veces','Más de 5 veces'],sc:[0,0,1,2,3]},
   {t:'¿Cuánto tiempo está despierto/a en total durante la noche?',opts:['Menos de 15 min','15-30 min','30-60 min','1-2 horas','Más de 2 horas'],sc:[0,0,1,2,3]},
   {t:'¿Dónde duerme la mayor parte del tiempo?',opts:['Cuna/cama propia','Cama de padres/tutores','Cochecito/silla de auto','En brazos'],sc:[0,1,1,2]},
@@ -1944,13 +1944,13 @@ const SCALES=[
  name:'Adicción al Smartphone (SAS-SV)',cat:'qol',max:24,
  desc:'Escala breve de adicción al smartphone. Punto de corte: ≥31 hombres, ≥33 mujeres (versión completa). Versión breve (SAS-SV): ≥22.',
  interp:s=>{
-   if(s<=10) return {t:'Sin riesgo de uso problemático',c:'#166534',bg:'#f0fdf4'};
-   if(s<=15) return {t:'Uso moderado — monitorear',c:'#854d0e',bg:'#fefce8'};
-   if(s<=20) return {t:'Uso problemático probable',c:'#9a3412',bg:'#fff7ed'};
-   return {t:'Adicción al smartphone probable',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=10) return {l:'Sin riesgo de uso problemático',c:'#166534',bg:'#f0fdf4'};
+   if(s<=15) return {l:'Uso moderado — monitorear',c:'#854d0e',bg:'#fefce8'};
+   if(s<=20) return {l:'Uso problemático probable',c:'#9a3412',bg:'#fff7ed'};
+   return {l:'Adicción al smartphone probable',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'Me pierdo el trabajo planificado por el uso del smartphone',opts:['Totalmente en desacuerdo','En desacuerdo','Ni acuerdo ni desacuerdo','De acuerdo','Totalmente de acuerdo'],sc:[1,2,3,4,5]},
+   {l:'Me pierdo el trabajo planificado por el uso del smartphone',opts:['Totalmente en desacuerdo','En desacuerdo','Ni acuerdo ni desacuerdo','De acuerdo','Totalmente de acuerdo'],sc:[1,2,3,4,5]},
    {t:'Me cuesta concentrarme en clases, trabajo u otras actividades por el smartphone',opts:['Totalmente en desacuerdo','En desacuerdo','Ni acuerdo ni desacuerdo','De acuerdo','Totalmente de acuerdo'],sc:[1,2,3,4,5]},
    {t:'Siento dolor en las muñecas o en la nuca por el uso del smartphone',opts:['Totalmente en desacuerdo','En desacuerdo','Ni acuerdo ni desacuerdo','De acuerdo','Totalmente de acuerdo'],sc:[1,2,3,4,5]},
    {t:'No podría tolerar no tener mi smartphone',opts:['Totalmente en desacuerdo','En desacuerdo','Ni acuerdo ni desacuerdo','De acuerdo','Totalmente de acuerdo'],sc:[1,2,3,4,5]},
@@ -1962,14 +1962,14 @@ const SCALES=[
  name:'Escala de Rating de Menopausia (MRS)',cat:'qol',max:44,
  desc:'Evalúa síntomas climatéricos en 3 dominios: somático-vegetativo, psicológico y urogenital. Incluye alteraciones del sueño.',
  interp:s=>{
-   if(s<=4)  return {t:'Sin síntomas / mínimos',c:'#166534',bg:'#f0fdf4'};
-   if(s<=8)  return {t:'Síntomas leves',c:'#3f6212',bg:'#f7fee7'};
-   if(s<=16) return {t:'Síntomas moderados',c:'#854d0e',bg:'#fefce8'};
-   return {t:'Síntomas severos',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=4)  return {l:'Sin síntomas / mínimos',c:'#166534',bg:'#f0fdf4'};
+   if(s<=8)  return {l:'Síntomas leves',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=16) return {l:'Síntomas moderados',c:'#854d0e',bg:'#fefce8'};
+   return {l:'Síntomas severos',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'Sofocos / sudoración',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
-   {t:'Malestar cardíaco (palpitaciones, sensación de opresión)',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {l:'Sofocos / sudoración',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {l:'Malestar cardíaco (palpitaciones, sensación de opresión)',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Problemas para dormir (dificultad para conciliar o mantener el sueño)',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Estado depresivo (decaimiento, tristeza, llanto fácil)',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Irritabilidad (tensión, agresividad)',opts:['Ninguno','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
@@ -1985,14 +1985,14 @@ const SCALES=[
  name:'Screening Síndrome Premenstrual (PSST)',cat:'qol',max:52,
  desc:'Identifica síndrome disfórico premenstrual (SDPM). Evalúa síntomas afectivos, físicos y de funcionalidad.',
  interp:s=>{
-   if(s<=10) return {t:'Sin síndrome premenstrual significativo',c:'#166534',bg:'#f0fdf4'};
-   if(s<=20) return {t:'SPM leve',c:'#3f6212',bg:'#f7fee7'};
-   if(s<=35) return {t:'SPM moderado',c:'#854d0e',bg:'#fefce8'};
-   return {t:'Síndrome disfórico premenstrual probable',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=10) return {l:'Sin síndrome premenstrual significativo',c:'#166534',bg:'#f0fdf4'};
+   if(s<=20) return {l:'SPM leve',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=35) return {l:'SPM moderado',c:'#854d0e',bg:'#fefce8'};
+   return {l:'Síndrome disfórico premenstrual probable',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'Irritabilidad/enojo',opts:['Nunca','Leve','Moderado','Severo'],sc:[0,1,2,3]},
-   {t:'Tensión/ansiedad/nerviosismo',opts:['Nunca','Leve','Moderado','Severo'],sc:[0,1,2,3]},
+   {l:'Irritabilidad/enojo',opts:['Nunca','Leve','Moderado','Severo'],sc:[0,1,2,3]},
+   {l:'Tensión/ansiedad/nerviosismo',opts:['Nunca','Leve','Moderado','Severo'],sc:[0,1,2,3]},
    {t:'Llantos / sensibilidad emocional',opts:['Nunca','Leve','Moderado','Severo'],sc:[0,1,2,3]},
    {t:'Estado de ánimo deprimido / desesperanza',opts:['Nunca','Leve','Moderado','Severo'],sc:[0,1,2,3]},
    {t:'Menor interés en el trabajo, hobbies o actividades sociales',opts:['Nunca','Leve','Moderado','Severo'],sc:[0,1,2,3]},
@@ -2010,15 +2010,15 @@ const SCALES=[
  name:'Escala de Depresión Geriátrica — GDS-5',cat:'mental',max:5,
  desc:'Versión ultracorta de 5 ítems para cribado de depresión en adultos mayores. Punto de corte ≥2.',
  interp:s=>{
-   if(s<=1) return {t:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
-   if(s<=2) return {t:'Posible depresión — consultar',c:'#854d0e',bg:'#fefce8'};
-   return {t:'Depresión probable',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=1) return {l:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
+   if(s<=2) return {l:'Posible depresión — consultar',c:'#854d0e',bg:'#fefce8'};
+   return {l:'Depresión probable',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'¿Está básicamente satisfecho/a con su vida?',opts:['Sí','No'],sc:[0,1]},
-   {t:'¿Siente frecuentemente que su vida está vacía?',opts:['Sí','No'],sc:[1,0]},
-   {t:'¿Tiene miedo de que algo malo le vaya a pasar?',opts:['Sí','No'],sc:[1,0]},
-   {t:'¿Se siente feliz la mayor parte del tiempo?',opts:['Sí','No'],sc:[0,1]},
+   {l:'¿Está básicamente satisfecho/a con su vida?',opts:['Sí','No'],sc:[0,1]},
+   {l:'¿Siente frecuentemente que su vida está vacía?',opts:['Sí','No'],sc:[1,0]},
+   {l:'¿Tiene miedo de que algo malo le vaya a pasar?',opts:['Sí','No'],sc:[1,0]},
+   {l:'¿Se siente feliz la mayor parte del tiempo?',opts:['Sí','No'],sc:[0,1]},
    {t:'¿Se siente frecuentemente desamparado/a?',opts:['Sí','No'],sc:[1,0]},
  ]
 },
@@ -2026,13 +2026,13 @@ const SCALES=[
  name:'Sueño en Adulto Mayor — Cribado',cat:'sleep',max:20,
  desc:'Cribado de alteraciones del sueño frecuentes en geriatría: insomnio, apnea, movimientos, circadiano y somnolencia.',
  interp:s=>{
-   if(s<=4)  return {t:'Sin alteraciones significativas del sueño',c:'#166534',bg:'#f0fdf4'};
-   if(s<=9)  return {t:'Alteraciones leves — monitorear',c:'#854d0e',bg:'#fefce8'};
-   if(s<=14) return {t:'Alteraciones moderadas — evaluación recomendada',c:'#9a3412',bg:'#fff7ed'};
-   return {t:'Alteraciones severas — derivar a especialista',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=4)  return {l:'Sin alteraciones significativas del sueño',c:'#166534',bg:'#f0fdf4'};
+   if(s<=9)  return {l:'Alteraciones leves — monitorear',c:'#854d0e',bg:'#fefce8'};
+   if(s<=14) return {l:'Alteraciones moderadas — evaluación recomendada',c:'#9a3412',bg:'#fff7ed'};
+   return {l:'Alteraciones severas — derivar a especialista',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'¿Le cuesta conciliar el sueño o se despierta en la madrugada?',opts:['Nunca','Pocas veces','Frecuentemente','Casi siempre'],sc:[0,1,2,3]},
+   {l:'¿Le cuesta conciliar el sueño o se despierta en la madrugada?',opts:['Nunca','Pocas veces','Frecuentemente','Casi siempre'],sc:[0,1,2,3]},
    {t:'¿Se despierta muy temprano sin poder volver a dormir?',opts:['Nunca','Pocas veces','Frecuentemente','Casi siempre'],sc:[0,1,2,3]},
    {t:'¿Le dicen que ronca fuerte o que deja de respirar al dormir?',opts:['No','A veces','Frecuentemente','Casi siempre'],sc:[0,1,2,3]},
    {t:'¿Siente sus piernas inquietas o con sensaciones molestas al acostarse?',opts:['No','Raramente','A veces','Frecuentemente'],sc:[0,1,2,3]},
@@ -2045,14 +2045,14 @@ const SCALES=[
  name:'FLEP — Epilepsia Frontal Nocturna',cat:'parasomnia',max:10,
  desc:'Diferencia episodios nocturnos de epilepsia frontal (NFLE) vs parasomnias NREM y REM. Score ≥4 sugiere NFLE; <4 sugiere parasomnia.',
  interp:s=>{
-   if(s<=-4) return {t:'Muy sugestivo de parasomnia NREM/REM',c:'#166534',bg:'#f0fdf4'};
-   if(s<0)   return {t:'Sugestivo de parasomnia',c:'#065f46',bg:'#ecfdf5'};
-   if(s<=3)  return {t:'Zona indeterminada — evaluación clínica requerida',c:'#854d0e',bg:'#fefce8'};
-   return {t:'Sugestivo de epilepsia frontal nocturna (NFLE)',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=-4) return {l:'Muy sugestivo de parasomnia NREM/REM',c:'#166534',bg:'#f0fdf4'};
+   if(s<0)   return {l:'Sugestivo de parasomnia',c:'#065f46',bg:'#ecfdf5'};
+   if(s<=3)  return {l:'Zona indeterminada — evaluación clínica requerida',c:'#854d0e',bg:'#fefce8'};
+   return {l:'Sugestivo de epilepsia frontal nocturna (NFLE)',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'¿Los episodios son estereotipados (siempre iguales)?',opts:['No','Sí'],sc:[-1,2]},
-   {t:'¿Ocurren múltiples veces por noche?',opts:['No','Sí'],sc:[-1,1]},
+   {l:'¿Los episodios son estereotipados (siempre iguales)?',opts:['No','Sí'],sc:[-1,2]},
+   {l:'¿Ocurren múltiples veces por noche?',opts:['No','Sí'],sc:[-1,1]},
    {t:'¿Duran menos de 2 minutos?',opts:['No','Sí'],sc:[-1,1]},
    {t:'¿Hay posturas distónicas o movimientos hiperkinéticos?',opts:['No','Sí'],sc:[-2,2]},
    {t:'¿El paciente recuerda los episodios?',opts:['No','Sí'],sc:[0,-1]},
@@ -2065,14 +2065,14 @@ const SCALES=[
  name:'Hamilton — Depresión (HAM-D 17)',cat:'mental',max:52,
  desc:'Escala clínica de 17 ítems para medir severidad de depresión. Puntaje de corte: leve ≥8, moderada ≥14, severa ≥19, muy severa ≥23. Diseñada para administración clínica.',
  interp:s=>{
-   if(s<=7)  return {t:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
-   if(s<=13) return {t:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
-   if(s<=18) return {t:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
-   if(s<=22) return {t:'Depresión severa',c:'#9a3412',bg:'#fff7ed'};
-   return {t:'Depresión muy severa',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=7)  return {l:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
+   if(s<=13) return {l:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=18) return {l:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
+   if(s<=22) return {l:'Depresión severa',c:'#9a3412',bg:'#fff7ed'};
+   return {l:'Depresión muy severa',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'Estado de ánimo deprimido (tristeza, desesperanza, inutilidad)',opts:['Ausente','Estas emociones solo al preguntar','Las expresa espontáneamente','Las comunica no verbalmente','Casi todo el tiempo'],sc:[0,1,2,3,4]},
+   {l:'Estado de ánimo deprimido (tristeza, desesperanza, inutilidad)',opts:['Ausente','Estas emociones solo al preguntar','Las expresa espontáneamente','Las comunica no verbalmente','Casi todo el tiempo'],sc:[0,1,2,3,4]},
    {t:'Sentimientos de culpa',opts:['Ausente','Se culpa, cree haber defraudado','Ideas de culpa o rumiación de errores pasados','Enfermedad actual como castigo; delirios de culpa','Voces acusatorias o condenatorias; alucinaciones visuales de culpa'],sc:[0,1,2,3,4]},
    {t:'Suicidio',opts:['Ausente','Siente que la vida no vale la pena','Desearía estar muerto; pensamientos de muerte propia','Ideas o gestos suicidas','Intentos de suicidio'],sc:[0,1,2,3,4]},
    {t:'Insomnio de conciliación',opts:['Sin dificultad','Quejas ocasionales de dificultad para dormirse','Quejas frecuentes (>30 min)'],sc:[0,1,2]},
@@ -2095,14 +2095,14 @@ const SCALES=[
  name:'Hamilton — Ansiedad (HAM-A)',cat:'mental',max:56,
  desc:'Escala clínica de 14 ítems para cuantificar severidad de ansiedad. Puntaje de corte: <17 leve, 18–24 moderada, 25–30 moderada-severa, >30 severa. Diseñada para administración clínica.',
  interp:s=>{
-   if(s<=7)  return {t:'Ansiedad mínima o ausente',c:'#166534',bg:'#f0fdf4'};
-   if(s<=17) return {t:'Ansiedad leve',c:'#3f6212',bg:'#f7fee7'};
-   if(s<=24) return {t:'Ansiedad moderada',c:'#854d0e',bg:'#fefce8'};
-   if(s<=30) return {t:'Ansiedad moderada-severa',c:'#9a3412',bg:'#fff7ed'};
-   return {t:'Ansiedad severa',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=7)  return {l:'Ansiedad mínima o ausente',c:'#166534',bg:'#f0fdf4'};
+   if(s<=17) return {l:'Ansiedad leve',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=24) return {l:'Ansiedad moderada',c:'#854d0e',bg:'#fefce8'};
+   if(s<=30) return {l:'Ansiedad moderada-severa',c:'#9a3412',bg:'#fff7ed'};
+   return {l:'Ansiedad severa',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'Estado de ánimo ansioso (preocupación, anticipación del peor resultado, aprensión)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
+   {l:'Estado de ánimo ansioso (preocupación, anticipación del peor resultado, aprensión)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Tensión (sensación de tensión, fatigabilidad, respuesta de sobresalto, llanto fácil, temblor)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Miedos (a la oscuridad, a extraños, a quedarse solo, a animales, al tráfico, a las multitudes)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Insomnio (dificultad para dormirse, sueño interrumpido, sueño no reparador, sueños vívidos, pesadillas)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
@@ -2122,14 +2122,14 @@ const SCALES=[
  name:'Beck — Depresión (BDI-II) ⚠️',cat:'mental',max:63,
  desc:'Inventario de 21 ítems para medir severidad de síntomas depresivos. Cortes: mínima 0–13, leve 14–19, moderada 20–28, severa 29–63. ⚠️ Escala con copyright de Pearson: requiere autorización para uso.',
  interp:s=>{
-   if(s<=13) return {t:'Depresión mínima',c:'#166534',bg:'#f0fdf4'};
-   if(s<=19) return {t:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
-   if(s<=28) return {t:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
-   return {t:'Depresión severa',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=13) return {l:'Depresión mínima',c:'#166534',bg:'#f0fdf4'};
+   if(s<=19) return {l:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
+   if(s<=28) return {l:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
+   return {l:'Depresión severa',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'Tristeza',opts:['No me siento triste','Me siento triste gran parte del tiempo','Me siento triste continuamente','Me siento tan triste o desgraciado/a que no puedo soportarlo'],sc:[0,1,2,3]},
-   {t:'Pesimismo',opts:['No estoy desanimado acerca del futuro','Me siento más desanimado que antes','No espero que las cosas mejoren','El futuro es desesperado, solo puede ir a peor'],sc:[0,1,2,3]},
+   {l:'Tristeza',opts:['No me siento triste','Me siento triste gran parte del tiempo','Me siento triste continuamente','Me siento tan triste o desgraciado/a que no puedo soportarlo'],sc:[0,1,2,3]},
+   {l:'Pesimismo',opts:['No estoy desanimado acerca del futuro','Me siento más desanimado que antes','No espero que las cosas mejoren','El futuro es desesperado, solo puede ir a peor'],sc:[0,1,2,3]},
    {t:'Fracasos en el pasado',opts:['No me siento como un fracasado','He fracasado más de lo que hubiera debido','Cuando miro atrás veo muchos fracasos','Soy un fracaso total como persona'],sc:[0,1,2,3]},
    {t:'Pérdida de placer',opts:['Obtengo tanta satisfacción como antes','No disfruto de las cosas como antes','Obtengo muy poca satisfacción de las cosas','No puedo obtener ninguna satisfacción de las cosas'],sc:[0,1,2,3]},
    {t:'Sentimientos de culpa',opts:['No me siento culpable','Me siento culpable de muchas cosas','Me siento bastante culpable la mayor parte del tiempo','Me siento culpable en todo momento'],sc:[0,1,2,3]},
@@ -2155,14 +2155,14 @@ const SCALES=[
  name:'Función Sexual Femenina (FSFI)',cat:'sexual',max:36,
  desc:'Evalúa 6 dominios de la función sexual femenina: deseo, excitación, lubricación, orgasmo, satisfacción y dolor. Corte diagnóstico ≤26.55 sugiere disfunción sexual femenina.',
  interp:s=>{
-   if(s===0)  return {t:'No ha tenido actividad sexual en el último mes',c:'#374151',bg:'#f9fafb'};
-   if(s<=15)  return {t:'Disfunción sexual severa',c:'#991b1b',bg:'#fee2e2'};
-   if(s<=20)  return {t:'Disfunción sexual moderada',c:'#9a3412',bg:'#fff7ed'};
-   if(s<=26.55) return {t:'Disfunción sexual leve — por debajo del corte diagnóstico',c:'#854d0e',bg:'#fefce8'};
-   return {t:'Función sexual dentro del rango normal',c:'#166534',bg:'#f0fdf4'};
+   if(s===0)  return {l:'No ha tenido actividad sexual en el último mes',c:'#374151',bg:'#f9fafb'};
+   if(s<=15)  return {l:'Disfunción sexual severa',c:'#991b1b',bg:'#fee2e2'};
+   if(s<=20)  return {l:'Disfunción sexual moderada',c:'#9a3412',bg:'#fff7ed'};
+   if(s<=26.55) return {l:'Disfunción sexual leve — por debajo del corte diagnóstico',c:'#854d0e',bg:'#fefce8'};
+   return {l:'Función sexual dentro del rango normal',c:'#166534',bg:'#f0fdf4'};
  },
  qs:[
-   {t:'En las últimas 4 semanas, ¿con qué frecuencia sintió deseo o interés sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
+   {l:'En las últimas 4 semanas, ¿con qué frecuencia sintió deseo o interés sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
    {t:'¿Cómo calificaría su nivel de deseo o interés sexual?',opts:['Sin actividad sexual','Muy bajo o ninguno','Bajo','Moderado','Alto','Muy alto'],sc:[0,1,2,3,4,5]},
    {t:'¿Con qué frecuencia se sintió excitada sexualmente durante la actividad sexual?',opts:['Sin actividad sexual','Casi nunca / nunca','Pocas veces','A veces','A menudo','Casi siempre / siempre'],sc:[0,1,2,3,4,5]},
    {t:'¿Cómo calificaría su nivel de excitación sexual?',opts:['Sin actividad sexual','Muy bajo o ninguno','Bajo','Moderado','Alto','Muy alto'],sc:[0,1,2,3,4,5]},
@@ -3651,7 +3651,8 @@ async function finishScale(){
     // Store answers as JSON string for history display
     const answersJson=JSON.stringify(S.answers);
     // Try saving with answers column first, fall back without if column doesn't exist
-    const payload={patient_email:S.user.email,scale_id:sc.id,scale_name:sc.name,score,max_score:sc.max,answers:answersJson};
+    const _pl={patient_email:S.user.email,scale_id:sc.id,scale_name:sc.name,score,max_score:sc.max??null,answers:answersJson};
+    const payload=Object.fromEntries(Object.entries(_pl).filter(([,v])=>v!==undefined));
     let evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
     if(evalResp.status===400){
       // answers column may not exist - retry without it
@@ -4460,10 +4461,10 @@ async function showDiaryTab_(tab){
           const mins=e.sleep_minutes||0;
           // Cantidad (50 pts)
           let qty=0;
-          if(mins>=420&&mins<=540)qty=50;
-          else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);
-          else if(mins>540&&mins<=600)qty=Math.round(50*(600-mins)/60);
-          else if(mins>=300)qty=Math.round(50*(mins-240)/180);
+          if(mins>=420&&mins<=540)qty=50;                                    // 7-9h optimal
+          else if(mins>540&&mins<=660)qty=Math.round(50*(660-mins)/120);   // 9-11h gradual drop, ~25% at 10h
+          else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);   // 6-7h gradual drop
+          else if(mins>=240&&mins<360)qty=Math.round(50*(mins-240)/120);   // 4-6h low
           qty=Math.max(0,Math.min(50,qty));
           // Fragmentación (20 pts)
           const awk=e.awakenings||0;
@@ -7919,9 +7920,9 @@ function renderChildQuickActions(){
     {icon:'💡', label:'Info para padres', fn:"showChildTab('info',document.getElementById('ch-tab-info'))", color:'#b45309'}
   ];
   el.innerHTML = actions.map(a =>
-    `<button onclick="${a.fn}" style="background:${a.color}15;border:1.5px solid ${a.color}30;border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;font-family:var(--font)">
-      <div style="font-size:28px;margin-bottom:6px">${a.icon}</div>
-      <div style="font-size:13px;font-weight:600;color:${a.color}">${a.label}</div>
+    `<button onclick="${a.fn}" style="background:#1a4a3a;border:none;border-radius:14px;padding:14px 18px;text-align:left;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:14px;width:100%">
+      <div style="font-size:22px;filter:brightness(0) invert(1)">${a.icon}</div>
+      <div style="font-size:15px;font-weight:600;color:#fff">${a.label}</div>
     </button>`
   ).join('');
 }
