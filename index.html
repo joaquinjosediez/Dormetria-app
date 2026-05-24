@@ -548,7 +548,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     <!-- Action buttons at bottom -->
     <div style="padding:0 24px 48px;flex-shrink:0">
       <button onclick="showConsentOrLogin()" style="width:100%;padding:16px;border:none;border-radius:14px;background:rgba(255,255,255,0.22);color:#fff;font-size:17px;font-weight:700;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:block;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)">Comenzar</button>
-      <button onclick="showScreen('about')" style="width:100%;padding:16px;border:none;border-radius:14px;background:rgba(255,255,255,0.22);color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:block;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)">¿Qué es Dormetria?</button>
+      <button onclick="showScreen('about')" style="width:100%;padding:16px;border:none;border-radius:14px;background:rgba(255,255,255,0.22);color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:block;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)">¿Qué es Dormetria? ¿Cómo usarla?</button>
       <div style="text-align:center;margin-top:14px">
         <button onclick="localStorage.clear();location.reload();" style="background:none;border:none;color:rgba(255,255,255,0.2);font-size:11px;cursor:pointer;font-family:-apple-system,sans-serif;padding:4px">↺ Restablecer sesión</button>
         <button onclick="showScreen('privacy')" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:11px;cursor:pointer;font-family:-apple-system,sans-serif;padding:4px">Privacidad</button>
@@ -629,7 +629,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <div id="screen-about" class="screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="S.user?(S.role==='doctor'?showDoctorHome():showHome()):showScreen('landing')">← Volver</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">¿Qué es Dormetria?</div></div>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">¿Qué es Dormetria? ¿Cómo usarla?</div></div>
     <div style="width:70px"></div>
   </div>
   <div class="scroll" style="padding:0">
@@ -697,7 +697,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
       <!-- Nature of the app -->
       <div style="background:#eef8f5;border-radius:12px;padding:14px 16px;margin-bottom:14px;border-left:4px solid #1a4a3a">
-        <div style="font-size:14px;font-weight:600;color:#1a4a3a;margin-bottom:6px">¿Qué es Dormetria?</div>
+        <div style="font-size:14px;font-weight:600;color:#1a4a3a;margin-bottom:6px">¿Qué es Dormetria? ¿Cómo usarla?</div>
         <div style="font-size:13px;color:#2d6b56;line-height:1.65">Dormetria es una <strong>herramienta de apoyo clínico</strong> que facilita el seguimiento del sueño y la salud mental entre pacientes y sus médicos. <strong>No es una historia clínica oficial</strong> ni reemplaza la consulta médica, el diagnóstico profesional ni ningún tratamiento indicado.</div>
       </div>
 
@@ -884,7 +884,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     <div id="home-children" style="display:none"></div>
     <!-- Banner body (expandable) -->
     <div id="banner-body" style="display:none;margin:0 16px;background:var(--bg-secondary);border-radius:0 0 14px 14px;padding:14px 16px;border:1px solid var(--sep);border-top:none">
-      <p style="font-size:13px;color:var(--label-2);line-height:1.65;margin-bottom:8px">Plataforma de seguimiento clínico del sueño y la salud mental con <strong>escalas validadas autoadministrables</strong>. Todos los cuestionarios tienen scoring automático y pueden ser accedidos por tu médico en tiempo real.</p>
+      <div style="font-size:13px;color:var(--label-2);line-height:1.65;margin-bottom:12px">
+        <p style="margin-bottom:8px"><strong>¿Qué es Dormetria?</strong> Una plataforma de seguimiento clínico del sueño y la salud mental que podés usar desde tu celular o computadora.</p>
+        <p style="margin-bottom:8px"><strong>¿Cómo se usa?</strong></p>
+        <ol style="padding-left:16px;margin:0 0 8px">
+          <li style="margin-bottom:4px">Completá tu <strong>perfil</strong> (edad, sexo, hábitos) para personalizar las escalas sugeridas.</li>
+          <li style="margin-bottom:4px">Respondé los <strong>cuestionarios</strong> que aparecen en la pantalla de inicio — cada uno tiene scoring automático.</li>
+          <li style="margin-bottom:4px">Llevá el <strong>diario de sueño</strong> anotando tus horarios cada mañana.</li>
+          <li style="margin-bottom:4px">Tu profesional puede ver tus resultados en tiempo real desde su panel médico.</li>
+          <li style="margin-bottom:4px">Podés vincularte con un especialista desde la sección <em>Consultar con un profesional</em>.</li>
+        </ol>
+        <p style="color:var(--label-3);font-size:12px">Los resultados no reemplazan la consulta médica. Siempre consultá con tu profesional de salud.</p>
+      </div>
       <div style="padding:10px;background:#f0fdf4;border-radius:10px;font-size:12px;color:#374151;line-height:1.65">🔔 <strong>Recordatorios:</strong> Configurá avisos para el diario de sueño y los tests de alerta desde cada sección.</div>
     </div>
 
@@ -1334,6 +1345,16 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
       </button>
     </div>
   </div>
+  <div id="dr-instructivo" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:0 16px 12px;padding:14px 16px;font-size:13px;color:#374151;line-height:1.6">
+    <div style="font-weight:700;margin-bottom:8px;font-size:14px">📖 Cómo usar el Panel Profesional</div>
+    <ol style="padding-left:16px;margin:0 0 8px">
+      <li style="margin-bottom:4px"><strong>Mis pacientes</strong> — listado de pacientes vinculados, ordenado alfabéticamente. Hacé clic en un paciente para ver sus resultados.</li>
+      <li style="margin-bottom:4px"><strong>Alertas</strong> — resultados patológicos de escalas que requieren atención clínica.</li>
+      <li style="margin-bottom:4px"><strong>Vincular</strong> — generá o compartí el código de vinculación para que un paciente te agregue como su profesional.</li>
+      <li style="margin-bottom:4px"><strong>Mi perfil</strong> — completá tu nombre, especialidad, matrícula y país para aparecer correctamente en el directorio.</li>
+    </ol>
+    <p style="font-size:12px;color:#6b7280;margin:0">Los pacientes completan las escalas de forma autónoma. Vos ves los resultados en tiempo real.</p>
+  </div>
   <div class="tab-bar">
     <button class="tab active" onclick="showDrTab('patients',this)">Mis pacientes</button>
     <button class="tab" id="dr-alerts-tab" onclick="showDrTab('alerts',this)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:10px;border-radius:8px;padding:1px 5px;margin-left:3px">!</span></button>
@@ -1529,7 +1550,7 @@ const SCALES=[
  ],
  interp:s=>s<=3?{l:'Sin alteraciones significativas',c:'#14532d',bg:'#f0fdf4'}:s<=7?{l:'Alteración leve — seguimiento recomendado',c:'#92400e',bg:'#fef3c7'}:{l:'Alteración significativa — consulta profesional',c:'#991b1b',bg:'#fef2f2'}
 },
-{id:'cshq',ref:'Owens JA, Spirito A, McGuinn M. (2000). The Children\'s Sleep Habits Questionnaire. Sleep, 23(8), 1043–51.',name:'CSHQ — Hábitos de sueño infantil',cat:'pediatric',max:78,
+{id:'cshq',ref:'Owens JA, Spirito A, McGuinn M. (2000). The Children\'s Sleep Habits Questionnaire. Sleep, 23(8), 1043–51.',name:'CSHQ — Hábitos de sueño infantil (no disponible)',cat:'pediatric',max:78,disabled:true,
  ageGroups:['preschool','school'],
  desc:'Children Sleep Habits Questionnaire — 26 ítems, 2–12 años. Respondido por el cuidador.',
  icon:'🌙',bg:'#eff6ff',
@@ -3397,7 +3418,7 @@ function renderScales(targetId){
 
   // ── MAIN SCALES BLOCK ──
   const mainScaleIds = ['psqi','ess','isi','stopbang','meq'];
-  const mainScales = SCALES.filter(s => mainScaleIds.includes(s.id));
+  const mainScales = SCALES.filter(s => mainScaleIds.includes(s.id) && isScaleVisibleForProfile(s));
   if(mainScales.length){
     const header = document.createElement('div');
     header.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;padding:0 2px">Escalas principales</div>';
@@ -3422,7 +3443,7 @@ function renderScales(targetId){
   // ── GROUP by category (in more scales) ──
   const catOrder = ['sleep','sleepiness','circadian','shiftwork','movement','parasomnia','mental','trauma','sexuality','tech','neurological','pediatric','performance','qol'];
   catOrder.forEach(cat => {
-    const catScales = SCALES.filter(s => s.cat === cat && s.id !== 'gasq' && !mainScaleIds.includes(s.id));
+    const catScales = SCALES.filter(s => s.cat === cat && s.id !== 'gasq' && !mainScaleIds.includes(s.id) && isScaleVisibleForProfile(s));
     if(!catScales.length) return;
     const catInfo = SCALE_CATS[cat] || {label:cat, color:'#888', bg:'#eee', icon:'📋'};
     const msc = moreScalesDiv;
@@ -3436,7 +3457,7 @@ function renderScales(targetId){
   // ── PATHOLOGICAL ALERT BANNER ──
   const pathoWrap = document.getElementById('patho-alert-wrap');
   if(containerId === 'scales-list'){
-    const pathScales = SCALES.filter(sc => {
+    const pathScales = SCALES.filter(sc => { if(!isScaleVisibleForProfile(sc)) return false;
       const last = S.records.filter(r=>r.scale_id===sc.id).slice(-1)[0];
       if(!last || !sc.interp) return false;
       const i = sc.interp(last.score);
@@ -3590,6 +3611,7 @@ async function showPatientCode(){
 function startScale(id){
   S.scale=SCALES.find(s=>s.id===id);
   if(!S.scale){toast('Escala no encontrada');return;}
+  if(!S.scale.qs||!S.scale.qs.length){toast('Esta escala requiere entrevista clínica');return;}
   S.qIdx=0;S.answers=new Array(S.scale.qs.length).fill(null);
   document.getElementById('scale-title').textContent=S.scale.name;
   renderQ();showScreen('scale');
@@ -9018,6 +9040,26 @@ function toggleActivityType(v){
     const icon=lbl.querySelector('span');
     if(icon) icon.textContent=sel?'✅':'⬜';
   }
+}
+
+function isScaleVisibleForProfile(sc){
+  const p = S.profile || S.user;
+  if(!p) return true;
+  const sex = p.sex || p.gender || '';
+  const dob = p.dob || '';
+  const age = dob ? Math.floor((Date.now() - new Date(dob))/(365.25*24*3600*1000)) : null;
+  // Female-only scales
+  if(['mrs','psst'].includes(sc.id) && sex !== 'Femenino') return false;
+  // Geriatric scales: only show if age >= 55 (or unknown)
+  if(['gds5','moca_sleep'].includes(sc.id) && age !== null && age < 55) return false;
+  // Disabled scales
+  if(sc.disabled) return false;
+  return true;
+}
+
+function toggleDrInstructivo(){
+  const el=document.getElementById('dr-instructivo');
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
 }
 
 </script>
