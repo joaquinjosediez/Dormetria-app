@@ -921,7 +921,19 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
     <!-- 3. AYUDANOS A MEJORAR -->
     <div style="margin:10px 16px 0">
-      <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:#1a4a3a;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+      <button onclick="showHygieneChecklist()" style="flex:1;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
+        <div style="font-size:20px;margin-bottom:4px">🌿</div>
+        <div style="font-size:13px;font-weight:600;color:#1a4a3a">Higiene del sueño</div>
+        <div style="font-size:11px;color:#15803d;margin-top:2px">Checklist interactivo</div>
+      </button>
+      <button onclick="showConsultGuide()" style="flex:1;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
+        <div style="font-size:20px;margin-bottom:4px">🩺</div>
+        <div style="font-size:13px;font-weight:600;color:#9a3412">¿Cuándo consultar?</div>
+        <div style="font-size:11px;color:#c2410c;margin-top:2px">Guía de síntomas</div>
+      </button>
+    </div>
+    <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:#1a4a3a;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
         💡 Ayudanos a mejorar Dormetria
       </button>
     </div>
@@ -954,8 +966,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <!-- SCALE -->
 <div id="screen-scale" class="screen">
   <div class="topbar" style="justify-content:flex-start;gap:12px">
-    <button class="topbar-btn" onclick="showHome()" style="flex-shrink:0">← Salir</button>
-    <div style="font-size:13px;font-weight:600;color:#e8f5f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="scale-title">Escala</div>
+    <button class="topbar-btn" onclick="showHome()" style="flex-shrink:0;color:#1a4a3a;font-weight:600">← Salir</button>
+    <div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="scale-title">Escala</div>
   </div>
   <div class="q-prog"><div class="q-prog-fill" id="q-prog" style="width:0%"></div></div>
   <div class="q-area" id="q-area"></div>
@@ -1631,6 +1643,7 @@ const SCALES=[
  interp:s=>s<=4?{l:'Calidad normal',c:'#14532d',bg:'#dcfce7'}:s<=8?{l:'Leve alteración',c:'#92400e',bg:'#fef3c7'}:s<=14?{l:'Alteración moderada',c:'#c2410c',bg:'#ffedd5'}:{l:'Alteración severa',c:'#9b1c1c',bg:'#fee2e2'}
 },
 {id:'ess',ref:'Johns MW. (1991). A new method for measuring daytime sleepiness: the Epworth Sleepiness Scale. Sleep, 14(6), 540–545.',name:'Epworth (ESS)',cat:'sleepiness',max:24,desc:'Somnolencia diurna — riesgo de quedarse dormido en situaciones cotidianas',
+ note:'¿Cuál es la probabilidad de quedarte dormido/a en las siguientes situaciones hipotéticas? Aunque no hayas estado en alguna de ellas recientemente, imaginá cómo te afectarían.',
  qs:[
   {t:'Sentado leyendo',opts:['Nunca se dormiría','Pocas posibilidades','Posibilidades moderadas','Altas posibilidades'],sc:[0,1,2,3]},
   {t:'Viendo televisión',opts:['Nunca se dormiría','Pocas posibilidades','Posibilidades moderadas','Altas posibilidades'],sc:[0,1,2,3]},
@@ -2128,27 +2141,27 @@ const SCALES=[
    return {l:'Depresión severa',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
-   {t:'Tristeza',opts:['No me siento triste','Me siento triste gran parte del tiempo','Me siento triste continuamente','Me siento tan triste o desgraciado/a que no puedo soportarlo'],sc:[0,1,2,3]},
-   {t:'Pesimismo',opts:['No estoy desanimado acerca del futuro','Me siento más desanimado que antes','No espero que las cosas mejoren','El futuro es desesperado, solo puede ir a peor'],sc:[0,1,2,3]},
-   {t:'Fracasos en el pasado',opts:['No me siento como un fracasado','He fracasado más de lo que hubiera debido','Cuando miro atrás veo muchos fracasos','Soy un fracaso total como persona'],sc:[0,1,2,3]},
-   {t:'Pérdida de placer',opts:['Obtengo tanta satisfacción como antes','No disfruto de las cosas como antes','Obtengo muy poca satisfacción de las cosas','No puedo obtener ninguna satisfacción de las cosas'],sc:[0,1,2,3]},
-   {t:'Sentimientos de culpa',opts:['No me siento culpable','Me siento culpable de muchas cosas','Me siento bastante culpable la mayor parte del tiempo','Me siento culpable en todo momento'],sc:[0,1,2,3]},
-   {t:'Sentimientos de castigo',opts:['No creo que esté siendo castigado','Siento que puedo ser castigado','Espero ser castigado','Siento que estoy siendo castigado'],sc:[0,1,2,3]},
-   {t:'Insatisfacción conmigo mismo',opts:['Tengo la misma opinión que antes de mí mismo','He perdido confianza en mí mismo','Estoy decepcionado conmigo mismo','No me gusto'],sc:[0,1,2,3]},
-   {t:'Autocrítica',opts:['No me critico más que antes','Me critico más que antes','Me critico por todas mis faltas','Me culpo por todo lo malo que sucede'],sc:[0,1,2,3]},
-   {t:'Pensamientos suicidas',opts:['No tengo ningún pensamiento de matarme','He tenido pensamientos de matarme pero no lo llevaría a cabo','Querría matarme','Me mataría si tuviera la oportunidad'],sc:[0,1,2,3]},
-   {t:'Llanto',opts:['No lloro más que antes','Lloro más que antes','Lloro por cualquier pequeñez','Tengo ganas de llorar pero no puedo'],sc:[0,1,2,3]},
-   {t:'Agitación',opts:['No estoy más agitado que antes','Me siento más agitado que antes','Estoy tan agitado que me es difícil quedarme quieto','Estoy tan agitado que tengo que estar constantemente en movimiento'],sc:[0,1,2,3]},
-   {t:'Pérdida de interés',opts:['No he perdido el interés en otras personas o actividades','Me intereso menos que antes por otras personas o cosas','He perdido la mayor parte de mi interés en los demás','Me es difícil interesarme en algo'],sc:[0,1,2,3]},
-   {t:'Indecisión',opts:['Tomo mis propias decisiones tan bien como siempre','Me resulta más difícil que antes tomar decisiones','Tengo mucha más dificultad en tomar decisiones','Tengo problemas para tomar cualquier decisión'],sc:[0,1,2,3]},
-   {t:'Inutilidad',opts:['No me siento inútil','No me considero tan valioso como antes','Me siento más inútil que los demás','Me siento completamente inútil'],sc:[0,1,2,3]},
-   {t:'Pérdida de energía',opts:['Tengo tanta energía como siempre','Tengo menos energía que antes','No tengo energía suficiente para hacer muchas cosas','Tengo tanta poca energía que no puedo hacer nada'],sc:[0,1,2,3]},
-   {t:'Cambios en los patrones de sueño',opts:['No he experimentado ningún cambio en mis patrones de sueño','Duermo un poco más/menos que antes','Duermo bastante más/menos que antes','Duermo la mayor parte del día / Me despierto 1–2 horas antes'],sc:[0,1,2,3]},
-   {t:'Irritabilidad',opts:['No estoy más irritable que antes','Estoy más irritable que antes','Estoy mucho más irritable que antes','Estoy irritable continuamente'],sc:[0,1,2,3]},
-   {t:'Cambios en el apetito',opts:['No he experimentado ningún cambio en mi apetito','Mi apetito es un poco mayor/menor que antes','Mi apetito es bastante mayor/menor que antes','No tengo nada de apetito / Quiero comer todo el día'],sc:[0,1,2,3]},
-   {t:'Dificultad de concentración',opts:['Puedo concentrarme tan bien como siempre','No puedo concentrarme tan bien como antes','Me es difícil mantener la mente en algo por mucho tiempo','No puedo concentrarme en nada'],sc:[0,1,2,3]},
-   {t:'Cansancio o fatiga',opts:['No estoy más cansado que antes','Me canso más fácilmente que antes','Estoy demasiado cansado para hacer muchas cosas','Estoy demasiado cansado para hacer la mayoría de las cosas'],sc:[0,1,2,3]},
-   {t:'Pérdida de interés en el sexo',opts:['No he notado ningún cambio reciente en mi interés por el sexo','Estoy menos interesado en el sexo que antes','Estoy mucho menos interesado en el sexo ahora','He perdido completamente el interés en el sexo'],sc:[0,1,2,3]},
+   {t:' ',opts:['No me siento triste','Me siento triste gran parte del tiempo','Me siento triste continuamente','Me siento tan triste o desgraciado/a que no puedo soportarlo'],sc:[0,1,2,3]},
+   {t:' ',opts:['No estoy desanimado acerca del futuro','Me siento más desanimado que antes','No espero que las cosas mejoren','El futuro es desesperado, solo puede ir a peor'],sc:[0,1,2,3]},
+   {t:' ',opts:['No me siento como un fracasado','He fracasado más de lo que hubiera debido','Cuando miro atrás veo muchos fracasos','Soy un fracaso total como persona'],sc:[0,1,2,3]},
+   {t:' ',opts:['Obtengo tanta satisfacción como antes','No disfruto de las cosas como antes','Obtengo muy poca satisfacción de las cosas','No puedo obtener ninguna satisfacción de las cosas'],sc:[0,1,2,3]},
+   {t:' ',opts:['No me siento culpable','Me siento culpable de muchas cosas','Me siento bastante culpable la mayor parte del tiempo','Me siento culpable en todo momento'],sc:[0,1,2,3]},
+   {t:' ',opts:['No creo que esté siendo castigado','Siento que puedo ser castigado','Espero ser castigado','Siento que estoy siendo castigado'],sc:[0,1,2,3]},
+   {t:' ',opts:['Tengo la misma opinión que antes de mí mismo','He perdido confianza en mí mismo','Estoy decepcionado conmigo mismo','No me gusto'],sc:[0,1,2,3]},
+   {t:' ',opts:['No me critico más que antes','Me critico más que antes','Me critico por todas mis faltas','Me culpo por todo lo malo que sucede'],sc:[0,1,2,3]},
+   {t:' ',opts:['No tengo ningún pensamiento de matarme','He tenido pensamientos de matarme pero no lo llevaría a cabo','Querría matarme','Me mataría si tuviera la oportunidad'],sc:[0,1,2,3]},
+   {t:' ',opts:['No lloro más que antes','Lloro más que antes','Lloro por cualquier pequeñez','Tengo ganas de llorar pero no puedo'],sc:[0,1,2,3]},
+   {t:' ',opts:['No estoy más agitado que antes','Me siento más agitado que antes','Estoy tan agitado que me es difícil quedarme quieto','Estoy tan agitado que tengo que estar constantemente en movimiento'],sc:[0,1,2,3]},
+   {t:' ',opts:['No he perdido el interés en otras personas o actividades','Me intereso menos que antes por otras personas o cosas','He perdido la mayor parte de mi interés en los demás','Me es difícil interesarme en algo'],sc:[0,1,2,3]},
+   {t:' ',opts:['Tomo mis propias decisiones tan bien como siempre','Me resulta más difícil que antes tomar decisiones','Tengo mucha más dificultad en tomar decisiones','Tengo problemas para tomar cualquier decisión'],sc:[0,1,2,3]},
+   {t:' ',opts:['No me siento inútil','No me considero tan valioso como antes','Me siento más inútil que los demás','Me siento completamente inútil'],sc:[0,1,2,3]},
+   {t:' ',opts:['Tengo tanta energía como siempre','Tengo menos energía que antes','No tengo energía suficiente para hacer muchas cosas','Tengo tanta poca energía que no puedo hacer nada'],sc:[0,1,2,3]},
+   {t:' ',opts:['No he experimentado ningún cambio en mis patrones de sueño','Duermo un poco más/menos que antes','Duermo bastante más/menos que antes','Duermo la mayor parte del día / Me despierto 1–2 horas antes'],sc:[0,1,2,3]},
+   {t:' ',opts:['No estoy más irritable que antes','Estoy más irritable que antes','Estoy mucho más irritable que antes','Estoy irritable continuamente'],sc:[0,1,2,3]},
+   {t:' ',opts:['No he experimentado ningún cambio en mi apetito','Mi apetito es un poco mayor/menor que antes','Mi apetito es bastante mayor/menor que antes','No tengo nada de apetito / Quiero comer todo el día'],sc:[0,1,2,3]},
+   {t:' ',opts:['Puedo concentrarme tan bien como siempre','No puedo concentrarme tan bien como antes','Me es difícil mantener la mente en algo por mucho tiempo','No puedo concentrarme en nada'],sc:[0,1,2,3]},
+   {t:' ',opts:['No estoy más cansado que antes','Me canso más fácilmente que antes','Estoy demasiado cansado para hacer muchas cosas','Estoy demasiado cansado para hacer la mayoría de las cosas'],sc:[0,1,2,3]},
+   {t:' ',opts:['No he notado ningún cambio reciente en mi interés por el sexo','Estoy menos interesado en el sexo que antes','Estoy mucho menos interesado en el sexo ahora','He perdido completamente el interés en el sexo'],sc:[0,1,2,3]},
  ]
 },
 {id:'fsfi',ref:'Rosen R, Brown C, Heiman J, Leiblum S, Meston C, Shabsigh R, et al. (2000). The Female Sexual Function Index (FSFI): a multidimensional self-report instrument for the assessment of female sexual function. J Sex Marital Ther, 26(2), 191–208.',
@@ -3617,7 +3630,7 @@ function startScale(id){
 function renderQ(){
   const sc=S.scale;const q=sc.qs[S.qIdx];
   document.getElementById('q-prog').style.width=Math.round(S.qIdx/sc.qs.length*100)+'%';
-  let html=`${S.qIdx===0&&sc.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:10px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;line-height:1.5;font-style:italic">'+ sc.note +'</div>':''}<div class="q-num">Pregunta ${S.qIdx+1} de ${sc.qs.length}</div>${q.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:4px;font-style:italic">'+q.note+'</div>':''}${S.scale&&S.scale.id==='bdi2'?'<div style="font-size:12px;color:var(--label-3);font-style:italic;padding:6px 0 2px">¿Con cuál de estas afirmaciones se siente más identificado/a?</div>':''}<div class="q-text">${q.t}</div>`;
+  let html=`${S.qIdx===0&&sc.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:10px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;line-height:1.5;font-style:italic">'+ sc.note +'</div>':''}<div class="q-num">Pregunta ${S.qIdx+1} de ${sc.qs.length}</div>${q.note?'<div style="font-size:13px;color:var(--label-2);margin-bottom:4px;font-style:italic">'+q.note+'</div>':''}${S.scale&&S.scale.id==='bdi2'?'<div style="font-size:14px;font-weight:500;color:var(--label);padding:8px 0 6px">¿Con cuál de estas afirmaciones se siente más identificado/a?</div>':''}<div class="q-text">${q.t}</div>`;
   q.opts.forEach((o,i)=>html+=`<button class="opt${S.answers[S.qIdx]===i?' sel':''}" onclick="pickOpt(${i})">${o}</button>`);
   document.getElementById('q-area').innerHTML=html;
   let nav='';if(S.qIdx>0)nav+=`<button class="btn btn-s" onclick="prevQ()">← Anterior</button>`;
@@ -4416,31 +4429,31 @@ async function showDiaryTab_(tab){
                   if(bedStats||wakeStats){
                     const bxH=34;
                     const bxY=Math.max(2,ca.top-bxH-4);
-                    const W=ca.right-ca.left;
+                    // Stretch to canvas left edge for more space
+                    const bxLeft=4;
+                    const bxRight=chart.canvas.width-4;
+                    const W=bxRight-bxLeft;
                     cx.save();
                     cx.fillStyle='#f8fafc';
                     cx.strokeStyle='#e2e8f0';cx.lineWidth=1;
-                    if(cx.roundRect){cx.roundRect(ca.left,bxY,W,bxH,6);}
-                    else{cx.rect(ca.left,bxY,W,bxH);}
+                    if(cx.roundRect){cx.roundRect(bxLeft,bxY,W,bxH,6);}
+                    else{cx.rect(bxLeft,bxY,W,bxH);}
                     cx.fill();cx.stroke();
                     cx.font='600 11px system-ui';cx.textBaseline='middle';
                     const mid=bxY+bxH/2;
-                    const half=W/2;
                     if(bedStats&&bedStats.m!=null){
-                      const x=ca.left+8;
                       cx.fillStyle='#d97706';
-                      cx.beginPath();cx.arc(x+4,mid,4,0,Math.PI*2);cx.fill();
+                      cx.beginPath();cx.arc(bxLeft+12,mid,4,0,Math.PI*2);cx.fill();
                       cx.fillStyle='#334155';
-                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),x+12,mid);
+                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),bxLeft+20,mid);
                     }
                     if(wakeStats&&wakeStats.m!=null){
                       const label='Prom. levantarse  '+toHHMM(wakeStats.m);
                       const lw=cx.measureText(label).width;
-                      const x=ca.right-8-lw-12;
                       cx.fillStyle='#1d4ed8';
-                      cx.beginPath();cx.arc(x+4,mid,4,0,Math.PI*2);cx.fill();
+                      cx.beginPath();cx.arc(bxRight-lw-20,mid,4,0,Math.PI*2);cx.fill();
                       cx.fillStyle='#334155';
-                      cx.fillText(label,x+12,mid);
+                      cx.fillText(label,bxRight-lw-12,mid);
                     }
                     cx.restore();
                   }
@@ -9139,6 +9152,69 @@ function copySameMeds(){
   if(banner) banner.innerHTML='<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 14px;margin-bottom:8px;font-size:13px;color:#166534">✅ Medicación copiada de ayer</div>';
 }
 
+function showHygieneChecklist(){
+  const saved = JSON.parse(localStorage.getItem('dm_hygiene_checks')||'{}');
+  const cats = [...new Set(SLEEP_HYGIENE.map(h=>h.cat))];
+  let html = `<div style="padding:16px 16px 80px">
+    <div style="font-size:18px;font-weight:700;color:var(--label);margin-bottom:4px">Higiene del sueño</div>
+    <div style="font-size:13px;color:var(--label-3);margin-bottom:16px">Marcá los hábitos que lograste incorporar</div>`;
+  cats.forEach(cat=>{
+    const items = SLEEP_HYGIENE.filter(h=>h.cat===cat);
+    const done = items.filter(h=>saved[h.id]).length;
+    html += `<div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">${cat} · ${done}/${items.length}</div>`;
+    items.forEach(h=>{
+      const checked = !!saved[h.id];
+      html += `<label onclick="toggleHygiene('${h.id}',this)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;margin-bottom:6px;background:${checked?'#f0fdf4':'var(--bg-secondary)'};border:1.5px solid ${checked?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer">
+        <span style="font-size:20px;flex-shrink:0;margin-top:-2px">${checked?'✅':'⬜'}</span>
+        <span style="font-size:14px;color:${checked?'#1a4a3a':'var(--label)'};line-height:1.4">${h.text}</span>
+      </label>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  document.getElementById('hygiene-content').innerHTML = html;
+  showScreen('hygiene');
+}
+
+function toggleHygiene(id, lbl){
+  const saved = JSON.parse(localStorage.getItem('dm_hygiene_checks')||'{}');
+  saved[id] = !saved[id];
+  localStorage.setItem('dm_hygiene_checks', JSON.stringify(saved));
+  const checked = saved[id];
+  lbl.style.background = checked ? '#f0fdf4' : 'var(--bg-secondary)';
+  lbl.style.borderColor = checked ? '#1a4a3a' : 'var(--sep-opaque)';
+  const icon = lbl.querySelector('span');
+  if(icon) icon.textContent = checked ? '✅' : '⬜';
+  const txt = lbl.querySelectorAll('span')[1];
+  if(txt) txt.style.color = checked ? '#1a4a3a' : 'var(--label)';
+}
+
+function showConsultGuide(){
+  let html = `<div style="padding:16px 16px 80px">
+    <div style="font-size:18px;font-weight:700;color:var(--label);margin-bottom:4px">¿Cuándo consultar?</div>
+    <div style="font-size:13px;color:var(--label-3);margin-bottom:16px">Pautas de derivación por síntoma</div>`;
+  const urgColors = {alta:'#fee2e2',media:'#fefce8',baja:'#f0fdf4'};
+  const urgBorders = {alta:'#fca5a5',media:'#fde68a',baja:'#bbf7d0'};
+  const urgLabels = {alta:'⚡ Consultar pronto',media:'📅 Consultar cuando puedas',baja:'ℹ️ Comentar en próxima consulta'};
+  CONSULT_WHEN.forEach(c=>{
+    html += `<div style="background:${urgColors[c.urgency]};border:1px solid ${urgBorders[c.urgency]};border-radius:14px;padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:24px">${c.icon}</span>
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--label)">${c.symptom}</div>
+          <div style="font-size:11px;color:var(--label-3)">${urgLabels[c.urgency]}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--label-2);margin-bottom:6px">${c.desc}</div>
+      <div style="font-size:12px;font-weight:600;color:#1a4a3a">→ ${c.specialist}</div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('consult-content').innerHTML = html;
+  showScreen('consult-guide');
+}
+
 </script>
 
 <!-- MODAL MEDICAMENTOS -->
@@ -9159,7 +9235,51 @@ function copySameMeds(){
       <button onclick="addCustomMed()" style="background:#1a4a3a;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">+</button>
     </div>
   </div>
-</div></div></div></div>
+</div></div></div>
+<div id="screen-hygiene" class="screen" style="display:none">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">Higiene del sueño</div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll" id="hygiene-content"></div>
+</div>
+
+<div id="screen-consult-guide" class="screen" style="display:none">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">¿Cuándo consultar?</div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll" id="consult-content"></div>
+</div>
+</div>
 </body>
 </html>
+
+
+const SLEEP_HYGIENE = [
+  {id:'h1', cat:'Horarios', text:'Me acuesto y levanto a la misma hora todos los días, incluso fines de semana'},
+  {id:'h2', cat:'Horarios', text:'Evito dormir siestas de más de 20 minutos'},
+  {id:'h3', cat:'Ambiente', text:'Mi cuarto está oscuro y a una temperatura fresca (~18-20°C)'},
+  {id:'h4', cat:'Ambiente', text:'Uso el dormitorio solo para dormir y tener relaciones'},
+  {id:'h5', cat:'Tecnología', text:'Apago pantallas (celular, TV, computadora) al menos 1 hora antes de dormir'},
+  {id:'h6', cat:'Tecnología', text:'No uso el celular en la cama'},
+  {id:'h7', cat:'Estimulantes', text:'No consumo cafeína después de las 14:00'},
+  {id:'h8', cat:'Estimulantes', text:'No tomo alcohol como ayuda para dormir'},
+  {id:'h9', cat:'Actividad', text:'Hago actividad física regularmente, pero no en las 3 horas antes de dormir'},
+  {id:'h10', cat:'Actividad', text:'Tengo una rutina relajante antes de acostarme (baño, lectura, meditación)'},
+  {id:'h11', cat:'Mente', text:'Si no me duermo en 20 min, me levanto y hago algo tranquilo hasta tener sueño'},
+  {id:'h12', cat:'Mente', text:'Evito mirar el reloj cuando no puedo dormir'},
+];
+
+const CONSULT_WHEN = [
+  {icon:'😴', symptom:'Somnolencia diurna excesiva', desc:'Si te quedás dormido involuntariamente durante el día o manejás con sueño', specialist:'Médico especialista en sueño', urgency:'alta'},
+  {icon:'🔊', symptom:'Ronquidos con pausas respiratorias', desc:'Si alguien observa que dejás de respirar mientras dormís', specialist:'Neumonología o Medicina del Sueño', urgency:'alta'},
+  {icon:'🦵', symptom:'Sensaciones molestas en piernas al acostarte', desc:'Necesidad irresistible de mover las piernas por la noche', specialist:'Neurología o Medicina del Sueño', urgency:'media'},
+  {icon:'😰', symptom:'Comportamientos durante el sueño', desc:'Moverte, gritar, golpear mientras dormís', specialist:'Neurología o Medicina del Sueño', urgency:'media'},
+  {icon:'😟', symptom:'Insomnio crónico (>3 meses)', desc:'Más de 3 noches por semana con dificultad para dormir', specialist:'Psiquiatría o Psicología — CBTI', urgency:'media'},
+  {icon:'😱', symptom:'Ansiedad o depresión que afecta el sueño', desc:'Estado de ánimo que interfiere con el inicio o mantenimiento del sueño', specialist:'Psiquiatría o Psicología', urgency:'media'},
+  {icon:'🌙', symptom:'Sueño fragmentado sin causa aparente', desc:'Te despertás múltiples veces por noche sin poder volver a dormir', specialist:'Médico clínico o especialista en sueño', urgency:'baja'},
+];
 
