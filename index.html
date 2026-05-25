@@ -115,6 +115,29 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 .dark-screen .topbar-btn{color:rgba(255,255,255,0.9) !important;}
 .dark-screen .scroll{background:#1a2e23 !important;}
 
+/* Dark home scroll cards */
+#screen-home .scroll[style*='#1a2e23'] .sc-card,
+#screen-home .scroll[style*='#1a2e23'] .card,
+#screen-home .scroll[style*='#1a2e23'] [style*='--bg-secondary']{
+  background:rgba(255,255,255,0.07) !important;
+  border:1px solid rgba(255,255,255,0.1) !important;
+}
+#screen-home .scroll[style*='#1a2e23'] .sc-name,
+#screen-home .scroll[style*='#1a2e23'] .sc-desc,
+#screen-home .scroll[style*='#1a2e23'] .sc-ref,
+#screen-home .scroll[style*='#1a2e23'] .sec-title,
+#screen-home .scroll[style*='#1a2e23'] .info-row .info-label{
+  color:rgba(255,255,255,0.9) !important;
+}
+#screen-home .scroll[style*='#1a2e23'] .sc-desc,
+#screen-home .scroll[style*='#1a2e23'] .info-row .info-val{
+  color:rgba(255,255,255,0.6) !important;
+}
+#screen-home .scroll[style*='#1a2e23'] .sec-title{
+  color:rgba(255,255,255,0.5) !important;
+  border-bottom-color:rgba(255,255,255,0.1) !important;
+}
+
 /* ── NAVIGATION BAR (iOS style) ── */
 .topbar{
   background:rgba(242,242,247,0.92);
@@ -883,7 +906,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     </div>
   </div>
 
-  <div class="scroll">
+  <div class="scroll" style="background:#1a2e23">
 
     <!-- Linked child profiles (hidden, for reference) -->
     <div id="home-children" style="display:none"></div>
@@ -906,11 +929,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
 
     <!-- 2. CONSULTA + MIS PROFESIONALES block -->
-    <div style="margin:12px 16px 0;background:var(--bg-secondary);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+    <div style="margin:12px 16px 0;background:rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
       <button onclick="showConsultDir()" style="width:100%;border:none;border-bottom:0.5px solid var(--sep);background:transparent;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:var(--font)">
         <div style="text-align:left">
-          <div style="font-size:15px;font-weight:700;color:var(--label)">🩺 Consultar con un profesional</div>
-          <div style="font-size:12px;color:var(--label-2);margin-top:2px">Directorio de especialistas en medicina del sueño</div>
+          <div style="font-size:15px;font-weight:700;color:#fff">🩺 Consultar con un profesional</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">Directorio de especialistas en medicina del sueño</div>
         </div>
         <span style="color:var(--label-3);font-size:20px">›</span>
       </button>
@@ -937,7 +960,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
         <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px">Guía de síntomas</div>
       </button>
     </div>
-    <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:#1a4a3a;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
+    <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9);border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
         💡 Ayudanos a mejorar Dormetria
       </button>
     </div>
@@ -1925,23 +1948,7 @@ const SCALES=[
  ],
  interp:s=>s>=22?{l:'Sin disfunción',c:'#15803d',bg:'#dcfce7'}:s>=17?{l:'Leve',c:'#92400e',bg:'#fef3c7'}:s>=12?{l:'Leve-moderada',c:'#d97706',bg:'#fef3c7'}:s>=8?{l:'Moderada',c:'#c2410c',bg:'#ffedd5'}:{l:'Severa',c:'#991b1b',bg:'#fee2e2'}},
 
-{id:'bisq',ref:'Sadeh A. (2004). A brief screening questionnaire for infant sleep problems (BISQ). Pediatrics.',name:'Sueño infantil (BISQ)',cat:'pediatric',max:8,desc:'Cribado de problemas del sueño en bebés (2-24 meses)',
- qs:[
-  {l:'¿Cuántas horas duerme su hijo/a por la noche (entre las 10pm y las 6am)?',opts:['Menos de 5h','5-6h','6-7h','7-8h','8-9h','Más de 9h'],sc:[3,2,2,1,0,0]},
-  {t:'¿Cuántas veces se despierta por la noche en promedio?',opts:['Nunca','1 vez','2-3 veces','4-5 veces','Más de 5 veces'],sc:[0,0,1,2,3]},
-  {t:'¿Cuánto tiempo está despierto/a en total durante la noche?',opts:['Menos de 15 min','15-30 min','30-60 min','1-2 horas','Más de 2 horas'],sc:[0,0,1,2,3]},
-  {t:'¿Dónde duerme la mayor parte del tiempo?',opts:['Cuna/cama propia','Cama de padres/tutores','Cochecito/silla de auto','En brazos'],sc:[0,1,1,2]},
-  {t:'¿Cómo se queda dormido/a?',opts:['Solo/a en su cuna','Al pecho o biberón','Con un adulto cerca','En brazos'],sc:[0,1,1,2]},
-  {t:'¿Cuándo se despierta de noche, cuánto tarda en volver a dormirse?',opts:['Menos de 5 min','5-15 min','15-30 min','Más de 30 min'],sc:[0,1,2,3]},
-  {t:'¿Cuántas siestas hace por día?',opts:['0 (sin siestas)','1','2','3 o más'],sc:[2,0,0,1]},
-  {t:'¿Tiene problemas para que su hijo/a se quede dormido/a al acostarlo?',opts:['Nunca','A veces','Frecuentemente','Siempre'],sc:[0,0,1,2]},
-  {t:'¿Tiene problemas con los despertares nocturnos de su hijo/a?',opts:['Nunca','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3]},
-  {t:'¿Cuánto tiempo duerme su hijo/a durante el día (siestas)?',opts:['Más de 3 horas','2–3 horas','1–2 horas','Menos de 1 hora','No hace siesta'],sc:[0,0,1,2,3]},
-  {t:'¿Necesita su hijo/a ser alimentado/a para dormirse?',opts:['Nunca o raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3]},
-  {t:'¿Necesita su hijo/a ser cargado/a o mecido/a para dormirse?',opts:['Nunca o raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3]},
-  {t:'¿Considera que el sueño de su hijo/a es un problema?',opts:['No es un problema','Un problema menor','Un problema moderado','Un problema serio'],sc:[0,1,2,3]}
- ],
- interp:s=>s<=2?{l:'Sueño adecuado',c:'#15803d',bg:'#dcfce7'}:s<=5?{l:'Posibles problemas',c:'#92400e',bg:'#fef3c7'}:{l:'Problemas de sueño',c:'#991b1b',bg:'#fee2e2'}},
+
 {id:'mctq',ref:'Roenneberg T et al. (2003). Life between Clocks: Daily Temporal Patterns of Human Chronotypes. J Biol Rhythms.',name:'Cronótipo (MCTq)',cat:'circadian',max:4,desc:'Punto medio del sueño en días libres como medida objetiva del cronótipo',
  qs:[
   {t:'¿A qué hora se acuesta normalmente los días de trabajo (laborables)?',opts:['Antes de las 21:00','21:00-22:00','22:00-23:00','23:00-00:00','00:00-01:00','01:00-02:00','Después de las 02:00'],sc:[0,1,2,3,4,5,6]},
@@ -3686,6 +3693,28 @@ function pickOpt(i){
 }
 function nextQ(){if(S.answers[S.qIdx]===null){toast('Seleccioná una opción');return;}S.qIdx++;renderQ();}
 function prevQ(){S.qIdx--;renderQ();}
+
+// Alert thresholds for scale scores
+const ALERT_THR = {
+  ess:   {score:10, label:'Somnolencia excesiva (ESS ≥10)'},
+  isi:   {score:15, label:'Insomnio moderado-severo (ISI ≥15)'},
+  psqi:  {score:8,  label:'Mala calidad de sueño (PSQI ≥8)'},
+  phq9:  {score:10, label:'Síntomas depresivos (PHQ-9 ≥10)'},
+  gad7:  {score:10, label:'Ansiedad moderada-severa (GAD-7 ≥10)'},
+  stopbang:{score:3,label:'Alto riesgo apnea (STOP-BANG ≥3)'},
+  pcl5:  {score:33, label:'TEPT probable (PCL-5 ≥33)'},
+  fss:   {score:36, label:'Fatiga severa (FSS ≥36)'},
+  irls:  {score:15, label:'SPI moderado-severo (IRLS ≥15)'},
+  rbdq:  {score:5,  label:'RBD probable (RBDQ ≥5)'},
+  hamd:  {score:14, label:'Depresión moderada (HAM-D ≥14)'},
+  hama:  {score:18, label:'Ansiedad moderada (HAM-A ≥18)'},
+  bdi2:  {score:20, label:'Depresión moderada (BDI-II ≥20)'},
+  sassv: {score:20, label:'Alto riesgo apnea (SASS ≥20)'},
+  pdss:  {score:100,label:'Sueño alterado en Parkinson (PDSS ≥100)'},
+  flep:  {score:4,  label:'NFLE probable (FLEP ≥4)'},
+  mrs:   {score:13, label:'Síntomas climatéricos severos (MRS ≥13)'},
+  psst:  {score:20, label:'TDPM probable (PSST ≥20)'},
+};
 async function finishScale(){
   if(S.answers[S.qIdx]===null){toast('Seleccioná una opción');return;}
   const sc=S.scale;let score=0;sc.qs.forEach((q,i)=>{if(S.answers[i]!==null)score+=q.sc[S.answers[i]];});
