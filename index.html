@@ -4375,6 +4375,7 @@ function renderProfileView(){
     <div style="margin-top:20px"><button class="btn btn-g" onclick="toggleProfileEdit()">Editar perfil</button>
     </div>
     </div>
+    <div id="profile-edit-form" style="display:${S.profileEditing?'block':'none'}">
     <div class="divider"></div>
     <div class="sec-title">Editar datos personales</div>
     <div class="form-group"><label class="form-label">Nombre</label>
@@ -4579,8 +4580,8 @@ function toggleProfileEdit(){
   if(S.profileEditing){
     setTimeout(()=>{
       initProfileEditExtras();
-      const firstFormGroup = document.querySelector('#profile-content .form-group');
-      if(firstFormGroup) firstFormGroup.scrollIntoView({behavior:'smooth'});
+      const editForm = document.getElementById('profile-edit-form');
+      if(editForm) editForm.scrollIntoView({behavior:'smooth'});
     }, 150);
   }
 }
@@ -8521,12 +8522,12 @@ function showChildDiaryNew(){
   const today = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
   
   const moodOpts = [
-    {v:'great', e:'😄', l:'Muy bien'},
-    {v:'good', e:'🙂', l:'Bien'},
-    {v:'ok', e:'😐', l:'Regular'},
-    {v:'tired', e:'😴', l:'Cansado/a'},
+    {v:'sad', e:'😢', l:'Decaído/a'},
     {v:'grumpy', e:'😤', l:'Irritable'},
-    {v:'sad', e:'😢', l:'Decaído/a'}
+    {v:'tired', e:'😴', l:'Cansado/a'},
+    {v:'ok', e:'😐', l:'Regular'},
+    {v:'good', e:'🙂', l:'Bien'},
+    {v:'great', e:'😄', l:'Muy bien'}
   ];
   const moodRow = (id, label) => `
     <div class="form-group" style="margin-bottom:10px">
@@ -8565,6 +8566,16 @@ function showChildDiaryNew(){
       <div style="display:flex;align-items:center;gap:10px">
         <input class="form-input" type="number" id="d-latency" min="0" max="180" placeholder="minutos" style="max-width:110px">
         <span style="font-size:13px;color:var(--label-2)">minutos desde que se intentó dormir</span>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Despertares nocturnos</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+        <button type="button" onclick="const i=document.getElementById('d-awakenings');i.value=Math.max(0,(parseInt(i.value)||0)-1)" style="width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:none;font-size:18px;cursor:pointer;font-family:var(--font)">−</button>
+        <input type="number" id="d-awakenings" value="0" min="0" max="20" style="width:60px;text-align:center;font-size:18px;font-weight:600;border:2px solid var(--border);border-radius:10px;padding:6px;font-family:var(--font)">
+        <button type="button" onclick="const i=document.getElementById('d-awakenings');i.value=(parseInt(i.value)||0)+1" style="width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:none;font-size:18px;cursor:pointer;font-family:var(--font)">+</button>
+        <span style="font-size:13px;color:var(--label-2)">veces esta noche</span>
       </div>
     </div>
 
@@ -8697,8 +8708,9 @@ async function saveChildDiary(){
     const body={
       patient_email:S.user.email,
       diary_date:date,
-      bed_time:bed,
+      bedtime:bed,
       wake_time:wake,
+      awakenings:parseInt(document.getElementById('d-awakenings')?.value)||0,
       sleep_minutes:totalMin,
       latency_minutes:latency,
       notes:[
