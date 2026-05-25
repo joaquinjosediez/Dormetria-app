@@ -115,33 +115,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 .dark-screen .topbar-btn{color:rgba(255,255,255,0.9) !important;}
 .dark-screen .scroll{background:#1a2e23 !important;}
 
-/* ── GLOBAL DARK CARD OVERRIDES for dark-scroll sections ── */
-.dk-card{
-  background:rgba(255,255,255,0.07) !important;
-  border:1px solid rgba(255,255,255,0.1) !important;
-  border-radius:14px;
-}
-.dk-card .sc-name, .dk-card .sc-desc, .dk-card .badge{color:rgba(255,255,255,0.9) !important;}
-.dk-card .sc-ref{color:rgba(255,255,255,0.4) !important;}
-.dk-card .sec-divider{border-color:rgba(255,255,255,0.1) !important;}
-
-/* Dark home scroll cards */
-#screen-home .scroll[style*='#1a2e23'] .sc-card,
-#screen-home .scroll[style*='#1a2e23'] .card,
-#screen-home .scroll[style*='#1a2e23'] [style*='--bg-secondary']{
-  background:rgba(255,255,255,0.07) !important;
-  border:1px solid rgba(255,255,255,0.1) !important;
-}
-#screen-home .scroll[style*='#1a2e23'] .sc-name,
-#screen-home .scroll[style*='#1a2e23'] .sc-desc,
-#screen-home .scroll[style*='#1a2e23'] .sc-ref,
-#screen-home .scroll[style*='#1a2e23'] .sec-title,
-#screen-home .scroll[style*='#1a2e23'] .info-row .info-label{
-  color:rgba(255,255,255,0.9) !important;
-}
-#screen-home .scroll[style*='#1a2e23'] .sc-desc,
-#screen-home .scroll[style*='#1a2e23'] .inf
-#screen-home .scroll[style*='#1a2e23'] 
 
 /* ── NAVIGATION BAR (iOS style) ── */
 .topbar{
@@ -521,14 +494,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 @media(min-width:430px){
   #app{box-shadow:0 0 60px rgba(0,0,0,0.12);}
 }
-/* ── Dark green theme for all main content screens ── */
-#screen-home .scroll,
-#screen-profile .scroll,
-#screen-history .scroll,
-#screen-escalas .scroll,
-#screen-scale .scroll {
-  background: #1a2e23;
-}
 
 /* Cards on dark background - all dark screens */
 .dark-bg .sc-card,
@@ -618,31 +583,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   color: rgba(255,255,255,0.9) !important;
 }
 
-/* Patient history dark bg */
-#screen-patient-history .topbar,
-#screen-escalas .topbar {
-  background: #1a2e23 !important;
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-}
-#screen-patient-history .topbar button,
-#screen-escalas .topbar button {
-  color: rgba(255,255,255,0.9) !important;
-}
-#screen-patient-history .scroll {
-  background: #1a2e23 !important;
-}
-#screen-patient-history .tab-bar {
-  background: #1a2e23 !important;
-  border-top: 1px solid rgba(255,255,255,0.08) !important;
-}
-#screen-patient-history .tab {
-  color: rgba(255,255,255,0.5) !important;
-  border-bottom-color: transparent !important;
-}
-#screen-patient-history .tab.active {
-  color: #fff !important;
-  border-bottom-color: #6ee7b7 !important;
-}
+
 /* History record cards */
 #screen-patient-history [style*="border-bottom:1px solid var(--sep-opaque)"] {
   border-bottom-color: rgba(255,255,255,0.08) !important;
@@ -670,9 +611,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   color: rgba(255,255,255,0.9) !important;
 }
 
-/* ══════════════════════════════════════════════
-   GLOBAL: All green backgrounds must have white text
-   ══════════════════════════════════════════════ */
 
 /* Any element with dark green background */
 [style*="background:#1a4a3a"],
@@ -772,25 +710,180 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 .hero * { color: #fff !important; }
 .hero-label, .hero-meta { color: rgba(255,255,255,0.65) !important; }
 
-/* Login form inputs dark */
-#screen-login .form-input,
-#screen-login .form-select {
-  background: rgba(255,255,255,0.1) !important;
-  border-color: rgba(255,255,255,0.25) !important;
+
+/* ════════════════════════════════════════════
+   DEFINITIVE COLOR SYSTEM
+   All dark-bg screens: white text
+   All light-bg elements: dark text
+   ════════════════════════════════════════════ */
+
+/* ── TOPBAR: always dark green bg, white text ── */
+.topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+.topbar-btn, .topbar-brand, .topbar-sub,
+.topbar > div, .topbar > button, .topbar > a {
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* ── HOME SCROLL: dark bg ── */
+#screen-home > .scroll {
+  background: #1a2e23 !important;
+}
+
+/* Scale cards on dark bg */
+#screen-home .sc-card {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+#screen-home .sc-card .sc-name { color: #fff !important; }
+#screen-home .sc-card .sc-desc { color: rgba(255,255,255,0.6) !important; }
+#screen-home .sc-card .sc-ref  { color: rgba(255,255,255,0.35) !important; font-style: italic; }
+#screen-home .sc-card .sc-icon { background: rgba(255,255,255,0.1) !important; }
+
+/* Section headers */
+#screen-home .sec-title {
+  color: rgba(255,255,255,0.45) !important;
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+#screen-home .more-scales-header {
+  color: rgba(255,255,255,0.7) !important;
+  background: rgba(255,255,255,0.05) !important;
+}
+
+/* ── ESCALAS SCREEN ── */
+#screen-scales > .topbar, #screen-scales .topbar { background: #1a2e23 !important; }
+#screen-scales > .topbar *, #screen-scales .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-scales > .scroll { background: #1a2e23 !important; }
+#screen-scales .sc-card {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+#screen-scales .sc-card .sc-name { color: #fff !important; }
+#screen-scales .sc-card .sc-desc { color: rgba(255,255,255,0.6) !important; }
+#screen-scales .sc-card .sc-ref  { color: rgba(255,255,255,0.35) !important; font-style: italic; }
+#screen-scales .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+#screen-scales .more-scales-header { color: rgba(255,255,255,0.7) !important; background: rgba(255,255,255,0.05) !important; }
+
+/* ── PATIENT HISTORY ── */
+#screen-patient-history { background: #1a2e23 !important; }
+#screen-patient-history .topbar { background: #1a2e23 !important; }
+#screen-patient-history .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-patient-history .scroll { background: #1a2e23 !important; }
+#screen-patient-history .tab-bar {
+  background: #1a2e23 !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history .tab { color: rgba(255,255,255,0.5) !important; border-bottom-color: transparent !important; }
+#screen-patient-history .tab.active { color: #fff !important; border-bottom-color: #6ee7b7 !important; }
+/* History record rows */
+#screen-patient-history [style*="display:flex"] > div > div:first-child { color: #fff !important; }
+#screen-patient-history [style*="color:var(--label)"] { color: #fff !important; }
+#screen-patient-history [style*="color:var(--label-2)"] { color: rgba(255,255,255,0.6) !important; }
+#screen-patient-history [style*="color:var(--label-3)"] { color: rgba(255,255,255,0.4) !important; }
+#screen-patient-history [style*="border-bottom:1px solid var(--sep"] { border-bottom-color: rgba(255,255,255,0.07) !important; }
+
+/* ── PROFILE SCREEN ── */
+#screen-profile { background: #1a2e23 !important; }
+#screen-profile .topbar { background: #1a2e23 !important; }
+#screen-profile .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-profile .scroll { background: #1a2e23 !important; }
+#screen-profile .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+#screen-profile .info-label { color: rgba(255,255,255,0.5) !important; }
+#screen-profile .info-val   { color: rgba(255,255,255,0.9) !important; }
+#screen-profile .info-row   { border-bottom-color: rgba(255,255,255,0.07) !important; }
+#screen-profile .tag { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.85) !important; }
+#screen-profile .form-label { color: rgba(255,255,255,0.65) !important; }
+#screen-profile .form-input, #screen-profile .form-select, #screen-profile .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
   color: #fff !important;
 }
-#screen-login .form-label {
-  color: rgba(255,255,255,0.75) !important;
+#screen-profile .form-input::placeholder, #screen-profile .form-textarea::placeholder { color: rgba(255,255,255,0.3) !important; }
+#screen-profile select option { background: #1a2e23; color: #fff; }
+#screen-profile .divider { background: rgba(255,255,255,0.07) !important; }
+
+/* ── LOGIN SCREEN ── */
+#screen-login { background: #1a2e23 !important; }
+#screen-login .login-outer { background: #1a2e23 !important; }
+#screen-login .login-title { color: #fff !important; }
+#screen-login .login-sub   { color: rgba(255,255,255,0.6) !important; }
+#screen-login .form-label  { color: rgba(255,255,255,0.7) !important; }
+#screen-login .form-input  { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.2) !important; color: #fff !important; }
+#screen-login .form-input::placeholder { color: rgba(255,255,255,0.35) !important; }
+#screen-login .mode-tabs   { background: rgba(255,255,255,0.1) !important; }
+#screen-login .mode-tab    { color: rgba(255,255,255,0.6) !important; }
+#screen-login .mode-tab.active { background: rgba(255,255,255,0.18) !important; color: #fff !important; }
+#screen-login .err         { color: #fca5a5 !important; }
+
+/* ── DOCTOR PANEL ── */
+#screen-doctor-home { background: #1a2e23 !important; }
+#screen-doctor-home .topbar { background: #1a2e23 !important; }
+#screen-doctor-home .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-home .hero { background: linear-gradient(160deg,#1e3a2c,#162a1e) !important; }
+#screen-doctor-home .hero * { color: #fff !important; }
+#screen-doctor-home .hero-label, #screen-doctor-home .hero-meta { color: rgba(255,255,255,0.6) !important; }
+#screen-doctor-home #dr-content { background: #1a2e23 !important; color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-home .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+
+/* ── CHILD HOME ── */
+#screen-child-home { background: #1a2e23 !important; }
+#screen-child-home .topbar { background: #1a2e23 !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; }
+#screen-child-home .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-child-home .scroll { background: #1a2e23 !important; }
+
+/* ── HIGIENE / CONSULTAR ── */
+#screen-hygiene, #screen-consult-guide { background: #1a2e23 !important; }
+#screen-hygiene .topbar, #screen-consult-guide .topbar { background: #1a2e23 !important; }
+#screen-hygiene .topbar *, #screen-consult-guide .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-hygiene .scroll, #screen-consult-guide .scroll { background: #1a2e23 !important; }
+
+/* ── LANDING PAGE: keep light ── */
+#screen-landing { background: var(--bg-primary); }
+#screen-landing .sec-title { color: var(--label-2) !important; border-bottom-color: var(--sep-opaque) !important; }
+
+/* ── SCALE SCREEN: keep light (white bg for focus) ── */
+#screen-scale { background: #f5f5f7 !important; }
+#screen-scale .topbar { background: #f5f5f7 !important; border-bottom: 1px solid #e0e0e5 !important; }
+#screen-scale .topbar-btn { color: #1a4a3a !important; }
+#screen-scale #scale-title { color: #1a4a3a !important; }
+#screen-scale .q-num    { color: #6b7280 !important; }
+#screen-scale .q-text   { color: #111 !important; }
+#screen-scale .opt      { background: #fff !important; color: #111 !important; border-color: #ddd !important; }
+#screen-scale .opt.sel  { background: #1a4a3a !important; color: #fff !important; }
+
+/* ── DIARY SCREENS: keep light for input clarity ── */
+#screen-diary-new, #screen-diary-edit { background: #f5f5f7 !important; }
+
+/* ── BOTTOM NAV ── */
+.bottomnav { background: rgba(26,46,35,0.97) !important; border-top: 1px solid rgba(255,255,255,0.08) !important; }
+.bnav-lbl  { color: rgba(255,255,255,0.5) !important; }
+.bnav.active .bnav-lbl { color: #fff !important; }
+.bnav svg  { stroke: rgba(255,255,255,0.5); }
+.bnav.active svg { stroke: #fff; }
+
+/* ── Remove all stray var(--label) on dark screens ── */
+#screen-home [style*="color:var(--label)"],
+#screen-scales [style*="color:var(--label)"],
+#screen-profile [style*="color:var(--label)"],
+#screen-patient-history [style*="color:var(--label)"],
+#screen-doctor-home [style*="color:var(--label)"] {
+  color: rgba(255,255,255,0.9) !important;
 }
-#screen-login .mode-tabs {
-  background: rgba(255,255,255,0.1) !important;
-}
-#screen-login .mode-tab {
+#screen-home [style*="color:var(--label-2)"],
+#screen-scales [style*="color:var(--label-2)"],
+#screen-profile [style*="color:var(--label-2)"],
+#screen-patient-history [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="color:var(--label-2)"] {
   color: rgba(255,255,255,0.6) !important;
 }
-#screen-login .mode-tab.active {
-  background: rgba(255,255,255,0.15) !important;
-  color: #fff !important;
+#screen-home [style*="color:var(--label-3)"],
+#screen-scales [style*="color:var(--label-3)"],
+#screen-profile [style*="color:var(--label-3)"],
+#screen-patient-history [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="color:var(--label-3)"] {
+  color: rgba(255,255,255,0.4) !important;
 }
 
 </style>
@@ -1252,7 +1345,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 </div>
 
 <!-- SCALES SCREEN -->
-<div id="screen-scales" class="screen dark-screen">
+<div id="screen-scales" class="screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cuestionarios</div><div style="font-size:11px;color:var(--g200)">Autoadministrables</div></div>
@@ -1314,7 +1407,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 </div>
 
 <!-- PROFILE -->
-<div id="screen-profile" class="screen dark-screen">
+<div id="screen-profile" class="screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#fff">Mi perfil clínico</div></div>
@@ -9792,7 +9885,7 @@ function scheduleLocalReminder(){
     </div>
   </div>
 </div></div></div>
-<div id="screen-hygiene" class="screen dark-screen">
+<div id="screen-hygiene" class="screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">Higiene del sueño</div>
@@ -9801,7 +9894,7 @@ function scheduleLocalReminder(){
   <div class="scroll" id="hygiene-content"></div>
 </div>
 
-<div id="screen-consult-guide" class="screen dark-screen">
+<div id="screen-consult-guide" class="screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">¿Cuándo consultar?</div>
