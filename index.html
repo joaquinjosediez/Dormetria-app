@@ -618,6 +618,58 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   color: rgba(255,255,255,0.9) !important;
 }
 
+/* Patient history dark bg */
+#screen-patient-history .topbar,
+#screen-escalas .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history .topbar button,
+#screen-escalas .topbar button {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-patient-history .scroll {
+  background: #1a2e23 !important;
+}
+#screen-patient-history .tab-bar {
+  background: #1a2e23 !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history .tab {
+  color: rgba(255,255,255,0.5) !important;
+  border-bottom-color: transparent !important;
+}
+#screen-patient-history .tab.active {
+  color: #fff !important;
+  border-bottom-color: #6ee7b7 !important;
+}
+/* History record cards */
+#screen-patient-history [style*="border-bottom:1px solid var(--sep-opaque)"] {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history [style*="color:var(--label)"] {
+  color: #fff !important;
+}
+#screen-patient-history [style*="color:var(--label-3)"] {
+  color: rgba(255,255,255,0.4) !important;
+}
+/* Doctor screen */
+#screen-doctor-home {
+  background: #1a2e23 !important;
+}
+#screen-doctor-home .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-doctor-home .hero {
+  background: linear-gradient(135deg, #1a2e23, #2d4a3a) !important;
+}
+#screen-doctor-home .dr-content-wrap,
+#screen-doctor-home #dr-content {
+  background: #1a2e23 !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
 </style>
 
 </head>
@@ -1094,9 +1146,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
 <!-- SCALE -->
 <div id="screen-scale" class="screen">
-  <div class="topbar" style="justify-content:flex-start;gap:12px">
-    <button class="topbar-btn" onclick="showHome()" style="flex-shrink:0;color:#1a4a3a;font-weight:600">← Salir</button>
-    <div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="scale-title">Escala</div>
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
+    <div style="text-align:center;flex:1;overflow:hidden"><div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px" id="scale-title">Escala</div></div>
+    <div style="width:52px"></div>
   </div>
   <div class="q-prog"><div class="q-prog-fill" id="q-prog" style="width:0%"></div></div>
   <div class="q-area" id="q-area"></div>
@@ -1496,11 +1549,23 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     </ol>
     <p style="font-size:12px;color:#6b7280;margin:0">Los pacientes completan las escalas de forma autónoma. Vos ves los resultados en tiempo real.</p>
   </div>
-  <div class="tab-bar">
-    <button class="tab active" onclick="showDrTab('patients',this)">Mis pacientes</button>
-    <button class="tab" id="dr-alerts-tab" onclick="showDrTab('alerts',this)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:10px;border-radius:8px;padding:1px 5px;margin-left:3px">!</span></button>
-    <button class="tab" onclick="showDrTab('link',this)">Vincular</button>
-    <button class="tab" onclick="showDrTab('drprofile',this)">Mi perfil</button>
+  <div class="bottomnav" id="dr-bottomnav" style="background:#1a2e23;border-top:1px solid rgba(255,255,255,0.08)">
+    <button class="bnav active" id="drnav-patients" onclick="showDrTab('patients',this)" style="color:#fff">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.9)">Pacientes</span>
+    </button>
+    <button class="bnav" id="drnav-alerts" onclick="showDrTab('alerts',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:9px;border-radius:8px;padding:1px 5px;margin-left:2px"></span></span>
+    </button>
+    <button class="bnav" id="drnav-link" onclick="showDrTab('link',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Vincular</span>
+    </button>
+    <button class="bnav" id="drnav-profile" onclick="showDrTab('profile',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Mi perfil</span>
+    </button>
   </div>
   <div class="scroll"><div id="dr-content" style="padding:0 16px"></div></div>
 </div>
@@ -4037,7 +4102,7 @@ function renderProfileView(){
     <div class="info-row"><span class="info-label">Alcohol</span><span class="info-val">${u.alcohol||'-'}</span></div>
     <div class="info-row"><span class="info-label">Tabaco</span><span class="info-val">${u.tobacco||'-'}</span></div>
     <div class="info-row"><span class="info-label">Actividad física</span><span class="info-val">${u.physical_activity||'-'}</span></div>
-    <div class="info-row"><span class="info-label">Tipo de trabajo</span><span class="info-val">${u.work_schedule?({'diurno':'Diurno fijo','remoto':'Remoto/flexible','guardias':'Guardias','nocturno':'Nocturno fijo','rotativo':'Turnos rotativos','freelance':'Freelance','estudiante':'Estudiante','jubilado':'Jubilado/a','desocupado':'Sin actividad','otro':'Otro'}[u.work_schedule]||u.work_schedule):'-'}</span></div>
+    <div class="info-row"><span class="info-label">Tipo de trabajo</span><span class="info-val">${(()=>{const m={'diurno':'Diurno fijo','remoto':'Remoto/flexible','guardias':'Guardias','nocturno':'Nocturno fijo','rotativo':'Turnos rotativos','freelance':'Freelance','estudiante':'Estudiante','jubilado':'Jubilado/a','desocupado':'Sin actividad','otro':'Otro'};const v=u.work_schedule;if(!v||v==='-')return '-';const arr=Array.isArray(v)?v:(typeof v==='string'&&v.startsWith('['))?JSON.parse(v):[v];return arr.map(x=>m[x]||x).join(', ');})()||'-'}</span></div>
     <div style="margin-top:20px"><button class="btn btn-g" onclick="toggleProfileEdit()">Editar perfil</button>
     </div>
     </div>
@@ -4183,12 +4248,17 @@ function previewPhoto(input){
 
 
 function toggleProfileEdit(){
-  if(!S.user){toast('Cargando perfil...');return;}
+  if(!S.user){
+    toast('Cargando perfil...');
+    showProfile();
+    return;
+  }
   S.profileEditing = !S.profileEditing;
   const btn = document.getElementById('profile-edit-btn');
   if(btn) btn.textContent = S.profileEditing ? 'Ver' : 'Editar';
   if(S.profileEditing){
     renderProfileEdit();
+    setTimeout(initProfileEditExtras, 100);
   } else {
     renderProfileView();
   }
@@ -5495,7 +5565,14 @@ async function showDoctorHome(){
   document.getElementById('dr-meta').textContent=(d.mat?d.mat+' · ':'')+specLabel;
   if(checkAdminAccess()){const ab=document.getElementById('admin-btn');if(ab)ab.style.display='inline-flex';}
   const _pl=document.getElementById('dr-panel-label'); if(_pl) _pl.textContent=(['psychiatry','neurology','pneumology','ent','pediatrics','cardiology','general'].includes(d.specialty)?'Panel médico':'Panel profesional');showScreen('doctor-home');showDrTab_('patients');setTimeout(()=>{updateDrAvailBtn();updateDrListedBtn();},200);}
-function showDrTab(tab,el){document.querySelectorAll('#screen-doctor-home .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDrTab_(tab);}
+function showDrTab(tab,el){
+  // Update bottom nav
+  ['patients','alerts','link','profile'].forEach(t=>{
+    const b=document.getElementById('drnav-'+t);
+    if(b){b.style.color=t===tab?'#fff':'rgba(255,255,255,0.5)';const lbl=b.querySelector('.bnav-lbl');if(lbl&&lbl.childNodes[0])lbl.childNodes[0].textContent=lbl.childNodes[0].textContent;}
+  });
+  showDrTab_(tab);
+}
 async function showDrTab_(tab){
   const cont=document.getElementById('dr-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   if(tab==='patients'){
