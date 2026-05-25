@@ -934,6 +934,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   display: none !important;
 }
 
+/* Force scale card icons to appear lighter */
+.sc-icon { filter: brightness(0.9); }
+/* Remove ios-group white bg aggressively */
+.ios-group { background: transparent !important; }
+
 </style>
 
 </head>
@@ -1386,7 +1391,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
     <!-- 5. ESCALAS -->
     <div style="padding:0 16px;margin-top:4px">
-      <div id="scales-list"></div></div>
+      <div id="scales-list" style="background:#1a2e23;min-height:200px"></div></div>
     <div style="height:80px"></div>
   </div>
 
@@ -3915,6 +3920,7 @@ function renderScales(targetId){
   const moreScalesDiv = document.createElement('div');
   moreScalesDiv.id='more-scales-container';
   moreScalesDiv.style.display='block';
+  moreScalesDiv.style.background='transparent';
   list.appendChild(moreScalesDiv);
 
   // ── GROUP by category (in more scales) ──
@@ -8858,17 +8864,17 @@ function renderParentInfo(){
 
   el.innerHTML = `<div style="padding:16px 0 8px">` + sections.map((s,i) =>
     `<div style="margin:0 16px 10px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09)">
-      <details>
-        <summary style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;list-style:none;-webkit-appearance:none;user-select:none;background:rgba(255,255,255,0.06)">
+      <div>
+        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:rgba(255,255,255,0.06)">
           <span style="width:40px;height:40px;border-radius:12px;background:${s.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.1);border-radius:10px;width:40px;height:40px;min-width:40px;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box">${s.iconSvg||s.icon}</span>
           <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.95);flex:1;line-height:1.3">${s.title}</span>
           <span style="width:28px;height:28px;border-radius:50%;background:${s.bg};display:flex;align-items:center;justify-content:center;color:${s.color};font-size:16px;
-        </summary>
-        <div style="padding:0 16px 18px;background:rgba(255,255,255,0.04);font-size:13px;color:rgba(255,255,255,0.9);line-height:1.85">
+        </div>
+        <div style="padding:0 16px 18px;background:rgba(255,255,255,0.04);font-size:13px;color:rgba(255,255,255,0.9);line-height:1.85;display:none">
           <div style="height:1px;background:${s.bg};margin-bottom:14px"></div>
           ${s.content}
         </div>
-      </details>
+      </div>
     </div>`
   ).join('') + `</div>`;
 
@@ -9830,7 +9836,8 @@ async function renderConsultNotes(){
             <option value="plan">Plan terapéutico</option>
             <option value="other">Nota libre</option>
           </select>
-          <button onclick="saveConsultNote('${patEmail.replace(/'/g,"\'")}',this)" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 18px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Guardar</button>
+          <button id="save-note-btn" onclick="saveConsultNote(document.getElementById('note-email').value,this)" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 18px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Guardar</button>
+        <input type="hidden" id="note-email" value="${patEmail}">
         </div>
       </div>
       
