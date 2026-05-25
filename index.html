@@ -1440,11 +1440,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   <div id="ch-panel-info" style="display:none;flex:1;overflow-y:auto;padding:0 0 80px">
     <div id="ch-info-content"></div>
   </div>
-  <div style="display:flex;border-top:1px solid rgba(255,255,255,0.1);background:#1a2e23;flex-shrink:0;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)">
-    <button id="ch-tab-home" onclick="showChildTab('home',this)" style="flex:1;padding:8px 4px;border:none;background:none;font-size:11px;font-weight:700;color:#1a4a3a;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">🏠</span>Inicio</button>
-    <button id="ch-tab-diary" onclick="showChildTab('diary',this)" style="flex:1;padding:8px 4px;border:none;background:none;font-size:11px;font-weight:500;color:var(--label-2);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">📔</span>Diario</button>
-    <button id="ch-tab-scales" onclick="showChildTab('scales',this)" style="flex:1;padding:8px 4px;border:none;background:none;font-size:11px;font-weight:500;color:var(--label-2);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">📊</span>Escalas</button>
-    <button id="ch-tab-info" onclick="showChildTab('info',this)" style="flex:1;padding:8px 4px;border:none;background:none;font-size:11px;font-weight:500;color:var(--label-2);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">💡</span>Info</button>
+  <div style="display:flex;border-top:1px solid rgba(255,255,255,0.08);background:#1a2e23;flex-shrink:0">
+    <button id="ch-tab-home" onclick="showChildTab('home',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:700;color:#fff;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Inicio</button>
+    <button id="ch-tab-diary" onclick="showChildTab('diary',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>Diario</button>
+    <button id="ch-tab-scales" onclick="showChildTab('scales',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Escalas</button>
+    <button id="ch-tab-info" onclick="showChildTab('info',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Info</button>
   </div>
 </div>
 
@@ -2734,7 +2734,7 @@ async function renderLinkedDoctors(){
   Promise.all(linkedDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,gender').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
     el.innerHTML=drs.map(d=>{
       const rating=JSON.parse(localStorage.getItem('dm_dr_rating_'+d.email)||'null');
-      const title=d.sex==='Masculino'?'Dr.':d.sex==='Femenino'?'Dra.':(d.specialty==='psychology'||d.specialty==='speech'||d.specialty==='ot'?'Lic.':'Dr/a.');
+      const title=d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':(d.specialty==='psychology'||d.specialty==='speech'||d.specialty==='ot'?'Lic.':'Dr/a.');
       const spec=specL[d.specialty]||d.specialty||'Especialista';
       let stars='';
       for(let s=1;s<=5;s++){const _e=d.email;const _s=s;stars+='<span data-e="'+_e+'" data-s="'+_s+'" class="dr-star" style="font-size:22px;cursor:pointer;opacity:'+(rating&&rating.stars>=_s?1:0.3)+'">⭐</span>';}
@@ -2967,6 +2967,8 @@ function updatePillarBars(entries){
   function meanStd(arr){if(!arr.length)return null;const m=arr.reduce((a,b)=>a+b,0)/arr.length;const s=Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);return{m,s};}
   const bedOffsets=sorted.map(e=>e.bedtime?timeToOffset(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
   const bedStats=meanStd(bedOffsets);
+  const wakeOffsets=sorted.map(e=>e.wake_time?timeToOffset(e.wake_time.slice(0,5)):null).filter(v=>v!==null);
+  const wakeStats=meanStd(wakeOffsets);
   function computePillarScore(e){
     const mins=e.sleep_minutes||0;
     let qty=0;
@@ -3120,7 +3122,7 @@ async function loadHomeDoctors(){
       db.get('doctors?email=eq.'+encodeURIComponent(l.doctor_email)+'&select=name,lname,specialty,gender,photo_url').then(d=>d&&d[0]||{email:l.doctor_email,name:l.doctor_email.split('@')[0]}).catch(()=>({email:l.doctor_email,name:l.doctor_email.split('@')[0]}))
     ));
     if(list) list.innerHTML = drs.map(d=>{
-      const title=d.sex==='Masculino'?'Dr.':d.sex==='Femenino'?'Dra.':'Dr/a.';
+      const title=d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':'Dr/a.';
       const spec=sL[d.specialty]||d.specialty||'Especialista';
       const avatar=d.photo_url
         ?'<img src="'+d.photo_url+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">'
@@ -3593,7 +3595,7 @@ async function showPatientCode(){
     else{
       Promise.all(lkDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,gender').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
         const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiol.',general:'Clínica Gral',physician:'Médico'};
-        codeDrEl.innerHTML=drs.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-secondary);border-radius:10px;margin-bottom:6px"><div><div style="font-size:13px;font-weight:600">${d.sex==='Masculino'?'Dr.':d.sex==='Femenino'?'Dra.':'Dr/a.'} ${d.name} ${d.lname||''}</div><div style="font-size:11px;color:var(--label-2)">${sL[d.specialty]||d.specialty||'Especialista'}</div></div><button data-eml="${d.email}" class="code-unlink-btn" style="padding:5px 12px;border:none;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;cursor:pointer">Revocar</button></div>`).join('');
+        codeDrEl.innerHTML=drs.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-secondary);border-radius:10px;margin-bottom:6px"><div><div style="font-size:13px;font-weight:600">${d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':'Dr/a.'} ${d.name} ${d.lname||''}</div><div style="font-size:11px;color:var(--label-2)">${sL[d.specialty]||d.specialty||'Especialista'}</div></div><button data-eml="${d.email}" class="code-unlink-btn" style="padding:5px 12px;border:none;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;cursor:pointer">Revocar</button></div>`).join('');
         codeDrEl.querySelectorAll('.code-unlink-btn').forEach(b=>b.addEventListener('click',()=>{if(confirm('¿Revocar acceso a '+b.closest('div').querySelector('div>div').textContent+'?')){unlinkDoctor(b.dataset.eml);b.closest('div[style]').remove();}}));
       });
     }
@@ -3879,95 +3881,7 @@ function renderProfileView(){
     <div class="info-row"><span class="info-label">Actividad física</span><span class="info-val">${u.physical_activity||'-'}</span></div>
     <div class="info-row"><span class="info-label">Tipo de trabajo</span><span class="info-val">${u.work_schedule?({'diurno':'Diurno fijo','remoto':'Remoto/flexible','guardias':'Guardias','nocturno':'Nocturno fijo','rotativo':'Turnos rotativos','freelance':'Freelance','estudiante':'Estudiante','jubilado':'Jubilado/a','desocupado':'Sin actividad','otro':'Otro'}[u.work_schedule]||u.work_schedule):'-'}</span></div>
     <div style="margin-top:20px"><button class="btn btn-g" onclick="toggleProfileEdit()">Editar perfil</button>
-      <button class="btn btn-s" onclick="showSuggestionsModal()" style="margin-top:8px">💡 Ayudanos a mejorar</button>
     </div>
-    <div class="divider"></div>
-    <div class="sec-title">Mis médicos vinculados</div>
-    <div id="patient-linked-drs"></div>
-    <button class="btn btn-g" onclick="showConsultDir()" style="margin-top:10px">🩺 Buscar profesional</button>
-  </div>`;
-  renderLinkedDoctors();
-}
-function toggleProfileEdit(){
-  S.profileEditing=!S.profileEditing;
-  document.getElementById('profile-edit-btn').textContent=S.profileEditing?'Ver':'Editar';
-  if(S.profileEditing)renderProfileEdit();else renderProfileView();
-}
-
-const PATHOLOGIES = [
-  'Hipertensión','Diabetes tipo 1','Diabetes tipo 2','Obesidad','Hipotiroidismo','Hipertiroidismo',
-  'Asma','EPOC','Apnea del sueño','Insomnia crónica','Síndrome de piernas inquietas',
-  'Fibromialgia','Artritis reumatoidea','Lupus','Depresión','Ansiedad generalizada',
-  'Trastorno bipolar','Esquizofrenia','ADHD','Autismo','Epilepsia','Migraña',
-  'Enfermedad de Parkinson','Alzheimer','Esclerosis múltiple','ACV previo',
-  'Enfermedad coronaria','Insuficiencia cardíaca','Arritmia','Reflujo gastroesofágico',
-  'Intestino irritable','Enfermedad de Crohn','Celiaquía','Psoriasis','Eccema',
-  'Anemia','Déficit de hierro','Déficit de vitamina D','Hipovitaminosis B12','Otra'
-];
-function renderProfileEdit(){
-  const u=S.user;const selPaths=u.pathologies||[];
-  const pathOpts=PATHOLOGIES.map(p=>`<option value="${p}">${p}</option>`).join('');
-  const curPhoto=u.photo_url||'';
-  document.getElementById('profile-content').innerHTML=`
-    <div class="sec-title">Foto de perfil</div>
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-      <div id="prof-photo-preview" style="width:72px;height:72px;border-radius:50%;background:var(--g50);border:2px dashed var(--g200);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-        ${curPhoto?'<img src="'+curPhoto+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:24px">👤</span>'}
-      </div>
-      <div style="flex:1">
-        <label class="form-label">Seleccioná una foto</label>
-        <input type="file" id="prof-photo-input" accept="image/*" style="font-size:12px;color:var(--ink3);width:100%" onchange="previewPhoto(this)">
-        <div style="font-size:11px;color:var(--ink4);margin-top:4px">JPG o PNG, máx. 2MB</div>
-      </div>
-    </div>
-    <input type="hidden" id="prof-photo-data" value="${curPhoto}">
-    <div class="sec-title">Datos personales</div>
-    <div class="form-group"><label class="form-label">Fecha de nacimiento</label>
-      <input class="form-input" type="date" id="pf-dob">
-    </div>
-    <div class="form-group"><label class="form-label">Sexo biológico <span style="color:#dc2626">*</span></label>
-      <select class="form-select" id="pf-sex" onchange="document.getElementById('pf-female-section').style.display=this.value==='Femenino'?'block':'none'">
-        <option value="">Seleccionar</option>
-        <option value="Femenino"${u.sex==='Femenino'?' selected':''}>Femenino</option>
-        <option value="Masculino"${u.sex==='Masculino'?' selected':''}>Masculino</option>
-        <option value="Otro"${u.sex==='Otro'?' selected':''}>Otro</option>
-      </select></div>
-    <div class="form-group"><label class="form-label">País de residencia</label>
-      <select class="form-select" id="pf-country">
-        <option value="">Seleccionar país</option>
-        <option value="Argentina"\${u.country==='Argentina'?' selected':''}>Argentina</option>
-        <option value="Bolivia"\${u.country==='Bolivia'?' selected':''}>Bolivia</option>
-        <option value="Chile"\${u.country==='Chile'?' selected':''}>Chile</option>
-        <option value="Colombia"\${u.country==='Colombia'?' selected':''}>Colombia</option>
-        <option value="Costa Rica"\${u.country==='Costa Rica'?' selected':''}>Costa Rica</option>
-        <option value="Cuba"\${u.country==='Cuba'?' selected':''}>Cuba</option>
-        <option value="Ecuador"\${u.country==='Ecuador'?' selected':''}>Ecuador</option>
-        <option value="El Salvador"\${u.country==='El Salvador'?' selected':''}>El Salvador</option>
-        <option value="España"\${u.country==='España'?' selected':''}>España</option>
-        <option value="Guatemala"\${u.country==='Guatemala'?' selected':''}>Guatemala</option>
-        <option value="Honduras"\${u.country==='Honduras'?' selected':''}>Honduras</option>
-        <option value="México"\${u.country==='México'?' selected':''}>México</option>
-        <option value="Nicaragua"\${u.country==='Nicaragua'?' selected':''}>Nicaragua</option>
-        <option value="Panamá"\${u.country==='Panamá'?' selected':''}>Panamá</option>
-        <option value="Paraguay"\${u.country==='Paraguay'?' selected':''}>Paraguay</option>
-        <option value="Perú"\${u.country==='Perú'?' selected':''}>Perú</option>
-        <option value="República Dominicana"\${u.country==='República Dominicana'?' selected':''}>República Dominicana</option>
-        <option value="Uruguay"\${u.country==='Uruguay'?' selected':''}>Uruguay</option>
-        <option value="Venezuela"\${u.country==='Venezuela'?' selected':''}>Venezuela</option>
-        <option value="Brasil"\${u.country==='Brasil'?' selected':''}>Brasil (port.)</option>
-        <option value="Otro"\${u.country==='Otro'?' selected':''}>Otro</option>
-      </select>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Altura (cm) <span style="color:#dc2626">*</span></label><input class="form-input" type="number" id="pf-height" value="${u.height_cm||''}" placeholder="170"></div>
-      <div class="form-group"><label class="form-label">Peso (kg) <span style="color:#dc2626">*</span></label><input class="form-input" type="number" id="pf-weight" value="${u.weight_kg||''}" placeholder="70"></div>
-    </div>
-    <div class="divider"></div>
-    <div class="sec-title">Patologías</div>
-    <div id="pf-paths-tags" style="margin-bottom:8px">${selPaths.map(p=>`<span class="tag">${p}<span class="tag-rm" onclick="removePath('${p}')">✕</span></span>`).join('')}</div>
-    <div class="form-group" style="display:flex;gap:8px">
-      <select class="form-select" id="pf-path-sel" style="flex:1"><option value="">Seleccionar patología...</option>${pathOpts}</select>
-      <button class="btn btn-s" style="width:auto;padding:10px 14px;flex-shrink:0" onclick="addPath()">+ Agregar</button>
     </div>
     <div class="form-group"><label class="form-label">Otra patología</label><input class="form-input" id="pf-path-other" placeholder="Escribir y presionar +"><button class="btn btn-s" style="width:auto;padding:10px 14px;margin-left:8px" onclick="addPathOther()">+</button></div>
     <div class="divider"></div>
@@ -4428,32 +4342,31 @@ async function showDiaryTab_(tab){
                   // ── Summary box: side by side, full width ──
                   if(bedStats||wakeStats){
                     const bxH=34;
+                    const dpr=window.devicePixelRatio||1;
+                    const canvW=(chart.canvas.clientWidth||chart.canvas.width/dpr);
+                    const bxLeft=0,bxRight=canvW;
                     const bxY=Math.max(2,ca.top-bxH-4);
-                    // Stretch to canvas left edge for more space
-                    const bxLeft=4;
-                    const bxRight=chart.canvas.width-4;
-                    const W=bxRight-bxLeft;
                     cx.save();
                     cx.fillStyle='#f8fafc';
                     cx.strokeStyle='#e2e8f0';cx.lineWidth=1;
-                    if(cx.roundRect){cx.roundRect(bxLeft,bxY,W,bxH,6);}
-                    else{cx.rect(bxLeft,bxY,W,bxH);}
+                    if(cx.roundRect){cx.roundRect(bxLeft,bxY,canvW,bxH,6);}
+                    else{cx.rect(bxLeft,bxY,canvW,bxH);}
                     cx.fill();cx.stroke();
                     cx.font='600 11px system-ui';cx.textBaseline='middle';
                     const mid=bxY+bxH/2;
                     if(bedStats&&bedStats.m!=null){
                       cx.fillStyle='#d97706';
-                      cx.beginPath();cx.arc(bxLeft+12,mid,4,0,Math.PI*2);cx.fill();
+                      cx.beginPath();cx.arc(bxLeft+14,mid,4,0,Math.PI*2);cx.fill();
                       cx.fillStyle='#334155';
-                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),bxLeft+20,mid);
+                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),bxLeft+22,mid);
                     }
                     if(wakeStats&&wakeStats.m!=null){
-                      const label='Prom. levantarse  '+toHHMM(wakeStats.m);
-                      const lw=cx.measureText(label).width;
+                      const txt='Prom. levantarse  '+toHHMM(wakeStats.m);
+                      const lw=cx.measureText(txt).width;
                       cx.fillStyle='#1d4ed8';
-                      cx.beginPath();cx.arc(bxRight-lw-20,mid,4,0,Math.PI*2);cx.fill();
+                      cx.beginPath();cx.arc(bxRight-lw-22,mid,4,0,Math.PI*2);cx.fill();
                       cx.fillStyle='#334155';
-                      cx.fillText(label,bxRight-lw-12,mid);
+                      cx.fillText(txt,bxRight-lw-14,mid);
                     }
                     cx.restore();
                   }
@@ -5406,7 +5319,7 @@ async function showDoctorHome(){
     return null;
   }
   const _sex = d.sex&&d.sex!==''?d.sex:_guessSex(d.name);
-  const _drTitle = _sex==='Masculino'?'Dr.':_sex==='Femenino'?'Dra.':_licSpecs.includes(d.specialty)?'Lic.':'Dr/a.';
+  const _drTitle = _sex==='Masculino'?'Dr.':_sex==='Femenino'||(d.gender==='Femenino'&&!_licSpecs.includes(d.specialty))?'Dra.':_licSpecs.includes(d.specialty)?'Lic.':'Dr.';
   document.getElementById('dr-name').textContent=_drTitle+' '+d.name+(d.lname?' '+d.lname:'');const specLabels={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General',other_health:'Profesional de salud'};
   const specLabel=specLabels[d.specialty]||'Panel profesional';
   document.getElementById('dr-meta').textContent=(d.mat?d.mat+' · ':'')+specLabel;
@@ -5926,7 +5839,7 @@ function buildPDF(pd,records,dd){
   const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const W=210,mg=18,cw=W-mg*2;let y=mg;
   doc.setFillColor(26,74,58);doc.rect(0,0,W,32,'F');doc.setTextColor(240,250,247);doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text('Dormetria',mg,14);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(160,212,200);doc.text('Plataforma clínica de sueño y salud mental',mg,21);doc.text('Generado: '+new Date().toLocaleString('es-AR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}),mg,27);y=42;
   doc.setFillColor(240,250,248);doc.roundedRect(mg,y,cw,30,2,2,'F');doc.setTextColor(26,74,58);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('Datos del paciente',mg+4,y+8);doc.setTextColor(30,30,30);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`Nombre: ${pd.name} ${pd.lname||''}`,mg+4,y+16);doc.text(`Email: ${pd.email}`,mg+4,y+22);if(pd.dob)doc.text(`Nacimiento: ${new Date(pd.dob).toLocaleDateString('es-AR')}`,mg+110,y+16);doc.text(`Código: ${pd.code||'—'}`,mg+110,y+22);y+=36;
-  if(dd){doc.setFillColor(245,252,245);doc.roundedRect(mg,y,cw,22,2,2,'F');doc.setTextColor(20,83,45);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('Médico tratante',mg+4,y+8);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.text(`Dr/a. ${dd.name} ${dd.lname||''}   |   ${dd.mat||''}`,mg+4,y+16);if(dd.inst)doc.text(dd.inst,mg+130,y+16);y+=28;}
+  if(dd){doc.setFillColor(245,252,245);doc.roundedRect(mg,y,cw,22,2,2,'F');doc.setTextColor(20,83,45);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('Médico tratante',mg+4,y+8);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.text(`${(dd.gender==='Masculino'||dd.sex==='Masculino')?'Dr.':(dd.gender==='Femenino'||dd.sex==='Femenino')?'Dra.':'Dr/a.'} ${dd.name} ${dd.lname||''}   |   ${dd.mat||''}`,mg+4,y+16);if(dd.inst)doc.text(dd.inst,mg+130,y+16);y+=28;}
   if(!records.length){doc.setTextColor(120,120,120);doc.setFontSize(10);doc.text('Sin evaluaciones registradas.',mg,y+10);doc.save(`Dormetria_${pd.name}.pdf`);return;}
   doc.setTextColor(26,74,58);doc.setFontSize(12);doc.setFont('helvetica','bold');y+=4;doc.text('Resumen clínico',mg,y);y+=10;
   const lastBS={};records.forEach(r=>{lastBS[r.scale_id]=r;});
@@ -6230,7 +6143,7 @@ async function sendScaleSuggestion(){
         headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
         body: JSON.stringify({
           doctor_email: S.user.email,
-          doctor_name: 'Dr/a. '+S.user.name+' '+(S.user.lname||''),
+          doctor_name: ((S.user.gender==='Masculino')?'Dr. ':(S.user.gender==='Femenino')?'Dra. ':'Dr/a. ')+S.user.name+' '+(S.user.lname||''),
           patient_email: patEmail,
           scale_id: scaleId,
           scale_name: sc?.name||scaleId,
@@ -7942,7 +7855,7 @@ function showChildTab(tab, btn){
     const p = document.getElementById('ch-panel-'+t);
     const b = document.getElementById('ch-tab-'+t);
     if(p) p.style.display = tab===t ? (t==='home'?'block':'block') : 'none';
-    if(b){ b.style.color=tab===t?'#1a4a3a':'var(--label-2)'; b.style.fontWeight=tab===t?'700':'500'; b.querySelector('span')&&(b.querySelector('span').style.filter=tab===t?'none':'grayscale(0.4) opacity(0.7)'); b.style.fontWeight=tab===t?'700':'500'; }
+    if(b){ b.style.color=tab===t?'#fff':'rgba(255,255,255,0.5)'; b.style.fontWeight=tab===t?'700':'500'; const svg=b.querySelector('svg'); if(svg) svg.style.stroke=tab===t?'#fff':'rgba(255,255,255,0.4)'; }
   });
   if(tab==='home') renderChildQuickActions();
   if(tab==='diary') renderChildDiaryList();
@@ -9019,7 +8932,7 @@ async function saveDrProfile(){
     bio:document.getElementById('dr-edit-bio')?.value||'',
     city:document.getElementById('dr-edit-city')?.value||'',
     country:document.getElementById('dr-edit-country')?.value||'',
-    gender:document.getElementById('dr-edit-gender')?.value||'',
+    gender:document.getElementById('dr-edit-gender')?.value||'',population:[(document.getElementById('dr-pop-adult')?.checked?'adult':null),(document.getElementById('dr-pop-child')?.checked?'child':null)].filter(Boolean).join(',')||null,
   };
   try{
     await db.patch('doctors?email=eq.'+encodeURIComponent(S.user.email),upd);
@@ -9213,6 +9126,15 @@ function showConsultGuide(){
   html += '</div>';
   document.getElementById('consult-content').innerHTML = html;
   showScreen('consult-guide');
+}
+
+function updateDrPopLabel(){
+  const adult = document.getElementById('dr-pop-adult');
+  const child = document.getElementById('dr-pop-child');
+  const lA = document.getElementById('dr-pop-adult-lbl');
+  const lC = document.getElementById('dr-pop-child-lbl');
+  if(adult&&lA){ lA.style.borderColor=adult.checked?'#1a4a3a':'var(--sep-opaque)'; lA.style.background=adult.checked?'#f0fdf4':'var(--bg-secondary)'; }
+  if(child&&lC){ lC.style.borderColor=child.checked?'#1a4a3a':'var(--sep-opaque)'; lC.style.background=child.checked?'#f0fdf4':'var(--bg-secondary)'; }
 }
 
 </script>
