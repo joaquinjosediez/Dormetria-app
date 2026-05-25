@@ -670,6 +670,129 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   color: rgba(255,255,255,0.9) !important;
 }
 
+/* ══════════════════════════════════════════════
+   GLOBAL: All green backgrounds must have white text
+   ══════════════════════════════════════════════ */
+
+/* Any element with dark green background */
+[style*="background:#1a4a3a"],
+[style*="background:#1a2e23"],
+[style*="background:#2d6b56"],
+[style*="background:#2d4a3a"],
+[style*="background:linear-gradient(135deg,#1a4a3a"],
+[style*="background:linear-gradient(135deg, #1a4a3a"] {
+  color: #fff !important;
+}
+[style*="background:#1a4a3a"] *,
+[style*="background:#1a2e23"] *,
+[style*="background:#2d6b56"] * {
+  color: inherit;
+}
+
+/* Fix: all label colors inside dark screens */
+#screen-home .scroll,
+#screen-home .scroll *:not(.badge):not(button):not(.btn):not(.opt) {
+  color: rgba(255,255,255,0.9);
+}
+#screen-home .scroll .sec-title { color: rgba(255,255,255,0.5) !important; }
+#screen-home .scroll .sc-ref { color: rgba(255,255,255,0.4) !important; font-style: italic; }
+#screen-home .scroll .sc-desc { color: rgba(255,255,255,0.65) !important; }
+#screen-home .scroll .badge { /* preserve badge colors */ }
+#screen-home .scroll button { color: inherit; }
+
+/* Profile */
+#screen-profile .scroll,
+#screen-profile .scroll *:not(.badge):not(.btn):not(button):not(input):not(select):not(textarea) {
+  color: rgba(255,255,255,0.85) !important;
+}
+#screen-profile .form-label { color: rgba(255,255,255,0.6) !important; }
+#screen-profile .form-input,
+#screen-profile .form-select,
+#screen-profile .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-profile .form-input::placeholder,
+#screen-profile .form-textarea::placeholder {
+  color: rgba(255,255,255,0.35) !important;
+}
+#screen-profile select option { background: #1a2e23; color: #fff; }
+
+/* Escalas screen */
+#screen-scales .scroll,
+#screen-scales .scroll .sc-name { color: #fff !important; }
+#screen-scales .scroll .sc-desc { color: rgba(255,255,255,0.65) !important; }
+#screen-scales .scroll .sc-ref { color: rgba(255,255,255,0.4) !important; font-style: italic; }
+#screen-scales .scroll .sec-title { color: rgba(255,255,255,0.5) !important; }
+
+/* Doctor screen */
+#screen-doctor-home { background: #1a2e23; }
+#screen-doctor-home,
+#screen-doctor-home .topbar,
+#screen-doctor-home #dr-panel,
+#screen-doctor-home #dr-content {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-doctor-home .sec-title { color: rgba(255,255,255,0.5) !important; }
+#screen-doctor-home .tab-bar,
+#screen-doctor-home .tab-bar .tab { 
+  background: transparent !important;
+  color: rgba(255,255,255,0.5) !important;
+}
+#screen-doctor-home .tab-bar .tab.active {
+  color: #fff !important;
+  border-bottom-color: #6ee7b7 !important;
+}
+
+/* Login screen */
+#screen-login { background: #1a2e23 !important; }
+#screen-login .login-card {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+#screen-login label, #screen-login .login-label { color: rgba(255,255,255,0.8) !important; }
+#screen-login input {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-login input::placeholder { color: rgba(255,255,255,0.35) !important; }
+#screen-login .login-title { color: #fff !important; }
+#screen-login .login-sub { color: rgba(255,255,255,0.6) !important; }
+#screen-login .tab { color: rgba(255,255,255,0.6) !important; }
+#screen-login .tab.active { color: #fff !important; border-bottom-color: #6ee7b7 !important; }
+
+/* Remove stray non-white text on green backgrounds */
+.topbar { background: #1a2e23 !important; }
+.topbar .topbar-btn, .topbar .topbar-brand, .topbar div { color: rgba(255,255,255,0.9) !important; }
+
+/* Hero section */
+.hero { background: linear-gradient(135deg, #1a2e23, #1e3a2c) !important; }
+.hero * { color: #fff !important; }
+.hero-label, .hero-meta { color: rgba(255,255,255,0.65) !important; }
+
+/* Login form inputs dark */
+#screen-login .form-input,
+#screen-login .form-select {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.25) !important;
+  color: #fff !important;
+}
+#screen-login .form-label {
+  color: rgba(255,255,255,0.75) !important;
+}
+#screen-login .mode-tabs {
+  background: rgba(255,255,255,0.1) !important;
+}
+#screen-login .mode-tab {
+  color: rgba(255,255,255,0.6) !important;
+}
+#screen-login .mode-tab.active {
+  background: rgba(255,255,255,0.15) !important;
+  color: #fff !important;
+}
+
 </style>
 
 </head>
@@ -1032,11 +1155,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <!-- PATIENT HOME -->
 <div id="screen-home" class="screen">
   <div class="topbar">
-    <div style="font-size:17px;font-weight:600;color:var(--label)">Dormetria <span style="font-size:10px;color:var(--label-3);font-weight:400">v20.5</span></div>
-    <div style="display:flex;gap:4px">
-      <button class="topbar-btn" onclick="exportPatientPDF()" style="font-size:15px">↓ PDF</button>
-      <button class="topbar-btn" onclick="doLogout()" style="color:var(--ios-red)">Salir</button>
-    </div>
+    <button class="topbar-btn" onclick="exportPatientPDF()" style="color:rgba(255,255,255,0.8)">↓ PDF</button>
+    <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div></div>
+    <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
   </div>
   <div class="hero" style="padding:8px 16px 14px">
     <!-- Qué es Dormetria - top of hero -->
@@ -1519,9 +1640,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <!-- DOCTOR HOME -->
 <div id="screen-doctor-home" class="screen">
   <div class="topbar">
-    <div><div class="topbar-brand">Dormetria</div><div class="topbar-sub">Panel médico</div></div>
-    <button onclick="showSuggestionsModal()" style="padding:6px 14px;border:none;border-radius:16px;background:#c8a96e;color:#0f2820;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px">💡 ¿Querés aportarnos tu idea?</button>
-    <button class="topbar-btn" onclick="doLogout()">Salir</button>
+    <button onclick="toggleDrInstructivo()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;font-family:var(--font);padding:4px 8px">📖 Ayuda</button>
+    <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div><div style="font-size:10px;color:rgba(255,255,255,0.5)">Panel médico</div></div>
+    <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
   </div>
   <div class="hero">
     <div class="hero-label" id="dr-panel-label">Panel profesional</div>
@@ -1580,6 +1701,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   <div class="tab-bar">
     <button class="tab active" onclick="showDrPTab('profile',this)">Perfil</button>
     <button class="tab" onclick="showDrPTab('summary',this)">Resumen</button>
+    <button class="tab" onclick="showDrPTab('notes',this)">📝 Notas</button>
     <button class="tab" onclick="showDrPTab('diary',this)">Diario sueño</button>
     <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
     <button class="tab" onclick="showDrPTab('docs',this)">Estudios</button>
@@ -4190,7 +4312,18 @@ function renderProfileView(){
     <div style="display:flex;gap:10px;margin-top:8px;padding-bottom:24px">
       <button class="btn btn-s" onclick="toggleProfileEdit()" style="flex:1">Cancelar</button>
       <button class="btn btn-g" onclick="saveProfile()" style="flex:1" id="save-profile-btn">Guardar</button>
-    </div>`;
+    </div>
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">🔔 Recordatorio diario</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="pf-reminder-toggle" onchange="saveReminderPref(this.checked)" style="width:18px;height:18px;accent-color:#1a4a3a">
+          <span style="font-size:14px">Activar recordatorio del diario</span>
+        </label>
+        <input type="time" id="pf-reminder-time" value="08:00" onchange="saveReminderPref(undefined,this.value)" style="background:var(--bg-secondary);border:1.5px solid var(--sep-opaque);border-radius:8px;padding:6px 10px;font-size:14px;color:var(--label);font-family:var(--font)">
+      </div>
+      <button type="button" onclick="requestReminderPermission()" style="margin-top:8px;background:none;border:1px solid #1a4a3a;color:#1a4a3a;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:var(--font)">Activar notificaciones del sistema</button>
+    </div>\`;
   // Init extras after DOM is set
   setTimeout(initProfileEditExtras, 0);
 }
@@ -4202,6 +4335,12 @@ function initProfileEditExtras(){
   // Set dob
   const dobEl2=document.getElementById('pf-dob');
   if(dobEl2 && S.user && S.user.dob) dobEl2.value=S.user.dob.split('T')[0];
+  // Init reminder settings
+  const rPrefs=getReminderPrefs();
+  const rInp=document.getElementById('pf-reminder-time');
+  if(rInp) rInp.value=rPrefs.time||'08:00';
+  const rTog=document.getElementById('pf-reminder-toggle');
+  if(rTog) rTog.checked=rPrefs.enabled;
   // Init activity type select
   const actEl=document.getElementById('pf-activity-type');
   if(actEl && S.user && S.user.activity_type){
@@ -5533,7 +5672,7 @@ async function pvtFinish(){
 }
 
 // DOCTOR
-async function showDoctorHome(){
+async function showDoctorHome(){const _mn=document.getElementById('main-nav');if(_mn)_mn.style.setProperty('display','none','important');
   // Merge localStorage profile data into S.user, then refresh from DB
   if(S.user){
     const drKey='dm_dr_profile_'+(S.user.email||'');
@@ -5601,7 +5740,7 @@ async function showDrTab_(tab){
         const nb=(b.name+' '+(b.lname||'')).trim().toLowerCase();
         return na.localeCompare(nb,'es');
       });
-      function renderPatientList(filter){
+      async function renderPatientList(filter){
         const f=(filter||'').toLowerCase();
         const filtered=validPts.filter(u=>{
           const name=(u.name+' '+(u.lname||'')).trim().toLowerCase();
@@ -5668,8 +5807,15 @@ async function showDrTab_(tab){
           </select></div>
         <div class="form-group"><label class="form-label">Biografía profesional</label>
           <textarea class="form-input" id="dr-edit-bio" rows="3" placeholder="Breve descripción de tu práctica clínica..." style="resize:none">${dr.bio||''}</textarea></div>
-        <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:8px">Guardar cambios</button>
-      </div>`;
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Escalas que usás habitualmente</label>
+          <div style="font-size:12px;color:var(--label-3);margin-bottom:10px">Seleccioná las escalas de tu interés para que aparezcan destacadas en el panel de cada paciente</div>
+          <div id="dr-scales-picker" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+        </div>
+        <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:16px">Guardar cambios</button>
+      </div>\`;
+      // Render scales picker after DOM is ready
+      setTimeout(()=>renderDrScalesPicker(dr.preferred_scales||[]),50);
     }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
     return;
   }
@@ -5993,7 +6139,11 @@ async function showDrPTab_(tab){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);S.viewRecs=recs||[];
       if(!recs||!recs.length){cont.innerHTML='<div class="empty-state">Sin evaluaciones</div>';return;}
       cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500">${r.scale_name}</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:500">${r.score}/${r.max_score}</div><span class="badge" style="background:${i.bg};color:${i.c}">${i.l}</span></div><span style="color:var(--label-3);font-size:16px">›</span></div></div>`;}).join('');
-    }else if(tab==='docs'){
+    }else if(    if(tab==='notes'){
+      renderConsultNotes();
+      return;
+    }
+    tab==='docs'){
       const docs=await db.get('patient_documents?patient_email=eq.'+encodeURIComponent(email)+'&order=created_at.desc&select=id,title,category,description,file_type,cpap_data,created_at');
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📁</div>Sin estudios cargados</div>';return;}
       const catLabels={lab:'🔬 Laboratorio',estudio:'📊 Estudio',cpap:'😮‍💨 CPAP',otro:'📄 Otro'};
@@ -9181,7 +9331,7 @@ async function saveDrProfile(){
     bio:document.getElementById('dr-edit-bio')?.value||'',
     city:document.getElementById('dr-edit-city')?.value||'',
     country:document.getElementById('dr-edit-country')?.value||'',
-    gender:document.getElementById('dr-edit-gender')?.value||'',population:[(document.getElementById('dr-pop-adult')?.checked?'adult':null),(document.getElementById('dr-pop-child')?.checked?'child':null)].filter(Boolean).join(',')||null,
+    gender:document.getElementById('dr-edit-gender')?.value||'',preferred_scales:window._drSelectedScales||[],population:[(document.getElementById('dr-pop-adult')?.checked?'adult':null),(document.getElementById('dr-pop-child')?.checked?'child':null)].filter(Boolean).join(',')||null,
   };
   try{
     await db.patch('doctors?email=eq.'+encodeURIComponent(S.user.email),upd);
@@ -9413,6 +9563,215 @@ const CONSULT_WHEN = [
   {icon:'😱', symptom:'Ansiedad o depresión que afecta el sueño', desc:'Estado de ánimo que interfiere con el inicio o mantenimiento del sueño', specialist:'Psiquiatría o Psicología', urgency:'media'},
   {icon:'🌙', symptom:'Sueño fragmentado sin causa aparente', desc:'Te despertás múltiples veces por noche sin poder volver a dormir', specialist:'Médico clínico o especialista en sueño', urgency:'baja'},
 ];
+function renderDrScalesPicker(selected){
+  const cont = document.getElementById('dr-scales-picker');
+  if(!cont) return;
+  // Group SCALES by category
+  const cats = {};
+  const CAT_LABELS = {
+    'sleep':'🌙 Sueño','sleepiness':'😴 Somnolencia','insomnia':'🌙 Insomnio',
+    'circadian':'🕐 Circadiano','apnea':'💨 Apnea','parasomnia':'😱 Parasomnias',
+    'movement':'🦵 Movimiento','mental':'🧠 Salud mental','geriatric':'👴 Geriátrico',
+    'sexual':'❤️ Sexualidad','female':'♀️ Salud femenina','pediatric':'🧒 Pediátrico',
+    'sleepiness':'😴 Somnolencia','fatigue':'⚡ Fatiga','addiction':'📱 Adicción',
+    'ptsd':'🎗️ TEPT','quality':'⭐ Calidad de vida'
+  };
+  SCALES.forEach(sc=>{
+    if(sc.disabled||!sc.qs||!sc.qs.length) return;
+    const cat = sc.cat||'other';
+    if(!cats[cat]) cats[cat]=[];
+    cats[cat].push(sc);
+  });
+  
+  let html = '';
+  Object.entries(cats).forEach(([cat, scales])=>{
+    html += \`<div style="font-size:10px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin:10px 0 4px">\${CAT_LABELS[cat]||cat}</div>\`;
+    scales.forEach(sc=>{
+      const sel = selected.includes(sc.id);
+      html += \`<label id="drsp-\${sc.id}" onclick="toggleDrScale('\${sc.id}',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid \${sel?'#1a4a3a':'var(--sep-opaque)'};border-radius:10px;cursor:pointer;background:\${sel?'#f0fdf4':'var(--bg-secondary)'}">
+        <span style="font-size:16px;flex-shrink:0">\${sel?'✅':'⬜'}</span>
+        <div><div style="font-size:13px;font-weight:500;color:var(--label)">\${sc.name}</div><div style="font-size:11px;color:var(--label-3)">\${sc.desc?sc.desc.slice(0,60)+'...':''}</div></div>
+      </label>\`;
+    });
+  });
+  cont.innerHTML = html;
+  window._drSelectedScales = [...selected];
+}
+
+function toggleDrScale(id, lbl){
+  if(!window._drSelectedScales) window._drSelectedScales = [];
+  const idx = window._drSelectedScales.indexOf(id);
+  if(idx >= 0){ window._drSelectedScales.splice(idx,1); } else { window._drSelectedScales.push(id); }
+  const sel = window._drSelectedScales.includes(id);
+  lbl.style.borderColor = sel ? '#1a4a3a' : 'var(--sep-opaque)';
+  lbl.style.background = sel ? '#f0fdf4' : 'var(--bg-secondary)';
+  lbl.querySelector('span').textContent = sel ? '✅' : '⬜';
+}
+
+async function renderConsultNotes(){
+  const patEmail = S.viewData?.email;
+  if(!patEmail){ return; }
+  const cont = document.getElementById('dr-patient-content');
+  if(!cont) return;
+  cont.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
+  
+  // Load existing notes
+  let notes = [];
+  try {
+    notes = await db.get(`consultation_notes?doctor_email=eq.${encodeURIComponent(S.user.email)}&patient_email=eq.${encodeURIComponent(patEmail)}&order=created_at.desc&select=*`).catch(()=>[]);
+  } catch(e){}
+
+  const u = S.viewData||{};
+  const dob = u.dob ? new Date(u.dob) : null;
+  const age = dob ? Math.floor((Date.now()-dob)/31557600000) : null;
+  
+  // Get latest scale scores for the snapshot
+  const lastScores = {};
+  (S.patientRecords||[]).forEach(r=>{
+    if(!lastScores[r.scale_id]) lastScores[r.scale_id] = r;
+  });
+  const keyScales = ['psqi','ess','isi','phq9','gad7','stopbang'];
+  const snapshotItems = keyScales.map(id=>{
+    const r = lastScores[id];
+    if(!r) return null;
+    const sc = SCALES.find(s=>s.id===id);
+    if(!sc) return null;
+    const i = sc.interp(r.score);
+    return `<span style="font-size:11px;padding:3px 8px;border-radius:10px;background:${i.bg};color:${i.c};font-weight:600">${sc.name.split('(')[0].trim()} ${r.score}</span>`;
+  }).filter(Boolean).join(' ');
+
+  cont.innerHTML = `
+    <div style="padding:16px 16px 100px">
+      <!-- New note form -->
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;margin-bottom:20px">
+        <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">📝 Nueva nota de consulta</div>
+        ${snapshotItems ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${snapshotItems}</div>` : ''}
+        <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:10px">Estado del paciente al momento de esta nota</div>
+        <textarea id="note-text" placeholder="Escribí las observaciones clínicas de esta sesión..." 
+          style="width:100%;min-height:120px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:12px;color:#fff;font-size:14px;font-family:var(--font);resize:vertical;box-sizing:border-box;line-height:1.5"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <select id="note-type" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;font-family:var(--font)">
+            <option value="session">Sesión clínica</option>
+            <option value="followup">Seguimiento</option>
+            <option value="alert">Alerta / Urgente</option>
+            <option value="plan">Plan terapéutico</option>
+            <option value="other">Otro</option>
+          </select>
+          <button onclick="saveConsultNote('${patEmail.replace(/'/g,"\'")}')" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 20px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Guardar nota</button>
+        </div>
+      </div>
+      
+      <!-- Existing notes -->
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px">Notas anteriores (${notes.length})</div>
+      ${notes.length ? notes.map(n=>{
+        const d = new Date(n.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        const typeColors = {session:'rgba(99,102,241,0.2)',followup:'rgba(16,185,129,0.2)',alert:'rgba(239,68,68,0.25)',plan:'rgba(245,158,11,0.2)',other:'rgba(255,255,255,0.06)'};
+        const typeLabels = {session:'Sesión',followup:'Seguimiento',alert:'⚡ Urgente',plan:'Plan',other:'Nota'};
+        return `<div style="background:${typeColors[n.note_type]||'rgba(255,255,255,0.06)'};border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 16px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.5)">${typeLabels[n.note_type]||'Nota'}</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.4)">${d}</span>
+          </div>
+          ${n.snapshot ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px">${n.snapshot}</div>` : ''}
+          <div style="font-size:14px;color:rgba(255,255,255,0.9);line-height:1.5;white-space:pre-wrap">${(n.note||'').replace(/</g,'&lt;')}</div>
+        </div>`;
+      }).join('') : '<div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);font-size:14px">No hay notas de consulta aún</div>'}
+    </div>
+  `;
+}
+
+async function saveConsultNote(patEmail){
+  const note = document.getElementById('note-text')?.value?.trim();
+  const noteType = document.getElementById('note-type')?.value||'session';
+  if(!note){ toast('Escribí una nota antes de guardar'); return; }
+  const btn = document.querySelector('[onclick*="saveConsultNote"]');
+  if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
+  
+  // Build snapshot of current scale scores
+  const lastScores = {};
+  (S.patientRecords||[]).forEach(r=>{ if(!lastScores[r.scale_id]) lastScores[r.scale_id]=r; });
+  const keyScales = ['psqi','ess','isi','phq9','gad7','stopbang'];
+  const snapshot = keyScales.map(id=>{
+    const r = lastScores[id]; if(!r) return null;
+    const sc = SCALES.find(s=>s.id===id); if(!sc) return null;
+    const i = sc.interp(r.score);
+    return `<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${i.bg};color:${i.c};font-weight:600">${sc.name.split('(')[0].trim()} ${r.score}</span>`;
+  }).filter(Boolean).join(' ');
+
+  try {
+    await db.post('consultation_notes', {
+      doctor_email: S.user.email,
+      patient_email: patEmail,
+      note,
+      note_type: noteType,
+      snapshot: snapshot || null,
+      created_at: new Date().toISOString()
+    });
+    toast('Nota guardada ✓');
+    document.getElementById('note-text').value = '';
+    renderConsultNotes();
+  } catch(e) {
+    toast('Error al guardar. Ejecutá en Supabase SQL: CREATE TABLE IF NOT EXISTS consultation_notes (id uuid default gen_random_uuid() primary key, doctor_email text, patient_email text, note text, note_type text, snapshot text, created_at timestamptz default now()); ALTER TABLE consultation_notes ENABLE ROW LEVEL SECURITY;');
+    if(btn){ btn.disabled=false; btn.textContent='Guardar nota'; }
+  }
+}
+
+// ── RECORDATORIOS ──
+async function requestReminderPermission(){
+  if(!('Notification' in window)){ toast('Tu navegador no soporta notificaciones'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm === 'granted'){
+    toast('Recordatorios activados ✓');
+    scheduleLocalReminder();
+    saveReminderPref(true);
+  } else {
+    toast('Permiso de notificaciones denegado');
+  }
+}
+
+function saveReminderPref(enabled, time){
+  const prefs = JSON.parse(localStorage.getItem('dm_reminder_prefs')||'{}');
+  if(enabled !== undefined) prefs.enabled = enabled;
+  if(time) prefs.time = time;
+  localStorage.setItem('dm_reminder_prefs', JSON.stringify(prefs));
+}
+
+function getReminderPrefs(){
+  return JSON.parse(localStorage.getItem('dm_reminder_prefs')||'{"enabled":false,"time":"08:00"}');
+}
+
+function scheduleLocalReminder(){
+  // Check every minute if it's time to remind
+  clearInterval(window._reminderInterval);
+  window._reminderInterval = setInterval(()=>{
+    const prefs = getReminderPrefs();
+    if(!prefs.enabled) return;
+    const now = new Date();
+    const [h,m] = (prefs.time||'08:00').split(':').map(Number);
+    if(now.getHours()===h && now.getMinutes()===m){
+      // Check if already notified today
+      const today = now.toISOString().split('T')[0];
+      if(localStorage.getItem('dm_notified_'+today)) return;
+      localStorage.setItem('dm_notified_'+today,'1');
+      if(Notification.permission==='granted'){
+        new Notification('🌙 Dormetria', {
+          body: '¿Cómo dormiste anoche? Registrá tu diario de sueño',
+          icon: '/icon-192.png',
+          badge: '/icon-192.png'
+        });
+      }
+    }
+  }, 60000);
+}
+
+// Initialize reminders on app load
+(function initReminders(){
+  const prefs = getReminderPrefs();
+  if(prefs.enabled && Notification.permission==='granted'){
+    scheduleLocalReminder();
+  }
+})();
+
 </script>
 
 <!-- MODAL MEDICAMENTOS -->
