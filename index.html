@@ -115,6 +115,16 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 .dark-screen .topbar-btn{color:rgba(255,255,255,0.9) !important;}
 .dark-screen .scroll{background:#1a2e23 !important;}
 
+/* ── GLOBAL DARK CARD OVERRIDES for dark-scroll sections ── */
+.dk-card{
+  background:rgba(255,255,255,0.07) !important;
+  border:1px solid rgba(255,255,255,0.1) !important;
+  border-radius:14px;
+}
+.dk-card .sc-name, .dk-card .sc-desc, .dk-card .badge{color:rgba(255,255,255,0.9) !important;}
+.dk-card .sc-ref{color:rgba(255,255,255,0.4) !important;}
+.dk-card .sec-divider{border-color:rgba(255,255,255,0.1) !important;}
+
 /* Dark home scroll cards */
 #screen-home .scroll[style*='#1a2e23'] .sc-card,
 #screen-home .scroll[style*='#1a2e23'] .card,
@@ -130,13 +140,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   color:rgba(255,255,255,0.9) !important;
 }
 #screen-home .scroll[style*='#1a2e23'] .sc-desc,
-#screen-home .scroll[style*='#1a2e23'] .info-row .info-val{
-  color:rgba(255,255,255,0.6) !important;
-}
-#screen-home .scroll[style*='#1a2e23'] .sec-title{
-  color:rgba(255,255,255,0.5) !important;
-  border-bottom-color:rgba(255,255,255,0.1) !important;
-}
+#screen-home .scroll[style*='#1a2e23'] .inf
+#screen-home .scroll[style*='#1a2e23'] 
 
 /* ── NAVIGATION BAR (iOS style) ── */
 .topbar{
@@ -516,6 +521,103 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 @media(min-width:430px){
   #app{box-shadow:0 0 60px rgba(0,0,0,0.12);}
 }
+/* ── Dark green theme for all main content screens ── */
+#screen-home .scroll,
+#screen-profile .scroll,
+#screen-history .scroll,
+#screen-escalas .scroll,
+#screen-scale .scroll {
+  background: #1a2e23;
+}
+
+/* Cards on dark background - all dark screens */
+.dark-bg .sc-card,
+#screen-home .sc-card,
+#screen-escalas .sc-card {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-home .sc-name, #screen-escalas .sc-name {color:#fff !important;}
+#screen-home .sc-desc, #screen-escalas .sc-desc {color:rgba(255,255,255,0.65) !important;}
+#screen-home .sc-ref, #screen-escalas .sc-ref {color:rgba(255,255,255,0.4) !important;}
+#screen-home .sc-icon, #screen-escalas .sc-icon {background:rgba(255,255,255,0.1) !important; border-radius:10px;}
+#screen-home .scroll .sc-name,
+#screen-escalas .scroll .sc-name {
+  color: #fff !important;
+}
+#screen-home .scroll .sc-desc,
+#screen-escalas .scroll .sc-desc {
+  color: rgba(255,255,255,0.65) !important;
+}
+#screen-home .scroll .sc-ref,
+#screen-escalas .scroll .sc-ref {
+  color: rgba(255,255,255,0.4) !important;
+}
+#screen-home .scroll .sec-title,
+#screen-escalas .scroll .sec-title {
+  color: rgba(255,255,255,0.5) !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+#screen-home .scroll .more-scales-header,
+#screen-escalas .scroll .more-scales-header {
+  background: rgba(255,255,255,0.05) !important;
+}
+
+/* Profile screen */
+#screen-profile .scroll {
+  background: #1a2e23 !important;
+}
+#screen-profile .form-group label,
+#screen-profile .form-label {
+  color: rgba(255,255,255,0.7) !important;
+}
+#screen-profile .form-input,
+#screen-profile .form-select,
+#screen-profile .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-profile .sec-title {
+  color: rgba(255,255,255,0.5) !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+#screen-profile .divider {
+  background: rgba(255,255,255,0.08) !important;
+}
+#screen-profile .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-profile .topbar button, 
+#screen-profile .topbar .topbar-btn {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-profile .topbar div {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-profile .sec-title {
+  color: rgba(255,255,255,0.5) !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+#screen-profile .info-row {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+#screen-profile .info-label { color: rgba(255,255,255,0.55) !important; }
+#screen-profile .info-val { color: rgba(255,255,255,0.9) !important; }
+#screen-profile .tag { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.8) !important; }
+
+/* Diary/Diario header */
+#screen-diary-home .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-diary-home .topbar button, 
+#screen-diary-home .topbar .topbar-btn {
+  color: rgba(255,255,255,0.9) !important;
+}
+
 </style>
 
 </head>
@@ -906,7 +1008,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     </div>
   </div>
 
-  <div class="scroll" style="background:#1a2e23">
+  <div class="scroll dark-bg" style="background:#1a2e23">
 
     <!-- Linked child profiles (hidden, for reference) -->
     <div id="home-children" style="display:none"></div>
@@ -977,7 +1079,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 </div>
 
 <!-- SCALES SCREEN -->
-<div id="screen-scales" class="screen">
+<div id="screen-scales" class="screen dark-screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cuestionarios</div><div style="font-size:11px;color:var(--g200)">Autoadministrables</div></div>
@@ -1038,10 +1140,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 </div>
 
 <!-- PROFILE -->
-<div id="screen-profile" class="screen">
+<div id="screen-profile" class="screen dark-screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Mi perfil clínico</div></div>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#fff">Mi perfil clínico</div></div>
     <button class="topbar-btn" id="profile-edit-btn" onclick="toggleProfileEdit()">Editar</button>
   </div>
   <div class="scroll"><div id="profile-content" style="padding:16px"></div></div>
@@ -4079,6 +4181,18 @@ function previewPhoto(input){
   reader.readAsDataURL(file);
 }
 
+
+function toggleProfileEdit(){
+  if(!S.user){toast('Cargando perfil...');return;}
+  S.profileEditing = !S.profileEditing;
+  const btn = document.getElementById('profile-edit-btn');
+  if(btn) btn.textContent = S.profileEditing ? 'Ver' : 'Editar';
+  if(S.profileEditing){
+    renderProfileEdit();
+  } else {
+    renderProfileView();
+  }
+}
 async function saveProfile(){
   // Validate required fields
   const sexVal=document.getElementById('pf-sex')?.value;
