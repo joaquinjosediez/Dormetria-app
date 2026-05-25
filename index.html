@@ -6139,11 +6139,10 @@ async function showDrPTab_(tab){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);S.viewRecs=recs||[];
       if(!recs||!recs.length){cont.innerHTML='<div class="empty-state">Sin evaluaciones</div>';return;}
       cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500">${r.scale_name}</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:500">${r.score}/${r.max_score}</div><span class="badge" style="background:${i.bg};color:${i.c}">${i.l}</span></div><span style="color:var(--label-3);font-size:16px">›</span></div></div>`;}).join('');
-    }else if(    if(tab==='notes'){
+    }else if(tab==='notes'){
       renderConsultNotes();
       return;
-    }
-    tab==='docs'){
+    }else if(tab==='docs'){
       const docs=await db.get('patient_documents?patient_email=eq.'+encodeURIComponent(email)+'&order=created_at.desc&select=id,title,category,description,file_type,cpap_data,created_at');
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📁</div>Sin estudios cargados</div>';return;}
       const catLabels={lab:'🔬 Laboratorio',estudio:'📊 Estudio',cpap:'😮‍💨 CPAP',otro:'📄 Otro'};
