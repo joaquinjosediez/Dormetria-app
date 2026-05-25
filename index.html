@@ -5813,7 +5813,7 @@ async function showDrTab_(tab){
           <div id="dr-scales-picker" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
         </div>
         <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:16px">Guardar cambios</button>
-      </div>\`;
+      </div>`;
       // Render scales picker after DOM is ready
       setTimeout(()=>renderDrScalesPicker(dr.preferred_scales||[]),50);
     }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
@@ -9585,13 +9585,13 @@ function renderDrScalesPicker(selected){
   
   let html = '';
   Object.entries(cats).forEach(([cat, scales])=>{
-    html += \`<div style="font-size:10px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin:10px 0 4px">\${CAT_LABELS[cat]||cat}</div>\`;
+    html += `<div style="font-size:10px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin:10px 0 4px">\${CAT_LABELS[cat]||cat}</div>`;
     scales.forEach(sc=>{
       const sel = selected.includes(sc.id);
-      html += \`<label id="drsp-\${sc.id}" onclick="toggleDrScale('\${sc.id}',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid \${sel?'#1a4a3a':'var(--sep-opaque)'};border-radius:10px;cursor:pointer;background:\${sel?'#f0fdf4':'var(--bg-secondary)'}">
+      html += `<label id="drsp-\${sc.id}" onclick="toggleDrScale('\${sc.id}',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid \${sel?'#1a4a3a':'var(--sep-opaque)'};border-radius:10px;cursor:pointer;background:\${sel?'#f0fdf4':'var(--bg-secondary)'}">
         <span style="font-size:16px;flex-shrink:0">\${sel?'✅':'⬜'}</span>
         <div><div style="font-size:13px;font-weight:500;color:var(--label)">\${sc.name}</div><div style="font-size:11px;color:var(--label-3)">\${sc.desc?sc.desc.slice(0,60)+'...':''}</div></div>
-      </label>\`;
+      </label>`;
     });
   });
   cont.innerHTML = html;
