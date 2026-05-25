@@ -110,6 +110,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 /* ── SCREENS ── */
 .screen{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
 .screen.active{display:flex;}
+.dark-screen{background:#1a2e23 !important;}
+.dark-screen .topbar{background:#1a2e23 !important;border-bottom:1px solid rgba(255,255,255,0.08) !important;}
+.dark-screen .topbar-btn{color:rgba(255,255,255,0.9) !important;}
+.dark-screen .scroll{background:#1a2e23 !important;}
 
 /* ── NAVIGATION BAR (iOS style) ── */
 .topbar{
@@ -910,12 +914,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
         </div>
         <span style="color:var(--label-3);font-size:20px">›</span>
       </button>
-      <div style="padding:12px 16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:13px;font-weight:700;color:var(--label)">Mis profesionales</div>
-          <button onclick="showConsultDir()" style="border:none;background:var(--g50);color:#1a4a3a;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">+ Buscar</button>
+      <div style="padding:12px 16px;background:#1a2e23;border-radius:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:700;color:#fff">🩺 Mis profesionales</div>
+          <button onclick="showConsultDir()" style="border:none;background:rgba(255,255,255,0.12);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Buscar</button>
         </div>
-        <div id="home-doctors-list"><div style="font-size:13px;color:var(--label-3)">Cargando...</div></div>
+        <div id="home-doctors-list"><div style="font-size:13px;color:rgba(255,255,255,0.5)">Cargando...</div></div>
       </div>
     </div>
 
@@ -1424,7 +1428,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     </div>
     <div id="ch-quick-actions" style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0"></div>
     <div style="margin-bottom:16px">
-      <button onclick="showConsultDir()" style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
+      <button onclick="showConsultDir(false,true)" style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
         <div style="font-size:22px;filter:brightness(0) invert(1)">🩺</div>
         <div style="font-size:15px;font-weight:600;color:#fff">Consultar especialista</div>
       </button>
@@ -2718,73 +2722,96 @@ function adminReject(email,btn){
 
 
 async function renderLinkedDoctors(){
-  const el=document.getElementById('patient-linked-drs');if(!el)return;
-  el.innerHTML='<div style="font-size:12px;color:var(--label-3);padding:6px 0">Cargando...</div>';
-  // Try DB first (doctor_patients table), fall back to localStorage
-  let linkedDrs=[];
+  // Update both home list and any other linked doctor display
+  const containers = [document.getElementById('home-doctors-list')].filter(Boolean);
+  if(!containers.length) return;
+  const email = S.user&&S.user.email;
+  if(!email){ containers.forEach(el=>el.innerHTML=''); return; }
   try{
-    const links=await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+'&select=doctor_email');
-    if(links&&links.length) linkedDrs=links.map(l=>l.doctor_email).filter(Boolean);
-  }catch(e){}
-  // Merge with localStorage (in case DB query fails due to RLS)
-  const lsLinks=JSON.parse(localStorage.getItem('dm_pt_drs_'+(S.user?.email||''))||'[]');
-  lsLinks.forEach(e=>{if(!linkedDrs.includes(e)) linkedDrs.push(e);});
-  if(!linkedDrs.length){el.innerHTML='<div style="font-size:13px;color:var(--label-3);padding:8px 0">Ningún profesional te sigue todavía.</div>';return;}
-  const specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter. Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
-  Promise.all(linkedDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,gender').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
-    el.innerHTML=drs.map(d=>{
-      const rating=JSON.parse(localStorage.getItem('dm_dr_rating_'+d.email)||'null');
-      const title=d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':(d.specialty==='psychology'||d.specialty==='speech'||d.specialty==='ot'?'Lic.':'Dr/a.');
-      const spec=specL[d.specialty]||d.specialty||'Especialista';
-      let stars='';
-      for(let s=1;s<=5;s++){const _e=d.email;const _s=s;stars+='<span data-e="'+_e+'" data-s="'+_s+'" class="dr-star" style="font-size:22px;cursor:pointer;opacity:'+(rating&&rating.stars>=_s?1:0.3)+'">⭐</span>';}
-      return '<div style="border:1px solid var(--sep-opaque);border-radius:12px;padding:12px 14px;margin-bottom:8px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-        '<div><div style="font-size:14px;font-weight:600">'+title+' '+d.name+' '+(d.lname||'')+'</div>'+
-        '<div style="font-size:12px;color:var(--label-2)">'+spec+'</div></div>'+
-        '<button class="unlink-dr-btn" data-email="'+d.email+'" style="padding:4px 10px;border:none;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;cursor:pointer">Desvincular</button>'+
-        '</div><div style="margin-top:10px">'+
-        '<div style="font-size:11px;color:var(--label-2);margin-bottom:4px">Tu calificación:</div>'+
-        '<div>'+stars+'</div>'+
-        (rating?'<div style="font-size:11px;color:var(--label-3);margin-top:4px">'+rating.stars+'/5</div>':'')+
-        '</div></div>';
-    }).join('');
-    el.querySelectorAll('.dr-star').forEach(el2=>el2.addEventListener('click',()=>rateDr(el2.dataset.e,parseInt(el2.dataset.s))));
-    el.querySelectorAll('.unlink-dr-btn').forEach(b=>b.addEventListener('click',()=>unlinkDoctor(b.dataset.email)));
-  });
+    const links = await db.get(`doctor_patients?patient_email=eq.${encodeURIComponent(email)}&select=doctor_email,rating,comment`).catch(()=>[]);
+    if(!links||!links.length){
+      containers.forEach(el=>el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,0.4);padding:4px 0">No tenés profesionales vinculados</div>');
+      return;
+    }
+    const drEmails = links.map(l=>l.doctor_email);
+    const drs = await db.get(`doctors?email=in.(${drEmails.map(e=>encodeURIComponent(e)).join(',')})`).catch(()=>[]);
+    containers.forEach(el=>{
+      el.innerHTML = (drs||[]).map(d=>{
+        const title=d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':d.gender==='Femenino'||d.sex==='Femenino'?'Dra.':'Dr/a.';
+        const specL={'sleep':'Med. Sueño','psychiatry':'Psiquiatría','neurology':'Neurología','pneumology':'Neumonología','pediatrics':'Pediatría','psychology':'Psicología'};
+        const spec=specL[d.specialty]||d.specialty||'Especialista';
+        const link = links.find(l=>l.doctor_email===d.email)||{};
+        const initials = ((d.name||'')[0]||(d.email||'')[0]||'?').toUpperCase();
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer" onclick="showDoctorActions('${(d.email||'').replace(/'/g,"\'")}','${((title+' '+(d.name||'')+(d.lname?' '+d.lname:'')).trim()).replace(/'/g,"\'")}')">
+          <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#fff">${title} ${d.name||''} ${d.lname||''}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">${spec}${d.city?'  ·  '+d.city:''}</div>
+            ${link.rating?`<div style="font-size:11px;color:#fbbf24">${'★'.repeat(link.rating)}${'☆'.repeat(5-link.rating)}</div>`:''}
+          </div>
+          <div style="color:rgba(255,255,255,0.3);font-size:18px">›</div>
+        </div>`;
+      }).join('');
+    });
+  }catch(e){ containers.forEach(el=>el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4)">Error al cargar</div>'); }
 }
 
-function unlinkDoctor(email){
-  if(!confirm('¿Seguro que querés desvincular a este profesional? Ya no podrá ver tus datos.')) return;
-  const key='dm_pt_drs_'+(S.user?.email||'');
-  const list=JSON.parse(localStorage.getItem(key)||'[]').filter(e=>e!==email);
-  localStorage.setItem(key,JSON.stringify(list));
-  // Also remove from dr's cache
-  toast('Profesional desvinculado. Sus datos ya no estarán disponibles para este médico.');
-  renderLinkedDoctors();
-}
-function rateDr(email,stars){
-  localStorage.setItem('dm_dr_rating_'+email,JSON.stringify({stars,date:new Date().toISOString()}));
-  toast('Calificación guardada: '+stars+'/5');
-  renderLinkedDoctors();
-}
-function showSuggestionsModal(){
-  if(_activeReminderModal){_activeReminderModal.remove();_activeReminderModal=null;}
-  const modal=document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;display:flex;align-items:flex-end;justify-content:center';
-  modal.innerHTML=`<div style="background:#fff;border-radius:20px 20px 0 0;padding:22px 20px 40px;width:100%;max-width:520px;box-shadow:0 -4px 24px rgba(0,0,0,0.18)">
-    <div style="font-size:17px;font-weight:700;margin-bottom:4px">💡 Ayudanos a mejorar</div>
-    <div style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.5">¿Qué te gustaría que tenga Dormetria? Tu opinión nos ayuda a mejorar la aplicación.</div>
-    <textarea id="suggestion-text" rows="4" placeholder="Escribí tu sugerencia acá..." style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:var(--font);resize:none;line-height:1.5"></textarea>
-    <div style="display:flex;gap:10px;margin-top:14px">
-      <button style="flex:1;padding:13px;border:1.5px solid #ddd;border-radius:12px;background:#fff;font-size:15px;cursor:pointer;font-family:var(--font)" onclick="this.closest('[style*=fixed]').remove();_activeReminderModal=null">Cancelar</button>
-      <button style="flex:1;padding:13px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)" onclick="submitSuggestion()">Enviar</button>
-    </div>
+function showDoctorActions(email, name){
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:flex-end';
+  modal.innerHTML = `<div style="width:100%;background:#1e3d2f;border-radius:20px 20px 0 0;padding:20px 16px 32px">
+    <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px">${name}</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px">¿Qué querés hacer?</div>
+    <button onclick="showRateDoctorModal('${email.replace(/'/g,"\'")}','${name.replace(/'/g,"\'")}');this.closest('[style*=fixed]').remove()" style="width:100%;background:rgba(255,255,255,0.1);border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;margin-bottom:8px">⭐ Calificar y comentar</button>
+    <button onclick="unlinkDoctor('${email.replace(/'/g,"\'")}');this.closest('[style*=fixed]').remove()" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;color:#fca5a5;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;margin-bottom:8px">🔗 Desvincular profesional</button>
+    <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;background:none;border:none;color:rgba(255,255,255,0.5);font-size:14px;cursor:pointer;font-family:var(--font);padding:8px">Cancelar</button>
   </div>`;
-  _activeReminderModal=modal;
   document.body.appendChild(modal);
-  modal.onclick=e=>{if(e.target===modal){modal.remove();_activeReminderModal=null;}};
 }
+
+function showRateDoctorModal(email, name){
+  let rating = 0;
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:flex-end';
+  modal.innerHTML = `<div style="width:100%;background:#1e3d2f;border-radius:20px 20px 0 0;padding:20px 16px 32px">
+    <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:16px">Calificar a ${name}</div>
+    <div id="star-row" style="display:flex;gap:8px;justify-content:center;margin-bottom:16px">
+      ${[1,2,3,4,5].map(i=>`<button onclick="setRating(${i})" id="star-${i}" style="font-size:32px;background:none;border:none;cursor:pointer">☆</button>`).join('')}
+    </div>
+    <textarea id="rating-comment" placeholder="Comentario opcional..." style="width:100%;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;padding:10px;font-size:13px;font-family:var(--font);resize:none;height:80px;box-sizing:border-box"></textarea>
+    <button onclick="submitRating('${email.replace(/'/g,"\'")}',this)" style="width:100%;background:#1a4a3a;border:none;border-radius:12px;padding:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);margin-top:10px">Guardar calificación</button>
+    <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;background:none;border:none;color:rgba(255,255,255,0.5);font-size:14px;cursor:pointer;font-family:var(--font);padding:8px;margin-top:4px">Cancelar</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+let _currentRating = 0;
+function setRating(n){
+  _currentRating = n;
+  [1,2,3,4,5].forEach(i=>{ const s=document.getElementById('star-'+i); if(s) s.textContent=i<=n?'★':'☆'; s.style.color=i<=n?'#fbbf24':'rgba(255,255,255,0.3)'; });
+}
+
+async function submitRating(email, btn){
+  if(!_currentRating){ toast('Seleccioná una calificación'); return; }
+  const comment = document.getElementById('rating-comment')?.value||'';
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    await db.patch(`doctor_patients?patient_email=eq.${encodeURIComponent(S.user.email)}&doctor_email=eq.${encodeURIComponent(email)}`, {rating:_currentRating, comment});
+    toast('¡Calificación guardada!');
+    btn.closest('[style*=fixed]').remove();
+    renderLinkedDoctors();
+  }catch(e){ toast('Error al guardar'); btn.disabled=false; btn.textContent='Guardar calificación'; }
+}
+
+async function unlinkDoctor(email){
+  if(!confirm('¿Desvincularte de este profesional?')) return;
+  try{
+    await fetch(SU+'/rest/v1/doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+'&doctor_email=eq.'+encodeURIComponent(email),{method:'DELETE',headers:{'apikey':SK,'Authorization':'Bearer '+SK}});
+    toast('Profesional desvinculado');
+    renderLinkedDoctors();
+  }catch(e){ toast('Error al desvincular'); }
+}
+
 async function submitSuggestion(){
   const text=document.getElementById('suggestion-text')?.value?.trim();
   if(!text){toast('Escribí tu sugerencia primero');return;}
@@ -8311,7 +8338,7 @@ function renderParentInfo(){
 // ── CONSULTATION DIRECTORY ──
 let _consultDoctorsCache = [];
 
-async function showConsultDir(fromResult){
+async function showConsultDir(fromResult, childMode){
   // Hide main nav
   const _mn=document.getElementById('main-nav');if(_mn)_mn.style.setProperty('display','none','important');
   // Set back button target
@@ -8329,6 +8356,8 @@ async function showConsultDir(fromResult){
       // Try listed=true filter first
       let dbDocs=await db.get('doctors?listed=eq.true&select=name,lname,email,specialty,gender,mat,city,country,bio&order=name.asc').catch(()=>[]);
       if(dbDocs&&dbDocs.length){docs=dbDocs;}
+      // Filter by child population if in child mode
+      if(childMode&&docs) docs=docs.filter(d=>d.population&&d.population.includes('child'));
       else{
         // Fallback: show all doctors (listed column may not be populated)
         // filter by localStorage approved list OR show all with specialty
@@ -9068,22 +9097,23 @@ function copySameMeds(){
 function showHygieneChecklist(){
   const saved = JSON.parse(localStorage.getItem('dm_hygiene_checks')||'{}');
   const cats = [...new Set(SLEEP_HYGIENE.map(h=>h.cat))];
-  let html = `<div style="padding:16px 16px 80px">
-    <div style="font-size:18px;font-weight:700;color:var(--label);margin-bottom:4px">Higiene del sueño</div>
-    <div style="font-size:13px;color:var(--label-3);margin-bottom:16px">Marcá los hábitos que lograste incorporar</div>`;
+  let html = '<div style="padding:16px 16px 80px">';
+  const total = SLEEP_HYGIENE.length;
+  const done = SLEEP_HYGIENE.filter(h=>saved[h.id]).length;
+  html += `<div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">Higiene del sueño</div>`;
+  html += `<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:4px">Marcá los hábitos que lograste incorporar</div>`;
+  html += `<div style="font-size:13px;color:#6ee7b7;font-weight:600;margin-bottom:16px">${done} de ${total} hábitos incorporados</div>`;
   cats.forEach(cat=>{
     const items = SLEEP_HYGIENE.filter(h=>h.cat===cat);
-    const done = items.filter(h=>saved[h.id]).length;
-    html += `<div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">${cat} · ${done}/${items.length}</div>`;
+    const catDone = items.filter(h=>saved[h.id]).length;
+    html += `<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.07em;margin:14px 0 8px">${cat} · ${catDone}/${items.length}</div>`;
     items.forEach(h=>{
       const checked = !!saved[h.id];
-      html += `<label onclick="toggleHygiene('${h.id}',this)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;margin-bottom:6px;background:${checked?'#f0fdf4':'var(--bg-secondary)'};border:1.5px solid ${checked?'#1a4a3a':'var(--sep-opaque)'};border-radius:12px;cursor:pointer">
-        <span style="font-size:20px;flex-shrink:0;margin-top:-2px">${checked?'✅':'⬜'}</span>
-        <span style="font-size:14px;color:${checked?'#1a4a3a':'var(--label)'};line-height:1.4">${h.text}</span>
+      html += `<label onclick="toggleHygiene('${h.id}',this)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;margin-bottom:8px;background:${checked?'rgba(110,231,183,0.12)':'rgba(255,255,255,0.06)'};border:1.5px solid ${checked?'#6ee7b7':'rgba(255,255,255,0.1)'};border-radius:12px;cursor:pointer">
+        <span style="font-size:18px;flex-shrink:0;margin-top:-1px">${checked?'✅':'⬜'}</span>
+        <span style="font-size:14px;color:${checked?'#6ee7b7':'rgba(255,255,255,0.85)'};line-height:1.4">${h.text}</span>
       </label>`;
     });
-    html += '</div>';
   });
   html += '</div>';
   document.getElementById('hygiene-content').innerHTML = html;
@@ -9104,23 +9134,24 @@ function toggleHygiene(id, lbl){
 }
 
 function showConsultGuide(){
-  let html = `<div style="padding:16px 16px 80px">
-    <div style="font-size:18px;font-weight:700;color:var(--label);margin-bottom:4px">¿Cuándo consultar?</div>
-    <div style="font-size:13px;color:var(--label-3);margin-bottom:16px">Pautas de derivación por síntoma</div>`;
-  const urgColors = {alta:'#fee2e2',media:'#fefce8',baja:'#f0fdf4'};
-  const urgBorders = {alta:'#fca5a5',media:'#fde68a',baja:'#bbf7d0'};
-  const urgLabels = {alta:'⚡ Consultar pronto',media:'📅 Consultar cuando puedas',baja:'ℹ️ Comentar en próxima consulta'};
+  const urgIcons = {alta:'⚡',media:'📅',baja:'ℹ️'};
+  const urgColors = {alta:'rgba(239,68,68,0.15)',media:'rgba(251,191,36,0.12)',baja:'rgba(110,231,183,0.1)'};
+  const urgBorders = {alta:'rgba(239,68,68,0.4)',media:'rgba(251,191,36,0.3)',baja:'rgba(110,231,183,0.3)'};
+  const urgText = {alta:'Consultar pronto',media:'Consultar cuando puedas',baja:'Comentar en próxima consulta'};
+  let html = '<div style="padding:16px 16px 80px">';
+  html += '<div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">¿Cuándo consultar?</div>';
+  html += '<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:20px">Pautas de derivación por síntoma</div>';
   CONSULT_WHEN.forEach(c=>{
     html += `<div style="background:${urgColors[c.urgency]};border:1px solid ${urgBorders[c.urgency]};border-radius:14px;padding:14px 16px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <span style="font-size:24px">${c.icon}</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:28px">${c.icon}</span>
         <div>
-          <div style="font-size:15px;font-weight:600;color:var(--label)">${c.symptom}</div>
-          <div style="font-size:11px;color:var(--label-3)">${urgLabels[c.urgency]}</div>
+          <div style="font-size:15px;font-weight:600;color:#fff">${c.symptom}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5)">${urgIcons[c.urgency]} ${urgText[c.urgency]}</div>
         </div>
       </div>
-      <div style="font-size:13px;color:var(--label-2);margin-bottom:6px">${c.desc}</div>
-      <div style="font-size:12px;font-weight:600;color:#1a4a3a">→ ${c.specialist}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:8px">${c.desc}</div>
+      <div style="font-size:12px;font-weight:600;color:#6ee7b7">→ ${c.specialist}</div>
     </div>`;
   });
   html += '</div>';
@@ -9136,48 +9167,6 @@ function updateDrPopLabel(){
   if(adult&&lA){ lA.style.borderColor=adult.checked?'#1a4a3a':'var(--sep-opaque)'; lA.style.background=adult.checked?'#f0fdf4':'var(--bg-secondary)'; }
   if(child&&lC){ lC.style.borderColor=child.checked?'#1a4a3a':'var(--sep-opaque)'; lC.style.background=child.checked?'#f0fdf4':'var(--bg-secondary)'; }
 }
-
-</script>
-
-<!-- MODAL MEDICAMENTOS -->
-<div id="med-modal" style="display:none;position:fixed;inset:0;z-index:9999;" onclick="if(event.target===this)closeMedModal()">
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);pointer-events:none"></div>
-  <div style="position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none">
-  <div style="background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 20px 36px;max-height:80vh;overflow-y:auto;pointer-events:all">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-size:16px;font-weight:700;color:var(--label)">Agregar medicamento</div>
-      <button onclick="closeMedModal()" style="background:none;border:none;font-size:22px;color:var(--label-3);cursor:pointer;line-height:1">×</button>
-    </div>
-    <div style="font-size:12px;font-weight:600;color:var(--label-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Psicofármacos frecuentes</div>
-    <div id="med-quick-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
-    <div style="font-size:12px;font-weight:600;color:var(--label-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Otro medicamento</div>
-    <div style="display:flex;gap:8px">
-      <input id="med-custom-name" type="text" placeholder="Nombre del medicamento" style="flex:1;padding:10px 12px;border:1.5px solid var(--sep-opaque);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label)">
-      <input id="med-custom-dose" type="text" placeholder="Dosis" style="width:90px;padding:10px 12px;border:1.5px solid var(--sep-opaque);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label)">
-      <button onclick="addCustomMed()" style="background:#1a4a3a;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">+</button>
-    </div>
-  </div>
-</div></div></div>
-<div id="screen-hygiene" class="screen">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
-    <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">Higiene del sueño</div>
-    <div style="width:70px"></div>
-  </div>
-  <div class="scroll" id="hygiene-content"></div>
-</div>
-
-<div id="screen-consult-guide" class="screen">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
-    <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">¿Cuándo consultar?</div>
-    <div style="width:70px"></div>
-  </div>
-  <div class="scroll" id="consult-content"></div>
-</div>
-</div>
-</body>
-</html>
 
 
 const SLEEP_HYGIENE = [
@@ -9204,4 +9193,44 @@ const CONSULT_WHEN = [
   {icon:'😱', symptom:'Ansiedad o depresión que afecta el sueño', desc:'Estado de ánimo que interfiere con el inicio o mantenimiento del sueño', specialist:'Psiquiatría o Psicología', urgency:'media'},
   {icon:'🌙', symptom:'Sueño fragmentado sin causa aparente', desc:'Te despertás múltiples veces por noche sin poder volver a dormir', specialist:'Médico clínico o especialista en sueño', urgency:'baja'},
 ];
+</script>
 
+<!-- MODAL MEDICAMENTOS -->
+<div id="med-modal" style="display:none;position:fixed;inset:0;z-index:9999;" onclick="if(event.target===this)closeMedModal()">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);pointer-events:none"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none">
+  <div style="background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 20px 36px;max-height:80vh;overflow-y:auto;pointer-events:all">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700;color:var(--label)">Agregar medicamento</div>
+      <button onclick="closeMedModal()" style="background:none;border:none;font-size:22px;color:var(--label-3);cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--label-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Psicofármacos frecuentes</div>
+    <div id="med-quick-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--label-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Otro medicamento</div>
+    <div style="display:flex;gap:8px">
+      <input id="med-custom-name" type="text" placeholder="Nombre del medicamento" style="flex:1;padding:10px 12px;border:1.5px solid var(--sep-opaque);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label)">
+      <input id="med-custom-dose" type="text" placeholder="Dosis" style="width:90px;padding:10px 12px;border:1.5px solid var(--sep-opaque);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label)">
+      <button onclick="addCustomMed()" style="background:#1a4a3a;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">+</button>
+    </div>
+  </div>
+</div></div></div>
+<div id="screen-hygiene" class="screen dark-screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">Higiene del sueño</div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll" id="hygiene-content"></div>
+</div>
+
+<div id="screen-consult-guide" class="screen dark-screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center;font-size:14px;font-weight:600;color:#1a4a3a">¿Cuándo consultar?</div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll" id="consult-content"></div>
+</div>
+</div>
+</body>
+</html>
