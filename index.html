@@ -1403,43 +1403,62 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
         </ol>
         <p style="color:var(--label-3);font-size:12px">Los resultados no reemplazan la consulta médica. Siempre consultá con tu profesional de salud.</p>
       </div>
-      <div style="padding:10px;background:#f0fdf4;border-radius:10px;font-size:12px;color:#374151;line-height:1.65">🔔 <strong>Recordatorios:</strong> Configurá avisos para el diario de sueño y los tests de alerta desde cada sección.</div>
+      <div style="padding:10px;background:rgba(255,255,255,0.07);border-radius:10px;font-size:12px;color:rgba(255,255,255,0.8);line-height:1.65">🔔 <strong>Recordatorios:</strong> Configurá avisos para el diario de sueño y los tests de alerta desde cada sección.</div>
     </div>
 
+    <!-- 1. HIGIENE + CUÁNDO CONSULTAR -->
+    <div style="margin:10px 16px 0">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <button onclick="showHygieneChecklist()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
+          <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px">🌙</div>
+          <div style="font-size:13px;font-weight:700;color:#fff">Higiene del sueño</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">Checklist de hábitos</div>
+        </button>
+        <button onclick="showConsultGuide()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
+          <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px">🩺</div>
+          <div style="font-size:13px;font-weight:700;color:#fff">¿Cuándo consultar?</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">Señales de alerta</div>
+        </button>
+      </div>
+    </div>
 
     <!-- 2. CONSULTA + MIS PROFESIONALES block -->
-    <div style="margin:12px 16px 0;background:rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
-      <button onclick="showConsultDir()" style="width:100%;border:none;border-bottom:0.5px solid var(--sep);background:transparent;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:var(--font)">
+    <div style="margin:0 16px 10px;background:rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
+      <button onclick="showConsultDir()" style="width:100%;border:none;border-bottom:0.5px solid rgba(255,255,255,0.08);background:transparent;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:var(--font)">
         <div style="text-align:left">
           <div style="font-size:15px;font-weight:700;color:#fff">🩺 Consultar con un profesional</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">Directorio de especialistas en medicina del sueño</div>
         </div>
-        <span style="color:var(--label-3);font-size:20px">›</span>
+        <span style="color:rgba(255,255,255,0.3);font-size:20px">›</span>
       </button>
-      <div style="padding:12px 16px;background:#1a2e23;border-radius:14px;margin-bottom:10px">
+      <div style="padding:12px 16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-size:14px;font-weight:700;color:#fff">🩺 Mis profesionales</div>
+          <div style="font-size:14px;font-weight:700;color:#fff">Mis profesionales</div>
           <button onclick="showConsultDir()" style="border:none;background:rgba(255,255,255,0.12);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Buscar</button>
         </div>
         <div id="home-doctors-list"><div style="font-size:13px;color:rgba(255,255,255,0.5)">Cargando...</div></div>
       </div>
     </div>
 
-    <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9);border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
+    <!-- 3. AYUDANOS A MEJORAR -->
+    <div style="margin:0 16px 12px">
+      <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
         💡 Ayudanos a mejorar Dormetria
       </button>
     </div>
 
     <!-- 4. ALERTA patológica (se rellena dinámicamente) -->
-    <div style="padding:0 16px;margin-top:12px" id="patho-alert-wrap"></div>
+    <div style="padding:0 16px;margin-top:4px" id="patho-alert-wrap"></div>
 
     <!-- 5. ESCALAS -->
     <div style="padding:0 16px;margin-top:4px">
-      <div id="scales-list" style="background:#1a2e23;min-height:200px"></div></div>
+      <div id="scales-list" style="background:#1a2e23;min-height:200px"></div>
+    </div>
     <div style="height:80px"></div>
   </div>
 
 </div>
+
 
 <!-- SCALES SCREEN -->
 <div id="screen-scales" class="screen">
