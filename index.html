@@ -1425,20 +1425,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
       </div>
     </div>
 
-    <!-- 3. AYUDANOS A MEJORAR -->
-    <div style="margin:10px 16px 0">
-      <div style="display:flex;gap:10px;margin-bottom:12px">
-      <button onclick="showHygieneChecklist()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
-        <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-        <div style="font-size:13px;font-weight:600;color:#fff">Higiene del sueño</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px">Checklist interactivo</div>
-      </button>
-      <button onclick="showConsultGuide()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
-        <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
-        <div style="font-size:13px;font-weight:600;color:#fff">¿Cuándo consultar?</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px">Guía de síntomas</div>
-      </button>
-    </div>
     <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9);border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
         💡 Ayudanos a mejorar Dormetria
       </button>
@@ -3242,12 +3228,17 @@ async function renderLinkedDoctors(){
         const spec=specL[d.specialty]||d.specialty||'Especialista';
         const link = links.find(l=>l.doctor_email===d.email)||{};
         const initials = ((d.name||'')[0]||(d.email||'')[0]||'?').toUpperCase();
-        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer" onclick="showDoctorActions('${(d.email||'').replace(/'/g,"\'")}','${((title+' '+(d.name||'')+(d.lname?' '+d.lname:'')).trim()).replace(/'/g,"\'")}')">
-          <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
+        const _FLAGS={'Argentina':'🇦🇷','Uruguay':'🇺🇾','Chile':'🇨🇱','España':'🇪🇸','México':'🇲🇽','Colombia':'🇨🇴','Brasil':'🇧🇷','Perú':'🇵🇪','Bolivia':'🇧🇴','Paraguay':'🇵🇾','Ecuador':'🇪🇨','Venezuela':'🇻🇪','Costa Rica':'🇨🇷','Cuba':'🇨🇺','Estados Unidos':'🇺🇸'};
+        const flag = _FLAGS[d.country]||'';
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer" onclick="showDoctorActions('${(d.email||'').replace(/'/g,"\'")}','${((title+' '+(d.name||'')+(d.lname?' '+d.lname:'')).trim()).replace(/'/g,"\'")}')">
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:600;color:#fff">${title} ${d.name||''} ${d.lname||''}</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.5)">${spec}${d.city?'  ·  '+d.city:''}</div>
-            ${link.rating?`<div style="font-size:11px;color:#fbbf24">${'★'.repeat(link.rating)}${'☆'.repeat(5-link.rating)}</div>`:''}
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              ${flag?`<span style="font-size:16px;line-height:1">${flag}</span>`:''}
+              <span style="font-size:15px;font-weight:700;color:#fff">${title} ${d.name||''} ${d.lname||''}</span>
+            </div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.6)">${spec}${d.city?' · '+d.city:''}</div>
+            ${link.rating?`<div style="font-size:11px;color:#fbbf24;margin-top:2px">${'★'.repeat(link.rating)}${'☆'.repeat(5-link.rating)}</div>`:''}
           </div>
           <div style="color:rgba(255,255,255,0.3);font-size:18px">›</div>
         </div>`;
@@ -4484,6 +4475,28 @@ function renderProfileView(){
         <option value="">Seleccionar</option>
         ${['No fuma','Ex fumador/a','Fumador/a ocasional','Fumador/a diario'].map(v=>`<option value="${v}"${u.tobacco===v?' selected':''}>${v}</option>`).join('')}
       </select></div>
+    <div class="form-group" style="margin-top:4px">
+      <label class="form-label">Actividad principal</label>
+      <select class="form-select" id="pf-activity-type" onchange="onActivityTypeChange(this.value)">
+        <option value="">Seleccioná...</option>
+        <option value="child"${u.activity_type==='child'||u.activity_type?.includes?.('child')?' selected':''}>Niño/a (&lt;12 años)</option>
+        <option value="teen"${u.activity_type==='teen'||u.activity_type?.includes?.('teen')?' selected':''}>Adolescente (12–18 años)</option>
+        <option value="student_morning"${u.activity_type==='student_morning'?' selected':''}>Estudiante — turno mañana</option>
+        <option value="student_afternoon"${u.activity_type==='student_afternoon'?' selected':''}>Estudiante — turno tarde</option>
+        <option value="student_evening"${u.activity_type==='student_evening'?' selected':''}>Estudiante — turno noche</option>
+        <option value="athlete"${u.activity_type==='athlete'?' selected':''}>Deportista / Atleta</option>
+        <option value="healthcare"${u.activity_type==='healthcare'?' selected':''}>Profesional de salud</option>
+        <option value="office"${u.activity_type==='office'?' selected':''}>Trabajo de oficina</option>
+        <option value="remote"${u.activity_type==='remote'?' selected':''}>Trabajo remoto</option>
+        <option value="retired"${u.activity_type==='retired'?' selected':''}>Jubilado/a</option>
+        <option value="other"${u.activity_type==='other'?' selected':''}>Otro (especificá abajo)</option>
+      </select>
+      <div id="pf-activity-other-wrap" style="display:${u.activity_type==='other'?'block':'none'};margin-top:8px">
+        <div class="form-group">
+          <label class="form-label">Especificá tu actividad</label>
+          <input class="form-input" type="text" id="pf-activity-other" placeholder="Ej: Músico, Docente..." value="${u.activity_other||''}">
+        </div></div>
+
     <div class="form-group"><label class="form-label">Actividad física</label>
       <select class="form-select" id="pf-activity">
         <option value="">Seleccionar</option>
@@ -5219,28 +5232,7 @@ function showDiaryNew(){
       <button id="nap-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(true)">Dormí siesta</button>
     </div>
     <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div>
-    <div class="form-group" style="margin-top:4px">
-      <label class="form-label">Actividad principal</label>
-      <select class="form-select" id="pf-activity-type" onchange="onActivityTypeChange(this.value)">
-        <option value="">Seleccioná...</option>
-        <option value="child"${u.activity_type==='child'||u.activity_type?.includes?.('child')?' selected':''}>Niño/a (&lt;12 años)</option>
-        <option value="teen"${u.activity_type==='teen'||u.activity_type?.includes?.('teen')?' selected':''}>Adolescente (12–18 años)</option>
-        <option value="student_morning"${u.activity_type==='student_morning'?' selected':''}>Estudiante — turno mañana</option>
-        <option value="student_afternoon"${u.activity_type==='student_afternoon'?' selected':''}>Estudiante — turno tarde</option>
-        <option value="student_evening"${u.activity_type==='student_evening'?' selected':''}>Estudiante — turno noche</option>
-        <option value="athlete"${u.activity_type==='athlete'?' selected':''}>Deportista / Atleta</option>
-        <option value="healthcare"${u.activity_type==='healthcare'?' selected':''}>Profesional de salud</option>
-        <option value="office"${u.activity_type==='office'?' selected':''}>Trabajo de oficina</option>
-        <option value="remote"${u.activity_type==='remote'?' selected':''}>Trabajo remoto</option>
-        <option value="retired"${u.activity_type==='retired'?' selected':''}>Jubilado/a</option>
-        <option value="other"${u.activity_type==='other'?' selected':''}>Otro (especificá abajo)</option>
-      </select>
-      <div id="pf-activity-other-wrap" style="display:${u.activity_type==='other'?'block':'none'};margin-top:8px">
-        <div class="form-group">
-          <label class="form-label">Especificá tu actividad</label>
-          <input class="form-input" type="text" id="pf-activity-other" placeholder="Ej: Músico, Docente..." value="${u.activity_other||''}">
-        </div></div>
-    <div class="divider"></div>
+        <div class="divider"></div>
     <div class="sec-title">Calidad del sueño</div>
     <div class="emoji-row">
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy mal</div></button>
@@ -5292,6 +5284,8 @@ function showDiaryNew(){
         </select>
       </div>
     </div>
+        <div class="sec-title">Pantallas antes de dormir 📱</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><input class="form-input" type="number" id="d-screen" min="0" value="0" style="max-width:90px"><span style="font-size:13px;color:var(--ink3)">minutos</span></div>
     <div class="divider"></div>
     <div class="sec-title">Cafeína del día ☕</div>
     <div id="caffeine-items"></div>
@@ -5316,8 +5310,7 @@ function showDiaryNew(){
     </div>
     <div id="alc-total" style="font-size:13px;font-weight:500;margin-bottom:12px;min-height:18px"></div>
     <input type="hidden" id="d-alc" value="0">
-    <div class="sec-title">Pantallas antes de dormir 📱</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><input class="form-input" type="number" id="d-screen" min="0" value="0" style="max-width:90px"><span style="font-size:13px;color:var(--ink3)">minutos</span></div>
+
     <div id="period-section" style="display:none;margin-bottom:14px">
       <div class="sec-title">Ciclo menstrual</div>
       <button type="button" id="period-btn" onclick="togglePeriod()" style="display:flex;align-items:center;gap:10px;background:var(--bg-secondary);border:1.5px solid var(--sep-opaque);border-radius:12px;padding:12px 16px;width:100%;cursor:pointer;font-family:var(--font)">
@@ -8580,6 +8573,7 @@ async function renderChildDiaryList(){
 
 function showChildDiaryNew(){
   S._fromChild = true;
+  _childAwakenings = [];
   showScreen('diary-new');
   const n = new Date();
   const today = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
@@ -8632,38 +8626,9 @@ function showChildDiaryNew(){
       </div>
     </div>
 
-    <div class="form-group" style="margin-bottom:14px">
-      <label class="form-label">Despertares nocturnos</label>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
-        <button type="button" onclick="const i=document.getElementById('d-awakenings');i.value=Math.max(0,(parseInt(i.value)||0)-1)" style="width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:none;font-size:18px;cursor:pointer;font-family:var(--font)">−</button>
-        <input type="number" id="d-awakenings" value="0" min="0" max="20" style="width:60px;text-align:center;font-size:18px;font-weight:600;border:2px solid var(--border);border-radius:10px;padding:6px;font-family:var(--font)">
-        <button type="button" onclick="const i=document.getElementById('d-awakenings');i.value=(parseInt(i.value)||0)+1" style="width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:none;font-size:18px;cursor:pointer;font-family:var(--font)">+</button>
-        <span style="font-size:13px;color:var(--label-2)">veces</span>
-      </div>
-    </div>
-    <div class="form-group" style="margin-bottom:14px" id="d-awakening-detail-wrap">
-      <label class="form-label">Duración de cada despertar</label>
-      <select class="form-select" id="d-awakening-duration">
-        <option value="">Seleccioná...</option>
-        <option value="brief">Breve (menos de 5 min)</option>
-        <option value="short">Corto (5-15 min)</option>
-        <option value="medium">Moderado (15-30 min)</option>
-        <option value="long">Largo (más de 30 min)</option>
-      </select>
-    </div>
-    <div class="form-group" style="margin-bottom:14px" id="d-awakening-method-wrap">
-      <label class="form-label">¿Cómo volvió a dormirse?</label>
-      <select class="form-select" id="d-awakening-method">
-        <option value="">Seleccioná...</option>
-        <option value="solo">Solo/a, sin ayuda</option>
-        <option value="presence">Con presencia de un adulto (sin alzar)</option>
-        <option value="contact">Con contacto físico (abrazo, alzado)</option>
-        <option value="feeding">Con alimentación (pecho/mamadera)</option>
-        <option value="pacifier">Con chupete</option>
-        <option value="movement">Con movimiento (caminar, hamaca)</option>
-        <option value="long">Le costó mucho, tardó más de 30 min</option>
-      </select>
-    </div>
+    <div class="sec-title" style="margin-top:8px">Despertares nocturnos</div>
+    <div id="ch-awakening-list" style="margin-bottom:8px"></div>
+    <button type="button" onclick="addChildAwakeningRow()" style="background:none;border:1.5px dashed var(--border);border-radius:10px;padding:10px 14px;color:var(--label-2);font-size:13px;cursor:pointer;font-family:var(--font);width:100%;margin-bottom:14px">+ Agregar despertar</button>
 
     ${moodRow('d-mood-night', 'Estado al despertar (mañana) 🌅')}
 
@@ -8796,9 +8761,8 @@ async function saveChildDiary(){
       diary_date:date,
       bedtime:bed,
       wake_time:wake,
-      awakenings:parseInt(document.getElementById('d-awakenings')?.value)||0,
-      awakening_duration:document.getElementById('d-awakening-duration')?.value||null,
-      awakening_method:document.getElementById('d-awakening-method')?.value||null,
+      awakenings:_childAwakenings.length,
+      awakening_detail:JSON.stringify(_childAwakenings)||null,
       sleep_minutes:totalMin,
       latency_minutes:latency,
       notes:[
@@ -8963,7 +8927,21 @@ function renderParentInfo(){
   ];
 
   el.innerHTML = `<div style="padding:16px 0 8px">` + sections.map((s,i) =>
-    `<div style="margin:0 16px 10px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1)">
+    `<!-- 3. AYUDANOS A MEJORAR -->
+    <div style="margin:10px 16px 0">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+      <button onclick="showHygieneChecklist()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
+        <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:#fff">Higiene del sueño</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px">Checklist interactivo</div>
+      </button>
+      <button onclick="showConsultGuide()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
+        <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:#fff">¿Cuándo consultar?</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px">Guía de síntomas</div>
+      </button>
+    </div>
+    <div style="margin:0 16px 10px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1)">
       <div onclick="const c=this.nextElementSibling;const isOpen=c.style.display==='block';document.querySelectorAll('#ch-panel-info .pi-content').forEach(x=>x.style.display='none');if(!isOpen)c.style.display='block';" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:rgba(255,255,255,0.06)">
         <span style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:8px;box-sizing:border-box">${s.iconSvg||s.icon}</span>
         <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.95);flex:1;line-height:1.3">${s.title}</span>
@@ -10078,6 +10056,63 @@ async function unlinkPatient(email, name){
     toast(name+' archivado/a');
     showDrTab('patients',document.getElementById('drnav-patients'));
   }catch(e){ toast('Error: '+e.message); }
+}
+
+// ── Child diary awakening list ──
+let _childAwakenings = [];
+
+function addChildAwakeningRow(){
+  const idx = _childAwakenings.length;
+  _childAwakenings.push({time:'', duration:'', method:''});
+  renderChildAwakenings();
+}
+
+function removeChildAwakening(i){
+  _childAwakenings.splice(i, 1);
+  renderChildAwakenings();
+}
+
+function renderChildAwakenings(){
+  const el = document.getElementById('ch-awakening-list');
+  if(!el) return;
+  if(!_childAwakenings.length){ el.innerHTML=''; return; }
+  el.innerHTML = _childAwakenings.map((a,i) => `
+    <div style="background:var(--bg-secondary);border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:600;color:var(--label)">Despertar ${i+1}</span>
+        <button type="button" onclick="removeChildAwakening(${i})" style="background:none;border:none;color:var(--label-3);font-size:18px;cursor:pointer;line-height:1">×</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--label-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px">Horario</label>
+          <input type="time" value="${a.time}" onchange="_childAwakenings[${i}].time=this.value" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:14px;font-family:var(--font)">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--label-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px">Duración</label>
+          <select onchange="_childAwakenings[${i}].duration=this.value" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font)">
+            <option value="" ${!a.duration?'selected':''}>—</option>
+            <option value="brief" ${a.duration==='brief'?'selected':''}>< 5 min</option>
+            <option value="short" ${a.duration==='short'?'selected':''}>5-15 min</option>
+            <option value="medium" ${a.duration==='medium'?'selected':''}>15-30 min</option>
+            <option value="long" ${a.duration==='long'?'selected':''}>+ 30 min</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--label-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px">Cómo volvió a dormirse</label>
+        <select onchange="_childAwakenings[${i}].method=this.value" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font)">
+          <option value="" ${!a.method?'selected':''}>Seleccioná...</option>
+          <option value="solo" ${a.method==='solo'?'selected':''}>Solo/a, sin ayuda</option>
+          <option value="presence" ${a.method==='presence'?'selected':''}>Con presencia del padre/madre (sin alzar)</option>
+          <option value="contact" ${a.method==='contact'?'selected':''}>Con contacto físico (abrazo, alzado)</option>
+          <option value="feeding" ${a.method==='feeding'?'selected':''}>Con alimentación (pecho/mamadera)</option>
+          <option value="pacifier" ${a.method==='pacifier'?'selected':''}>Con chupete</option>
+          <option value="movement" ${a.method==='movement'?'selected':''}>Con movimiento (caminar, hamaca)</option>
+          <option value="hard" ${a.method==='hard'?'selected':''}>Le costó mucho (más de 30 min)</option>
+        </select>
+      </div>
+    </div>
+  `).join('');
 }
 
 </script>
