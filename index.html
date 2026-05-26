@@ -939,6 +939,21 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 /* Remove ios-group white bg aggressively */
 .ios-group { background: transparent !important; }
 
+/* Info para padres: prevent text bleed */
+#ch-panel-info .info-card-content {
+  background: #1e3d2f !important;
+  position: relative;
+  z-index: 5;
+}
+#ch-panel-info .info-card-header {
+  position: relative;
+  z-index: 6;
+}
+#ch-panel-info > div {
+  position: relative;
+  overflow: hidden;
+}
+
 </style>
 
 </head>
@@ -1787,7 +1802,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <div id="screen-doctor-home" class="screen">
   <div class="topbar">
     <button onclick="toggleDrInstructivo()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;font-family:var(--font);padding:4px 8px">📖 Ayuda</button>
-    <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div><div style="font-size:10px;color:rgba(255,255,255,0.5)">Panel médico</div></div>
+    <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div><div style="font-size:10px;color:rgba(255,255,255,0.5)" id="dr-topbar-sub">Medicina del Sueño</div></div>
     <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
   </div>
   <div class="hero">
@@ -2902,7 +2917,7 @@ function showDrRegisterForm(){
     <div style="font-size:17px;font-weight:700;margin-bottom:4px">🏥 Registrarme en el directorio</div>
     <div style="font-size:13px;color:#666;margin-bottom:18px;line-height:1.5">Completá tus datos para que pacientes puedan encontrarte y contactarte desde Dormetria.</div>
     <div style="display:flex;flex-direction:column;gap:12px">
-      <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Sexo biológico (para el título)</label>
+      <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Sexo (para el título)</label>
         <select id="dreg-sex" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box">
           <option value="" ${(u.sex||'')==''?' selected':''}>Seleccionar</option>
           <option value="Masculino" ${u.sex==='Masculino'?' selected':''}>Masculino (Dr.)</option>
@@ -4354,7 +4369,7 @@ function renderProfileView(){
     <div class="info-row"><span class="info-label">Nombre</span><span class="info-val">${u.name} ${u.lname||''}</span></div>
     <div class="info-row"><span class="info-label">Fecha de nacimiento</span><span class="info-val">${dob?dob.toLocaleDateString('es-AR'):'-'}</span></div>
     <div class="info-row"><span class="info-label">Edad</span><span class="info-val">${age?age+' años':'-'}</span></div>
-    <div class="info-row"><span class="info-label">Sexo biológico</span><span class="info-val">${u.sex||'-'}</span></div>
+    <div class="info-row"><span class="info-label">Sexo</span><span class="info-val">${u.sex||'-'}</span></div>
     <div class="info-row"><span class="info-label">País</span><span class="info-val">${u.country||'No registrado'}</span></div>
     <div class="divider"></div>
     <div class="sec-title">Datos clínicos</div>
@@ -4387,12 +4402,12 @@ function renderProfileView(){
     <div class="form-group"><label class="form-label">Fecha de nacimiento</label>
       <input class="form-input" type="date" id="pf-dob" value="">
     </div>
-    <div class="form-group"><label class="form-label">Sexo biológico</label>
+    <div class="form-group"><label class="form-label">Sexo</label>
       <select class="form-select" id="pf-sex">
         <option value="">Seleccionar</option>
         <option value="Masculino"${u.sex==='Masculino'?' selected':''}>Masculino</option>
         <option value="Femenino"${u.sex==='Femenino'?' selected':''}>Femenino</option>
-        <option value="Intersex"${u.sex==='Intersex'?' selected':''}>Intersex</option>
+        <option value="Otro"${u.sex==='Otro'||u.sex==='Intersex'?' selected':''}>Otro</option>
       </select>
     </div>
     <div class="form-group"><label class="form-label">País</label>
@@ -4456,15 +4471,15 @@ function renderProfileView(){
     <div id="pf-work-schedule-section" style="margin-top:8px">
       <div class="form-group"><label class="form-label">Tipo de trabajo <span style="font-size:11px;color:var(--label-3);font-weight:400">(podés elegir más de una)</span></label>
         <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
-          <label id="pf-ws-lbl-guardias" onclick="toggleWorkSchedule('guardias')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('guardias')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('guardias')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('guardias')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🏥 Guardias (ej. 24hs)</span></label>
-          <label id="pf-ws-lbl-nocturno" onclick="toggleWorkSchedule('nocturno')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('nocturno')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('nocturno')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('nocturno')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🌙 Trabajo nocturno fijo</span></label>
-          <label id="pf-ws-lbl-rotativo" onclick="toggleWorkSchedule('rotativo')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('rotativo')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('rotativo')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('rotativo')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🔄 Turnos rotativos</span></label>
-          <label id="pf-ws-lbl-diurno" onclick="toggleWorkSchedule('diurno')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('diurno')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('diurno')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('diurno')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🌅 Horario diurno fijo</span></label>
-          <label id="pf-ws-lbl-remoto" onclick="toggleWorkSchedule('remoto')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('remoto')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('remoto')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('remoto')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">💻 Trabajo remoto / flexible</span></label>
-          <label id="pf-ws-lbl-freelance" onclick="toggleWorkSchedule('freelance')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('freelance')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('freelance')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('freelance')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">📋 Freelance / por proyectos</span></label>
-          <label id="pf-ws-lbl-jubilado" onclick="toggleWorkSchedule('jubilado')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('jubilado')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('jubilado')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('jubilado')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">🏖️ Jubilado/a</span></label>
-          <label id="pf-ws-lbl-desocupado" onclick="toggleWorkSchedule('desocupado')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('desocupado')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('desocupado')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('desocupado')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">⏸️ Sin actividad laboral</span></label>
-          <label id="pf-ws-lbl-otro_trabajo" onclick="toggleWorkSchedule('otro_trabajo')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('otro_trabajo')?'#1a4a3a':'var(--sep-opaque)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('otro_trabajo')?'#f0fdf4':'var(--bg-secondary)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('otro_trabajo')?'✅':'⬜'}</span><span style="font-size:14px;color:var(--label)">➕ Otro</span></label>
+          <label id="pf-ws-lbl-guardias" onclick="toggleWorkSchedule('guardias')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('guardias')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('guardias')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('guardias')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">🏥 Guardias (ej. 24hs)</span></label>
+          <label id="pf-ws-lbl-nocturno" onclick="toggleWorkSchedule('nocturno')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('nocturno')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('nocturno')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('nocturno')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">🌙 Trabajo nocturno fijo</span></label>
+          <label id="pf-ws-lbl-rotativo" onclick="toggleWorkSchedule('rotativo')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('rotativo')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('rotativo')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('rotativo')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">🔄 Turnos rotativos</span></label>
+          <label id="pf-ws-lbl-diurno" onclick="toggleWorkSchedule('diurno')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('diurno')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('diurno')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('diurno')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">🌅 Horario diurno fijo</span></label>
+          <label id="pf-ws-lbl-remoto" onclick="toggleWorkSchedule('remoto')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('remoto')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('remoto')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('remoto')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">💻 Trabajo remoto / flexible</span></label>
+          <label id="pf-ws-lbl-freelance" onclick="toggleWorkSchedule('freelance')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('freelance')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('freelance')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('freelance')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">📋 Freelance / por proyectos</span></label>
+          <label id="pf-ws-lbl-jubilado" onclick="toggleWorkSchedule('jubilado')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('jubilado')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('jubilado')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('jubilado')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">🏖️ Jubilado/a</span></label>
+          <label id="pf-ws-lbl-desocupado" onclick="toggleWorkSchedule('desocupado')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('desocupado')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('desocupado')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('desocupado')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">⏸️ Sin actividad laboral</span></label>
+          <label id="pf-ws-lbl-otro_trabajo" onclick="toggleWorkSchedule('otro_trabajo')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${(u.work_schedule||[]).includes('otro_trabajo')?'#6ee7b7':'rgba(255,255,255,0.15)'} ;border-radius:12px;cursor:pointer;background:${(u.work_schedule||[]).includes('otro_trabajo')?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}"><span style="font-size:16px;flex-shrink:0">${(u.work_schedule||[]).includes('otro_trabajo')?'✅':'⬜'}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">➕ Otro</span></label>
         </div>
         <input type="hidden" id="pf-work-schedule" value="${Array.isArray(u.work_schedule)?u.work_schedule.join(','):(u.work_schedule||'')}">
         <div id="pf-work-schedule-hint" style="font-size:12px;color:#d97706;margin-top:8px;padding:8px 12px;background:#fffbeb;border-radius:8px;display:${(Array.isArray(u.work_schedule)?u.work_schedule:u.work_schedule?.split(',')||[]).some(v=>['guardias','nocturno','rotativo'].includes(v))?'block':'none'}">
@@ -5935,7 +5950,7 @@ async function showDrTab_(tab){
           if(!u)return'';
           const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
           const nameDisplay=u._placeholder?u.email:(u.name+' '+(u.lname||'')).trim();
-          return`<div class="pat-row" onclick="viewPatient('${u.email}')" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--sep)"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${u.email}</div></div><div class="chev">›</div></div>`;
+          return`<div class="pat-row" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${u.email}</div></div><div class="chev">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">Sin resultados</div>';
         document.getElementById('dr-patient-count').textContent='Pacientes vinculados ('+filtered.length+')';
@@ -6052,6 +6067,22 @@ async function showDrTab_(tab){
     }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||'')+'</div>';}
   }
   if(tab==='link'){cont.innerHTML=`<div style="padding-top:14px"><div class="sec-title">Vincular paciente por código</div><p style="font-size:13px;color:var(--ink3);margin-bottom:18px;line-height:1.6">Pedile al paciente su código. Lo encuentra en "Mi código" en la barra inferior.</p><div class="form-group"><label class="form-label">Código del paciente</label><input class="form-input" id="link-code" placeholder="ABC123" style="max-width:200px;font-size:20px;letter-spacing:.14em;font-family:'DM Mono',monospace;text-transform:uppercase"><div class="err" id="link-error">Código no encontrado.</div></div><button class="btn btn-g" style="max-width:220px" onclick="linkPatient()" id="link-btn">Vincular paciente</button></div>`;}
+  if(tab==='profile'){
+    try{
+      const dr=await db.get(`doctors?email=eq.${encodeURIComponent(S.user.email)}&select=*`).catch(()=>[]);
+      S.viewData = dr&&dr[0] ? {...S.user,...dr[0]} : S.user;
+      const d = S.viewData;
+      if(typeof renderDrProfileEdit==='function'){
+        cont.innerHTML = renderDrProfileEdit(d);
+        setTimeout(()=>{ try{initDrPopLabel&&initDrPopLabel();}catch(e){} },100);
+      } else {
+        cont.innerHTML = '<div style="padding:20px;color:rgba(255,255,255,0.9)">Cargando perfil...</div>';
+      }
+    }catch(e){
+      cont.innerHTML='<div class="empty-state">Error al cargar: '+e.message+'</div>';
+    }
+    return;
+  }
 }
 async function linkPatient(){
   const code=document.getElementById('link-code').value.trim().toUpperCase();
@@ -9610,7 +9641,7 @@ function renderActivityTypeField(currentVal){
     const border=sel?'#1a4a3a':'var(--sep-opaque)';
     const bg=sel?'#f0fdf4':'var(--bg-secondary)';
     const icon=sel?'✅':'⬜';
-    return `<label id="pf-atl-${o.v}" onclick="toggleActivityType('${o.v}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${border};border-radius:12px;cursor:pointer;background:${bg}"><span style="font-size:16px;flex-shrink:0">${icon}</span><span style="font-size:14px;color:var(--label)">${o.l}</span></label>`;
+    return `<label id="pf-atl-${o.v}" onclick="toggleActivityType('${o.v}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1.5px solid ${border};border-radius:12px;cursor:pointer;background:${bg}"><span style="font-size:16px;flex-shrink:0">${icon}</span><span style="font-size:14px;color:rgba(255,255,255,0.9)">${o.l}</span></label>`;
   }).join('');
 }
 
@@ -9683,6 +9714,7 @@ function showHygieneChecklist(){
   html += '</div>';
   document.getElementById('hygiene-content').innerHTML = html;
   showScreen('hygiene');
+  setTimeout(()=>{const s=document.querySelector('#screen-hygiene .scroll');if(s)s.scrollTop=0;},50);
 }
 
 function toggleHygiene(id, lbl){
@@ -9716,7 +9748,7 @@ function showConsultGuide(){
         </div>
       </div>
       <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:8px">${c.desc}</div>
-      <div style="font-size:12px;font-weight:600;color:#6ee7b7">→ ${c.specialist}</div>
+
     </div>`;
   });
   html += '</div>';
@@ -9783,7 +9815,7 @@ function renderDrScalesPicker(selected){
     html += `<div style="font-size:10px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin:10px 0 4px">\${CAT_LABELS[cat]||cat}</div>`;
     scales.forEach(sc=>{
       const sel = selected.includes(sc.id);
-      html += `<label id="drsp-\${sc.id}" onclick="toggleDrScale('\${sc.id}',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid \${sel?'#1a4a3a':'var(--sep-opaque)'};border-radius:10px;cursor:pointer;background:\${sel?'#f0fdf4':'var(--bg-secondary)'}">
+      html += `<label id="drsp-\${sc.id}" onclick="toggleDrScale('\${sc.id}',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid \${sel?'#1a4a3a':'var(--sep-opaque)'};border-radius:10px;cursor:pointer;background:\${sel?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}">
         <span style="font-size:16px;flex-shrink:0">\${sel?'✅':'⬜'}</span>
         <div><div style="font-size:13px;font-weight:500;color:var(--label)">\${sc.name}</div><div style="font-size:11px;color:var(--label-3)">\${sc.desc?sc.desc.slice(0,60)+'...':''}</div></div>
       </label>`;
@@ -9981,6 +10013,15 @@ function fixScaleColors(){
   container.querySelectorAll('[style*="background:var(--bg-secondary)"]').forEach(el=>{
     el.style.background='rgba(255,255,255,0.07)';
   });
+}
+
+async function unlinkPatient(email, name){
+  if(!confirm('¿Archivar a '+name+'? No aparecerá en la lista activa.')) return;
+  try{
+    await fetch(SU+'/rest/v1/doctor_patients?patient_email=eq.'+encodeURIComponent(email)+'&doctor_email=eq.'+encodeURIComponent(S.user.email),{method:'DELETE',headers:{'apikey':SK,'Authorization':'Bearer '+SK}});
+    toast(name+' archivado/a');
+    showDrTab('patients',document.getElementById('drnav-patients'));
+  }catch(e){ toast('Error: '+e.message); }
 }
 
 </script>
