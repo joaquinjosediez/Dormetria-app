@@ -292,8 +292,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   transition:all 0.2s;
 }
 .mode-tab.active{background:var(--bg-secondary);color:#1a4a3a;box-shadow:0 1px 4px rgba(0,0,0,0.12);}
-.toggle-link{text-align:center;font-size:15px;color:var(--label-2);margin-top:16px;}
-.toggle-link span{color:#1a4a3a;cursor:pointer;font-weight:500;}
+.toggle-link{text-align:center;font-size:15px;color:rgba(255,255,255,0.7);margin-top:16px;}
+.toggle-link span{color:#6ee7b7;cursor:pointer;font-weight:500;}
 
 /* ── QUESTIONNAIRE ── */
 .q-prog{height:3px;background:var(--fill-3);flex-shrink:0;}
@@ -953,6 +953,23 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   position: relative;
   overflow: hidden;
 }
+
+/* Login form dark fixes */
+.login-title { color: #fff !important; }
+.login-sub { color: rgba(255,255,255,0.65) !important; }
+.toggle-link { color: rgba(255,255,255,0.7) !important; }
+.toggle-link span { color: #6ee7b7 !important; }
+#screen-login .form-label { color: rgba(255,255,255,0.75) !important; }
+#screen-login .form-input { 
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-login .form-input::placeholder { color: rgba(255,255,255,0.4) !important; }
+#screen-login .err { color: #fca5a5 !important; }
+#screen-login .mode-tabs { background: rgba(255,255,255,0.1) !important; }
+#screen-login .mode-tab { color: rgba(255,255,255,0.6) !important; }
+#screen-login .mode-tab.active { color: #fff !important; background: rgba(255,255,255,0.15) !important; }
 
 </style>
 
@@ -6067,20 +6084,8 @@ async function showDrTab_(tab){
     }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||'')+'</div>';}
   }
   if(tab==='link'){cont.innerHTML=`<div style="padding-top:14px;color:rgba(255,255,255,0.9)"><div class="sec-title" style="color:rgba(255,255,255,0.5)">Vincular paciente por código</div><p style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:18px;line-height:1.6">Pedile al paciente su código. Lo encuentra en "Mi código" en la barra inferior.</p><div class="form-group"><label class="form-label">Código del paciente</label><input class="form-input" id="link-code" placeholder="ABC123" style="max-width:200px;font-size:20px;letter-spacing:.14em;font-family:'DM Mono',monospace;text-transform:uppercase"><div class="err" id="link-error">Código no encontrado.</div></div><button class="btn btn-g" style="max-width:220px" onclick="linkPatient()" id="link-btn">Vincular paciente</button></div>`;}
-  if(tab==='profile'){
-    try{
-      const dr=await db.get(`doctors?email=eq.${encodeURIComponent(S.user.email)}&select=*`).catch(()=>[]);
-      S.viewData = dr&&dr[0] ? {...S.user,...dr[0]} : S.user;
-      const d = S.viewData;
-      if(typeof renderDrProfileEdit==='function'){
-        cont.innerHTML = renderDrProfileEdit(d);
-        setTimeout(()=>{ try{initDrPopLabel&&initDrPopLabel();}catch(e){} },100);
-      } else {
-        cont.innerHTML = '<div style="padding:20px;color:rgba(255,255,255,0.9)">Cargando perfil...</div>';
-      }
-    }catch(e){
-      cont.innerHTML='<div class="empty-state">Error al cargar: '+e.message+'</div>';
-    }
+    if(tab==='profile'){
+    showDrTab_('drprofile');
     return;
   }
 }
@@ -8906,17 +8911,14 @@ function renderParentInfo(){
   ];
 
   el.innerHTML = `<div style="padding:16px 0 8px">` + sections.map((s,i) =>
-    `<div style="margin:0 16px 10px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09)">
-      <div>
-        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:rgba(255,255,255,0.06)">
-          <span style="width:40px;height:40px;border-radius:12px;background:${s.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.1);border-radius:10px;width:40px;height:40px;min-width:40px;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box">${s.iconSvg||s.icon}</span>
-          <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.95);flex:1;line-height:1.3">${s.title}</span>
-          <span style="width:28px;height:28px;border-radius:50%;background:${s.bg};display:flex;align-items:center;justify-content:center;color:${s.color};font-size:16px;
-        </div>
-        <div style="padding:0 16px 18px;background:rgba(255,255,255,0.04);font-size:13px;color:rgba(255,255,255,0.9);line-height:1.85;display:none">
-          <div style="height:1px;background:${s.bg};margin-bottom:14px"></div>
-          ${s.content}
-        </div>
+    `<div style="margin:0 16px 10px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1)">
+      <div onclick="const c=this.nextElementSibling;const isOpen=c.style.display==='block';document.querySelectorAll('#ch-panel-info .pi-content').forEach(x=>x.style.display='none');if(!isOpen)c.style.display='block';" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:rgba(255,255,255,0.06)">
+        <span style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:8px;box-sizing:border-box">${s.iconSvg||s.icon}</span>
+        <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.95);flex:1;line-height:1.3">${s.title}</span>
+        <span style="color:rgba(255,255,255,0.4);font-size:18px">›</span>
+      </div>
+      <div class="pi-content" style="display:none;padding:16px;background:#1a2e23;font-size:13px;color:rgba(255,255,255,0.85);line-height:1.85;border-top:1px solid rgba(255,255,255,0.08)">
+        ${s.content}
       </div>
     </div>`
   ).join('') + `</div>`;
