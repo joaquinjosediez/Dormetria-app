@@ -971,6 +971,32 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 #screen-login .mode-tab { color: rgba(255,255,255,0.6) !important; }
 #screen-login .mode-tab.active { color: #fff !important; background: rgba(255,255,255,0.15) !important; }
 
+/* Register form - all dark bg fixes */
+#register-form .form-label { color: rgba(255,255,255,0.75) !important; }
+#register-form .form-input, #register-form .form-select {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#register-form .form-input::placeholder { color: rgba(255,255,255,0.4) !important; }
+#register-form label span { color: rgba(255,255,255,0.85) !important; }
+#register-form [style*="color:var(--label"] { color: rgba(255,255,255,0.85) !important; }
+#register-form a { color: #6ee7b7 !important; }
+#p-reg .form-label, #d-reg .form-label { color: rgba(255,255,255,0.75) !important; }
+
+/* Doctor panel - profile form white text */
+#screen-doctor-home #dr-content .form-label { color: rgba(255,255,255,0.75) !important; }
+#screen-doctor-home #dr-content .form-input,
+#screen-doctor-home #dr-content .form-select,
+#screen-doctor-home #dr-content .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-doctor-home #dr-content .form-input::placeholder { color: rgba(255,255,255,0.35) !important; }
+#screen-doctor-home #dr-content select option { background: #1a2e23; color: #fff; }
+#screen-doctor-home #dr-content .sec-title { color: rgba(255,255,255,0.5) !important; }
+
 </style>
 
 </head>
@@ -1314,13 +1340,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
       </div>
       <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="reg-email" placeholder="tucorreo@email.com"></div>
       <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"><div class="err" id="reg-error">Completá todos los campos</div></div>
-      <div style="margin-bottom:14px;padding:12px;background:var(--fill-3);border-radius:10px">
-        <div style="font-size:12px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Términos <span style="color:#FF3B30">*</span></div>
+      <div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.07);border-radius:10px;border:1px solid rgba(255,255,255,0.1)">
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Términos <span style="color:#FF3B30">*</span></div>
         <div style="display:flex;flex-direction:column;gap:7px">
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c1" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:var(--label-2);line-height:1.5">Acepto el almacenamiento de mis datos de salud</span></label>
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c2" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:var(--label-2);line-height:1.5">Acepto que el médico vinculado acceda a mi historial</span></label>
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c4" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:var(--label-2);line-height:1.5">Acepto las notificaciones al médico por resultados relevantes</span></label>
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c3" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:var(--label-2);line-height:1.5">Uso anónimo de mis datos para investigación <em>(opcional)</em></span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c1" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto el almacenamiento de mis datos de salud</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c2" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto que el médico vinculado acceda a mi historial</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c4" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto las notificaciones al médico por resultados relevantes</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c3" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Uso anónimo de mis datos para investigación <em>(opcional)</em></span></label>
           <div style="font-size:11px;color:var(--label-3);margin-top:3px"><span onclick="showScreen('privacy')" style="color:#1a4a3a;cursor:pointer;text-decoration:underline">Ver política de privacidad</span></div>
         </div>
       </div>
@@ -1854,7 +1880,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
       <span class="bnav-lbl" style="color:rgba(255,255,255,0.9)">Pacientes</span>
     </button>
     <button class="bnav" id="drnav-alerts" onclick="showDrTab('alerts',this)" style="color:rgba(255,255,255,0.5)">
-      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v42.0c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
       <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:9px;border-radius:8px;padding:1px 5px;margin-left:2px"></span></span>
     </button>
     <button class="bnav" id="drnav-link" onclick="showDrTab('link',this)" style="color:rgba(255,255,255,0.5)">
@@ -1889,7 +1915,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   <div class="scroll"><div id="drp-content" style="padding:0 16px"></div></div>
 </div>
 
-  <div class="bottomnav" id="main-nav">
+  <div class="bottomnav" id="main-nav" style="display:none">
     <button class="bnav" id="bnav-inicio" onclick="navTo('home')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div><span class="bnav-lbl">Inicio</span></button>
     <button class="bnav" id="bnav-cuest" onclick="navTo('scales')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div><span class="bnav-lbl">Escalas</span></button>
     <button class="bnav" id="bnav-diario" onclick="navTo('diary')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div><span class="bnav-lbl">Diario</span></button>
@@ -3704,6 +3730,7 @@ async function switchToChild(childEmail){
   }catch(e){ toast('Error: '+e.message); }
 }
 async function showHome(){
+  const _navEl=document.getElementById('main-nav');if(_navEl)_navEl.style.display='';
   if(S.childMode){ showChildHome(); return; }
   const u=S.user;
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
@@ -4462,27 +4489,7 @@ function renderProfileView(){
         <option value="">Seleccionar</option>
         ${['Sedentario/a','Leve (1–2 días/sem)','Moderada (3–4 días/sem)','Intensa (5+ días/sem)'].map(v=>`<option value="${v}"${u.physical_activity===v?' selected':''}>${v}</option>`).join('')}
       </select></div>
-    <div class="form-group" style="margin-top:4px">
-      <label class="form-label">Actividad principal</label>
-      <select class="form-select" id="pf-activity-type" onchange="onActivityTypeChange(this.value)">
-        <option value="">Seleccioná...</option>
-        <option value="child"${u.activity_type==='child'||u.activity_type?.includes?.('child')?' selected':''}>Niño/a (&lt;12 años)</option>
-        <option value="teen"${u.activity_type==='teen'||u.activity_type?.includes?.('teen')?' selected':''}>Adolescente (12–18 años)</option>
-        <option value="student_morning"${u.activity_type==='student_morning'?' selected':''}>Estudiante — turno mañana</option>
-        <option value="student_afternoon"${u.activity_type==='student_afternoon'?' selected':''}>Estudiante — turno tarde</option>
-        <option value="student_evening"${u.activity_type==='student_evening'?' selected':''}>Estudiante — turno noche</option>
-        <option value="athlete"${u.activity_type==='athlete'?' selected':''}>Deportista / Atleta</option>
-        <option value="healthcare"${u.activity_type==='healthcare'?' selected':''}>Profesional de salud</option>
-        <option value="office"${u.activity_type==='office'?' selected':''}>Trabajo de oficina</option>
-        <option value="remote"${u.activity_type==='remote'?' selected':''}>Trabajo remoto</option>
-        <option value="retired"${u.activity_type==='retired'?' selected':''}>Jubilado/a</option>
-        <option value="other"${u.activity_type==='other'?' selected':''}>Otro (especificá abajo)</option>
-      </select>
-      <div id="pf-activity-other-wrap" style="display:${u.activity_type==='other'?'block':'none'};margin-top:8px">
-        <div class="form-group">
-          <label class="form-label">Especificá tu actividad</label>
-          <input class="form-input" type="text" id="pf-activity-other" placeholder="Ej: Músico, Docente..." value="${u.activity_other||''}">
-        </div>
+    
       </div>
     </div>
     <div id="pf-work-schedule-section" style="margin-top:8px">
@@ -5211,7 +5218,28 @@ function showDiaryNew(){
       <button id="nap-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(false)">No dormí siesta</button>
       <button id="nap-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(true)">Dormí siesta</button>
     </div>
-    <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div></div>
+    <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div>
+    <div class="form-group" style="margin-top:4px">
+      <label class="form-label">Actividad principal</label>
+      <select class="form-select" id="pf-activity-type" onchange="onActivityTypeChange(this.value)">
+        <option value="">Seleccioná...</option>
+        <option value="child"${u.activity_type==='child'||u.activity_type?.includes?.('child')?' selected':''}>Niño/a (&lt;12 años)</option>
+        <option value="teen"${u.activity_type==='teen'||u.activity_type?.includes?.('teen')?' selected':''}>Adolescente (12–18 años)</option>
+        <option value="student_morning"${u.activity_type==='student_morning'?' selected':''}>Estudiante — turno mañana</option>
+        <option value="student_afternoon"${u.activity_type==='student_afternoon'?' selected':''}>Estudiante — turno tarde</option>
+        <option value="student_evening"${u.activity_type==='student_evening'?' selected':''}>Estudiante — turno noche</option>
+        <option value="athlete"${u.activity_type==='athlete'?' selected':''}>Deportista / Atleta</option>
+        <option value="healthcare"${u.activity_type==='healthcare'?' selected':''}>Profesional de salud</option>
+        <option value="office"${u.activity_type==='office'?' selected':''}>Trabajo de oficina</option>
+        <option value="remote"${u.activity_type==='remote'?' selected':''}>Trabajo remoto</option>
+        <option value="retired"${u.activity_type==='retired'?' selected':''}>Jubilado/a</option>
+        <option value="other"${u.activity_type==='other'?' selected':''}>Otro (especificá abajo)</option>
+      </select>
+      <div id="pf-activity-other-wrap" style="display:${u.activity_type==='other'?'block':'none'};margin-top:8px">
+        <div class="form-group">
+          <label class="form-label">Especificá tu actividad</label>
+          <input class="form-input" type="text" id="pf-activity-other" placeholder="Ej: Músico, Docente..." value="${u.activity_other||''}">
+        </div></div>
     <div class="divider"></div>
     <div class="sec-title">Calidad del sueño</div>
     <div class="emoji-row">
@@ -6085,8 +6113,7 @@ async function showDrTab_(tab){
   }
   if(tab==='link'){cont.innerHTML=`<div style="padding-top:14px;color:rgba(255,255,255,0.9)"><div class="sec-title" style="color:rgba(255,255,255,0.5)">Vincular paciente por código</div><p style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:18px;line-height:1.6">Pedile al paciente su código. Lo encuentra en "Mi código" en la barra inferior.</p><div class="form-group"><label class="form-label">Código del paciente</label><input class="form-input" id="link-code" placeholder="ABC123" style="max-width:200px;font-size:20px;letter-spacing:.14em;font-family:'DM Mono',monospace;text-transform:uppercase"><div class="err" id="link-error">Código no encontrado.</div></div><button class="btn btn-g" style="max-width:220px" onclick="linkPatient()" id="link-btn">Vincular paciente</button></div>`;}
     if(tab==='profile'){
-    showDrTab_('drprofile');
-    return;
+    tab='drprofile';  // redirect directly
   }
 }
 async function linkPatient(){
@@ -8611,8 +8638,31 @@ function showChildDiaryNew(){
         <button type="button" onclick="const i=document.getElementById('d-awakenings');i.value=Math.max(0,(parseInt(i.value)||0)-1)" style="width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:none;font-size:18px;cursor:pointer;font-family:var(--font)">−</button>
         <input type="number" id="d-awakenings" value="0" min="0" max="20" style="width:60px;text-align:center;font-size:18px;font-weight:600;border:2px solid var(--border);border-radius:10px;padding:6px;font-family:var(--font)">
         <button type="button" onclick="const i=document.getElementById('d-awakenings');i.value=(parseInt(i.value)||0)+1" style="width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:none;font-size:18px;cursor:pointer;font-family:var(--font)">+</button>
-        <span style="font-size:13px;color:var(--label-2)">veces esta noche</span>
+        <span style="font-size:13px;color:var(--label-2)">veces</span>
       </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px" id="d-awakening-detail-wrap">
+      <label class="form-label">Duración de cada despertar</label>
+      <select class="form-select" id="d-awakening-duration">
+        <option value="">Seleccioná...</option>
+        <option value="brief">Breve (menos de 5 min)</option>
+        <option value="short">Corto (5-15 min)</option>
+        <option value="medium">Moderado (15-30 min)</option>
+        <option value="long">Largo (más de 30 min)</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:14px" id="d-awakening-method-wrap">
+      <label class="form-label">¿Cómo volvió a dormirse?</label>
+      <select class="form-select" id="d-awakening-method">
+        <option value="">Seleccioná...</option>
+        <option value="solo">Solo/a, sin ayuda</option>
+        <option value="presence">Con presencia de un adulto (sin alzar)</option>
+        <option value="contact">Con contacto físico (abrazo, alzado)</option>
+        <option value="feeding">Con alimentación (pecho/mamadera)</option>
+        <option value="pacifier">Con chupete</option>
+        <option value="movement">Con movimiento (caminar, hamaca)</option>
+        <option value="long">Le costó mucho, tardó más de 30 min</option>
+      </select>
     </div>
 
     ${moodRow('d-mood-night', 'Estado al despertar (mañana) 🌅')}
@@ -8747,6 +8797,8 @@ async function saveChildDiary(){
       bedtime:bed,
       wake_time:wake,
       awakenings:parseInt(document.getElementById('d-awakenings')?.value)||0,
+      awakening_duration:document.getElementById('d-awakening-duration')?.value||null,
+      awakening_method:document.getElementById('d-awakening-method')?.value||null,
       sleep_minutes:totalMin,
       latency_minutes:latency,
       notes:[
@@ -9771,16 +9823,17 @@ function updateDrPopLabel(){
 const SLEEP_HYGIENE = [
   {id:'h1', cat:'Horarios', text:'Me acuesto y levanto a la misma hora todos los días, incluso fines de semana'},
   {id:'h2', cat:'Horarios', text:'Evito dormir siestas de más de 20 minutos'},
-  {id:'h3', cat:'Ambiente', text:'Mi cuarto está oscuro y a una temperatura fresca (~18-20°C)'},
-  {id:'h4', cat:'Ambiente', text:'Uso el dormitorio solo para dormir y tener relaciones'},
-  {id:'h5', cat:'Tecnología', text:'Apago pantallas (celular, TV, computadora) al menos 1 hora antes de dormir'},
-  {id:'h6', cat:'Tecnología', text:'No uso el celular en la cama'},
-  {id:'h7', cat:'Estimulantes', text:'No consumo cafeína después de las 14:00'},
-  {id:'h8', cat:'Estimulantes', text:'No tomo alcohol como ayuda para dormir'},
-  {id:'h9', cat:'Actividad', text:'Hago actividad física regularmente, pero no en las 3 horas antes de dormir'},
-  {id:'h10', cat:'Actividad', text:'Tengo una rutina relajante antes de acostarme (baño, lectura, meditación)'},
-  {id:'h11', cat:'Mente', text:'Si no me duermo en 20 min, me levanto y hago algo tranquilo hasta tener sueño'},
-  {id:'h12', cat:'Mente', text:'Evito mirar el reloj cuando no puedo dormir'},
+  {id:'h3', cat:'Ambiente', text:'Mi cuarto está oscuro — uso cortinas blackout o antifaz'},
+  {id:'h4', cat:'Ambiente', text:'La temperatura del cuarto es fresca (18-24°C); el calor excesivo interrumpe el sueño'},
+  {id:'h5', cat:'Ambiente', text:'El ambiente es silencioso; si hay ruido (incluyendo ronquidos de pareja), uso tapones o ruido blanco'},
+  {id:'h6', cat:'Tecnología', text:'Apago pantallas (celular, TV, computadora) al menos 1 hora antes de dormir'},
+  {id:'h7', cat:'Tecnología', text:'No uso el celular en la cama'},
+  {id:'h8', cat:'Estimulantes', text:'No consumo cafeína (café, té negro, mate, bebidas cola, energizantes) después de las 14:00'},
+  {id:'h9', cat:'Estimulantes', text:'No tomo alcohol como ayuda para dormir — fragmenta el sueño profundo'},
+  {id:'h10', cat:'Actividad', text:'Hago actividad física regularmente, pero no en las 3 horas antes de dormir'},
+  {id:'h11', cat:'Actividad', text:'Tengo una rutina relajante antes de acostarme (baño, lectura, meditación)'},
+  {id:'h12', cat:'Mente', text:'Si no me duermo en 20 min, me levanto y hago algo tranquilo hasta tener sueño'},
+  {id:'h13', cat:'Mente', text:'Evito mirar el reloj cuando no puedo dormir'},
 ];
 
 const CONSULT_WHEN = [
@@ -9791,6 +9844,7 @@ const CONSULT_WHEN = [
   {icon:'😟', symptom:'Insomnio crónico (>3 meses)', desc:'Más de 3 noches por semana con dificultad para dormir', specialist:'Psiquiatría o Psicología — CBTI', urgency:'media'},
   {icon:'😱', symptom:'Ansiedad o depresión que afecta el sueño', desc:'Estado de ánimo que interfiere con el inicio o mantenimiento del sueño', specialist:'Psiquiatría o Psicología', urgency:'media'},
   {icon:'🌙', symptom:'Sueño fragmentado sin causa aparente', desc:'Te despertás múltiples veces por noche sin poder volver a dormir', specialist:'Médico clínico o especialista en sueño', urgency:'baja'},
+  {icon:'💊', symptom:'Medicación para dormir sin control especializado', desc:'Tomás somníferos, ansiolíticos u otros fármacos para dormir sin seguimiento de un especialista en sueño', specialist:'Especialista en Medicina del Sueño o Psiquiatría', urgency:'media'},
 ];
 function renderDrScalesPicker(selected){
   const cont = document.getElementById('dr-scales-picker');
@@ -10047,7 +10101,7 @@ async function unlinkPatient(email, name){
     </div>
   </div>
 </div></div></div>
-<div id="screen-hygiene" class="screen">
+<div id="screen-hygiene" class="screen" style="background:#1a2e23">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">Higiene del sueño</div>
@@ -10056,7 +10110,7 @@ async function unlinkPatient(email, name){
   <div class="scroll" id="hygiene-content" style="background:#1a2e23;padding-top:0"></div>
 </div>
 
-<div id="screen-consult-guide" class="screen">
+<div id="screen-consult-guide" class="screen" style="background:#1a2e23">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">¿Cuándo consultar?</div>
