@@ -1005,7 +1005,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <div id="app">
 
 <!-- LOGIN -->
-<div id="screen-landing" class="screen" style="position:relative;z-index:1;">
+<div id="screen-landing" class="screen active" style="position:relative;z-index:1;">
 <style>
   #screen-landing{background:#0f2820;position:relative;overflow:hidden;}
   #dm-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 38% at 50% 8%,#1a4a3a 0%,transparent 58%),#0f2820;z-index:0;pointer-events:none;}
@@ -9488,9 +9488,9 @@ async function tryAutoLogin(){
     const {email,role}=JSON.parse(s); S.role=role;
     const t=role==='patient'?'patients':'doctors';
     const d=await db.get(t+'?email=eq.'+encodeURIComponent(email)+'&select=*');
-    if(d&&d.length){ S.user=d[0];trackUsage(); if(role==='patient'){setPatientMode(d[0].dob);showHome();}else{showDoctorHome();} }
+    if(d&&d.length){ S.user=d[0];trackUsage(); if(role==='patient'){setPatientMode(d[0].dob);showHome().catch(function(e){console.error('showHome:',e);showScreen('landing');});}else{showDoctorHome();} }
     else localStorage.removeItem('dm_s');
-  }catch(e){ console.error('AutoLogin:',e.message); localStorage.removeItem('dm_s'); }
+  }catch(e){ console.error('AutoLogin:',e.message); showScreen('landing'); }
 }
 
 function exportPatientPDF(){ toast('Exportación PDF no disponible en esta versión'); }
@@ -9660,7 +9660,6 @@ async function scheduleDiaryReminder(){
   }catch(e){console.log("Diary reminder:",e.message);}
 }
 
-tryAutoLogin();
 schedulePVTReminders();
 scheduleDiaryReminder();
 
