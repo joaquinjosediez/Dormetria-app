@@ -1006,173 +1006,158 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
 <!-- LOGIN -->
 <div id="screen-landing" class="screen">
-  <style>
-    #screen-landing{background:#0f2820;position:relative;overflow:hidden;}
-    
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;background:#071510;overflow:hidden;-webkit-font-smoothing:antialiased;}
-.screen{position:relative;width:100%;height:100%;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:52px 32px 44px;overflow:hidden;}
-.bg{position:absolute;inset:0;background:radial-gradient(ellipse 65% 45% at 50% 12%,#1a4a3a 0%,transparent 65%),radial-gradient(ellipse 80% 50% at 50% 100%,#0d2a1e 0%,transparent 55%),#0f2820;z-index:0;}
-.stars{position:absolute;inset:0;z-index:2;pointer-events:none;}
-.logo-area{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;align-items:center;}
-.logo-svg{width:min(82%,320px);height:auto;overflow:visible;shape-rendering:geometricPrecision;}
-@keyframes dmFadeIn{from{opacity:0}to{opacity:1}}
-@keyframes dmFadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.dm-smooth{filter:url(#dm-sf);}
-#ltr-o{opacity:0;animation:dmFadeIn 0.5s ease 0.00s forwards}
-#ltr-d{opacity:0;animation:dmFadeIn 0.5s ease 2.00s forwards}
-#ltr-r{opacity:0;animation:dmFadeIn 0.5s ease 2.13s forwards}
-#ltr-m{opacity:0;animation:dmFadeIn 0.5s ease 2.26s forwards}
-#ltr-e{opacity:0;animation:dmFadeIn 0.5s ease 2.39s forwards}
-#ltr-t{opacity:0;animation:dmFadeIn 0.5s ease 2.52s forwards}
-#ltr-r2{opacity:0;animation:dmFadeIn 0.5s ease 2.65s forwards}
-#ltr-i{opacity:0;animation:dmFadeIn 0.5s ease 2.78s forwards}
-#ltr-a{opacity:0;animation:dmFadeIn 0.5s ease 2.91s forwards}
+<style>
+  #screen-landing{background:#0f2820;position:relative;overflow:hidden;}
+  #dm-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 38% at 50% 8%,#1a4a3a 0%,transparent 58%),#0f2820;z-index:0;pointer-events:none;}
+  #dm-stars{position:absolute;inset:0;z-index:2;pointer-events:none;}
+  /* Skyline: z-index 1, below stars, pointer-events:none already on SVG */
+  #dm-wrap{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;padding:52px 32px 44px;}
+  #dm-logo-area{display:flex;flex-direction:column;align-items:center;}
+  #dm-logo-svg{width:min(82%,320px);height:auto;overflow:visible;shape-rendering:geometricPrecision;}
+  #dm-tagline{font-family:'Instrument Sans',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.28);text-transform:uppercase;margin-top:20px;opacity:0;animation:dmFadeIn 0.6s ease 3.4s forwards;}
+  /* BOTTOM: always visible — no opacity animation, no delay */
+  #dm-bottom{width:100%;display:flex;flex-direction:column;align-items:center;}
+  #dm-subtitle{font-family:'Instrument Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.42);text-align:center;line-height:1.7;margin-bottom:22px;}
+  #dm-btn{width:100%;height:54px;border-radius:27px;background:linear-gradient(135deg,#2d6b4a 0%,#1a4a3a 100%);border:1px solid rgba(126,200,164,0.2);display:flex;align-items:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;}
+  #dm-btn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;}
+  #dm-btn-label{flex:1;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:white;padding-right:48px;}
+  #dm-login{font-family:'Instrument Sans',sans-serif;font-size:12px;color:rgba(255,255,255,0.28);cursor:pointer;}
+  #dm-login span{color:#7ec8a4;}
+  @keyframes dmFadeIn{from{opacity:0}to{opacity:1}}
+  #ltr-o{opacity:0;animation:dmFadeIn 0.5s ease 0.00s forwards}
+  #ltr-d{opacity:0;animation:dmFadeIn 0.5s ease 2.00s forwards}
+  #ltr-r{opacity:0;animation:dmFadeIn 0.5s ease 2.13s forwards}
+  #ltr-m{opacity:0;animation:dmFadeIn 0.5s ease 2.26s forwards}
+  #ltr-e{opacity:0;animation:dmFadeIn 0.5s ease 2.39s forwards}
+  #ltr-t{opacity:0;animation:dmFadeIn 0.5s ease 2.52s forwards}
+  #ltr-r2{opacity:0;animation:dmFadeIn 0.5s ease 2.65s forwards}
+  #ltr-i{opacity:0;animation:dmFadeIn 0.5s ease 2.78s forwards}
+  #ltr-a{opacity:0;animation:dmFadeIn 0.5s ease 2.91s forwards}
 
-.tagline{font-family:'Instrument Sans',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.28);text-transform:uppercase;margin-top:20px;opacity:0;animation:dmFadeIn 0.6s ease 3.51s forwards;}
-.bottom-zone{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;align-items:center;opacity:0;animation:dmFadeUp 0.8s ease 4.01s forwards;}
-.subtitle{font-family:'Instrument Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.42);text-align:center;line-height:1.7;margin-bottom:22px;}
-.btn-empezar{width:100%;height:54px;border-radius:27px;background:linear-gradient(135deg,#2d6b4a 0%,#1a4a3a 100%);border:1px solid rgba(126,200,164,0.2);display:flex;align-items:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);transition:transform 0.15s;}
-.btn-empezar:active{transform:scale(0.98);}
-.btn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;}
-.btn-label{flex:1;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:white;padding-right:48px;}
-.btn-login{font-family:'Instrument Sans',sans-serif;font-size:12px;color:rgba(255,255,255,0.28);}
-.btn-login span{color:#7ec8a4;cursor:pointer;}
+</style>
 
-  </style>
-  
-<div class="dm-splash-screen">
-  <div class="bg"></div>
-  <svg id="dm-skyline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 220"
-     preserveAspectRatio="xMidYMax meet"
-     style="position:absolute;bottom:0;left:0;width:100%;height:58%;z-index:1;pointer-events:none;">
+<div id="dm-bg"></div>
+<svg id="dm-skyline" xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 390 200" preserveAspectRatio="xMidYMax meet"
+     style="position:absolute;bottom:0;left:0;width:100%;height:52%;z-index:1;pointer-events:none;opacity:0.82;">
 
-  <!-- Far hills (lightest dark layer) -->
-  <path d="M0 220 L0 130 Q20 108 40 112 Q58 116 72 100 Q88 82 108 90 Q124 96 140 85 Q158 72 178 80 Q194 86 210 220 Z" fill="#0c2318"/>
-
-  <!-- Left forested hill mass -->
-  <path d="M0 220 L0 148 Q8 138 18 132 Q28 125 35 118 Q44 108 55 112 Q64 116 70 108 Q80 97 92 102 Q100 106 108 100 Q118 93 128 98 Q136 102 142 95 Q152 86 162 91 Q170 95 175 220 Z" fill="#0e2a1e"/>
-
-  <!-- Tree line left -->
-  <path d="M0 220 L0 155
-    Q5 148 8 155 Q12 148 15 155
-    Q18 145 22 155 Q26 145 30 155
-    Q34 140 38 148 Q40 140 43 148 Q46 138 50 148
-    Q54 142 58 150 Q62 142 66 150
-    Q70 145 74 152 Q78 145 82 152
-    Q85 148 88 155 Q92 148 95 155
-    L95 220 Z" fill="#091a11"/>
-
-  <!-- Individual tree tops (pointy conifers) -->
-  <polygon points="15,155 22,132 29,155" fill="#081610"/>
-  <polygon points="35,150 44,124 53,150" fill="#081610"/>
-  <polygon points="55,148 65,120 75,148" fill="#081610"/>
-  <polygon points="78,152 86,130 94,152" fill="#081610"/>
-  <polygon points="5,158 11,142 17,158" fill="#081610"/>
-
-  <!-- City skyline right side -->
+  <!-- Single unified silhouette fill — left forest, right city -->
   <path d="
-    M200 220 L200 160
-    L208 160 L208 148
-    L214 148 L214 160
-    L220 160 L220 140
-    L226 140 L226 128
-    L230 128 L230 120
-    L234 120 L234 112
-    L238 112 L238 120
-    L242 120 L242 128
-    L246 128 L246 118
-    L252 118 L252 108
-    L256 108 L256 100
-    L260 100 L260 108
-    L264 108 L264 118
-    L270 118 L270 125
-    L276 125 L276 115
-    L282 115 L282 105
-    L286 105 L286 98
-    L290 98 L290 105
-    L294 105 L294 115
-    L300 115 L300 122
-    L308 122 L308 110
-    L314 110 L314 102
-    L318 102 L318 95
-    L322 95 L322 88
-    L326 88 L326 82
-    L330 82 L330 88
-    L334 88 L334 95
-    L338 95 L338 102
-    L344 102 L344 110
-    L350 110 L350 118
-    L356 118 L356 108
-    L362 108 L362 100
-    L368 100 L368 108
-    L374 108 L374 118
-    L382 118 L382 112
-    L386 112 L386 106
-    L390 106 L390 220 Z"
-    fill="#0d2318"/>
+    M0 200
+    L0 130
+    Q8 122 15 115
+    Q22 107 30 100
+    Q38 92 48 96
+    Q56 99 62 92
+    Q70 84 80 79
+    Q90 73 100 70
+    Q110 67 118 63
+    Q126 59 134 63
+    Q140 67 146 60
+    Q152 53 160 57
+    Q166 61 172 55
+    Q178 49 186 53
+    Q192 57 197 200
+    L197 200
+    M197 200
+    L197 140
+    L204 140 L204 128
+    L210 128 L210 115
+    L216 115 L216 105
+    L222 105 L222 98
+    L228 98 L228 108
+    L234 108 L234 120
+    L240 120 L240 110
+    L246 110 L246 100
+    L252 100 L252 90
+    L258 90 L258 82
+    L264 82 L264 90
+    L270 90 L270 100
+    L276 100 L276 88
+    L282 88 L282 78
+    L288 78 L288 70
+    L294 70 L294 62
+    L298 62 L298 56
+    L302 56 L302 62
+    L306 62 L306 70
+    L310 70 L310 78
+    L316 78 L316 88
+    L322 88 L322 96
+    L328 96 L328 86
+    L334 86 L334 78
+    L340 78 L340 86
+    L346 86 L346 96
+    L352 96 L352 106
+    L358 106 L358 96
+    L364 96 L364 88
+    L370 88 L370 96
+    L376 96 L376 108
+    L382 108 L382 118
+    L390 118
+    L390 200
+    Z"
+    fill="#081812"/>
 
-  <!-- Building details: antenna on tallest building -->
-  <line x1="328" y1="82" x2="328" y2="70" stroke="#0d2318" stroke-width="1.5"/>
-  <circle cx="328" cy="69" r="2" fill="#1a4a3a"/>
+  <!-- Antenna on tallest building -->
+  <line x1="300" y1="56" x2="300" y2="44" stroke="#081812" stroke-width="1.5"/>
 
-  <!-- Tiny lit windows -->
-  <rect x="228" y="122" width="3" height="2" fill="#1a3a2a" opacity="0.8"/>
-  <rect x="258" y="104" width="2" height="2" fill="#1a4a3a" opacity="0.7"/>
-  <rect x="285" y="102" width="2" height="2" fill="#152d1e" opacity="0.9"/>
-  <rect x="324" y="92" width="2" height="2" fill="#2d5a40" opacity="0.6"/>
-  <rect x="328" y="92" width="2" height="2" fill="#1a4a3a" opacity="0.5"/>
-  <rect x="365" y="104" width="2" height="2" fill="#1a3a2a" opacity="0.7"/>
-
-  <!-- Ground strip -->
-  <rect x="0" y="210" width="390" height="10" fill="#060f09"/>
+  <!-- Faint ground line -->
+  <rect x="0" y="195" width="390" height="5" fill="#060f0a"/>
 </svg>
-  <div class="stars" id="dm-stars"></div>
-  <div style="flex:0.45;position:relative;z-index:3;"></div>
-  <div class="logo-area">
-    <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="36 33 635 126" shape-rendering="geometricPrecision">
+<div id="dm-stars"></div>
+
+<div id="dm-wrap">
+  <div style="flex:0.3"></div>
+  <div id="dm-logo-area">
+    <svg id="dm-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="36 33 635 126" shape-rendering="geometricPrecision">
       <defs>
         <filter id="dm-sf" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">
           <feGaussianBlur stdDeviation="0.4" result="b"/>
           <feComponentTransfer in="b"><feFuncA type="linear" slope="1.8" intercept="-0.3"/></feComponentTransfer>
         </filter>
       </defs>
-      <g class="dm-smooth"><path id="ltr-o" d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-d" d="M104 34 L 94 36 L 84 40 L 85 42 L 88 42 L 92 47 L 92 83 L 90 84 L 87 80 L 79 75 L 76 75 L 75 74 L 63 74 L 62 75 L 59 75 L 50 80 L 45 85 L 39 95 L 37 101 L 37 105 L 36 106 L 36 124 L 37 125 L 38 133 L 43 143 L 51 151 L 58 155 L 61 155 L 62 156 L 73 156 L 74 155 L 77 155 L 83 152 L 88 147 L 91 142 L 93 143 L 94 155 L 95 156 L 102 153 L 112 151 L 111 148 L 109 148 L 106 146 L 104 140 Z M70 79 L 74 79 L 82 82 L 89 90 L 92 100 L 92 129 L 91 130 L 91 133 L 88 140 L 81 147 L 76 149 L 68 149 L 61 146 L 54 139 L 51 133 L 50 125 L 49 124 L 49 104 L 50 103 L 51 96 L 56 87 L 60 83 L 65 80 L 69 80 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-r" d="M248 74 L 238 75 L 232 79 L 226 89 L 224 88 L 224 75 L 223 74 L 205 80 L 205 82 L 208 82 L 212 86 L 212 147 L 210 150 L 204 152 L 205 154 L 234 154 L 234 152 L 229 151 L 226 149 L 224 143 L 224 108 L 225 107 L 225 102 L 229 91 L 234 86 L 236 85 L 244 85 L 250 88 L 251 83 L 254 77 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-m" d="M260 79 L 260 82 L 263 82 L 267 86 L 267 90 L 268 91 L 268 142 L 267 143 L 267 148 L 264 151 L 260 152 L 260 154 L 288 154 L 288 152 L 284 151 L 280 147 L 280 101 L 286 88 L 290 84 L 294 82 L 305 82 L 307 83 L 312 88 L 315 97 L 315 146 L 311 151 L 307 153 L 308 154 L 335 154 L 335 152 L 331 151 L 329 149 L 327 142 L 327 104 L 328 103 L 328 99 L 330 93 L 333 88 L 336 85 L 342 82 L 352 82 L 357 85 L 361 91 L 362 99 L 363 100 L 363 143 L 361 149 L 359 151 L 355 152 L 355 154 L 383 154 L 383 152 L 379 151 L 375 146 L 375 100 L 374 99 L 374 93 L 371 84 L 369 81 L 364 77 L 357 74 L 346 74 L 340 76 L 331 84 L 327 91 L 325 90 L 325 88 L 322 82 L 318 78 L 313 75 L 310 75 L 309 74 L 298 74 L 288 79 L 281 88 L 279 87 L 279 74 L 267 78 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-e" d="M418 74 L 406 79 L 396 90 L 391 102 L 391 106 L 390 107 L 390 124 L 391 125 L 391 129 L 393 135 L 399 145 L 409 153 L 411 153 L 414 155 L 417 155 L 418 156 L 431 156 L 432 155 L 435 155 L 444 150 L 451 142 L 454 137 L 455 132 L 452 131 L 449 137 L 439 145 L 432 147 L 426 147 L 419 145 L 413 141 L 408 135 L 403 123 L 402 111 L 403 110 L 455 110 L 455 101 L 454 100 L 453 93 L 450 87 L 444 80 L 435 75 L 432 75 L 431 74 Z M403 98 L 407 88 L 411 83 L 417 79 L 426 78 L 432 80 L 438 86 L 441 92 L 443 104 L 442 105 L 404 105 L 403 104 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-t" d="M481 53 L 479 55 L 479 59 L 475 68 L 470 73 L 464 76 L 461 76 L 461 80 L 470 80 L 472 82 L 472 144 L 476 152 L 484 156 L 493 156 L 499 153 L 505 147 L 505 145 L 504 144 L 499 148 L 496 149 L 490 149 L 488 148 L 484 143 L 484 140 L 483 139 L 483 81 L 484 80 L 504 80 L 504 76 L 485 76 L 483 74 L 483 53 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-r2" d="M554 74 L 546 78 L 539 88 L 537 87 L 536 84 L 536 74 L 517 80 L 517 82 L 522 83 L 525 87 L 525 147 L 523 150 L 518 152 L 518 154 L 546 154 L 546 152 L 543 152 L 538 148 L 538 140 L 537 139 L 537 110 L 538 109 L 539 98 L 542 91 L 546 87 L 554 84 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-i" d="M582 74 L 562 80 L 562 82 L 567 83 L 570 88 L 570 144 L 569 145 L 569 148 L 566 151 L 562 152 L 562 154 L 590 154 L 590 152 L 584 150 L 582 147 Z M580 43 L 575 46 L 573 50 L 573 54 L 574 57 L 577 60 L 584 61 L 588 59 L 590 56 L 590 49 L 586 44 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-        <path id="ltr-a" d="M613 79 L 610 81 L 606 86 L 603 93 L 603 96 L 614 99 L 615 91 L 619 83 L 624 79 L 633 78 L 640 81 L 644 86 L 646 92 L 646 101 L 643 105 L 637 108 L 617 114 L 609 118 L 602 125 L 599 135 L 600 136 L 600 142 L 603 148 L 610 154 L 616 156 L 628 156 L 636 153 L 641 149 L 644 144 L 646 143 L 647 144 L 647 148 L 651 154 L 655 156 L 662 156 L 666 154 L 670 149 L 669 148 L 662 149 L 659 146 L 659 140 L 658 139 L 658 112 L 659 111 L 658 110 L 658 93 L 655 85 L 652 81 L 647 77 L 637 74 L 626 74 Z M645 109 L 647 115 L 646 118 L 646 134 L 642 142 L 638 146 L 632 149 L 622 149 L 618 147 L 614 143 L 612 138 L 612 130 L 614 125 L 622 118 L 628 115 L 638 112 L 643 109 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-</g>
+      <g style="filter:url(#dm-sf)">
+        <path id="ltr-o" d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-d" d="M104 34 L 94 36 L 84 40 L 85 42 L 88 42 L 92 47 L 92 83 L 90 84 L 87 80 L 79 75 L 76 75 L 75 74 L 63 74 L 62 75 L 59 75 L 50 80 L 45 85 L 39 95 L 37 101 L 37 105 L 36 106 L 36 124 L 37 125 L 38 133 L 43 143 L 51 151 L 58 155 L 61 155 L 62 156 L 73 156 L 74 155 L 77 155 L 83 152 L 88 147 L 91 142 L 93 143 L 94 155 L 95 156 L 102 153 L 112 151 L 111 148 L 109 148 L 106 146 L 104 140 Z M70 79 L 74 79 L 82 82 L 89 90 L 92 100 L 92 129 L 91 130 L 91 133 L 88 140 L 81 147 L 76 149 L 68 149 L 61 146 L 54 139 L 51 133 L 50 125 L 49 124 L 49 104 L 50 103 L 51 96 L 56 87 L 60 83 L 65 80 L 69 80 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-r" d="M248 74 L 238 75 L 232 79 L 226 89 L 224 88 L 224 75 L 223 74 L 205 80 L 205 82 L 208 82 L 212 86 L 212 147 L 210 150 L 204 152 L 205 154 L 234 154 L 234 152 L 229 151 L 226 149 L 224 143 L 224 108 L 225 107 L 225 102 L 229 91 L 234 86 L 236 85 L 244 85 L 250 88 L 251 83 L 254 77 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-m" d="M260 79 L 260 82 L 263 82 L 267 86 L 267 90 L 268 91 L 268 142 L 267 143 L 267 148 L 264 151 L 260 152 L 260 154 L 288 154 L 288 152 L 284 151 L 280 147 L 280 101 L 286 88 L 290 84 L 294 82 L 305 82 L 307 83 L 312 88 L 315 97 L 315 146 L 311 151 L 307 153 L 308 154 L 335 154 L 335 152 L 331 151 L 329 149 L 327 142 L 327 104 L 328 103 L 328 99 L 330 93 L 333 88 L 336 85 L 342 82 L 352 82 L 357 85 L 361 91 L 362 99 L 363 100 L 363 143 L 361 149 L 359 151 L 355 152 L 355 154 L 383 154 L 383 152 L 379 151 L 375 146 L 375 100 L 374 99 L 374 93 L 371 84 L 369 81 L 364 77 L 357 74 L 346 74 L 340 76 L 331 84 L 327 91 L 325 90 L 325 88 L 322 82 L 318 78 L 313 75 L 310 75 L 309 74 L 298 74 L 288 79 L 281 88 L 279 87 L 279 74 L 267 78 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-e" d="M418 74 L 406 79 L 396 90 L 391 102 L 391 106 L 390 107 L 390 124 L 391 125 L 391 129 L 393 135 L 399 145 L 409 153 L 411 153 L 414 155 L 417 155 L 418 156 L 431 156 L 432 155 L 435 155 L 444 150 L 451 142 L 454 137 L 455 132 L 452 131 L 449 137 L 439 145 L 432 147 L 426 147 L 419 145 L 413 141 L 408 135 L 403 123 L 402 111 L 403 110 L 455 110 L 455 101 L 454 100 L 453 93 L 450 87 L 444 80 L 435 75 L 432 75 L 431 74 Z M403 98 L 407 88 L 411 83 L 417 79 L 426 78 L 432 80 L 438 86 L 441 92 L 443 104 L 442 105 L 404 105 L 403 104 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-t" d="M481 53 L 479 55 L 479 59 L 475 68 L 470 73 L 464 76 L 461 76 L 461 80 L 470 80 L 472 82 L 472 144 L 476 152 L 484 156 L 493 156 L 499 153 L 505 147 L 505 145 L 504 144 L 499 148 L 496 149 L 490 149 L 488 148 L 484 143 L 484 140 L 483 139 L 483 81 L 484 80 L 504 80 L 504 76 L 485 76 L 483 74 L 483 53 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-r2" d="M554 74 L 546 78 L 539 88 L 537 87 L 536 84 L 536 74 L 517 80 L 517 82 L 522 83 L 525 87 L 525 147 L 523 150 L 518 152 L 518 154 L 546 154 L 546 152 L 543 152 L 538 148 L 538 140 L 537 139 L 537 110 L 538 109 L 539 98 L 542 91 L 546 87 L 554 84 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-i" d="M582 74 L 562 80 L 562 82 L 567 83 L 570 88 L 570 144 L 569 145 L 569 148 L 566 151 L 562 152 L 562 154 L 590 154 L 590 152 L 584 150 L 582 147 Z M580 43 L 575 46 L 573 50 L 573 54 L 574 57 L 577 60 L 584 61 L 588 59 L 590 56 L 590 49 L 586 44 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+          <path id="ltr-a" d="M613 79 L 610 81 L 606 86 L 603 93 L 603 96 L 614 99 L 615 91 L 619 83 L 624 79 L 633 78 L 640 81 L 644 86 L 646 92 L 646 101 L 643 105 L 637 108 L 617 114 L 609 118 L 602 125 L 599 135 L 600 136 L 600 142 L 603 148 L 610 154 L 616 156 L 628 156 L 636 153 L 641 149 L 644 144 L 646 143 L 647 144 L 647 148 L 651 154 L 655 156 L 662 156 L 666 154 L 670 149 L 669 148 L 662 149 L 659 146 L 659 140 L 658 139 L 658 112 L 659 111 L 658 110 L 658 93 L 655 85 L 652 81 L 647 77 L 637 74 L 626 74 Z M645 109 L 647 115 L 646 118 L 646 134 L 642 142 L 638 146 L 632 149 L 622 149 L 618 147 L 614 143 L 612 138 L 612 130 L 614 125 L 622 118 L 628 115 L 638 112 L 643 109 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+
+      </g>
     </svg>
-    <div class="tagline">Medicina del sueño</div>
+    <div id="dm-tagline">Medicina del sueño</div>
   </div>
-  <div style="flex:1;position:relative;z-index:3;"></div>
-  <div class="bottom-zone">
-    <div class="subtitle">Seguimiento clínico del sueño<br>basado en evidencia.</div>
-    <div class="btn-empezar" onclick="showConsentOrLogin()">
-      <div class="btn-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-      <div class="btn-label">Empezar</div>
+  <div style="flex:1"></div>
+  <div id="dm-bottom">
+    <div id="dm-subtitle">Seguimiento clínico del sueño<br>basado en evidencia.</div>
+    <div id="dm-btn" onclick="showConsentOrLogin()">
+      <div id="dm-btn-icon">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div id="dm-btn-label">Empezar</div>
     </div>
-    <div class="btn-login">Ya tengo cuenta — <span onclick="showScreen('login')">Ingresar</span></div>
+    <div id="dm-login">Ya tengo cuenta — <span onclick="showScreen('login')">Ingresar</span></div>
   </div>
 </div>
+
 <script>(function(){
   var c=document.getElementById('dm-stars');if(!c)return;
   var sh=document.createElement('style'),css='';
-  for(var i=0;i<44;i++){var op=(Math.random()*0.5+0.15).toFixed(2);css+='@keyframes dmTw'+i+'{0%,100%{opacity:'+op+'}50%{opacity:0.02}}';}
+  for(var i=0;i<44;i++){var op=(Math.random()*0.45+0.12).toFixed(2);css+='@keyframes dmTw'+i+'{0%,100%{opacity:'+op+'}50%{opacity:0.02}}';}
   sh.textContent=css;document.head.appendChild(sh);
   for(var i=0;i<34;i++){var el=document.createElement('div'),sz=Math.random()*2+0.6;
-    el.style.cssText='position:absolute;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:white;left:'+(Math.random()*100)+'%;top:'+(Math.random()*58)+'%;animation:dmTw'+i+' '+(Math.random()*3.5+2).toFixed(1)+'s ease-in-out -'+(Math.random()*6).toFixed(1)+'s infinite';
+    el.style.cssText='position:absolute;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:white;left:'+(Math.random()*100)+'%;top:'+(Math.random()*55)+'%;animation:dmTw'+i+' '+(Math.random()*3.5+2).toFixed(1)+'s ease-in-out -'+(Math.random()*6).toFixed(1)+'s infinite';
     c.appendChild(el);}
   for(var i=34;i<44;i++){var el=document.createElement('div');
-    el.style.cssText='position:absolute;left:'+(Math.random()*86+7)+'%;top:'+(Math.random()*52)+'%;color:rgba(126,200,164,0.35);font-size:10px;font-weight:300;font-family:sans-serif;line-height:1;animation:dmTw'+i+' '+(Math.random()*4+3).toFixed(1)+'s ease-in-out -'+(Math.random()*5).toFixed(1)+'s infinite';
+    el.style.cssText='position:absolute;left:'+(Math.random()*86+7)+'%;top:'+(Math.random()*50)+'%;color:rgba(126,200,164,0.35);font-size:10px;font-weight:300;font-family:sans-serif;line-height:1;animation:dmTw'+i+' '+(Math.random()*4+3).toFixed(1)+'s ease-in-out -'+(Math.random()*5).toFixed(1)+'s infinite';
     el.textContent='+';c.appendChild(el);}
 })();</script>
-
 </div>
 
 
