@@ -1486,7 +1486,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     <div style="padding:12px 16px 0">
       <div id="home-meta" style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:capitalize;margin-bottom:12px"></div>
       <!-- Métricas -->
-      <div id="home-metrics" style="display:flex;gap:10px;margin-bottom:16px"></div>
+      <!-- metrics removed from simplified home -->
       <!-- Child profile pills -->
       <div id="home-profile-pills" style="display:none;margin-bottom:14px">
         <div id="home-profile-pills-list" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
@@ -3761,6 +3761,7 @@ async function loadLinkedChildProfiles(){
   if(!S.user) return;
   try{
     const children = await db.get('patients?parent_email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,email');
+    S._linkedChildren = children || [];
     const container = document.getElementById('home-children');
     // Hero pills
     const pillsWrap = document.getElementById('home-profile-pills');
@@ -3890,7 +3891,7 @@ function renderHomeQuickActions(){
       icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
       title:'Perfil infantil',
       sub:'Ver sueño del niño/a',
-      fn:"showLinkedChildSelector()"
+      fn:"showChildFromHome()"
     });
   }
 
@@ -8679,6 +8680,16 @@ async function switchToParentProfile(){
     }
   }catch(e){ toast('Error: '+e.message); }
 }
+
+function showChildFromHome(){
+  // If there are linked child profiles, switch to first one
+  // Otherwise go to register child profile
+  if(S._linkedChildren && S._linkedChildren.length > 0){
+    switchToChild(S._linkedChildren[0].email);
+  } else {
+    registerChildProfile();
+  }
+}
 function showChildHome(){
   if(!S.user) return;
   const _mnav=document.getElementById('main-nav');
@@ -8728,7 +8739,7 @@ function renderChildQuickActions(){
   ];
   el.innerHTML = actions.map(a =>
     `<button onclick="${a.fn}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px 18px;text-align:left;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:14px;width:100%;min-height:72px;margin-bottom:10px">
-      <div style="width:40px;height:40px;background:rgba(255,255,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${a.svg}</div>
+      <div style="width:40px;height:40px;background:#1a4a3a;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${a.svg}</div>
       <div><div style="font-size:15px;font-weight:600;color:#fff">${a.label}</div><div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">${a.sub}</div></div>
     </button>`
   ).join('');
@@ -8747,15 +8758,15 @@ function renderChildScales(){
       const scR = (S.records||[]).filter(r=>r.scale_id===sc.id);
       const last = scR[scR.length-1];
       const i = last ? sc.interp(last.score) : null;
-      return `<div style="background:${sc.bg||'var(--g50)'};border-radius:14px;padding:16px;margin-bottom:12px;cursor:pointer" onclick="startScale('${sc.id}')">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-          <div style="font-size:24px">${sc.icon||'📋'}</div>
-          <div>
-            <div style="font-size:14px;font-weight:600">${sc.name}</div>
-            <div style="font-size:12px;color:var(--label-2)">${sc.desc}</div>
+      return `<div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;margin-bottom:12px;cursor:pointer" onclick="startScale('${sc.id}')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:#fff">${sc.name}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">${sc.desc}</div>
           </div>
         </div>
-        ${last?'<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="font-size:13px;font-weight:600">'+last.score+'</span><span style="font-size:12px;padding:3px 10px;border-radius:20px;background:'+i.bg+';color:'+i.c+'">'+i.l+'</span></div>':'<div style="font-size:12px;color:var(--label-3);margin-top:4px">Aún no completada → Tocar para empezar</div>'}
+        ${last?`<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="font-size:13px;font-weight:600;color:#fff">${last.score}</span><span style="font-size:12px;padding:3px 10px;border-radius:20px;background:${i.bg};color:${i.c}">${i.l}</span></div>`:'<div style="margin-top:6px"><span style="display:inline-block;background:#1a4a3a;color:#7ec8a4;font-size:12px;font-weight:600;padding:6px 16px;border-radius:20px;border:1px solid rgba(126,200,164,0.3)">Completar →</span></div>'}
       </div>`;
     }).join('');
 }
@@ -10510,5 +10521,75 @@ function showOnboarding() {
   <div class="scroll" id="consult-content" style="background:#1a2e23;padding-top:0"></div>
 </div>
 </div>
+
+
+<!-- RECOVERED SCREENS FROM v41 -->
+<div id="screen-scale" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
+    <div style="text-align:center;flex:1;overflow:hidden"><div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px" id="scale-title">Escala</div></div>
+    <div style="width:52px"></div>
+  </div>
+  <div class="q-prog"><div class="q-prog-fill" id="q-prog" style="width:0%"></div></div>
+  <div class="q-area" id="q-area"></div>
+  <div class="q-nav" id="q-nav"></div>
+</div>
+
+<div id="screen-scales" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cuestionarios</div><div style="font-size:11px;color:var(--g200)">Autoadministrables</div></div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll">
+    <div class="section"><div id="scales-list-full"></div></div>
+    <div style="height:16px"></div>
+  </div>
+
+</div>
+
+<div id="screen-patient-history" class="screen" style="background:#1a2e23">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Historial clínico</div></div>
+    <button class="topbar-btn" onclick="exportPatientPDF()">↓ PDF</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="showPHTab('all',this)">Todas</button>
+    <button class="tab" onclick="showPHTab('sleep',this)">Sueño</button>
+    <button class="tab" onclick="showPHTab('mental',this)">Salud mental</button>
+    <button class="tab" onclick="showPHTab('other',this)">Otras</button>
+    <button class="tab" onclick="showPHTab('summary',this)">Resumen</button>
+  </div>
+  <div class="scroll">
+    <div style="padding:0 16px" id="ph-list"></div>
+    <div id="ph-chart-wrap" style="display:none"><div class="chart-wrap"><canvas id="ph-chart" aria-label="Evolución de escalas"></canvas></div></div>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<div id="screen-profile" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#fff">Mi perfil clínico</div></div>
+    <button class="topbar-btn" id="profile-edit-btn" onclick="toggleProfileEdit()">Editar</button>
+  </div>
+  <div class="scroll"><div id="profile-content" style="padding:16px"></div></div>
+</div>
+
+<div id="screen-result" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Inicio</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="r-title">Resultado</div></div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll" id="r-content"></div>
+  <div id="r-consult-btn" style="display:none;padding:12px 16px">
+    <button class="btn" onclick="showConsultDir()" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:15px">
+      🩺 Consultar un profesional de sueño
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
