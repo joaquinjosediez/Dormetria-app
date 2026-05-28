@@ -1256,13 +1256,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   </div></div>
 </div>
 
-<div id="screen-about" class="screen">
-  <div class="topbar">
+<div id="screen-about" class="screen" style="background:#1a2e23;">
+  <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.06)">
     <button class="topbar-btn" onclick="S.user?(S.role==='doctor'?showDoctorHome():showHome()):showScreen('landing')">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cómo usar Dormetria</div></div>
     <div style="width:70px"></div>
   </div>
-  <div class="scroll" style="padding:20px 16px 40px">
+  <div class="scroll" style="padding:20px 16px 40px;background:#1a2e23;">
     <p style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.75;margin-bottom:24px">Dormetria te ayuda a hacer un seguimiento de tu sueño con herramientas clínicas reales — las mismas que usan los médicos — y a compartir esa información con tu especialista.</p>
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Las tres secciones</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
@@ -1497,6 +1497,15 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
           <div style="color:rgba(255,255,255,0.25);font-size:20px">›</div>
         </div>
       </div>
+    </div>
+
+    <!-- Qué es Dormetria -->
+    <div onclick="showScreen('about')" style="background:rgba(126,200,164,0.08);border:1px solid rgba(126,200,164,0.18);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+      <div style="width:32px;height:32px;border-radius:8px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500;color:#7ec8a4">¿Cómo usar Dormetria?</div></div>
+      <div style="color:rgba(255,255,255,0.2);font-size:18px">›</div>
     </div>
 
     <!-- Código profesional -->
@@ -4590,6 +4599,78 @@ function getActivityLabel(u){
 }
 
 function renderProfileView(){
+  if(!S.user) return;
+  const u = S.user;
+  const cont = document.getElementById('profile-content');
+  if(!cont) return;
+
+  const name = (u.name||'') + (u.lname?' '+u.lname:'');
+  const email = u.email||'';
+  const age = u.dob ? (new Date().getFullYear()-new Date(u.dob).getFullYear())+' años' : '';
+  const sex = u.sex||'';
+
+  cont.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+
+      <!-- Perfil como botón -->
+      <div onclick="toggleProfileEdit()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:46px;height:46px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:600;color:#fff">${name}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">${email}</div>
+          ${age||sex ? '<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px">'+[age,sex].filter(Boolean).join(' · ')+'</div>' : ''}
+        </div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+
+      <!-- Mis escalas -->
+      <div onclick="navTo('scales')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis escalas</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Cuestionarios clínicos completados</div></div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+
+      <!-- Mi historial -->
+      <div onclick="showPatientHistory()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mi historial</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Evolución de evaluaciones</div></div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+
+      <!-- Diario de sueño -->
+      <div onclick="navTo('diary')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Diario de sueño</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Registros y gráficos</div></div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+
+      <!-- Configuración -->
+      <div onclick="showOnboarding()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.5)" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.5)">Mi configuración</div></div>
+        <div style="color:rgba(255,255,255,0.2);font-size:18px">›</div>
+      </div>
+
+      <!-- Cerrar sesión -->
+      <div style="margin-top:6px">
+        <button onclick="doLogout()" style="width:100%;padding:14px;border:1px solid rgba(255,80,80,0.25);background:rgba(255,80,80,0.06);border-radius:12px;color:rgba(255,120,120,0.85);font-size:14px;font-weight:500;cursor:pointer;font-family:-apple-system,sans-serif;">
+          Cerrar sesión
+        </button>
+      </div>
+
+    </div>
+  `;
+}function renderProfileView(){
   const u=S.user;
   const dob=u.dob?new Date(u.dob):null;
   const age=dob?Math.floor((new Date()-dob)/31557600000):null;
