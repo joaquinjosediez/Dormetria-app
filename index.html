@@ -1005,44 +1005,139 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <div id="app">
 
 <!-- LOGIN -->
-<div id="screen-landing" class="screen active">
+<div id="screen-landing" class="screen">
   <style>
     #screen-landing{background:#0f2820;position:relative;overflow:hidden;}
-    #dm-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 20%,#1a4a3a 0%,transparent 70%),radial-gradient(ellipse 90% 60% at 50% 100%,#0d2a1e 0%,transparent 60%),#0f2820;z-index:0;}
-    #dm-stars{position:absolute;inset:0;z-index:1;pointer-events:none;}
-    #dm-content{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:52px 32px 44px;min-height:0;}
-    #dm-logo-area{display:flex;flex-direction:column;align-items:center;}
-    #dm-logo-svg{width:min(82%,320px);height:auto;overflow:visible;shape-rendering:geometricPrecision;}
-    #dm-tagline{font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.28);text-transform:uppercase;margin-top:20px;opacity:0;animation:dmFadeIn 0.6s ease 2.5s forwards;font-family:-apple-system,sans-serif;}
-    #dm-bottom{width:100%;display:flex;flex-direction:column;align-items:center;opacity:0;animation:dmFadeUp 0.8s ease 3.0s forwards;}
-    #dm-subtitle{font-size:13px;color:rgba(255,255,255,0.42);text-align:center;line-height:1.7;margin-bottom:22px;font-family:-apple-system,sans-serif;}
-    #dm-btn-start{width:100%;height:54px;border-radius:27px;background:linear-gradient(135deg,#2d6b4a 0%,#1a4a3a 100%);border:1px solid rgba(126,200,164,0.2);display:flex;align-items:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.06);}
-    #dm-btn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;}
-    #dm-btn-label{flex:1;text-align:center;font-weight:600;font-size:16px;color:white;padding-right:48px;font-family:-apple-system,sans-serif;}
-    #dm-login-link{font-size:12px;color:rgba(255,255,255,0.28);font-family:-apple-system,sans-serif;}
-    #dm-login-link span{color:#7ec8a4;cursor:pointer;}
-    @keyframes dmFadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes dmFadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    #ltr-o{opacity:0;animation:dmFadeIn 0.45s ease 0.60s forwards}#ltr-d{opacity:0;animation:dmFadeIn 0.45s ease 1.30s forwards}#ltr-r{opacity:0;animation:dmFadeIn 0.45s ease 1.43s forwards}#ltr-m{opacity:0;animation:dmFadeIn 0.45s ease 1.56s forwards}#ltr-e{opacity:0;animation:dmFadeIn 0.45s ease 1.69s forwards}#ltr-t{opacity:0;animation:dmFadeIn 0.45s ease 1.82s forwards}#ltr-r2{opacity:0;animation:dmFadeIn 0.45s ease 1.95s forwards}#ltr-i{opacity:0;animation:dmFadeIn 0.45s ease 2.08s forwards}#ltr-a{opacity:0;animation:dmFadeIn 0.45s ease 2.21s forwards}
-    #screen-landing .dm-smooth{filter:url(#dm-smooth-filter);}
+    
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:#071510;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.screen{position:relative;width:100%;height:100%;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:52px 32px 44px;overflow:hidden;}
+.bg{position:absolute;inset:0;background:radial-gradient(ellipse 65% 45% at 50% 12%,#1a4a3a 0%,transparent 65%),radial-gradient(ellipse 80% 50% at 50% 100%,#0d2a1e 0%,transparent 55%),#0f2820;z-index:0;}
+.stars{position:absolute;inset:0;z-index:2;pointer-events:none;}
+.logo-area{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;align-items:center;}
+.logo-svg{width:min(82%,320px);height:auto;overflow:visible;shape-rendering:geometricPrecision;}
+@keyframes dmFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes dmFadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.dm-smooth{filter:url(#dm-sf);}
+#ltr-o{opacity:0;animation:dmFadeIn 0.5s ease 0.00s forwards}
+#ltr-d{opacity:0;animation:dmFadeIn 0.5s ease 2.00s forwards}
+#ltr-r{opacity:0;animation:dmFadeIn 0.5s ease 2.13s forwards}
+#ltr-m{opacity:0;animation:dmFadeIn 0.5s ease 2.26s forwards}
+#ltr-e{opacity:0;animation:dmFadeIn 0.5s ease 2.39s forwards}
+#ltr-t{opacity:0;animation:dmFadeIn 0.5s ease 2.52s forwards}
+#ltr-r2{opacity:0;animation:dmFadeIn 0.5s ease 2.65s forwards}
+#ltr-i{opacity:0;animation:dmFadeIn 0.5s ease 2.78s forwards}
+#ltr-a{opacity:0;animation:dmFadeIn 0.5s ease 2.91s forwards}
+
+.tagline{font-family:'Instrument Sans',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.28);text-transform:uppercase;margin-top:20px;opacity:0;animation:dmFadeIn 0.6s ease 3.51s forwards;}
+.bottom-zone{position:relative;z-index:3;width:100%;display:flex;flex-direction:column;align-items:center;opacity:0;animation:dmFadeUp 0.8s ease 4.01s forwards;}
+.subtitle{font-family:'Instrument Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.42);text-align:center;line-height:1.7;margin-bottom:22px;}
+.btn-empezar{width:100%;height:54px;border-radius:27px;background:linear-gradient(135deg,#2d6b4a 0%,#1a4a3a 100%);border:1px solid rgba(126,200,164,0.2);display:flex;align-items:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);transition:transform 0.15s;}
+.btn-empezar:active{transform:scale(0.98);}
+.btn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;}
+.btn-label{flex:1;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:white;padding-right:48px;}
+.btn-login{font-family:'Instrument Sans',sans-serif;font-size:12px;color:rgba(255,255,255,0.28);}
+.btn-login span{color:#7ec8a4;cursor:pointer;}
+
   </style>
+  
+<div class="dm-splash-screen">
+  <div class="bg"></div>
+  <svg id="dm-skyline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 220"
+     preserveAspectRatio="xMidYMax meet"
+     style="position:absolute;bottom:0;left:0;width:100%;height:58%;z-index:1;pointer-events:none;">
 
-  <div id="dm-bg"></div>
-  <div id="dm-stars"></div>
+  <!-- Far hills (lightest dark layer) -->
+  <path d="M0 220 L0 130 Q20 108 40 112 Q58 116 72 100 Q88 82 108 90 Q124 96 140 85 Q158 72 178 80 Q194 86 210 220 Z" fill="#0c2318"/>
 
-  <div id="dm-content">
-    <div style="flex:0.5"></div>
+  <!-- Left forested hill mass -->
+  <path d="M0 220 L0 148 Q8 138 18 132 Q28 125 35 118 Q44 108 55 112 Q64 116 70 108 Q80 97 92 102 Q100 106 108 100 Q118 93 128 98 Q136 102 142 95 Q152 86 162 91 Q170 95 175 220 Z" fill="#0e2a1e"/>
 
-    <div id="dm-logo-area">
-      <svg id="dm-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="36 33 635 126" shape-rendering="geometricPrecision">
-        <defs>
-          <filter id="dm-smooth-filter" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">
-            <feGaussianBlur stdDeviation="0.4" result="blur"/>
-            <feComponentTransfer in="blur"><feFuncA type="linear" slope="1.8" intercept="-0.3"/></feComponentTransfer>
-          </filter>
-        </defs>
-        <g class="dm-smooth">
-          <path id="ltr-o" d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill="#f2f2ec" fill-rule="evenodd"/>
+  <!-- Tree line left -->
+  <path d="M0 220 L0 155
+    Q5 148 8 155 Q12 148 15 155
+    Q18 145 22 155 Q26 145 30 155
+    Q34 140 38 148 Q40 140 43 148 Q46 138 50 148
+    Q54 142 58 150 Q62 142 66 150
+    Q70 145 74 152 Q78 145 82 152
+    Q85 148 88 155 Q92 148 95 155
+    L95 220 Z" fill="#091a11"/>
+
+  <!-- Individual tree tops (pointy conifers) -->
+  <polygon points="15,155 22,132 29,155" fill="#081610"/>
+  <polygon points="35,150 44,124 53,150" fill="#081610"/>
+  <polygon points="55,148 65,120 75,148" fill="#081610"/>
+  <polygon points="78,152 86,130 94,152" fill="#081610"/>
+  <polygon points="5,158 11,142 17,158" fill="#081610"/>
+
+  <!-- City skyline right side -->
+  <path d="
+    M200 220 L200 160
+    L208 160 L208 148
+    L214 148 L214 160
+    L220 160 L220 140
+    L226 140 L226 128
+    L230 128 L230 120
+    L234 120 L234 112
+    L238 112 L238 120
+    L242 120 L242 128
+    L246 128 L246 118
+    L252 118 L252 108
+    L256 108 L256 100
+    L260 100 L260 108
+    L264 108 L264 118
+    L270 118 L270 125
+    L276 125 L276 115
+    L282 115 L282 105
+    L286 105 L286 98
+    L290 98 L290 105
+    L294 105 L294 115
+    L300 115 L300 122
+    L308 122 L308 110
+    L314 110 L314 102
+    L318 102 L318 95
+    L322 95 L322 88
+    L326 88 L326 82
+    L330 82 L330 88
+    L334 88 L334 95
+    L338 95 L338 102
+    L344 102 L344 110
+    L350 110 L350 118
+    L356 118 L356 108
+    L362 108 L362 100
+    L368 100 L368 108
+    L374 108 L374 118
+    L382 118 L382 112
+    L386 112 L386 106
+    L390 106 L390 220 Z"
+    fill="#0d2318"/>
+
+  <!-- Building details: antenna on tallest building -->
+  <line x1="328" y1="82" x2="328" y2="70" stroke="#0d2318" stroke-width="1.5"/>
+  <circle cx="328" cy="69" r="2" fill="#1a4a3a"/>
+
+  <!-- Tiny lit windows -->
+  <rect x="228" y="122" width="3" height="2" fill="#1a3a2a" opacity="0.8"/>
+  <rect x="258" y="104" width="2" height="2" fill="#1a4a3a" opacity="0.7"/>
+  <rect x="285" y="102" width="2" height="2" fill="#152d1e" opacity="0.9"/>
+  <rect x="324" y="92" width="2" height="2" fill="#2d5a40" opacity="0.6"/>
+  <rect x="328" y="92" width="2" height="2" fill="#1a4a3a" opacity="0.5"/>
+  <rect x="365" y="104" width="2" height="2" fill="#1a3a2a" opacity="0.7"/>
+
+  <!-- Ground strip -->
+  <rect x="0" y="210" width="390" height="10" fill="#060f09"/>
+</svg>
+  <div class="stars" id="dm-stars"></div>
+  <div style="flex:0.45;position:relative;z-index:3;"></div>
+  <div class="logo-area">
+    <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="36 33 635 126" shape-rendering="geometricPrecision">
+      <defs>
+        <filter id="dm-sf" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">
+          <feGaussianBlur stdDeviation="0.4" result="b"/>
+          <feComponentTransfer in="b"><feFuncA type="linear" slope="1.8" intercept="-0.3"/></feComponentTransfer>
+        </filter>
+      </defs>
+      <g class="dm-smooth"><path id="ltr-o" d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill="#f2f2ec" fill-rule="evenodd"/>
         <path id="ltr-d" d="M104 34 L 94 36 L 84 40 L 85 42 L 88 42 L 92 47 L 92 83 L 90 84 L 87 80 L 79 75 L 76 75 L 75 74 L 63 74 L 62 75 L 59 75 L 50 80 L 45 85 L 39 95 L 37 101 L 37 105 L 36 106 L 36 124 L 37 125 L 38 133 L 43 143 L 51 151 L 58 155 L 61 155 L 62 156 L 73 156 L 74 155 L 77 155 L 83 152 L 88 147 L 91 142 L 93 143 L 94 155 L 95 156 L 102 153 L 112 151 L 111 148 L 109 148 L 106 146 L 104 140 Z M70 79 L 74 79 L 82 82 L 89 90 L 92 100 L 92 129 L 91 130 L 91 133 L 88 140 L 81 147 L 76 149 L 68 149 L 61 146 L 54 139 L 51 133 L 50 125 L 49 124 L 49 104 L 50 103 L 51 96 L 56 87 L 60 83 L 65 80 L 69 80 Z" fill="#f2f2ec" fill-rule="evenodd"/>
         <path id="ltr-r" d="M248 74 L 238 75 L 232 79 L 226 89 L 224 88 L 224 75 L 223 74 L 205 80 L 205 82 L 208 82 L 212 86 L 212 147 L 210 150 L 204 152 L 205 154 L 234 154 L 234 152 L 229 151 L 226 149 L 224 143 L 224 108 L 225 107 L 225 102 L 229 91 L 234 86 L 236 85 L 244 85 L 250 88 L 251 83 L 254 77 Z" fill="#f2f2ec" fill-rule="evenodd"/>
         <path id="ltr-m" d="M260 79 L 260 82 L 263 82 L 267 86 L 267 90 L 268 91 L 268 142 L 267 143 L 267 148 L 264 151 L 260 152 L 260 154 L 288 154 L 288 152 L 284 151 L 280 147 L 280 101 L 286 88 L 290 84 L 294 82 L 305 82 L 307 83 L 312 88 L 315 97 L 315 146 L 311 151 L 307 153 L 308 154 L 335 154 L 335 152 L 331 151 L 329 149 L 327 142 L 327 104 L 328 103 L 328 99 L 330 93 L 333 88 L 336 85 L 342 82 L 352 82 L 357 85 L 361 91 L 362 99 L 363 100 L 363 143 L 361 149 L 359 151 L 355 152 L 355 154 L 383 154 L 383 152 L 379 151 L 375 146 L 375 100 L 374 99 L 374 93 L 371 84 L 369 81 L 364 77 L 357 74 L 346 74 L 340 76 L 331 84 L 327 91 L 325 90 L 325 88 L 322 82 L 318 78 L 313 75 L 310 75 L 309 74 L 298 74 L 288 79 L 281 88 L 279 87 L 279 74 L 267 78 Z" fill="#f2f2ec" fill-rule="evenodd"/>
@@ -1051,42 +1146,33 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
         <path id="ltr-r2" d="M554 74 L 546 78 L 539 88 L 537 87 L 536 84 L 536 74 L 517 80 L 517 82 L 522 83 L 525 87 L 525 147 L 523 150 L 518 152 L 518 154 L 546 154 L 546 152 L 543 152 L 538 148 L 538 140 L 537 139 L 537 110 L 538 109 L 539 98 L 542 91 L 546 87 L 554 84 Z" fill="#f2f2ec" fill-rule="evenodd"/>
         <path id="ltr-i" d="M582 74 L 562 80 L 562 82 L 567 83 L 570 88 L 570 144 L 569 145 L 569 148 L 566 151 L 562 152 L 562 154 L 590 154 L 590 152 L 584 150 L 582 147 Z M580 43 L 575 46 L 573 50 L 573 54 L 574 57 L 577 60 L 584 61 L 588 59 L 590 56 L 590 49 L 586 44 Z" fill="#f2f2ec" fill-rule="evenodd"/>
         <path id="ltr-a" d="M613 79 L 610 81 L 606 86 L 603 93 L 603 96 L 614 99 L 615 91 L 619 83 L 624 79 L 633 78 L 640 81 L 644 86 L 646 92 L 646 101 L 643 105 L 637 108 L 617 114 L 609 118 L 602 125 L 599 135 L 600 136 L 600 142 L 603 148 L 610 154 L 616 156 L 628 156 L 636 153 L 641 149 L 644 144 L 646 143 L 647 144 L 647 148 L 651 154 L 655 156 L 662 156 L 666 154 L 670 149 L 669 148 L 662 149 L 659 146 L 659 140 L 658 139 L 658 112 L 659 111 L 658 110 L 658 93 L 655 85 L 652 81 L 647 77 L 637 74 L 626 74 Z M645 109 L 647 115 L 646 118 L 646 134 L 642 142 L 638 146 L 632 149 L 622 149 L 618 147 L 614 143 L 612 138 L 612 130 L 614 125 L 622 118 L 628 115 L 638 112 L 643 109 Z" fill="#f2f2ec" fill-rule="evenodd"/>
-
-        </g>
-      </svg>
-      <div id="dm-tagline">Medicina del sueño</div>
-    </div>
-
-    <div style="flex:1"></div>
-
-    <div id="dm-bottom">
-      <div id="dm-subtitle">Seguimiento clínico del sueño<br>basado en evidencia.</div>
-      <div id="dm-btn-start" onclick="showConsentOrLogin()">
-        <div id="dm-btn-icon">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        </div>
-        <div id="dm-btn-label">Empezar</div>
-      </div>
-      <div id="dm-login-link">Ya tengo cuenta — <span onclick="showScreen('login')">Ingresar</span></div>
-    </div>
+</g>
+    </svg>
+    <div class="tagline">Medicina del sueño</div>
   </div>
-
-  <script>
-(function(){
-  var c=document.getElementById('dm-stars');
-  if(!c)return;
-  var sh=document.createElement('style');
-  var css='';
-  for(var i=0;i<42;i++){var op=(Math.random()*0.45+0.12).toFixed(2);css+='@keyframes dmTw'+i+'{0%,100%{opacity:'+op+'}50%{opacity:0.03}}';}
+  <div style="flex:1;position:relative;z-index:3;"></div>
+  <div class="bottom-zone">
+    <div class="subtitle">Seguimiento clínico del sueño<br>basado en evidencia.</div>
+    <div class="btn-empezar" onclick="showConsentOrLogin()">
+      <div class="btn-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+      <div class="btn-label">Empezar</div>
+    </div>
+    <div class="btn-login">Ya tengo cuenta — <span onclick="showScreen('login')">Ingresar</span></div>
+  </div>
+</div>
+<script>(function(){
+  var c=document.getElementById('dm-stars');if(!c)return;
+  var sh=document.createElement('style'),css='';
+  for(var i=0;i<44;i++){var op=(Math.random()*0.5+0.15).toFixed(2);css+='@keyframes dmTw'+i+'{0%,100%{opacity:'+op+'}50%{opacity:0.02}}';}
   sh.textContent=css;document.head.appendChild(sh);
-  for(var i=0;i<32;i++){var el=document.createElement('div');var sz=Math.random()*2+0.8;
-    el.style.cssText='position:absolute;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:white;left:'+(Math.random()*100)+'%;top:'+(Math.random()*65)+'%;animation:dmTw'+i+' '+(Math.random()*3.5+2).toFixed(1)+'s ease-in-out -'+(Math.random()*6).toFixed(1)+'s infinite';
+  for(var i=0;i<34;i++){var el=document.createElement('div'),sz=Math.random()*2+0.6;
+    el.style.cssText='position:absolute;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:white;left:'+(Math.random()*100)+'%;top:'+(Math.random()*58)+'%;animation:dmTw'+i+' '+(Math.random()*3.5+2).toFixed(1)+'s ease-in-out -'+(Math.random()*6).toFixed(1)+'s infinite';
     c.appendChild(el);}
-  for(var i=32;i<42;i++){var el=document.createElement('div');
-    el.style.cssText='position:absolute;left:'+(Math.random()*88+6)+'%;top:'+(Math.random()*60)+'%;color:rgba(126,200,164,0.4);font-size:11px;font-weight:300;font-family:sans-serif;line-height:1;animation:dmTw'+i+' '+(Math.random()*4+3).toFixed(1)+'s ease-in-out -'+(Math.random()*5).toFixed(1)+'s infinite';
+  for(var i=34;i<44;i++){var el=document.createElement('div');
+    el.style.cssText='position:absolute;left:'+(Math.random()*86+7)+'%;top:'+(Math.random()*52)+'%;color:rgba(126,200,164,0.35);font-size:10px;font-weight:300;font-family:sans-serif;line-height:1;animation:dmTw'+i+' '+(Math.random()*4+3).toFixed(1)+'s ease-in-out -'+(Math.random()*5).toFixed(1)+'s infinite';
     el.textContent='+';c.appendChild(el);}
-})();
-</script>
+})();</script>
+
 </div>
 
 
@@ -1257,94 +1343,710 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
     <div style="width:70px"></div>
   </div>
   <div class="scroll" style="padding:20px 16px 40px">
-
-    <p style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.75;margin-bottom:24px">
-      Dormetria te ayuda a hacer un seguimiento de tu sueño con herramientas clínicas reales — las mismas que usan los médicos — y a compartir esa información con tu especialista si lo deseás.
-    </p>
-
-    <!-- Section: Las 3 secciones principales -->
-    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Las tres secciones principales</div>
-
+    <p style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.75;margin-bottom:24px">Dormetria te ayuda a hacer un seguimiento de tu sueño con herramientas clínicas reales — las mismas que usan los médicos — y a compartir esa información con tu especialista.</p>
+    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Las tres secciones</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
-      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start">
-        <div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        </div>
-        <div>
-          <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:3px">Inicio</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.55">Tu punto de partida. Muestra accesos rápidos según lo que configuraste: el diario de sueño, las escalas sugeridas, el test de alerta, o el perfil de tu hijo/a.</div>
-        </div>
-      </div>
-
-      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start">
-        <div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-        </div>
-        <div>
-          <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:3px">Yo</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.55">Tu perfil clínico (edad, peso, medicación, hábitos) y tu historial de evaluaciones. Desde acá también podés modificar tu configuración inicial.</div>
-        </div>
-      </div>
-
-      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start">
-        <div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="5" cy="12" r="1.5" fill="white"/><circle cx="12" cy="12" r="1.5" fill="white"/><circle cx="19" cy="12" r="1.5" fill="white"/></svg>
-        </div>
-        <div>
-          <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:3px">Más</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.55">Acceso a todas las secciones: escalas clínicas, diario de sueño, test de alerta (PVT) y estudios.</div>
-        </div>
-      </div>
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start"><div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div><div><div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:3px">Inicio</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.55">Accesos rápidos: diario, escalas, test de alerta, perfil de tu hijo/a.</div></div></div>
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start"><div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div><div><div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:3px">Yo</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.55">Tu perfil clínico, historial de evaluaciones y configuración.</div></div></div>
+      <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start"><div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="5" cy="12" r="1.5" fill="white"/><circle cx="12" cy="12" r="1.5" fill="white"/><circle cx="19" cy="12" r="1.5" fill="white"/></svg></div><div><div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:3px">Más</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.55">Escalas clínicas, diario, PVT y estudios.</div></div></div>
     </div>
-
-    <!-- Section: Qué podés hacer -->
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Qué podés hacer</div>
-
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Completar escalas clínicas</strong> — cuestionarios validados sobre insomnio, somnolencia, calidad de sueño y más. Cada uno se puntúa automáticamente.</div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Llevar un diario de sueño</strong> — registrá cada mañana a qué hora te acostaste, cuánto tardaste en dormirte y cómo fue tu noche.</div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Hacer el test de alerta (PVT)</strong> — medí tu nivel de alerta en segundos. Útil para saber si estás en condiciones de manejar o trabajar.</div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Ver tu evolución</strong> — el historial clínico muestra cómo cambiaron tus resultados con el tiempo.</div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Perfil infantil</strong> — si tenés un hijo/a, podés crear un perfil separado con escalas pediátricas y diario adaptado.</div>
-      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div><div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Escalas clínicas</strong> — cuestionarios validados sobre insomnio, somnolencia y calidad de sueño, con puntuación automática.</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div><div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Diario de sueño</strong> — registrá cada mañana cómo fue tu noche.</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div><div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Test de alerta (PVT)</strong> — medí tu nivel de alerta en segundos.</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:6px;height:6px;border-radius:50%;background:#7ec8a4;margin-top:6px;flex-shrink:0"></div><div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6"><strong style="color:#fff">Perfil infantil</strong> — escalas pediátricas y diario adaptado para tu hijo/a.</div></div>
     </div>
-
-    <!-- Section: Conectar con tu médico -->
     <div style="background:rgba(126,200,164,0.12);border:1px solid rgba(126,200,164,0.25);border-radius:14px;padding:16px;margin-bottom:24px">
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-        </div>
-        <div>
-          <div style="font-size:14px;font-weight:600;color:#7ec8a4;margin-bottom:5px">Conectate con tu especialista</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.65">Cada cuenta tiene un <strong style="color:#fff">código personal</strong> de 6 dígitos. Compartíselo a tu médico y él/ella podrá ver tus resultados en tiempo real desde su panel profesional. Lo encontrás en la pantalla de Inicio.</div>
-        </div>
-      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg></div>
+      <div><div style="font-size:14px;font-weight:600;color:#7ec8a4;margin-bottom:5px">Conectate con tu especialista</div><div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.65">Cada cuenta tiene un <strong style="color:#fff">código personal</strong>. Compartíselo a tu médico y podrá ver tus resultados en tiempo real desde su panel. Lo encontrás en Inicio.</div></div></div>
     </div>
-
-    <div style="text-align:center">
-      <button onclick="S.user?showHome():showScreen('landing')" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:12px 28px;color:#7ec8a4;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">
-        Entendido, empezar →
-      </button>
-    </div>
-
+    <div style="text-align:center"><button onclick="S.user?showHome():showScreen('landing')" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:12px 28px;color:#7ec8a4;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">Entendido →</button></div>
   </div>
 </div>
 
+<!-- CONSENT SCREEN -->
+<div id="screen-consent" class="screen">
+  <div style="background:#1a4a3a;padding:20px 20px 16px;flex-shrink:0">
+    <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(168,216,204,0.7);margin-bottom:4px">Antes de comenzar</div>
+    <div style="font-size:22px;font-weight:700;color:#f0faf7;font-family:var(--font-display)">Términos y privacidad</div>
+  </div>
+  <div class="scroll" style="padding:0">
+    <div style="padding:20px">
+
+      <!-- Nature of the app -->
+      <div style="background:#eef8f5;border-radius:12px;padding:14px 16px;margin-bottom:14px;border-left:4px solid #1a4a3a">
+        <div style="font-size:14px;font-weight:600;color:#1a4a3a;margin-bottom:6px">¿Qué es y cómo se usa Dormetria?</div>
+        <div style="font-size:13px;color:#2d6b56;line-height:1.65">Dormetria es una <strong>herramienta de apoyo clínico</strong> que facilita el seguimiento del sueño y la salud mental entre pacientes y sus médicos. <strong>No es una historia clínica oficial</strong> ni reemplaza la consulta médica, el diagnóstico profesional ni ningún tratamiento indicado.</div>
+      </div>
+
+      <!-- Data sensitivity notice -->
+      <div style="background:#fff9ec;border-radius:12px;padding:14px 16px;margin-bottom:14px;border-left:4px solid #FF9500">
+        <div style="font-size:14px;font-weight:600;color:#92400e;margin-bottom:6px">⚠️ Tus datos son sensibles</div>
+        <div style="font-size:13px;color:#78350f;line-height:1.65">Los datos que ingresás (escalas, diario de sueño, estudios, medicación) son datos de salud considerados <strong>datos sensibles</strong> según la Ley 25.326 de Protección de Datos Personales de Argentina. Tenés derecho a acceder, rectificar y eliminar tus datos en cualquier momento.</div>
+      </div>
+
+      <!-- Consent items -->
+      <div style="font-size:14px;font-weight:600;color:var(--label);margin-bottom:10px">Doy mi consentimiento para:</div>
+
+      <div id="consent-items" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+
+        <label style="display:flex;gap:12px;align-items:flex-start;background:var(--bg-secondary);border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);cursor:pointer">
+          <input type="checkbox" id="c1" style="margin-top:2px;accent-color:#1a4a3a;width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--label);margin-bottom:3px">Almacenamiento de mis datos de salud <span style="color:#FF3B30">*</span></div>
+            <div style="font-size:12px;color:var(--label-2);line-height:1.5">Acepto que Dormetria almacene mis datos de sueño, resultados de escalas y estudios en servidores seguros de Supabase (jurisdicción UE, cumplimiento GDPR) para el funcionamiento de la app.</div>
+          </div>
+        </label>
+
+        <label style="display:flex;gap:12px;align-items:flex-start;background:var(--bg-secondary);border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);cursor:pointer">
+          <input type="checkbox" id="c2" style="margin-top:2px;accent-color:#1a4a3a;width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--label);margin-bottom:3px">Acceso médico mediante código <span style="color:#FF3B30">*</span></div>
+            <div style="font-size:12px;color:var(--label-2);line-height:1.5">Entiendo que al compartir mi código de 6 dígitos con un médico, ese profesional podrá acceder a mi historial completo en Dormetria. Puedo revocar este acceso en cualquier momento desde mi perfil.</div>
+          </div>
+        </label>
+
+        <label style="display:flex;gap:12px;align-items:flex-start;background:var(--bg-secondary);border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);cursor:pointer">
+          <input type="checkbox" id="c3" style="margin-top:2px;accent-color:#1a4a3a;width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--label);margin-bottom:3px">Uso anónimo para investigación <span style="color:var(--label-3);font-size:11px">(opcional)</span></div>
+            <div style="font-size:12px;color:var(--label-2);line-height:1.5">Acepto que mis datos, <strong>completamente anonimizados</strong> (sin nombre, email ni datos identificables), puedan ser utilizados para investigación científica sobre sueño y salud mental. Podés revocar este consentimiento en cualquier momento desde Perfil → Privacidad.</div>
+          </div>
+        </label>
+
+        <label style="display:flex;gap:12px;align-items:flex-start;background:var(--bg-secondary);border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);cursor:pointer">
+          <input type="checkbox" id="c4" style="margin-top:2px;accent-color:#1a4a3a;width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--label);margin-bottom:3px">Notificaciones al médico vinculado <span style="color:#FF3B30">*</span></div>
+            <div style="font-size:12px;color:var(--label-2);line-height:1.5">Acepto que si alguna escala arroja un resultado clínicamente relevante, el médico que vinculé mediante código reciba una alerta para poder revisar mis resultados y eventualmente contactarme.</div>
+          </div>
+        </label>
+
+      </div>
+
+      <!-- Mandatory disclaimer -->
+      <div style="background:#fef2f2;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#9b1c1c;line-height:1.6">
+        <strong>Aviso legal:</strong> Dormetria no es un dispositivo médico registrado en ANMAT. Las escalas son herramientas de screening validadas clínicamente, pero los resultados no constituyen diagnóstico y no reemplazan la evaluación de un profesional habilitado. <span style="color:#FF3B30">*</span> Campos obligatorios.
+      </div>
+
+      <div id="consent-error" style="display:none;color:#FF3B30;font-size:13px;margin-bottom:10px;padding:0 4px">Debés aceptar los ítems obligatorios para continuar.</div>
+
+      <button onclick="acceptConsent()" class="btn btn-g" style="margin-bottom:8px">Acepto y quiero continuar</button>
+      <div style="text-align:center;margin-top:8px;font-size:12px;color:var(--label-3)">
+        Al continuar confirmás haber leído y aceptado los términos anteriores.<br>
+        <span style="color:#1a4a3a;cursor:pointer" onclick="showScreen('privacy')">Leer política de privacidad completa</span> · 
+        <span style="color:var(--label-3);cursor:pointer" onclick="showScreen('landing')">Volver</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-login" class="screen" style="overflow-y:auto;">
+  <div class="login-outer"><div class="login-wrap">
+    <div class="login-logo">
+      <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCADEAscDASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAcIAQkDBQYCBP/EAF8QAAEDAwIDAwUICQ4LBgcBAAEAAgMEBREGBwgSITFBURMiYXGBFDJ1kaGxsrMVNDU3QlJykrQWFyMzNlViZXN0gqLB0hgkJidDRYWVltHTRFRkk8LiJVNjg5Sj46T/xAAZAQEAAwEBAAAAAAAAAAAAAAAAAQIEAwX/xAAmEQEAAgICAgICAwEBAQAAAAAAAQIDEQQxEiEiMjNBE1FhFEJx/9oADAMBAAIRAxEAPwCD0RFyeKIiICLCygIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIsIMoiICIiAiIgIiICIiAiIgIiICIiAiwsoCIiAiIgIiICIiAiIgIiICIiAiIgIiwgyiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiJlAREQEREBERARfEskcTOeWRkbPxnOAHxlfYIIyChoREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBEREiIiIEREBERAREQeq2+271fr73T+pW3Q1DKaQRTzz1AihjeQHcpIBdnBB6NPaps0nwoSyNjm1bq6Zrs5dTWqNrG/kl8gcT6wGqC9Fa61fok1B0re5La2ocJJ4xCySOV4AAc5rgcnAA6EdFdjYHX0+4u3VNfK6nhp7jHLJTVkcJPJ5Rji3mbnqA4AOx1xnGSpjXTbx647f8A1jSezu3ekqcyWzTlLLVMjLfdVWPLzHA73vyVQuv63a5/CNWB6B7okwtmdR1p5PyD8y1mVwAutz+Eav8ASJFNluVERT04kRFVgEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQERd9oPTFXq2/stlJIIWNb5Sonc3IiZ447yewD/kg6FFZCh2l0PT0bYJrbLVyY86eaofzk+PQgD1AKMt2duRpOFt2tMs1RanyCORkh5pKdzjhpLvwmk9M9oJ69OyPKERaJR4iIpSIiICIiAiIgIiICIiAiIgIiICIiAiIgwsoiAiIgIiICtrwNSOdoe/xZ81l0yB62DKqUrY8C37jtR/Cg+rCmO2jjfdYao/aJPyT8y1mV33WufwlV/pEi2aVH2vJ+SfmWsuu+6tz+Eav9IkVrNHL+kONERUeeIiICIiAiIgIiICIiAiIgIiICImUBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAXb6K0/Var1fadM0UrYai51BgZM5hc2LDHPLnAdSAGrqFNnBnp5113WqL69j/IWOiOHcvmmWfLQM+Iax35yl0xV8rRDw+8e3VftlqG3WW4XWnuktdSPqmywQGJrA17WcpBccnrnK8Wp745j/nN0wP4lqPr41AiT6Wz0il9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3EP9hc8j5FItg0NtfsPY5tU3SrMtbHGWfZGuLX1Emf8ARwsaAAXdBysGT0zlRRqTio1XV0z4bDpu2WuQjAmqZnVJb6Q0Bo+VQpqvUl+1XdnXXUd3q7lVH3vlZD5OIeEbPesHqHXvJUev05TkxU+se0hVm9dyu2+9i17eGyUVkt1SYI6Jrs+56OQOa57+4vy5r3HuDMDsJN4aaaKpp454XtkikaHMe05DgeoIWsjPqKlLazffWegbdHZxTU1/tEfSGnrJ3RywDOcMkw7LfBpHTuOOiRJi5HvVlld9Nl7VufNQ3B1zntN1omGJlRHGJGyRE55HsJGcHqCCCOviVBe9+z2kdtNto6kakqa3U9RVxtphO4NE7OYeUa2JvQANyS7qRjt7l3N54rb3LROjtGjqGlqXAgTVNc6VrD48jWDm+MKBdVX686qv0191DcZ6+vm6cz3Hkjb08yNmcMb0HQduMnJ6pMwnNkx/r3LrQiIqsIiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgLBCyiDAWURAWMLKIkwiIiBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBCiIMLKIgIiICIiAiIgIiICwsogIiIGAiIgIiICIiAiIgLGFlEBERAREQEREBERAREQEREBERBhZREBERAREQEREBYWUQEREBERAREQEREBERBhZREBERAREQEREBERAREQEREBERAWFlEBERAREQEREBERBhFlEBERAREQEREBERBhZREBERAREQFhZRBhZREBERAREQEREBERAREQEWFlAREQEREGEWUQEREBERAREQEREBERACIiAiIgIiIHcg7ERSCIigEREBERAREUgERFAIiICIiAiIgJ3IiAUREBERAREQE7kRAREUgiIoBERAREQEREAoiKQREUAiIgIiICIikERFAIiICIiAiIgFERAREQERESIiIgREQAgREBERAREQEREDvREUj/9k=" alt="Dormetria" style="height:64px;width:auto;margin-bottom:8px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.12));border-radius:14px;overflow:hidden">
+      <div class="login-sub" style="text-align:center">Seguimiento profesional<br>de medicina del sueño<br>para niños y adultos</div>
+    </div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="setMode('patient',this)">Paciente</button>
+      <button class="mode-tab" onclick="setMode('doctor',this)">Profesional</button>
+    </div>
+    <div id="login-form">
+      <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="login-email" placeholder="tucorreo@email.com"></div>
+      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="login-pass" placeholder="••••••••"><div class="err" id="login-error">Correo o contraseña incorrectos</div></div>
+      <button class="btn btn-g" onclick="doLogin()" id="login-btn">Ingresar</button>
+      <div class="toggle-link" id="reg-toggle">¿Primera vez? <span onclick="showRegister()">Crear cuenta</span></div>
+    </div>
+    <div id="register-form" style="display:none">
+      <div id="p-reg">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="reg-name" placeholder="María"></div>
+          <div class="form-group"><label class="form-label">Apellido</label><input class="form-input" id="reg-lname" placeholder="García"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Fecha de nacimiento <span style="color:#dc2626">*</span></label><input class="form-input" type="date" id="reg-dob"></div>
+      </div>
+      <div class="form-group" id="reg-activity-wrap" style="display:none">
+        <label class="form-label">Actividad principal</label>
+        <select class="form-select" id="reg-activity">
+          <option value="">Seleccioná...</option>
+          <option value="student">Estudiante</option>
+          <option value="athlete">Deportista / Atleta</option>
+          <option value="shift">Trabajador en turnos</option>
+          <option value="night">Trabajador nocturno</option>
+          <option value="healthcare">Profesional de salud</option>
+          <option value="office">Trabajo de oficina</option>
+          <option value="remote">Trabajo remoto</option>
+          <option value="retired">Jubilado/a</option>
+          <option value="other">Otro</option>
+        </select>
+      </div>
+      <div id="d-reg" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="dreg-name" placeholder="Carlos"></div>
+          <div class="form-group"><label class="form-label">Apellido</label><input class="form-input" id="dreg-lname" placeholder="López"></div>
+        </div>
+        <div class="form-group" id="spec-wrap">
+          <label class="form-label">Tipo de profesional</label>
+          <select class="form-select" id="reg-specialty">
+            <option value="">Seleccionar especialidad...</option>
+            <option value="psychiatry">Psiquiatría</option>
+            <option value="neurology">Neurología</option>
+            <option value="pneumology">Neumonología / Medicina del sueño</option>
+            <option value="ent">Otorrinolaringología</option>
+            <option value="pediatrics">Pediatría</option>
+            <option value="cardiology">Cardiología</option>
+            <option value="psychology">Psicología</option>
+            <option value="speech">Fonoaudiología</option>
+            <option value="dentistry">Odontología</option>
+            <option value="ot">Terapia Ocupacional</option>
+            <option value="kinesiology">Kinesiología / Fisioterapia</option>
+            <option value="general">Clínica General / Medicina de familia</option>
+            <option value="other_health">Otro profesional de la salud</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Matrícula / N° de licencia</label><input class="form-input" id="dreg-mat" placeholder="MN 12345"></div>
+        <div class="form-group"><label class="form-label">Institución (opcional)</label><input class="form-input" id="dreg-inst" placeholder="Hospital Austral"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="reg-email" placeholder="tucorreo@email.com"></div>
+      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"><div class="err" id="reg-error">Completá todos los campos</div></div>
+      <div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.07);border-radius:10px;border:1px solid rgba(255,255,255,0.1)">
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Términos <span style="color:#FF3B30">*</span></div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c1" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto el almacenamiento de mis datos de salud</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c2" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto que el médico vinculado acceda a mi historial</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c4" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto las notificaciones al médico por resultados relevantes</span></label>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c3" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Uso anónimo de mis datos para investigación <em>(opcional)</em></span></label>
+          <div style="font-size:11px;color:var(--label-3);margin-top:3px"><span onclick="showScreen('privacy')" style="color:#1a4a3a;cursor:pointer;text-decoration:underline">Ver política de privacidad</span></div>
+        </div>
+      </div>
+      <button class="btn btn-g" onclick="doRegister()" id="reg-btn">Crear cuenta</button>
+      <div class="toggle-link">¿Ya tenés cuenta? <span onclick="showLogin()">Ingresar</span></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- PATIENT HOME -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div style="width:60px"></div>
+    <div style="text-align:center;flex:1">
+      <div id="home-greeting" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:400"></div>
+      <div id="home-name" style="font-size:17px;font-weight:700;color:#fff"></div>
+    </div>
+    <button class="topbar-btn" onclick="exportPatientPDF()" style="color:rgba(255,255,255,0.6);font-size:12px">↓ PDF</button>
+  </div>
+  <div class="scroll dark-bg" id="home-scroll" style="background:#1a2e23;padding:0 0 24px">
+    <!-- Hero strip -->
+    <div style="padding:12px 16px 0">
+      <div id="home-meta" style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:capitalize;margin-bottom:12px"></div>
+      <!-- Métricas -->
+      <!-- metrics removed from simplified home -->
+      <!-- Child profile pills -->
+      <div id="home-profile-pills" style="display:none;margin-bottom:14px">
+        <div id="home-profile-pills-list" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
+      </div>
+    </div>
+    <!-- Acciones rápidas según onboarding -->
+    <div id="home-quick" style="padding:0 16px;display:flex;flex-direction:column;gap:10px;margin-bottom:20px"></div>
+    <!-- Código profesional (compacto) -->
+    <div style="padding:0 16px;margin-bottom:6px">
+      <button onclick="showPatientCode()" style="width:100%;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left">
+        <div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#fff">Código para tu profesional</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Compartilo con tu médico para vincular</div>
+        </div>
+        <div style="color:rgba(255,255,255,0.3);font-size:18px">›</div>
+      </button>
+    </div>
+    <!-- Escalas / contenido dinámico -->
+    <div style="padding:0 16px;margin-top:14px">
+      <div id="home-section-title" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px"></div>
+      <div id="scales-list"></div>
+    </div>
+    <!-- Banner expandible -->
+    <div style="padding:0 16px;margin-top:16px">
+      <button onclick="toggleHomeBanner()" style="width:100%;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);border-radius:10px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:center">
+        ¿Cómo se usa Dormetria? <span id="banner-chev">›</span>
+      </button>
+      <div id="banner-body" style="display:none;background:rgba(255,255,255,0.05);border-radius:0 0 10px 10px;padding:14px 16px;border:1px solid rgba(255,255,255,0.08);border-top:none;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.65">
+        <p style="margin-bottom:8px">Dormetria es una plataforma de seguimiento clínico del sueño. Completá las escalas, llevá el diario y compartí tu código con tu médico.</p>
+        <ol style="padding-left:16px;margin:0">
+          <li style="margin-bottom:4px">Completá tu <strong style="color:#fff">perfil</strong> con tus datos clínicos</li>
+          <li style="margin-bottom:4px">Respondé los <strong style="color:#fff">cuestionarios</strong> sugeridos</li>
+          <li style="margin-bottom:4px">Llevá el <strong style="color:#fff">diario de sueño</strong> cada mañana</li>
+          <li style="margin-bottom:4px">Compartí tu <strong style="color:#fff">código</strong> con tu profesional</li>
+        </ol>
+      </div>
+    </div>
+    <!-- Linked children (hidden, for reference) -->
+    <div id="home-children" style="display:none"></div>
+  </div>
+</div>
+
+<div id="screen-diary-home" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="font-size:17px;font-weight:600;color:var(--label)">Diario de sueño</div>
+    <div style="display:flex;gap:4px">
+      <button class="topbar-btn" onclick="showReminderSettings('diary')" style="font-size:13px" title="Configurar recordatorio">🔔</button>
+      <button class="topbar-btn" onclick="showDiaryNew()">+ Nuevo</button>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="showDiaryTab('list',this)">Registros</button>
+    <button class="tab" onclick="showDiaryTab('graficos',this)">Gráficos</button>
+    <button class="tab" onclick="showDiaryTab('wearable',this)">⌚ Wearable</button>
+  </div>
+  <div class="scroll"><div id="diary-content" style="padding:0 16px"></div></div>
+</div>
+
+<!-- DIARY NEW -->
+<div id="screen-diary-new" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showScreen('diary-home')">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Nuevo registro</div></div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll"><div style="padding:16px" id="diary-form-content"></div></div>
+</div>
+
+<!-- PVT INTRO -->
+<!-- DRIVING PVT GAME SCREEN -->
+
+<div id="screen-pvt-calib" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showScreen('pvt-intro')">← Volver</button>
+    <div style="font-size:17px;font-weight:600;color:var(--label)">Calibración de dispositivo</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll"><div style="padding:20px;max-width:440px;margin:0 auto">
+
+    <div id="calib-intro" style="">
+      <div style="text-align:center;padding:24px 0 16px">
+        <div style="font-size:48px;margin-bottom:14px">📱</div>
+        <div style="font-size:20px;font-weight:700;color:var(--label);font-family:var(--font-display);margin-bottom:10px">Calibrá tu dispositivo</div>
+        <div style="font-size:15px;color:var(--label-2);line-height:1.65;margin-bottom:20px">Cada pantalla táctil tiene una latencia propia de <strong>50–120ms</strong> que se suma a tu tiempo de reacción real. Este test mide esa latencia y la corrige automáticamente en todos tus futuros tests de alerta.</div>
+      </div>
+
+      <div style="background:var(--bg-secondary);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+        <div style="font-size:14px;font-weight:600;color:var(--label);margin-bottom:10px">Cómo funciona</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">1</div>
+            <div style="font-size:14px;color:var(--label-2);line-height:1.5">Aparecerá una cuenta regresiva <strong>3 – 2 – 1</strong> y luego el círculo verde. Reaccioná lo más rápido posible. Se repite <strong>15 veces</strong></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">2</div>
+            <div style="font-size:14px;color:var(--label-2);line-height:1.5">Tocá la pantalla <strong>tan rápido como puedas</strong> cada vez que aparezca</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">3</div>
+            <div style="font-size:14px;color:var(--label-2);line-height:1.5">La app calcula el offset de tu pantalla y lo aplica automáticamente</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fffbeb;border-radius:10px;padding:11px 14px;margin-bottom:20px;font-size:13px;color:#92400e">
+        ⏱ Dura aproximadamente <strong>45 segundos</strong>. Solo necesitás hacerlo una vez por dispositivo. Los tiempos &lt;80ms (anticipación) y &gt;350ms (distracción) son descartados automáticamente.
+      </div>
+
+      <button onclick="startCalibration()" class="btn btn-g">Iniciar calibración</button>
+    </div>
+
+    <div id="calib-arena" style="display:none;text-align:center">
+      <div style="font-size:14px;color:var(--label-2);margin-bottom:8px" id="calib-counter">Toque 0 / 15</div>
+      <div style="font-size:28px;font-weight:700;color:var(--label);margin-bottom:4px" id="calib-last-rt"></div>
+      <div id="calib-dot-wrap" style="height:260px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:16px;background:var(--bg-secondary);margin:16px 0;box-shadow:0 1px 4px rgba(0,0,0,0.06);position:relative" onclick="calibTap()">
+        <div id="calib-countdown" style="font-size:100px;font-weight:800;color:var(--g800);display:none;user-select:none;line-height:1">3</div>
+        <div id="calib-dot" style="width:90px;height:90px;border-radius:50%;background:#34C759;display:none;box-shadow:0 0 32px rgba(52,199,89,0.4)"></div>
+        <div id="calib-wait-msg" style="font-size:16px;color:var(--label-3)">Tocá cuando aparezca el círculo</div>
+      </div>
+      <div style="height:4px;background:var(--fill-3);border-radius:2px;overflow:hidden;margin-bottom:8px">
+        <div id="calib-progress" style="height:100%;background:#1a4a3a;border-radius:2px;transition:width 0.3s;width:0%"></div>
+      </div>
+    </div>
+
+    <div id="calib-result" style="display:none;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">✅</div>
+      <div style="font-size:20px;font-weight:700;color:var(--label);font-family:var(--font-display);margin-bottom:8px">Calibración completa</div>
+      <div id="calib-result-detail" style="font-size:15px;color:var(--label-2);line-height:1.65;margin-bottom:20px"></div>
+      <div style="background:var(--bg-secondary);border-radius:14px;padding:16px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,0.06)" id="calib-result-stats"></div>
+      <button onclick="showScreen('pvt-intro')" class="btn btn-g" style="margin-bottom:10px">Listo — ir al test</button>
+      <button onclick="startCalibration()" class="btn btn-s">Repetir calibración</button>
+    </div>
+
+  </div></div>
+</div>
+
+<div id="screen-pvt-intro" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showHome()">← Salir</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Test de alerta <span style="font-size:11px;font-weight:400;opacity:0.7">PVT</span></div></div>
+    <button class="topbar-btn" onclick="showPVTReminderMulti()" style="font-size:13px" title="Configurar recordatorios">🔔</button>
+  </div>
+  <!-- PVT Tabs -->
+  <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg)">
+    <button id="pvt-tab-test" onclick="showPVTTab('test',this)" style="flex:1;padding:10px;border:none;background:none;font-size:14px;font-weight:600;color:#1a4a3a;border-bottom:2px solid #1a4a3a;cursor:pointer;font-family:var(--font)">Test</button>
+    <button id="pvt-tab-hist" onclick="showPVTTab('hist',this)" style="flex:1;padding:10px;border:none;background:none;font-size:14px;font-weight:500;color:var(--label-2);border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font)">Registros</button>
+  </div>
+  <!-- Test tab -->
+  <div id="pvt-panel-test" class="scroll" style="padding:20px;flex:1;overflow-y:auto">
+
+    <!-- Calibration banner -->
+    <div id="pvt-calib-banner" style="background:#fffbeb;border-radius:12px;padding:12px 14px;margin-bottom:16px;border-left:4px solid #FF9500;cursor:pointer" onclick="showScreen('pvt-calib');updateCalibButton()">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#92400e">⚙️ Calibrá tu dispositivo antes de empezar</div>
+          <div style="font-size:12px;color:#b45309;margin-top:2px" id="pvt-calib-status">No calibrado — tocá para medir el offset de tu pantalla táctil</div>
+        </div>
+        <div style="color:#b45309;font-size:18px">›</div>
+      </div>
+    </div>
+
+    <!-- Mode selector -->
+    <div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Elegí el modo</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <button id="mode-simple-btn" onclick="setPVTMode('classic')" style="padding:16px 10px;border-radius:12px;background:var(--bg-secondary);border:2px solid #1a4a3a;cursor:pointer;font-family:var(--font);text-align:left">
+        <div style="font-size:22px;margin-bottom:6px">⚡</div>
+        <div style="font-size:15px;font-weight:600;color:var(--label)">Modo clásico</div>
+        <div style="font-size:12px;color:var(--label-2);margin-top:3px;line-height:1.4">Modo simplificado usado en investigación. Punto en pantalla blanca sin distracciones.</div>
+      </button>
+      <button id="mode-drive-btn" onclick="setPVTMode('drive')" style="padding:16px 10px;border-radius:12px;background:var(--bg-secondary);border:2px solid transparent;cursor:pointer;font-family:var(--font);text-align:left">
+        <div style="font-size:22px;margin-bottom:6px">🚗</div>
+        <div style="font-size:15px;font-weight:600;color:var(--label)">Modo conducción</div>
+        <div style="font-size:12px;color:var(--label-2);margin-top:3px;line-height:1.4">Jugá un escenario real: ¿qué tan rápido reaccionás cuando importa?</div>
+      </button>
+    </div>
+
+    <!-- Instructivo simple -->
+    <div id="pvt-info-simple">
+      <div style="background:var(--bg-secondary);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:600;color:var(--label);margin-bottom:10px">Instrucciones</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Un punto rojo aparece en pantalla en momentos aleatorios (de 2 a 10 segundos entre estímulos)</div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Tocá la pantalla <strong>tan rápido como puedas</strong> cuando aparezca</div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Si tardás más de 500ms es un <strong>lapso de alerta</strong>. Se mide tu tiempo de reacción promedio.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructivo conducción -->
+    <div id="pvt-info-drive" style="display:none">
+      <div style="background:var(--bg-secondary);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:600;color:var(--label);margin-bottom:10px">Instrucciones</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Un auto se te viene de frente desde el horizonte y se acerca rápidamente. Prestá atención.</div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Reaccioná lo más rápido posible — apretando la pantalla, el teclado o el pad según tu dispositivo. A los 500ms sin respuesta, se computa como choque.</div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">El resultado es equivalente al test clínico — mismo algoritmo, distinta presentación.</div></div>
+        </div>
+      </div>
+      <div style="background:#fef2f2;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#9b1c1c">
+        🚗 <strong>Medio segundo (500ms) sin reaccionar equivale a:</strong><br><br>· A 60 km/h → más de <strong>8 metros</strong> recorridos sin reaccionar<br>· A 100 km/h → casi <strong>14 metros</strong> sin reaccionar<br>· A 120 km/h → más de <strong>16 metros</strong> sin reaccionar<br><br><span style="font-size:12px;opacity:0.85;display:block;margin-top:4px">Los tiempos de reacción mayores a 500ms son el umbral crítico para la seguridad vial.</span>
+      </div>
+    </div>
+
+    <!-- Duration -->
+    <div style="font-size:13px;color:var(--label-2);margin-bottom:8px">💤 <strong>¿Cuánto dormiste anoche?</strong> (opcional — ayuda a interpretar tu alerta)</div>
+    <select class="form-select" id="pvt-prior-sleep" style="margin-bottom:14px">
+      <option value="">No especificar</option>
+      <option value="4">Menos de 4 horas</option>
+      <option value="5">4–5 horas</option>
+      <option value="6">5–6 horas</option>
+      <option value="7">6–7 horas</option>
+      <option value="8">7–8 horas (normal)</option>
+      <option value="9">Más de 8 horas</option>
+    </select>
+    <div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Duración del test</div>
+    <div style="display:flex;gap:8px;margin-bottom:18px" id="dur-opts">
+      <button class="dur-opt" data-d="1" onclick="setPVTDur(1,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">1 min</button>
+      <button class="dur-opt" data-d="3" onclick="setPVTDur(3,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">3 min</button>
+      <button class="dur-opt active-dur" data-d="5" onclick="setPVTDur(5,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:#eef8f5;border:1.5px solid #1a4a3a;font-family:var(--font);cursor:pointer;font-size:14px;font-weight:500;color:#1a4a3a">5 min</button>
+      <button class="dur-opt" data-d="10" onclick="setPVTDur(10,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">10 min</button>
+    </div>
+
+    <!-- Prior sleep -->
+    <button onclick="startPVT()" class="btn btn-g" id="pvt-start-btn" style="margin-top:4px">Comenzar test</button>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="showScreen('pvt-calib')" class="btn btn-s" style="flex:1"><span id="pvt-calib-label">⚙️ Calibrar</span></button>
+      <button onclick="showPVTReminderMulti()" class="btn btn-s" style="flex:1" id="pvt-remind-btn">🔔 Recordatorios</button>
+    </div>
+    <div style="font-size:12px;color:var(--label-3);text-align:center;margin-top:10px;margin-bottom:4px">Clic, touch o cualquier tecla para responder</div>
+  </div><!-- end pvt-panel-test -->
+  <!-- History & graph tab -->
+  <div id="pvt-panel-hist" style="display:none;flex:1;overflow-y:auto;padding:16px 16px 80px">
+    <div id="pvt-hist-list"></div>
+  </div>
+</div>
+
+<!-- PVT TEST -->
+<!-- DRIVING PVT SCREEN -->
+<div id="screen-pvt-drive" class="screen">
+  <div style="position:relative;height:100%;display:flex;flex-direction:column;background:#000">
+    <!-- topbar overlay -->
+    <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+      <button onclick="pvtAbort();pvtMode='simple'" style="border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.8);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:var(--font)">← Salir</button>
+      <div style="background:rgba(0,0,0,0.5);border-radius:8px;padding:6px 14px;text-align:center">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.06em">TIEMPO</div>
+        <div style="font-size:18px;font-weight:600;color:white;font-family:monospace" id="drive-timer">5:00</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.5);border-radius:8px;padding:6px 14px;text-align:center">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.06em">TR PROM</div>
+        <div style="font-size:18px;font-weight:600;color:#4ade80;font-family:monospace" id="drive-rt">—</div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="drive-canvas" style="width:100%;flex:1;display:block"></canvas>
+
+    <!-- HUD bottom -->
+    <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:12px 16px">
+      <div style="display:flex;gap:10px;margin-bottom:8px;justify-content:center">
+        <div style="background:rgba(0,0,0,0.5);border-radius:8px;padding:5px 12px;font-size:12px;color:rgba(255,255,255,0.6)">
+          Reacciones: <span id="drive-total" style="color:#4ade80;font-weight:600">0</span>
+        </div>
+      </div>
+      <button id="drive-react-btn" onclick="drivePVTReact()" style="width:100%;padding:22px;border:none;border-radius:14px;background:rgba(26,74,58,0.9);color:white;font-size:18px;font-weight:600;cursor:pointer;font-family:var(--font);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,0.15)">
+        ¡REACCIONAR! — clic, tap o cualquier tecla
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="screen-pvt" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="pvtAbort()">← Salir</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Test de alerta</div><div style="font-size:11px;color:var(--g200)" id="pvt-topbar-info"></div></div>
+    <div style="font-size:13px;font-weight:500;color:var(--g100)" id="pvt-countdown"></div>
+  </div>
+  <div class="pvt-arena" id="pvt-arena" onclick="pvtTap()">
+    <div class="pvt-dot" id="pvt-dot"></div>
+    <div class="pvt-msg" id="pvt-msg">Preparate...</div>
+    <div class="pvt-sub" id="pvt-sub"></div>
+  </div>
+</div>
+
+<!-- PVT RESULT -->
+<div id="screen-pvt-result" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="navTo('pvt')">← Test de alerta</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Resultado del test</div></div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll" id="pvt-result-content"></div>
+  <div style="padding:16px;display:flex;gap:10px">
+    <button class="btn btn-s" style="flex:1" onclick="loadPVTHistoryInline();showPVTTab('hist',document.getElementById('pvt-tab-hist'));navTo('pvt')">Ver registros</button>
+    <button class="btn btn-g" style="flex:1" onclick="navTo('pvt')">Nuevo test</button>
+  </div>
+</div>
+
+<!-- DOCUMENTS -->
+<div id="screen-docs" class="screen">
+  <div class="topbar">
+    <div style="font-size:17px;font-weight:600;color:var(--label)">Mis estudios</div>
+    <button class="topbar-btn" onclick="showDocsNew()">+ Cargar</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="showDocsTab('all',this)">Todos</button>
+    <button class="tab" onclick="showDocsTab('lab',this)">Laboratorios</button>
+    <button class="tab" onclick="showDocsTab('estudio',this)">Estudios</button>
+    <button class="tab" onclick="showDocsTab('cpap',this)">CPAP</button>
+    <button class="tab" onclick="showDocsTab('otro',this)">Otros</button>
+  </div>
+  <div class="scroll" id="docs-list" style="padding:0 16px"></div>
+</div>
+
+<!-- DOCUMENTS NEW -->
+<div id="screen-docs-new" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showScreen('docs')">← Volver</button>
+    <div style="font-size:17px;font-weight:600;color:var(--label)">Cargar estudio</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll"><div style="padding:16px" id="docs-form"></div></div>
+</div>
+
+<!-- PATIENT CODE -->
+<div id="screen-code" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showScreen('home')">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Mi código</div></div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="scroll" style="padding:32px 24px;text-align:center">
+    <div style="font-size:36px;margin-bottom:14px">🔑</div>
+    <div style="font-size:16px;font-weight:500;margin-bottom:8px">Compartí este código con tu médico</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:24px;max-width:300px;margin-left:auto;margin-right:auto">Tu médico lo usará para vincular tu cuenta y acceder a tu historial clínico de forma segura.</div>
+    <div class="code-box" id="patient-code-display">——</div>
+    <div style="font-size:12px;color:var(--ink4)">Código único y permanente de tu cuenta</div>
+
+    <!-- Linked doctors section -->
+    <div style="margin-top:20px;text-align:left;border-top:1px solid var(--sep-opaque);padding-top:20px">
+      <div style="font-size:14px;font-weight:600;color:var(--label);margin-bottom:4px">🩺 Profesionales que te siguen</div>
+      <div style="font-size:12px;color:var(--label-2);margin-bottom:10px">Estos médicos tienen acceso a tus datos. Podés revocar el acceso en cualquier momento.</div>
+      <div id="code-linked-drs"></div>
+    </div>
+    <!-- Child codes section -->
+    <div id="child-codes-section" style="margin-top:20px;text-align:left;border-top:1px solid var(--sep-opaque);padding-top:20px">
+      <div style="font-size:14px;font-weight:600;color:var(--label);margin-bottom:4px">👶 Perfiles vinculados (niños)</div>
+      <div style="font-size:12px;color:var(--label-2);margin-bottom:14px">Cada perfil infantil tiene su propio código para compartir con un profesional.</div>
+      <div id="child-codes-list"></div>
+    </div>
+
+    <div style="margin-top:20px"><button class="btn btn-g" onclick="showScreen('home')">Entendido</button></div>
+  </div>
+</div>
+
+<!-- DOCTOR HOME -->
+<div id="screen-doctor-home" class="screen">
+  <div class="topbar">
+    <button onclick="toggleDrInstructivo()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;font-family:var(--font);padding:4px 8px">📖 Ayuda</button>
+    <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div><div style="font-size:10px;color:rgba(255,255,255,0.5)" id="dr-topbar-sub">Medicina del Sueño</div></div>
+    <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
+  </div>
+  <div class="hero">
+    <div class="hero-label" id="dr-panel-label">Panel profesional</div>
+    <div class="hero-name" id="dr-name" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+    <div class="hero-meta" id="dr-meta">—</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button id="dir-register-btn" onclick="showDrRegisterForm()" style="padding:8px 16px;border:none;border-radius:20px;background:#2d6b56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+        🏥 Registrarme en el directorio
+      </button>
+      <button onclick="showAdminSetup()" style="padding:8px 14px;border:none;border-radius:20px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+        🔑 Activar acceso admin
+      </button>
+      <button id="admin-btn" onclick="showAdminPanel()" style="display:none;padding:8px 16px;border:none;border-radius:20px;background:#14532d;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
+        🔐 Panel Admin
+      </button>
+    </div>
+  </div>
+  <div id="dr-instructivo" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:0 16px 12px;padding:14px 16px;font-size:13px;color:#374151;line-height:1.6">
+    <div style="font-weight:700;margin-bottom:8px;font-size:14px">📖 Cómo usar el Panel Profesional</div>
+    <ol style="padding-left:16px;margin:0 0 8px">
+      <li style="margin-bottom:4px"><strong>Mis pacientes</strong> — listado de pacientes vinculados, ordenado alfabéticamente. Hacé clic en un paciente para ver sus resultados.</li>
+      <li style="margin-bottom:4px"><strong>Alertas</strong> — resultados patológicos de escalas que requieren atención clínica.</li>
+      <li style="margin-bottom:4px"><strong>Vincular</strong> — generá o compartí el código de vinculación para que un paciente te agregue como su profesional.</li>
+      <li style="margin-bottom:4px"><strong>Mi perfil</strong> — completá tu nombre, especialidad, matrícula y país para aparecer correctamente en el directorio.</li>
+    </ol>
+    <p style="font-size:12px;color:#6b7280;margin:0">Los pacientes completan las escalas de forma autónoma. Vos ves los resultados en tiempo real.</p>
+  </div>
+  <div class="bottomnav" id="dr-bottomnav" style="background:#1a2e23;border-top:1px solid rgba(255,255,255,0.08)">
+    <button class="bnav active" id="drnav-patients" onclick="showDrTab('patients',this)" style="color:#fff">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.9)">Pacientes</span>
+    </button>
+    <button class="bnav" id="drnav-alerts" onclick="showDrTab('alerts',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v42.0c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:9px;border-radius:8px;padding:1px 5px;margin-left:2px"></span></span>
+    </button>
+    <button class="bnav" id="drnav-link" onclick="showDrTab('link',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Vincular</span>
+    </button>
+    <button class="bnav" id="drnav-profile" onclick="showDrTab('profile',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Mi perfil</span>
+    </button>
+  </div>
+  <div class="scroll"><div id="dr-content" style="padding:0 16px"></div></div>
+</div>
+
+<!-- DOCTOR PATIENT -->
+<div id="screen-doctor-patient" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="showScreen('doctor-home')">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="drp-name">Paciente</div><div style="font-size:11px;color:var(--g200)" id="drp-sub"></div></div>
+    <button class="topbar-btn" onclick="exportDoctorPDF()">↓ PDF</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="showDrPTab('profile',this)">Perfil</button>
+    <button class="tab" onclick="showDrPTab('summary',this)">Resumen</button>
+    <button class="tab" onclick="showDrPTab('notes',this)">📝 Notas</button>
+    <button class="tab" onclick="showDrPTab('diary',this)">Diario sueño</button>
+    <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
+    <button class="tab" onclick="showDrPTab('docs',this)">Estudios</button>
+    <button class="tab" onclick="showDrPTab('suggest',this)">Sugerir escalas</button>
+    <button class="tab" onclick="showDrPTab('history',this)">Historial</button>
+  </div>
+  <div class="scroll"><div id="drp-content" style="padding:0 16px"></div></div>
+</div>
+
+  <div class="bottomnav" id="main-nav">
+    <button class="bnav" id="bnav-inicio" onclick="navTo('home')">
+      <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div>
+      <span class="bnav-lbl">Inicio</span>
+    </button>
+    <button class="bnav" id="bnav-yo" onclick="navTo('profile')">
+      <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+      <span class="bnav-lbl">Yo</span>
+    </button>
+    <button class="bnav" id="bnav-mas" onclick="showMasMenu()">
+      <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg></div>
+      <span class="bnav-lbl">Más</span>
+    </button>
+</div>
+
+<!-- CHILD MODE HOME SCREEN -->
+<div id="screen-child-home" class="screen" style="background:#1a2e23">
+  <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.08)">
+    <button class="topbar-btn" onclick="switchToParentProfile()" style="font-size:12px;color:#e8f5f0;font-weight:600;display:flex;align-items:center;gap:4px">← Adulto</button>
+    <div style="text-align:center">
+      <div style="font-size:11px;opacity:0.7;color:#e8f5f0;letter-spacing:.08em;text-transform:uppercase">Dormetria</div>
+      <div id="ch-name" style="font-size:15px;font-weight:600;color:#e8f5f0">Sueño infantil</div>
+    </div>
+    <button class="topbar-btn" onclick="showChildMenu()" style="font-size:18px">⋯</button>
+  </div>
+  <div id="ch-panel-home" class="scroll" style="padding:12px 12px 80px;display:flex;flex-direction:column;gap:0;background:#1a2e23;min-height:calc(100vh - 56px)">
+    <div id="ch-age-banner" style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:#fff;flex-shrink:0;border:1px solid rgba(255,255,255,0.08)">
+      <div id="ch-age-label" style="font-size:13px;opacity:0.8;margin-bottom:2px"></div>
+      <div id="ch-sleep-norm" style="font-size:15px;font-weight:600"></div>
+      <div id="ch-sleep-note" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;line-height:1.5"></div>
+    </div>
+    <div id="ch-quick-actions" style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0"></div>
+    <div style="margin-bottom:16px">
+      <button onclick="showConsultDir(false,true)" style="margin-top:10px;width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
+        <div style="font-size:22px;filter:brightness(0) invert(1)">🩺</div>
+        <div style="font-size:15px;font-weight:600;color:#fff">Consultar especialista</div>
+      </button>
+    </div>
+  </div>
+  <div id="ch-panel-diary" style="display:none;flex:1;overflow-y:auto;padding:16px 16px 80px">
+    <button class="btn btn-g" onclick="showChildDiaryNew()" style="margin-bottom:16px">+ Nuevo registro</button>
+    <div id="ch-diary-list"></div>
+  </div>
+  <div id="ch-panel-scales" style="display:none;flex:1;overflow-y:auto;padding:16px 16px 80px">
+    <div id="ch-scales-list"></div>
+  </div>
+  <div id="ch-panel-info" style="display:none;flex:1;overflow-y:auto;padding:0 0 80px">
+    <div id="ch-info-content"></div>
+  </div>
+  <div style="display:flex;border-top:1px solid rgba(255,255,255,0.08);background:#1a2e23;flex-shrink:0">
+    <button id="ch-tab-home" onclick="showChildTab('home',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:700;color:#fff;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Inicio</button>
+    <button id="ch-tab-diary" onclick="showChildTab('diary',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>Diario</button>
+    <button id="ch-tab-scales" onclick="showChildTab('scales',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Escalas</button>
+    <button id="ch-tab-info" onclick="showChildTab('info',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Info</button>
+  </div>
+</div>
+
+<!-- CONSULT DIRECTORY -->
+<div id="screen-consult" class="screen">
+  <div class="topbar">
+    <button id="consult-back-btn" class="topbar-btn" onclick="showHome()">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Profesionales</div></div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="hero" style="padding:10px 16px 12px">
+    <div class="hero-label">Especialistas en sueño</div>
+    <input type="text" id="consult-search" placeholder="Buscar por nombre o especialidad..." oninput="filterConsultDirs()" style="width:100%;box-sizing:border-box;margin-top:6px;padding:8px 12px;border:none;border-radius:10px;font-size:14px;background:rgba(255,255,255,0.2);color:#fff;font-family:var(--font)">
+    <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px">Profesionales que usan Dormetria</div>
+  </div>
+  <div class="scroll" style="padding:12px 16px"><div id="consult-list"></div></div>
+</div>
+
+<!-- ADMIN PANEL -->
 <div id="screen-admin" class="screen" style="background:#fff">
   <div class="topbar" style="background:#1a4a3a">
     <button class="topbar-btn" onclick="const _mn=document.getElementById('main-nav');if(_mn)_mn.style.removeProperty('display');showDoctorHome()">← Volver</button>
@@ -3567,14 +4269,8 @@ function toggleMoreScales(){
 }
 async function showScalesScreen(){
   showScreen('scales');
-  if(!S.records && S.user){
-    try{
-      const recs=await db.get('evaluations?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=created_at.asc&select=*');
-      S.records=recs||[];
-    }catch(e){S.records=[];}
-  }
+  if(!S.records&&S.user){try{const recs=await db.get('evaluations?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=created_at.asc&select=*');S.records=recs||[];}catch(e){S.records=[];}}
   renderScales('scales-list-full');
-  // Update nav active state
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
   const btn=document.getElementById('bnav-mas');if(btn)btn.classList.add('active');
 }
@@ -8082,14 +8778,12 @@ function getEEDSISubScaleName(ageGroup){
   };
   return names[ageGroup] || 'EEDSI — Evaluación del Sueño Infantil';
 }
+
+function getEEDSISubScaleName(ag){var n={infant:'EEDSI — Subescala Lactante (0–12 meses)',preschool:'EEDSI — Subescala Preescolar (1–5 años)',school:'EEDSI — Subescala Escolar (6–9 años)'};return n[ag]||'EEDSI — Evaluación del Sueño Infantil';}
 function renderChildScales(){
   const el = document.getElementById('ch-scales-list');
   if(!el) return;
-  // Ensure ageGroup is set from child DOB if missing
-  if(!S.ageGroup || S.ageGroup==='adult'){
-    if(S.user && S.user.dob) setPatientMode(S.user.dob);
-    if(!S.ageGroup || S.ageGroup==='adult') S.ageGroup='school'; // fallback
-  }
+  if(!S.ageGroup||S.ageGroup==='adult'){if(S.user&&S.user.dob)setPatientMode(S.user.dob);if(!S.ageGroup||S.ageGroup==='adult')S.ageGroup='school';}
   const pediatricScales = SCALES.filter(s => s.ageGroups && (s.ageGroups.includes(S.ageGroup)||s.ageGroups.includes('all')));
   if(!pediatricScales.length){
     el.innerHTML='<div style="padding:24px;text-align:center;color:var(--label-2)">No hay escalas disponibles para este grupo de edad.</div>';
