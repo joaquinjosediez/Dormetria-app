@@ -1474,180 +1474,64 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <!-- PATIENT HOME -->
 <div id="screen-home" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="exportPatientPDF()" style="color:rgba(255,255,255,0.8)">↓ PDF</button>
-    <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div></div>
-    <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
+    <div style="width:60px"></div>
+    <div style="text-align:center;flex:1">
+      <div id="home-greeting" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:400"></div>
+      <div id="home-name" style="font-size:17px;font-weight:700;color:#fff"></div>
+    </div>
+    <button class="topbar-btn" onclick="exportPatientPDF()" style="color:rgba(255,255,255,0.6);font-size:12px">↓ PDF</button>
   </div>
-  <div class="hero" style="padding:8px 16px 14px">
-    <!-- Qué es Dormetria - top of hero -->
-    <button onclick="toggleHomeBanner()" style="width:100%;border:none;background:#1a4a3a;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:10px;text-align:center;display:block">
-      ¿Qué es y cómo se usa Dormetria?
-      <span id="banner-chev" style="font-size:11px;opacity:0.6;margin-left:6px">›</span>
-    </button>
-    <!-- Row 1: name + code key -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-      <div style="min-width:0;flex:1">
-        <div class="hero-label" id="home-welcome-label">Bienvenido/a</div>
-        <div class="hero-name" id="home-name" style="font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
-        <div class="hero-meta" id="home-meta" style="font-size:11px;margin-top:2px">—</div>
+  <div class="scroll dark-bg" id="home-scroll" style="background:#1a2e23;padding:0 0 24px">
+    <!-- Hero strip -->
+    <div style="padding:12px 16px 0">
+      <div id="home-meta" style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:capitalize;margin-bottom:12px"></div>
+      <!-- Métricas -->
+      <div id="home-metrics" style="display:flex;gap:10px;margin-bottom:16px"></div>
+      <!-- Child profile pills -->
+      <div id="home-profile-pills" style="display:none;margin-bottom:14px">
+        <div id="home-profile-pills-list" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
       </div>
-      <button onclick="showPatientCode()" style="flex-shrink:0;border:none;background:#1a4a3a;color:#fff;border-radius:10px;padding:8px 12px;font-size:10px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;max-width:90px;text-align:center;line-height:1.3;box-shadow:0 2px 8px rgba(26,74,58,0.2);align-self:center"><span style="font-size:14px">🔑</span><span>Código para el profesional</span></button>
     </div>
-    <!-- Row 2: child profiles pills -->
-    <div id="home-profile-pills" style="display:none;margin-top:10px;align-items:center;gap:6px;flex-wrap:nowrap;width:100%">
-      <div id="home-profile-pills-list" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex-shrink:0"></div>
-      <button onclick="registerChildProfile()" id="home-add-child-btn" style="padding:7px 16px;border:none;border-radius:20px;background:linear-gradient(135deg,#1a4a3a,#2d5a9e);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);flex:1;text-align:center">+ Agregar perfil infantil</button>
+    <!-- Acciones rápidas según onboarding -->
+    <div id="home-quick" style="padding:0 16px;display:flex;flex-direction:column;gap:10px;margin-bottom:20px"></div>
+    <!-- Código profesional (compacto) -->
+    <div style="padding:0 16px;margin-bottom:6px">
+      <button onclick="showPatientCode()" style="width:100%;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left">
+        <div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#fff">Código para tu profesional</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Compartilo con tu médico para vincular</div>
+        </div>
+        <div style="color:rgba(255,255,255,0.3);font-size:18px">›</div>
+      </button>
     </div>
-  </div>
-
-  <div class="scroll dark-bg" style="background:#1a2e23">
-
-    <!-- Linked child profiles (hidden, for reference) -->
-    <div id="home-children" style="display:none"></div>
-    <!-- Banner body (expandable) -->
-    <div id="banner-body" style="display:none;margin:0 16px;background:var(--bg-secondary);border-radius:0 0 14px 14px;padding:14px 16px;border:1px solid var(--sep);border-top:none">
-      <div style="font-size:13px;color:var(--label-2);line-height:1.65;margin-bottom:12px">
-        <p style="margin-bottom:8px"><strong>¿Qué es y cómo se usa Dormetria?</strong> Una plataforma de seguimiento clínico del sueño y otros aspectos de la salud física y mental, que podés usar desde tu celular o computadora.</p>
-        <p style="margin-bottom:8px"><strong>¿Cómo se usa?</strong></p>
-        <ol style="padding-left:16px;margin:0 0 8px">
-          <li style="margin-bottom:4px">Completá tu <strong>perfil</strong> (edad, sexo, hábitos) para personalizar las escalas sugeridas.</li>
-          <li style="margin-bottom:4px">Respondé los <strong>cuestionarios</strong> que aparecen en la pantalla de inicio — cada uno tiene scoring automático.</li>
-          <li style="margin-bottom:4px">Llevá el <strong>diario de sueño</strong> anotando tus horarios cada mañana.</li>
-          <li style="margin-bottom:4px">Tu profesional puede ver tus resultados en tiempo real desde su panel profesional.</li>
-          <li style="margin-bottom:4px">Para vincularte con tu especialista, compartile tu código personal (en "Inicio → Código para el profesional"). El médico lo ingresa en su panel para ver tus resultados.</li>
+    <!-- Escalas / contenido dinámico -->
+    <div style="padding:0 16px;margin-top:14px">
+      <div id="home-section-title" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px"></div>
+      <div id="scales-list"></div>
+    </div>
+    <!-- Banner expandible -->
+    <div style="padding:0 16px;margin-top:16px">
+      <button onclick="toggleHomeBanner()" style="width:100%;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);border-radius:10px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:center">
+        ¿Cómo se usa Dormetria? <span id="banner-chev">›</span>
+      </button>
+      <div id="banner-body" style="display:none;background:rgba(255,255,255,0.05);border-radius:0 0 10px 10px;padding:14px 16px;border:1px solid rgba(255,255,255,0.08);border-top:none;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.65">
+        <p style="margin-bottom:8px">Dormetria es una plataforma de seguimiento clínico del sueño. Completá las escalas, llevá el diario y compartí tu código con tu médico.</p>
+        <ol style="padding-left:16px;margin:0">
+          <li style="margin-bottom:4px">Completá tu <strong style="color:#fff">perfil</strong> con tus datos clínicos</li>
+          <li style="margin-bottom:4px">Respondé los <strong style="color:#fff">cuestionarios</strong> sugeridos</li>
+          <li style="margin-bottom:4px">Llevá el <strong style="color:#fff">diario de sueño</strong> cada mañana</li>
+          <li style="margin-bottom:4px">Compartí tu <strong style="color:#fff">código</strong> con tu profesional</li>
         </ol>
-        <p style="color:var(--label-3);font-size:12px">Los resultados no reemplazan la consulta médica. Siempre consultá con tu profesional de salud.</p>
-      </div>
-      <div style="padding:10px;background:rgba(255,255,255,0.07);border-radius:10px;font-size:12px;color:rgba(255,255,255,0.8);line-height:1.65">🔔 <strong>Recordatorios:</strong> Configurá avisos para el diario de sueño y los tests de alerta desde cada sección.</div>
-    </div>
-
-    <!-- 1. HIGIENE + CUÁNDO CONSULTAR -->
-    <div style="margin:10px 16px 0">
-      <div style="display:flex;gap:10px;margin-bottom:12px">
-        <button onclick="showHygieneChecklist()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
-          <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px">🌙</div>
-          <div style="font-size:13px;font-weight:700;color:#fff">Higiene del sueño</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">Checklist de hábitos</div>
-        </button>
-        <button onclick="showConsultGuide()" style="flex:1;background:#1a4a3a;border:none;border-radius:14px;padding:14px 12px;cursor:pointer;font-family:var(--font);text-align:left">
-          <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px">🩺</div>
-          <div style="font-size:13px;font-weight:700;color:#fff">¿Cuándo consultar?</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">Señales de alerta</div>
-        </button>
       </div>
     </div>
-
-    <!-- 2. CONSULTA + MIS PROFESIONALES block -->
-    <div style="margin:0 16px 10px;background:rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
-      <button onclick="showConsultDir()" style="width:100%;border:none;border-bottom:0.5px solid rgba(255,255,255,0.08);background:transparent;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:var(--font)">
-        <div style="text-align:left">
-          <div style="font-size:15px;font-weight:700;color:#fff">🩺 Consultar con un profesional</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">Directorio de especialistas en medicina del sueño</div>
-        </div>
-        <span style="color:rgba(255,255,255,0.3);font-size:20px">›</span>
-      </button>
-      <div style="padding:12px 16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-size:14px;font-weight:700;color:#fff">Mis profesionales</div>
-          <button onclick="showConsultDir()" style="border:none;background:rgba(255,255,255,0.12);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Buscar</button>
-        </div>
-        <div id="home-doctors-list"><div style="font-size:13px;color:rgba(255,255,255,0.5)">Cargando...</div></div>
-      </div>
-    </div>
-
-    <!-- 3. AYUDANOS A MEJORAR -->
-    <div style="margin:0 16px 12px">
-      <button onclick="showSuggestionsModal()" style="width:100%;border:none;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:center">
-        💡 Ayudanos a mejorar Dormetria
-      </button>
-    </div>
-
-    <!-- 4. ALERTA patológica (se rellena dinámicamente) -->
-    <div style="padding:0 16px;margin-top:4px" id="patho-alert-wrap"></div>
-
-    <!-- 5. ESCALAS -->
-    <div style="padding:0 16px;margin-top:4px">
-      <div id="scales-list" style="background:#1a2e23;min-height:200px"></div>
-    </div>
-    <div style="height:80px"></div>
-  </div>
-
-</div>
-
-
-<!-- SCALES SCREEN -->
-<div id="screen-scales" class="screen">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cuestionarios</div><div style="font-size:11px;color:var(--g200)">Autoadministrables</div></div>
-    <div style="width:70px"></div>
-  </div>
-  <div class="scroll">
-    <div class="section"><div id="scales-list-full"></div></div>
-    <div style="height:16px"></div>
-  </div>
-
-</div>
-
-<!-- SCALE -->
-<div id="screen-scale" class="screen">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
-    <div style="text-align:center;flex:1;overflow:hidden"><div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px" id="scale-title">Escala</div></div>
-    <div style="width:52px"></div>
-  </div>
-  <div class="q-prog"><div class="q-prog-fill" id="q-prog" style="width:0%"></div></div>
-  <div class="q-area" id="q-area"></div>
-  <div class="q-nav" id="q-nav"></div>
-</div>
-
-<!-- RESULT -->
-<div id="screen-result" class="screen">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Inicio</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="r-title">Resultado</div></div>
-    <div style="width:70px"></div>
-  </div>
-  <div class="scroll" id="r-content"></div>
-  <div id="r-consult-btn" style="display:none;padding:12px 16px">
-    <button class="btn" onclick="showConsultDir()" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:15px">
-      🩺 Consultar un profesional de sueño
-    </button>
+    <!-- Linked children (hidden, for reference) -->
+    <div id="home-children" style="display:none"></div>
   </div>
 </div>
 
-<!-- PATIENT HISTORY -->
-<div id="screen-patient-history" class="screen" style="background:#1a2e23">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Historial clínico</div></div>
-    <button class="topbar-btn" onclick="exportPatientPDF()">↓ PDF</button>
-  </div>
-  <div class="tab-bar">
-    <button class="tab active" onclick="showPHTab('all',this)">Todas</button>
-    <button class="tab" onclick="showPHTab('sleep',this)">Sueño</button>
-    <button class="tab" onclick="showPHTab('mental',this)">Salud mental</button>
-    <button class="tab" onclick="showPHTab('other',this)">Otras</button>
-    <button class="tab" onclick="showPHTab('summary',this)">Resumen</button>
-  </div>
-  <div class="scroll">
-    <div style="padding:0 16px" id="ph-list"></div>
-    <div id="ph-chart-wrap" style="display:none"><div class="chart-wrap"><canvas id="ph-chart" aria-label="Evolución de escalas"></canvas></div></div>
-    <div style="height:16px"></div>
-  </div>
-</div>
-
-<!-- PROFILE -->
-<div id="screen-profile" class="screen">
-  <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#fff">Mi perfil clínico</div></div>
-    <button class="topbar-btn" id="profile-edit-btn" onclick="toggleProfileEdit()">Editar</button>
-  </div>
-  <div class="scroll"><div id="profile-content" style="padding:16px"></div></div>
-</div>
-
-<!-- DIARY HOME -->
 <div id="screen-diary-home" class="screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
@@ -2036,14 +1920,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 </div>
 
   <div class="bottomnav" id="main-nav">
-    <button class="bnav" id="bnav-inicio" onclick="navTo('home')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div><span class="bnav-lbl">Inicio</span></button>
-    <button class="bnav" id="bnav-cuest" onclick="navTo('scales')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div><span class="bnav-lbl">Escalas</span></button>
-    <button class="bnav" id="bnav-diario" onclick="navTo('diary')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div><span class="bnav-lbl">Diario</span></button>
-    <button class="bnav" id="bnav-alerta" onclick="navTo('pvt')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><span class="bnav-lbl">Alerta</span></button>
-    <button class="bnav" id="bnav-hist" onclick="navTo('history')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><span class="bnav-lbl">Historial</span></button>
-    <button class="bnav" id="bnav-docs" onclick="navTo('docs')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><span class="bnav-lbl">Estudios</span></button>
-  <button class="bnav" id="bnav-perfil" onclick="navTo('profile')"><div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div><span class="bnav-lbl">Perfil</span></button>
-</nav>
+    <button class="bnav" id="bnav-inicio" onclick="navTo('home')">
+      <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div>
+      <span class="bnav-lbl">Inicio</span>
+    </button>
+    <button class="bnav" id="bnav-yo" onclick="navTo('profile')">
+      <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+      <span class="bnav-lbl">Yo</span>
+    </button>
+    <button class="bnav" id="bnav-mas" onclick="showMasMenu()">
+      <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg></div>
+      <span class="bnav-lbl">Más</span>
+    </button>
 </div>
 
 <!-- CHILD MODE HOME SCREEN -->
@@ -2818,6 +2706,61 @@ const SCALES=[
    {t:'¿Con qué frecuencia sintió dolor después de la penetración vaginal?',opts:['Sin actividad sexual','Casi siempre / siempre','A menudo','A veces','Pocas veces','Casi nunca / nunca'],sc:[0,1,2,3,4,5]},
    {t:'¿Cómo calificaría el nivel de dolor durante o después de la penetración vaginal?',opts:['Sin actividad sexual','Muy alto','Alto','Moderado','Bajo','Muy bajo o ninguno'],sc:[0,1,2,3,4,5]},
  ]
+}
+
+,{id:'eedsi',
+  ref:'Escalona A & Soto P (2006). Escala de Evaluación del Desarrollo del Sueño Infantil (EEDSI). Adaptación para práctica clínica hispanohablante.',
+  name:'EEDSI — Evaluación del Sueño Infantil',
+  cat:'pediatric',
+  max:40,
+  ageGroups:['infant','preschool','school'],
+  desc:'Evaluación del desarrollo del sueño en menores de 10 años. Respondida por el cuidador.',
+  icon:'🌙',
+  bg:'#f0f9ff',
+  qs:[
+    {t:'INICIO DEL SUEÑO — ¿El niño/a se queda dormido/a solo/a (sin presencia del cuidador)?',
+     opts:['Siempre solo/a sin problemas','Generalmente solo/a','Necesita presencia pero se duerme','Necesita presencia activa (brazo, pecho, etc.)'],
+     sc:[0,1,2,3]},
+    {t:'INICIO DEL SUEÑO — ¿Cuánto tiempo tarda en dormirse desde que se acuesta?',
+     opts:['Menos de 15 minutos','15 a 30 minutos','30 a 60 minutos','Más de 60 minutos'],
+     sc:[0,1,2,3]},
+    {t:'MANTENIMIENTO — ¿Con qué frecuencia se despierta durante la noche?',
+     opts:['No se despierta o raramente','1 vez por noche','2 a 3 veces por noche','Más de 3 veces por noche'],
+     sc:[0,1,2,3]},
+    {t:'MANTENIMIENTO — Cuando se despierta, ¿puede volver a dormirse solo/a?',
+     opts:['Siempre solo/a','Generalmente solo/a','A veces necesita ayuda','Siempre necesita ayuda del cuidador'],
+     sc:[0,1,2,3]},
+    {t:'MANTENIMIENTO — ¿Cuánto dura el período de vigilia nocturna (suma total)?',
+     opts:['Menos de 15 minutos','15 a 30 minutos','30 a 60 minutos','Más de 60 minutos'],
+     sc:[0,1,2,3]},
+    {t:'DESPERTAR — ¿A qué hora se despierta habitualmente por la mañana?',
+     opts:['Hora consistente y adecuada para su edad','Varía ±30 minutos','Varía ±1 hora','Muy variable o muy temprano (antes de las 6h)'],
+     sc:[0,1,2,3]},
+    {t:'SIESTAS — ¿El niño/a realiza siestas acordes a su edad?',
+     opts:['Sí, apropiadas para su edad','Siestas algo irregulares','Siestas excesivas o muy cortas','No duerme siesta cuando debería, o siesta tardía'],
+     sc:[0,1,2,3]},
+    {t:'CONDUCTAS ASOCIADAS — ¿El niño/a presenta conductas disruptivas al momento de dormir (llanto prolongado, rabietas, salir de la cama)?',
+     opts:['Nunca o raramente','Ocasionalmente (1-2/semana)','Frecuentemente (3-4/semana)','Casi todas las noches'],
+     sc:[0,1,2,3]},
+    {t:'CONDUCTAS ASOCIADAS — ¿Presenta ronquidos, respiración ruidosa o pausas respiratorias al dormir?',
+     opts:['No','Leve, sin pausas','Moderado','Ronquido fuerte o pausas observadas'],
+     sc:[0,1,2,3]},
+    {t:'IMPACTO DIURNO — ¿El niño/a presenta irritabilidad, dificultad de concentración o somnolencia durante el día que atribuís a su sueño?',
+     opts:['No','Leve, ocasional','Moderado, frecuente','Severo, interfiere con actividades diarias'],
+     sc:[0,1,2,3]},
+    {t:'IMPACTO DIURNO — ¿El problema de sueño afecta el descanso de los cuidadores?',
+     opts:['No afecta','Afecta levemente','Afecta moderadamente','Afecta significativamente'],
+     sc:[0,1,2,3]},
+    {t:'CONTEXTO — ¿Existe una rutina pre-sueño consistente (secuencia de pasos antes de acostarse)?',
+     opts:['Sí, siempre la misma secuencia','Generalmente consistente','Poco consistente','Sin rutina establecida'],
+     sc:[0,1,2,3]}
+  ],
+  interp:function(s){
+    if(s<=8)  return {l:'Desarrollo del sueño adecuado',        c:'#14532d',bg:'#f0fdf4'};
+    if(s<=16) return {l:'Dificultades leves — seguimiento',      c:'#92400e',bg:'#fef3c7'};
+    if(s<=24) return {l:'Dificultades moderadas — consulta',     c:'#c2410c',bg:'#fff7ed'};
+                return {l:'Dificultades significativas — derivar',c:'#991b1b',bg:'#fef2f2'};
+  }
 }
 ];
 
@@ -3858,25 +3801,118 @@ async function showHome(){
   const _navEl=document.getElementById('main-nav');if(_navEl)_navEl.style.display='flex';
   if(S.childMode){ showChildHome(); return; }
   const u=S.user;
+  if(!u){ showScreen('landing'); return; }
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
-  document.getElementById('home-name').textContent=u.name+' '+(u.lname||'');
-  {const _wl=document.getElementById('home-welcome-label');if(_wl)_wl.textContent=u.sex==='Masculino'?'Bienvenido':'Bienvenida';}
 
-  document.getElementById('home-meta').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  // Greeting
+  const hr=new Date().getHours();
+  // greeting computed below
+  const nameEl=document.getElementById('home-name');
+  const greetEl=document.getElementById('home-greeting');
+  if(nameEl) nameEl.textContent=u.name+(u.lname?' '+u.lname:'');
+  if(greetEl) greetEl.textContent=hr<12?'Buenos días ☀️':(hr<19?'Buenas tardes 🌤️':'Buenas noches 🌙');
+
+  const metaEl=document.getElementById('home-meta');
+  if(metaEl) metaEl.textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+
   showScreen('home');
-  document.getElementById('scales-list').innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
-  // Load linked child profiles and show them
   loadLinkedChildProfiles();
   loadHomeDoctors();
+
+  // Quick actions from onboarding
+  renderHomeQuickActions();
+
+  document.getElementById('scales-list').innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
     const recs=await db.get('evaluations?patient_email=eq.'+encodeURIComponent(u.email)+'&order=created_at.asc&select=*');
     S.records=recs||[];
     renderMetrics();
-    try{renderScales('scales-list');setTimeout(fixScaleColors,100);setTimeout(loadDoctorSuggestions,500);}catch(re){console.error('renderScales ERROR:',re.message,re.stack);const el=document.getElementById('scales-list');if(el)el.innerHTML='<div class="empty-state" style="font-size:11px">Error: '+re.message+'</div>';}
+    const stEl=document.getElementById('home-section-title');
+    if(stEl) stEl.textContent='Evaluaciones sugeridas';
+    try{renderScales('scales-list');setTimeout(fixScaleColors,100);setTimeout(loadDoctorSuggestions,500);}
+    catch(re){console.error('renderScales ERROR:',re.message,re.stack);const el=document.getElementById('scales-list');if(el)el.innerHTML='<div class="empty-state" style="font-size:11px">Error: '+re.message+'</div>';}
   }catch(e){
     console.error('showHome error:',e);
     document.getElementById('scales-list').innerHTML='<div class="empty-state">Error al cargar. <button class="btn btn-s" onclick="showHome()" style="margin-top:10px">Reintentar</button></div>';
   }
+}
+
+function renderHomeQuickActions(){
+  const el=document.getElementById('home-quick');
+  if(!el) return;
+  var ob={};
+  try{ ob=JSON.parse(localStorage.getItem('dm_onboarding')||'{}'); }catch(e){}
+
+  // Define quick action cards based on onboarding
+  var actions=[];
+
+  // Always show diary shortcut
+  actions.push({
+    icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
+    title:'Diario de sueño',
+    sub:'Registrá tu noche de hoy',
+    fn:"navTo('diary')"
+  });
+
+  // Based on goal
+  if(ob.goal==='diagnose'||ob.goal==='followup'){
+    actions.push({
+      icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>',
+      title:'Escalas clínicas',
+      sub:'Completá los cuestionarios pendientes',
+      fn:"navTo('scales')"
+    });
+  }
+
+  // PVT for daytime sleepiness or circadian
+  if(ob.concerns&&(ob.concerns.includes('daytime')||ob.concerns.includes('circadian'))){
+    actions.push({
+      icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
+      title:'Test de alerta (PVT)',
+      sub:'Medí tu nivel de alerta ahora',
+      fn:"navTo('pvt')"
+    });
+  }
+
+  // Historial if followup
+  if(ob.goal==='followup'){
+    actions.push({
+      icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+      title:'Historial clínico',
+      sub:'Ver evolución de tus evaluaciones',
+      fn:"navTo('history')"
+    });
+  }
+
+  // Child profile shortcut
+  if(ob.for==='child'||ob.for==='both'){
+    actions.push({
+      icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+      title:'Perfil infantil',
+      sub:'Ver sueño del niño/a',
+      fn:"showLinkedChildSelector()"
+    });
+  }
+
+  // Fallback: show scales always if no specific actions
+  if(actions.length<2){
+    actions.push({
+      icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>',
+      title:'Escalas clínicas',
+      sub:'Completá los cuestionarios',
+      fn:"navTo('scales')"
+    });
+  }
+
+  el.innerHTML=actions.map(a=>`
+    <button onclick="${a.fn}" style="width:100%;display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${a.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;color:#fff">${a.title}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px">${a.sub}</div>
+      </div>
+      <div style="color:rgba(255,255,255,0.25);font-size:20px;flex-shrink:0">›</div>
+    </button>`).join('');
 }
 function renderMetrics(){
   const r=S.records;const last=r.length?new Date(r[r.length-1].created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}):'—';
@@ -4147,24 +4183,64 @@ function renderScales(targetId){
 
 
 function navTo(dest){
-  // Doctors with no patient role get routed to doctor home from any bottom-nav tap
-  if(S.role==='doctor' && !S.patientOverride){
-    showDoctorHome();
-    return;
-  }
-  // Update active nav button
+  if(S.role==='doctor' && !S.patientOverride){ showDoctorHome(); return; }
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
-  const map={home:'bnav-inicio',scales:'bnav-cuest',diary:'bnav-diario',
-             pvt:'bnav-alerta',history:'bnav-hist',docs:'bnav-docs',profile:'bnav-perfil'};
+  const map={home:'bnav-inicio', profile:'bnav-yo',
+             scales:'bnav-mas', diary:'bnav-mas', pvt:'bnav-mas',
+             history:'bnav-mas', docs:'bnav-mas'};
   const btn=document.getElementById(map[dest]);
   if(btn) btn.classList.add('active');
   if(dest==='home'){showHome();}
+  else if(dest==='profile'){showProfile();}
   else if(dest==='scales'){showScalesScreen();}
   else if(dest==='diary'){showDiaryHome();}
   else if(dest==='pvt'){showPVT();}
   else if(dest==='history'){showPatientHistory();}
-  else if(dest==='profile'){showProfile();}
   else if(dest==='docs'){showDocsScreen();}
+}
+
+function showMasMenu(){
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('bnav-mas');
+  if(btn) btn.classList.add('active');
+  // Build bottom sheet
+  const existing=document.getElementById('mas-sheet');
+  if(existing){ existing.remove(); return; }
+  const sheet=document.createElement('div');
+  sheet.id='mas-sheet';
+  sheet.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1a2e23;border-radius:20px 20px 0 0;padding:12px 0 calc(env(safe-area-inset-bottom,0px)+80px);box-shadow:0 -4px 24px rgba(0,0,0,0.4);animation:slideUp 0.25s ease;';
+  const items=[
+    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>', label:'Escalas clínicas', fn:"navTo('scales')"},
+    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>', label:'Diario de sueño', fn:"navTo('diary')"},
+    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', label:'Test de alerta (PVT)', fn:"navTo('pvt')"},
+    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', label:'Historial clínico', fn:"navTo('history')"},
+    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', label:'Estudios', fn:"navTo('docs')"},
+  ];
+  const handle='<div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 16px;"></div>';
+  const title='<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:.1em;text-transform:uppercase;padding:0 20px 10px;">Secciones</div>';
+  const rows=items.map(it=>`<button onclick="closeMasMenu();${it.fn}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 20px;border:none;background:none;cursor:pointer;text-align:left;"><div style="width:40px;height:40px;border-radius:10px;background:#0f2820;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${it.icon}</div><span style="font-size:15px;font-weight:500;color:#fff;font-family:-apple-system,sans-serif">${it.label}</span></button>`).join('');
+  sheet.innerHTML=handle+title+rows;
+  // Backdrop
+  const backdrop=document.createElement('div');
+  backdrop.id='mas-backdrop';
+  backdrop.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.4);';
+  backdrop.onclick=closeMasMenu;
+  document.body.appendChild(backdrop);
+  document.body.appendChild(sheet);
+  if(!document.getElementById('mas-anim-style')){
+    const st=document.createElement('style');
+    st.id='mas-anim-style';
+    st.textContent='@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}';
+    document.head.appendChild(st);
+  }
+}
+
+function closeMasMenu(){
+  const s=document.getElementById('mas-sheet');
+  const b=document.getElementById('mas-backdrop');
+  if(s) s.remove();
+  if(b) b.remove();
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
 }
 
 function toggleMoreScales(){
