@@ -214,8 +214,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   padding-bottom:max(env(safe-area-inset-bottom,0px), 8px);
   padding-top:4px;
   flex-shrink:0;
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:430px;z-index:100;
 }
 .bnav{
   flex:1;display:flex;flex-direction:column;align-items:center;
@@ -1007,7 +1005,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 <div id="app">
 
 <!-- LOGIN -->
-<div id="screen-landing" class="screen">
+<div id="screen-landing" class="screen" style="position:relative;z-index:1;">
 <style>
   #screen-landing{background:#0f2820;position:relative;overflow:hidden;}
   #dm-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 38% at 50% 8%,#1a4a3a 0%,transparent 58%),#0f2820;z-index:0;pointer-events:none;}
@@ -4692,20 +4690,16 @@ function doLogout(){
 async function showProfile(){
   const _nav=document.getElementById('main-nav');if(_nav)_nav.style.display='flex';
   showScreen('profile');S.profileEditing=false;const _peb=document.getElementById('profile-edit-btn');if(_peb)_peb.textContent='Editar';
-  // Mark nav active
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
   const _yb=document.getElementById('bnav-yo');if(_yb)_yb.classList.add('active');
-  const cont=document.getElementById('profile-content');
-  // Show immediately with cached data, then refresh from DB
+  if(!S.user){showScreen('landing');return;}
+  // Show with cached data immediately
   renderProfileView();
+  // Refresh from DB silently
   try{
-    const d=await db.get(`patients?email=eq.${encodeURIComponent(S.user.email)}&select=*`);
-    if(d&&d[0]){S.user=d[0];S.user.country=localStorage.getItem('dm_country_'+S.user.email)||'';}
-    renderProfileView();
-  }catch(e){
-    // Keep showing cached data — don't show error
-    console.warn('Profile refresh failed, using cached data');
-  }
+    const d=await db.get('patients?email=eq.'+encodeURIComponent(S.user.email)+'&select=*');
+    if(d&&d[0]){S.user=d[0];S.user.country=localStorage.getItem('dm_country_'+S.user.email)||'';renderProfileView();}
+  }catch(e){console.warn('Profile DB refresh failed');}
 }
 
 function getActivityLabel(u){
