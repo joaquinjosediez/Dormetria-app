@@ -207,9 +207,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 /* ── BOTTOM TAB BAR ── */
 .bottomnav{
   display:none;
-  background:rgba(242,242,247,0.92);
-  -webkit-backdrop-filter:blur(20px) saturate(180%);
-  backdrop-filter:blur(20px) saturate(180%);
+  background:#111d15;
+  border-top:1px solid rgba(255,255,255,0.06);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
   border-top:0.5px solid var(--sep-opaque);
   padding-bottom:max(env(safe-area-inset-bottom,0px), 8px);
   padding-top:4px;
@@ -222,10 +223,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   transition:opacity 0.1s;
 }
 .bnav:active{opacity:0.5;}
-.bnav svg{color:var(--label-3);}
-.bnav-lbl{font-size:10px;color:var(--label-3);margin-top:2px;font-weight:500;}
-.bnav.active svg{color:#1a4a3a;}
-.bnav.active .bnav-lbl{color:#1a4a3a;}
+.bnav svg{color:rgba(255,255,255,0.35);}
+.bnav-lbl{font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px;font-weight:500;}
+.bnav.active svg{color:#7ec8a4;}
+.bnav.active .bnav-lbl{color:#7ec8a4;}
 
 /* ── BUTTONS (iOS style) ── */
 .btn{
@@ -10637,13 +10638,13 @@ function showOnboarding() {
   </div>
 </div>
 
-<div id="screen-profile" class="screen">
-  <div class="topbar">
+<div id="screen-profile" class="screen" style="background:#1a2e23;display:flex;flex-direction:column;min-height:0">
+  <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.06)">
     <div style="width:60px"></div>
     <div style="text-align:center;flex:1"><div style="font-size:17px;font-weight:700;color:#fff">Yo</div></div>
     <button class="topbar-btn" id="profile-edit-btn" onclick="toggleProfileEdit()">Editar</button>
   </div>
-  <div class="scroll"><div id="profile-content" style="padding:16px"></div></div>
+  <div class="scroll" style="background:#1a2e23;flex:1;overflow-y:auto"><div id="profile-content" style="padding:16px"></div></div>
 </div>
 
 <div id="screen-result" class="screen">
