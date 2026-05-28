@@ -1990,6 +1990,98 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 </div>
 
 <!-- ADMIN PANEL -->
+
+<div id="screen-mas" class="screen" style="background:#1a2e23;">
+  <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.06)">
+    <div style="width:60px"></div>
+    <div style="text-align:center;flex:1"><div style="font-size:17px;font-weight:700;color:#fff">Más</div></div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll" style="background:#1a2e23;padding:16px 16px 32px;display:flex;flex-direction:column;gap:10px">
+
+    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Herramientas</div>
+
+    <!-- PVT -->
+    <div onclick="navTo('pvt')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Test de alerta (PVT)</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Medí tu nivel de alerta ahora</div></div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+    </div>
+
+    <!-- Higiene del sueño -->
+    <div onclick="showHygieneChecklist()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Higiene del sueño</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Checklist interactivo de hábitos</div></div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+    </div>
+
+    <!-- Directorio de profesionales -->
+    <div onclick="showDocsScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Directorio de especialistas</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Encontrá un profesional del sueño</div></div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-top:6px;margin-bottom:2px">Información</div>
+
+    <!-- Cuándo consultar -->
+    <div onclick="showConsultGuide()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">¿Cuándo consultar?</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Señales de alerta y red flags</div></div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+    </div>
+
+    <!-- Artículos / patologías -->
+    <div onclick="showScreen('about')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Cómo usar Dormetria</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Guía de la aplicación</div></div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+    </div>
+
+    <!-- Artículos de sueño (stub — expandible a futuro) -->
+    <div style="background:rgba(126,200,164,0.08);border:1px solid rgba(126,200,164,0.15);border-radius:14px;padding:14px 16px;">
+      <div style="font-size:12px;font-weight:600;color:#7ec8a4;margin-bottom:10px">Artículos breves</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div onclick="showSleepArticle('insomnia')" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <div style="font-size:18px">😴</div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Insomnio</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Qué es, tipos y tratamientos</div></div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.06)"></div>
+        <div onclick="showSleepArticle('apnea')" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <div style="font-size:18px">😤</div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Apnea del sueño</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Síntomas, riesgos y diagnóstico</div></div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.06)"></div>
+        <div onclick="showSleepArticle('hypersomnia')" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <div style="font-size:18px">☀️</div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Somnolencia excesiva</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Hipersomnia y narcolepsia</div></div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.06)"></div>
+        <div onclick="showSleepArticle('circadian')" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <div style="font-size:18px">🕐</div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Ritmo circadiano</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Jetlag social y cronotipo</div></div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.06)"></div>
+        <div onclick="showSleepArticle('parasomnia')" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <div style="font-size:18px">👻</div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Parasomnias</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Sonambulismo, terrores nocturnos</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <div id="screen-admin" class="screen" style="background:#fff">
   <div class="topbar" style="background:#1a4a3a">
     <button class="topbar-btn" onclick="const _mn=document.getElementById('main-nav');if(_mn)_mn.style.removeProperty('display');showDoctorHome()">← Volver</button>
@@ -3714,6 +3806,42 @@ function trackUsage(){
 function startScaleOfDay(){
   if(S._todayScaleId) startScale(S._todayScaleId);
 }
+
+function showSleepArticle(id){
+  var ARTICLES={
+    insomnia:{title:'Insomnio',body:'<p>El insomnio es la dificultad para iniciar o mantener el sueño al menos 3 noches por semana durante más de 3 meses. Afecta al 10–15% de la población adulta.</p><p style="margin-top:10px"><strong>Tipos:</strong> de inicio, de mantenimiento y terminal (despertar muy temprano).</p><p style="margin-top:10px"><strong>Tratamiento de primera línea:</strong> la TCC-I (Terapia Cognitivo-Conductual) tiene evidencia sólida y es superior a la medicación a largo plazo.</p>'},
+    apnea:{title:'Apnea del sueño',body:'<p>La apnea obstructiva (AOS) se caracteriza por pausas repetidas en la respiración durante el sueño. Aumenta el riesgo cardiovascular y metabólico.</p><p style="margin-top:10px"><strong>Síntomas:</strong> ronquidos fuertes, cansancio diurno, sensación de no descansar.</p><p style="margin-top:10px"><strong>Diagnóstico:</strong> polisomnografía o poligrafía. Tratamiento principal: CPAP.</p>'},
+    hypersomnia:{title:'Somnolencia excesiva',body:'<p>La hipersomnia implica somnolencia diurna excesiva pese a dormir suficiente. Puede asociarse a apnea, depresión o narcolepsia.</p><p style="margin-top:10px">La <strong>narcolepsia</strong> es un trastorno autoinmune con somnolencia irresistible y cataplejía. Requiere evaluación especializada.</p>'},
+    circadian:{title:'Ritmo circadiano',body:'<p>El ritmo circadiano es el reloj biológico de ~24hs que regula el ciclo sueño-vigilia. La luz es su principal sincronizador.</p><p style="margin-top:10px"><strong>Jetlag social:</strong> acostarse mucho más tarde los fines de semana. Se asocia a mayor riesgo metabólico.</p><p style="margin-top:10px"><strong>Cronotipo:</strong> la tendencia a ser matutino o vespertino tiene base genética y cambia con la edad.</p>'},
+    parasomnia:{title:'Parasomnias',body:'<p>Conductas anormales durante el sueño:</p><ul style="margin-top:8px;padding-left:16px"><li style="margin-bottom:4px"><strong>Sonambulismo:</strong> deambulación durante sueño profundo, más frecuente en niños.</li><li style="margin-bottom:4px"><strong>Terrores nocturnos:</strong> agitación intensa sin recuerdo posterior.</li><li style="margin-bottom:4px"><strong>Trastorno conductual REM:</strong> actuar los sueños; puede ser señal de enfermedades neurodegenerativas.</li></ul>'}
+  };
+  var art=ARTICLES[id];
+  if(!art)return;
+  var existing=document.getElementById('article-modal');
+  if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='article-modal';
+  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:flex-end;';
+  var sheet=document.createElement('div');
+  sheet.style.cssText='background:#1a2e23;border-radius:20px 20px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:24px 20px 40px;';
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;';
+  var ttl=document.createElement('div');
+  ttl.style.cssText='font-size:17px;font-weight:700;color:#fff';
+  ttl.textContent=art.title;
+  var cls=document.createElement('button');
+  cls.style.cssText='background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,0.6);font-size:16px;cursor:pointer;';
+  cls.textContent='✕';
+  cls.onclick=function(){modal.remove();};
+  hdr.appendChild(ttl);hdr.appendChild(cls);
+  var body=document.createElement('div');
+  body.style.cssText='font-size:13px;color:rgba(255,255,255,0.7);line-height:1.7;';
+  body.innerHTML=art.body;
+  sheet.appendChild(hdr);sheet.appendChild(body);
+  modal.appendChild(sheet);
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
 function doLogout(){S.user=null;localStorage.removeItem('dm_s');Object.keys(S.charts).forEach(k=>killChart(k));pvtStop();showScreen('login');}
 
 // PATIENT HOME
@@ -4182,43 +4310,21 @@ function navTo(dest){
   else if(dest==='pvt'){showPVT();}
   else if(dest==='history'){showPatientHistory();}
   else if(dest==='docs'){showDocsScreen();}
+  else if(dest==='mas'){showMas();}
 }
 
 function showMasMenu(){
-  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
-  const btn=document.getElementById('bnav-mas');
-  if(btn) btn.classList.add('active');
-  // Build bottom sheet
-  const existing=document.getElementById('mas-sheet');
-  if(existing){ existing.remove(); return; }
-  const sheet=document.createElement('div');
-  sheet.id='mas-sheet';
-  sheet.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1a2e23;border-radius:20px 20px 0 0;padding:12px 0 calc(env(safe-area-inset-bottom,0px)+80px);box-shadow:0 -4px 24px rgba(0,0,0,0.4);animation:slideUp 0.25s ease;';
-  const items=[
-    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>', label:'Escalas clínicas', fn:"navTo('scales')"},
-    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>', label:'¿Cómo usar Dormetria?', fn:"showScreen('about')"},
-    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>', label:'Diario de sueño', fn:"navTo('diary')"},
-    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', label:'Test de alerta (PVT)', fn:"navTo('pvt')"},
-    {icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', label:'Estudios', fn:"navTo('docs')"},
-  ];
-  const handle='<div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 16px;"></div>';
-  const title='<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:.1em;text-transform:uppercase;padding:0 20px 10px;">Secciones</div>';
-  const rows=items.map(it=>`<button onclick="closeMasMenu();${it.fn}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 20px;border:none;background:none;cursor:pointer;text-align:left;"><div style="width:40px;height:40px;border-radius:10px;background:#0f2820;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${it.icon}</div><span style="font-size:15px;font-weight:500;color:#fff;font-family:-apple-system,sans-serif">${it.label}</span></button>`).join('');
-  sheet.innerHTML=handle+title+rows;
-  // Backdrop
-  const backdrop=document.createElement('div');
-  backdrop.id='mas-backdrop';
-  backdrop.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.4);';
-  backdrop.onclick=closeMasMenu;
-  document.body.appendChild(backdrop);
-  document.body.appendChild(sheet);
-  if(!document.getElementById('mas-anim-style')){
-    const st=document.createElement('style');
-    st.id='mas-anim-style';
-    st.textContent='@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}';
-    document.head.appendChild(st);
-  }
+  showMas();
 }
+
+function showMas(){
+  const nav=document.getElementById('main-nav');if(nav)nav.style.display='flex';
+  showScreen('mas');
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('bnav-mas');if(btn)btn.classList.add('active');
+}
+
+function closeMasMenu(){ }
 
 function closeMasMenu(){
   const s=document.getElementById('mas-sheet');
@@ -4600,46 +4706,26 @@ function getActivityLabel(u){
 
 function renderProfileView(){
   if(!S.user) return;
-  const u = S.user;
-  const cont = document.getElementById('profile-content');
+  const u=S.user;
+  const cont=document.getElementById('profile-content');
   if(!cont) return;
+  const name=(u.name||'')+(u.lname?' '+u.lname:'');
+  const age=u.dob?(new Date().getFullYear()-new Date(u.dob).getFullYear())+' años':'';
+  const sex=u.sex||'';
 
-  const name = (u.name||'') + (u.lname?' '+u.lname:'');
-  const email = u.email||'';
-  const age = u.dob ? (new Date().getFullYear()-new Date(u.dob).getFullYear())+' años' : '';
-  const sex = u.sex||'';
-
-  cont.innerHTML = `
+  cont.innerHTML=`
     <div style="display:flex;flex-direction:column;gap:10px">
 
-      <!-- Perfil como botón -->
+      <!-- Info de perfil -->
       <div onclick="toggleProfileEdit()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
         <div style="width:46px;height:46px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:600;color:#fff">${name}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">${email}</div>
-          ${age||sex ? '<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px">'+[age,sex].filter(Boolean).join(' · ')+'</div>' : ''}
+          <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">${u.email||''}</div>
+          ${age||sex?'<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px">'+[age,sex].filter(Boolean).join(' · ')+'</div>':''}
         </div>
-        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
-      </div>
-
-      <!-- Mis escalas -->
-      <div onclick="navTo('scales')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-        </div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis escalas</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Cuestionarios clínicos completados</div></div>
-        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
-      </div>
-
-      <!-- Mi historial -->
-      <div onclick="showPatientHistory()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mi historial</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Evolución de evaluaciones</div></div>
         <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
       </div>
 
@@ -4648,26 +4734,46 @@ function renderProfileView(){
         <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         </div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Diario de sueño</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Registros y gráficos</div></div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Diario de sueño</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Mis registros y gráficos</div></div>
         <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
       </div>
 
-      <!-- Configuración -->
-      <div onclick="showOnboarding()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.5)" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <!-- Mis escalas -->
+      <div onclick="navTo('scales')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         </div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.5)">Mi configuración</div></div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis escalas</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Cuestionarios clínicos</div></div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+
+      <!-- Mi historial -->
+      <div onclick="showPatientHistory()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mi historial</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Evolución de mis evaluaciones</div></div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+
+      <!-- Código profesional -->
+      <div onclick="showPatientCode()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.5)" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:13px;color:rgba(255,255,255,0.5)">Mi código para el especialista</div></div>
         <div style="color:rgba(255,255,255,0.2);font-size:18px">›</div>
       </div>
 
-      <!-- Cerrar sesión -->
-      <div style="margin-top:6px">
-        <button onclick="doLogout()" style="width:100%;padding:14px;border:1px solid rgba(255,80,80,0.25);background:rgba(255,80,80,0.06);border-radius:12px;color:rgba(255,120,120,0.85);font-size:14px;font-weight:500;cursor:pointer;font-family:-apple-system,sans-serif;">
-          Cerrar sesión
-        </button>
+      <!-- Config + Logout -->
+      <div onclick="showOnboarding()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+        <div style="font-size:13px;color:rgba(255,255,255,0.4)">⚙️ Mi configuración inicial</div>
+        <div style="margin-left:auto;color:rgba(255,255,255,0.2);font-size:16px">›</div>
       </div>
 
+      <button onclick="doLogout()" style="width:100%;padding:13px;border:1px solid rgba(255,80,80,0.22);background:rgba(255,80,80,0.05);border-radius:12px;color:rgba(255,120,120,0.8);font-size:14px;font-weight:500;cursor:pointer;font-family:-apple-system,sans-serif;margin-top:2px;">
+        Cerrar sesión
+      </button>
     </div>
   `;
 }function renderProfileView(){
