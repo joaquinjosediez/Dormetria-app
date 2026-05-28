@@ -1513,62 +1513,76 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 
 <!-- PATIENT HOME -->
 <div id="screen-home" class="screen">
-  <div class="topbar">
+  <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.06)">
     <div style="width:60px"></div>
     <div style="text-align:center;flex:1">
-      <div id="home-greeting" style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:400"></div>
+      <div id="home-greeting" style="font-size:12px;color:rgba(255,255,255,0.45)"></div>
       <div id="home-name" style="font-size:17px;font-weight:700;color:#fff"></div>
     </div>
-    <button class="topbar-btn" onclick="exportPatientPDF()" style="color:rgba(255,255,255,0.6);font-size:12px">↓ PDF</button>
+    <button class="topbar-btn" onclick="exportPatientPDF()" style="color:rgba(255,255,255,0.5);font-size:11px">↓ PDF</button>
   </div>
-  <div class="scroll dark-bg" id="home-scroll" style="background:#1a2e23;padding:0 0 24px">
-    <!-- Hero strip -->
-    <div style="padding:12px 16px 0">
-      <div id="home-meta" style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:capitalize;margin-bottom:12px"></div>
-      <!-- Métricas -->
-      <!-- metrics removed from simplified home -->
-      <!-- Child profile pills -->
-      <div id="home-profile-pills" style="display:none;margin-bottom:14px">
-        <div id="home-profile-pills-list" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
+  <div class="scroll" style="background:#1a2e23;padding:16px 16px 32px;display:flex;flex-direction:column;gap:14px">
+
+    <!-- Fecha -->
+    <div id="home-meta" style="font-size:12px;color:rgba(255,255,255,0.35);text-transform:capitalize;margin-bottom:-4px"></div>
+
+    <!-- Dato curioso del sueño -->
+    <div id="home-fact-card" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px">
+      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Dato del día</div>
+      <div id="home-fact-text" style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6"></div>
+    </div>
+
+    <!-- Escala del día -->
+    <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
+      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Escala del día</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="home-scale-name" style="font-size:14px;font-weight:600;color:#fff"></div>
+          <div id="home-scale-sub" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(126,200,164,0.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:#7ec8a4">Completar →</div>
       </div>
     </div>
-    <!-- Acciones rápidas según onboarding -->
-    <div id="home-quick" style="padding:0 16px;display:flex;flex-direction:column;gap:10px;margin-bottom:20px"></div>
-    <!-- Código profesional (compacto) -->
-    <div style="padding:0 16px;margin-bottom:6px">
-      <button onclick="showPatientCode()" style="width:100%;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left">
-        <div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-        </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:#fff">Código para tu profesional</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Compartilo con tu médico para vincular</div>
-        </div>
-        <div style="color:rgba(255,255,255,0.3);font-size:18px">›</div>
-      </button>
-    </div>
-    <!-- Escalas / contenido dinámico -->
-    <div style="padding:0 16px;margin-top:14px">
-      <div id="home-section-title" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px"></div>
-      <div id="scales-list"></div>
-    </div>
-    <!-- Banner expandible -->
-    <div style="padding:0 16px;margin-top:16px">
-      <button onclick="toggleHomeBanner()" style="width:100%;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);border-radius:10px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:center">
-        ¿Cómo se usa Dormetria? <span id="banner-chev">›</span>
-      </button>
-      <div id="banner-body" style="display:none;background:rgba(255,255,255,0.05);border-radius:0 0 10px 10px;padding:14px 16px;border:1px solid rgba(255,255,255,0.08);border-top:none;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.65">
-        <p style="margin-bottom:8px">Dormetria es una plataforma de seguimiento clínico del sueño. Completá las escalas, llevá el diario y compartí tu código con tu médico.</p>
-        <ol style="padding-left:16px;margin:0">
-          <li style="margin-bottom:4px">Completá tu <strong style="color:#fff">perfil</strong> con tus datos clínicos</li>
-          <li style="margin-bottom:4px">Respondé los <strong style="color:#fff">cuestionarios</strong> sugeridos</li>
-          <li style="margin-bottom:4px">Llevá el <strong style="color:#fff">diario de sueño</strong> cada mañana</li>
-          <li style="margin-bottom:4px">Compartí tu <strong style="color:#fff">código</strong> con tu profesional</li>
-        </ol>
+
+    <!-- Diario de hoy -->
+    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="navTo('diary')">
+      <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Diario de sueño</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div id="home-diary-status" style="font-size:14px;color:rgba(255,255,255,0.8)">Registrá tu noche de hoy</div>
+        <div style="color:rgba(255,255,255,0.25);font-size:20px">›</div>
       </div>
     </div>
-    <!-- Linked children (hidden, for reference) -->
+
+    <!-- Perfil hijo (si corresponde) -->
+    <div id="home-child-pill" style="display:none">
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="showChildFromHome()">
+        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Perfil infantil</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div id="home-child-name" style="font-size:14px;color:rgba(255,255,255,0.8)">Ver perfil vinculado</div>
+          <div style="color:rgba(255,255,255,0.25);font-size:20px">›</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Código profesional -->
+    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showPatientCode()">
+      <div style="width:32px;height:32px;border-radius:8px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.7)">Mi código para el especialista</div>
+      </div>
+      <div style="color:rgba(255,255,255,0.2);font-size:18px">›</div>
+    </div>
+
+    <!-- Escalas list (oculto por defecto, solo placeholder) -->
+    <div id="scales-list" style="display:none"></div>
+    <div id="home-quick" style="display:none"></div>
+    <div id="home-profile-pills" style="display:none"><div id="home-profile-pills-list"></div></div>
+    <div id="home-section-title" style="display:none"></div>
+    <div id="home-metrics" style="display:none"></div>
     <div id="home-children" style="display:none"></div>
+    <div id="home-scroll" style="display:none"></div>
   </div>
 </div>
 
@@ -3752,6 +3766,10 @@ function trackUsage(){
   // Usage tracking in localStorage only (DB columns not available)
 }
 
+
+function startScaleOfDay(){
+  if(S._todayScaleId) startScale(S._todayScaleId);
+}
 function doLogout(){S.user=null;localStorage.removeItem('dm_s');Object.keys(S.charts).forEach(k=>killChart(k));pvtStop();showScreen('login');}
 
 // PATIENT HOME
@@ -3804,25 +3822,47 @@ async function showHome(){
   if(!u){ showScreen('landing'); return; }
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
 
-  // Greeting
   const hr=new Date().getHours();
-  // greeting computed below
   const nameEl=document.getElementById('home-name');
   const greetEl=document.getElementById('home-greeting');
   if(nameEl) nameEl.textContent=u.name+(u.lname?' '+u.lname:'');
   if(greetEl) greetEl.textContent=hr<12?'Buenos días ☀️':(hr<19?'Buenas tardes 🌤️':'Buenas noches 🌙');
-
   const metaEl=document.getElementById('home-meta');
   if(metaEl) metaEl.textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
 
   showScreen('home');
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+  const _hb=document.getElementById('bnav-inicio');if(_hb)_hb.classList.add('active');
+
+  // Dato curioso del día
+  const FACTS=[
+    'Los adultos necesitan entre 7 y 9 horas de sueño por noche para funcionar bien.',
+    'Durante el sueño REM el cerebro consolida los recuerdos del día.',
+    'La temperatura ideal para dormir está entre 16 y 19°C.',
+    'La privación de sueño afecta la cognición de manera similar al alcohol.',
+    'El sueño profundo (N3) es cuando el cuerpo libera hormona de crecimiento.',
+    'Las personas que duermen menos de 6 horas tienen mayor riesgo cardiovascular.',
+    'La luz azul suprime la melatonina hasta 3 horas después de la exposición.',
+    'El sueño REM ocupa el 20–25% del tiempo total de sueño en adultos.',
+    'Una siesta de 10–20 minutos mejora el rendimiento sin generar inercia de sueño.',
+    'El jetlag social —acostarse tarde los fines de semana— afecta el metabolismo.',
+    'Los ronquidos están presentes en el 40% de los adultos y pueden indicar apnea.',
+    'El insomnio crónico afecta aproximadamente al 10% de la población adulta.',
+  ];
+  const factEl=document.getElementById('home-fact-text');
+  if(factEl) factEl.textContent=FACTS[new Date().getDate()%FACTS.length];
+
+  // Escala del día (rota por día de la semana)
+  const SCALE_ROTATION=['isi','esss','psqi','gasq','isi','esss','psqi'];
+  const todayScaleId=SCALE_ROTATION[new Date().getDay()];
+  const todayScale=SCALES.find(s=>s.id===todayScaleId);
+  const scaleNameEl=document.getElementById('home-scale-name');
+  const scaleSubEl=document.getElementById('home-scale-sub');
+  if(scaleNameEl&&todayScale) scaleNameEl.textContent=todayScale.name||todayScaleId.toUpperCase();
+  if(scaleSubEl&&todayScale) scaleSubEl.textContent=todayScale.desc||'';
+  S._todayScaleId=todayScaleId;
+
   loadLinkedChildProfiles();
-  loadHomeDoctors();
-
-  // Quick actions from onboarding
-  renderHomeQuickActions();
-
-  document.getElementById('scales-list').innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
     const recs=await db.get('evaluations?patient_email=eq.'+encodeURIComponent(u.email)+'&order=created_at.asc&select=*');
     S.records=recs||[];
@@ -4584,8 +4624,22 @@ function drawChart(records,canvasId,key){
 }
 
 // PROFILE
+
+function doLogout(){
+  localStorage.removeItem('dm_s');
+  localStorage.removeItem('dm_onboarding');
+  S.user=null; S.role=null; S.records=[];
+  S.childMode=false; S.ageGroup=null;
+  const nav=document.getElementById('main-nav');
+  if(nav) nav.style.display='none';
+  showScreen('landing');
+}
 async function showProfile(){
+  const _nav=document.getElementById('main-nav');if(_nav)_nav.style.display='flex';
   showScreen('profile');S.profileEditing=false;const _peb=document.getElementById('profile-edit-btn');if(_peb)_peb.textContent='Editar';
+  // Mark nav active
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+  const _yb=document.getElementById('bnav-yo');if(_yb)_yb.classList.add('active');
   const cont=document.getElementById('profile-content');
   cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{const d=await db.get(`patients?email=eq.${encodeURIComponent(S.user.email)}&select=*`);S.user=d[0];S.user.country=localStorage.getItem('dm_country_'+S.user.email)||'';renderProfileView();}
@@ -5552,6 +5606,11 @@ function showDiaryNew(){
 
     </div>
     <button class="btn btn-g" onclick="saveDiary()" id="save-diary-btn" style="margin-bottom:28px">Guardar registro</button>
+    <div style="margin-top:24px;padding-bottom:8px">
+      <button onclick="doLogout()" style="width:100%;padding:14px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,80,80,0.08);border-radius:12px;color:rgba(255,120,120,0.9);font-size:14px;font-weight:500;cursor:pointer;font-family:-apple-system,sans-serif;">
+        Cerrar sesión
+      </button>
+    </div>
   `;
 }
 
@@ -10580,8 +10639,8 @@ function showOnboarding() {
 
 <div id="screen-profile" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#fff">Mi perfil clínico</div></div>
+    <div style="width:60px"></div>
+    <div style="text-align:center;flex:1"><div style="font-size:17px;font-weight:700;color:#fff">Yo</div></div>
     <button class="topbar-btn" id="profile-edit-btn" onclick="toggleProfileEdit()">Editar</button>
   </div>
   <div class="scroll"><div id="profile-content" style="padding:16px"></div></div>
