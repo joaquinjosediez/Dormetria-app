@@ -2819,8 +2819,10 @@ function killChart(k){try{S.charts[k].destroy();}catch(e){}S.charts[k]=null;}
 // AUTH
 function setMode(m,el){S.role=m;document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');document.getElementById('reg-toggle').innerHTML=m==='doctor'?'¿Profesional nuevo? <span onclick="showRegister()">Crear cuenta profesional</span>':'¿Primera vez? <span onclick="showRegister()">Crear cuenta</span>';showLogin();}
 function showScreen(id){
+  console.log('[DORMETRIA] showScreen('+id+')');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('screen-'+id);
+  if(!el){ console.error('[DORMETRIA] screen-'+id+' NOT FOUND in DOM'); return; }
   if(el){
     el.classList.add('active');
     const scrollEl=el.querySelector('.scroll');
@@ -3889,10 +3891,12 @@ async function switchToChild(childEmail){
   }catch(e){ toast('Error: '+e.message); }
 }
 async function showHome(){
+  console.log('[DORMETRIA] showHome called, S.user=',S.user?S.user.email:'NULL');
   const _navEl=document.getElementById('main-nav');if(_navEl)_navEl.style.display='flex';
   if(S.childMode){ showChildHome(); return; }
   const u=S.user;
-  if(!u){ showScreen('landing'); return; }
+  if(!u){ console.log('[DORMETRIA] No user, going to landing'); showScreen('landing'); return; }
+  console.log('[DORMETRIA] screen-home exists:', !!document.getElementById('screen-home'));
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
 
   const hr=new Date().getHours();
@@ -8066,8 +8070,12 @@ async function performDeleteAccount(){
 
 // ── CONSENT MANAGEMENT ──
 function showConsentOrLogin(){
-  // Always go to login - consent is shown only during registration
+  console.log('[DORMETRIA] showConsentOrLogin called, S.role=',S.role);
+  console.log('[DORMETRIA] screen-login exists:', !!document.getElementById('screen-login'));
   showScreen('login');
+  console.log('[DORMETRIA] showScreen(login) called');
+  const loginEl = document.getElementById('screen-login');
+  console.log('[DORMETRIA] screen-login display after:', loginEl ? getComputedStyle(loginEl).display : 'NULL');
 }
 
 function acceptConsent(){
