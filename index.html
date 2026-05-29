@@ -103,9 +103,9 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color:var(--label);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;font-family:var(--font);background:var(--bg-primary);color:var(--label);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
 
-#app{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;background:#0f2820;overflow:hidden;position:relative;}
+#app{max-width:430px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#0f2820;overflow:hidden;position:relative;}
 
 /* ── SCREENS ── */
 .screen{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
@@ -1375,7 +1375,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
   </div>
 </div>
 
-<div id="screen-login" class="screen" style="background:rgba(10,28,20,0.96);z-index:50">
+<div id="screen-login" class="screen" style="background:rgba(10,28,20,0.97);z-index:50;overflow-y:auto">
 <div style="position:absolute;top:14px;left:16px;z-index:60"><button onclick="closeLoginOverlay()" style="background:rgba(255,255,255,0.12);border:none;border-radius:50%;width:34px;height:34px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button></div>
 <div class="login-outer"><div class="login-wrap">
     <div class="login-logo">
@@ -2845,6 +2845,8 @@ const SCALES=[
 ];
 
 function killChart(k){try{S.charts[k].destroy();}catch(e){}S.charts[k]=null;}
+function timeToOffset(t){if(!t)return null;const p=t.split(':').map(Number);const h=p[0],m=p[1]||0;return(h>=12?h-12:h+12)+m/60;}
+function meanStd(arr){if(!arr||!arr.length)return{mean:0,std:0};const mean=arr.reduce((a,b)=>a+b,0)/arr.length;const variance=arr.reduce((a,b)=>a+(b-mean)*(b-mean),0)/arr.length;return{mean:mean,std:Math.sqrt(variance)};}
 function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
 function pillarBar(v,color){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+color+';width:'+v+'%;transition:width .6s ease"></div></div>';}
 
@@ -2854,7 +2856,7 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   // Reset login overlay styling if it was used as an overlay
   const _lg=document.getElementById('screen-login');
-  if(_lg){_lg.style.zIndex='';_lg.style.animation='';}
+  if(_lg){_lg.style.position='';_lg.style.inset='';_lg.style.zIndex='';_lg.style.animation='';}
   const el=document.getElementById('screen-'+id);
   if(el){
     el.classList.add('active');
@@ -4439,6 +4441,18 @@ function renderScaleCard(sc, records, isGASQ){
 }
 
 
+function copyChildCode(code,el){
+  if(!code||code==='——')return;
+  const lbl=el.querySelector('.child-copy-lbl');
+  const done=()=>{
+    if(lbl){const o=lbl.textContent;lbl.textContent='¡Copiado!';setTimeout(()=>{lbl.textContent=o;},1800);}
+    el.style.background='rgba(126,200,164,0.22)';
+    setTimeout(()=>{el.style.background='rgba(126,200,164,0.1)';},1800);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(done).catch(()=>{fallbackCopy(code);done();});
+  }else{fallbackCopy(code);done();}
+}
 function copyPatientCode(){
   const code=S.user&&S.user.code;
   if(!code)return;
@@ -4480,7 +4494,7 @@ async function showPatientCode(){
     else{
       Promise.all(lkDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,gender').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
         const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiol.',general:'Clínica Gral',physician:'Médico'};
-        codeDrEl.innerHTML=drs.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-secondary);border-radius:10px;margin-bottom:6px"><div><div style="font-size:13px;font-weight:600">${d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':'Dr/a.'} ${d.name} ${d.lname||''}</div><div style="font-size:11px;color:var(--label-2)">${sL[d.specialty]||d.specialty||'Especialista'}</div></div><button data-eml="${d.email}" class="code-unlink-btn" style="padding:5px 12px;border:none;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;cursor:pointer">Revocar</button></div>`).join('');
+        codeDrEl.innerHTML=drs.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;margin-bottom:6px"><div><div style="font-size:13px;font-weight:600;color:#fff">${d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':'Dr/a.'} ${d.name} ${d.lname||''}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">${sL[d.specialty]||d.specialty||'Especialista'}</div></div><button data-eml="${d.email}" class="code-unlink-btn" style="padding:5px 12px;border:none;border-radius:8px;background:rgba(220,38,38,0.2);color:#fca5a5;font-size:11px;font-weight:600;cursor:pointer">Revocar</button></div>`).join('');
         codeDrEl.querySelectorAll('.code-unlink-btn').forEach(b=>b.addEventListener('click',()=>{if(confirm('¿Revocar acceso a '+b.closest('div').querySelector('div>div').textContent+'?')){unlinkDoctor(b.dataset.eml);b.closest('div[style]').remove();}}));
       });
     }
@@ -4493,12 +4507,13 @@ async function showPatientCode(){
     }
     childList.innerHTML=children.map(ch=>{
       const ageYrs=ch.dob?Math.floor((new Date()-new Date(ch.dob))/31557600000):null;
-      return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px">'+
+      const code=ch.code||'——';
+      return '<div onclick="copyChildCode(\''+code+'\',this)" style="cursor:pointer;background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:12px;padding:14px;margin-bottom:10px">'+
         '<div style="display:flex;justify-content:space-between;align-items:center">'+
-        '<div><div style="font-size:14px;font-weight:600">'+ch.name+' '+(ch.lname||'')+'</div>'+
-        '<div style="font-size:12px;color:var(--label-2)">'+(ageYrs!==null?ageYrs+' años':'')+'</div></div>'+
-        '<div style="text-align:center"><div style="font-family:monospace;font-size:20px;font-weight:700;color:#1a4a3a;letter-spacing:.15em">'+(ch.code||'——')+'</div>'+
-        '<div style="font-size:10px;color:var(--label-3)">Código del perfil</div></div></div></div>';
+        '<div><div style="font-size:14px;font-weight:600;color:#fff">'+ch.name+' '+(ch.lname||'')+'</div>'+
+        '<div style="font-size:12px;color:rgba(255,255,255,0.5)">'+(ageYrs!==null?ageYrs+' años':'')+'</div></div>'+
+        '<div style="text-align:center"><div style="font-family:monospace;font-size:20px;font-weight:700;color:#7ec8a4;letter-spacing:.15em">'+code+'</div>'+
+        '<div class="child-copy-lbl" style="font-size:10px;color:rgba(126,200,164,0.8)">Tocá para copiar</div></div></div></div>';
     }).join('');
   }catch(e){
     childList.innerHTML='<div style="font-size:12px;color:var(--label-3)">No se pudieron cargar los perfiles.</div>';
@@ -5487,7 +5502,7 @@ function showDiaryNew(){
       <button id="nap-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(false)">No dormí siesta</button>
       <button id="nap-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(true)">Dormí siesta</button>
     </div>
-    <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div>
+    <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div></div>
         <div class="divider"></div>
     <div class="sec-title">Calidad del sueño</div>
     <div class="emoji-row">
@@ -5579,7 +5594,6 @@ function showDiaryNew(){
 <div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Notas adicionales</div>
     <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..." style="margin-bottom:14px"></textarea>
 
-    </div>
     <button class="btn btn-g" onclick="saveDiary()" id="save-diary-btn" style="margin-bottom:28px">Guardar registro</button>
     <div style="margin-top:24px;padding-bottom:8px">
       <button onclick="doLogout()" style="width:100%;padding:14px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,80,80,0.08);border-radius:12px;color:rgba(255,120,120,0.9);font-size:14px;font-weight:500;cursor:pointer;font-family:-apple-system,sans-serif;">
@@ -8138,22 +8152,20 @@ async function performDeleteAccount(){
 // ── CONSENT MANAGEMENT ──
 function closeLoginOverlay(){
   const lg=document.getElementById('screen-login');
-  if(lg){lg.classList.remove('active');lg.style.zIndex='';lg.style.animation='';}
-  // Landing stays active underneath
+  if(lg){lg.classList.remove('active');lg.style.position='';lg.style.inset='';lg.style.zIndex='';lg.style.animation='';}
   const ld=document.getElementById('screen-landing');
   if(ld) ld.classList.add('active');
 }
 function showConsentOrLogin(){
-  // Show login as a slide-up overlay on top of the landing (same-screen feel)
+  // Show login as a full-screen overlay positioned over the landing
   const lg=document.getElementById('screen-login');
   if(lg){
     lg.classList.add('active');
+    lg.style.position='absolute';
+    lg.style.inset='0';
     lg.style.zIndex='50';
     lg.style.animation='loginSlideUp 0.32s cubic-bezier(0.16,1,0.3,1)';
   }
-  // Keep landing visible underneath
-  const ld=document.getElementById('screen-landing');
-  if(ld) ld.classList.add('active');
   // Reset to login form (not register) and patient mode
   const _lf=document.getElementById('login-form');if(_lf)_lf.style.display='block';
   const _rf=document.getElementById('register-form');if(_rf)_rf.style.display='none';
