@@ -166,6 +166,12 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 /* ── SCROLL ── */
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px));}
 
+/* ── PVT screens: light background so default dark text is readable ── */
+#screen-pvt-intro{background:#f4efe5;}
+#screen-pvt-intro .scroll, #screen-pvt-intro [class*="panel"]{background:#f4efe5;}
+#screen-pvt-result{background:#f4efe5;}
+#screen-pvt-calib{background:#f4efe5;}
+
 /* ── SECTION HEADERS (iOS grouped style) ── */
 .section{padding:24px 16px 0;}
 .sec-title{
@@ -3899,32 +3905,31 @@ async function loadLinkedChildProfiles(){
   try{
     const children = await db.get('patients?parent_email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,email');
     S._linkedChildren = children || [];
+    // Children are now accessed via the dedicated tab, not shown on home
     const container = document.getElementById('home-children');
-    // Hero pills
+    if(container) container.style.display='none';
     const pillsWrap = document.getElementById('home-profile-pills');
-    const pillsList = document.getElementById('home-profile-pills-list');
-    if(!children||!children.length){
-      if(container) container.style.display='none';
-      if(pillsWrap) pillsWrap.style.display='flex'; // still show add-child btn
-      return;
-    }
-    // Populate hero pills (quick-switch)
-    if(pillsWrap && pillsList){
-      pillsWrap.style.display='flex';
-      pillsList.innerHTML = children.map(ch =>
-        `<button onclick="switchToChild('${ch.email}')" style="padding:5px 12px;border:none;border-radius:20px;background:linear-gradient(135deg,#1a4a3a,#2d5a9e);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px">
-          <span style="width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.25);display:inline-flex;align-items:center;justify-content:center;font-size:10px">${(ch.name||'?')[0]}</span>
-          ${ch.name}
-        </button>`
-      ).join('');
-    }
-    // Also populate the expanded section (hidden, kept for reference)
-    if(container){
-      container.style.display='none'; // pills in hero are enough
-    }
-  }catch(e){ console.log('children load:',e.message); }
+    if(pillsWrap) pillsWrap.style.display='none';
+    const childPill = document.getElementById('home-child-pill');
+    if(childPill) childPill.style.display='none';
+    // Now that children are loaded, refresh nav labels (child name)
+    try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
+    return;
+  }catch(e){ S._linkedChildren=S._linkedChildren||[]; }
 }
-
+async function openChildProfile(){
+  // Navigate to the (first) child's profile/home
+  if(!S._linkedChildren||!S._linkedChildren.length){
+    // No child yet — try loading, else prompt to register
+    try{ await loadLinkedChildProfiles(); }catch(e){}
+  }
+  if(S._linkedChildren&&S._linkedChildren.length){
+    switchToChild(S._linkedChildren[0].email);
+  }else{
+    if(typeof registerChildProfile==='function') registerChildProfile();
+    else toast('Agregá un perfil de niño primero');
+  }
+}
 async function switchToChild(childEmail){
   try{
     const d = await db.get('patients?email=eq.'+encodeURIComponent(childEmail)+'&select=*');
@@ -3937,6 +3942,7 @@ async function switchToChild(childEmail){
 }
 async function showHome(){
   const _navEl=document.getElementById('main-nav');if(_navEl)_navEl.style.display='flex';
+  try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
   if(S.childMode){ showChildHome(); return; }
   const u=S.user;
   if(!u){ showScreen('landing'); return; }
@@ -4347,16 +4353,67 @@ function renderScales(targetId){
 }
 
 
+function getOnboardingFor(){
+  // Returns 'self' | 'child' | 'both'
+  if(S.user&&S.user.onboarding_for) return S.user.onboarding_for;
+  try{const ob=JSON.parse(localStorage.getItem('dm_onboarding')||'{}');if(ob.for)return ob.for;}catch(e){}
+  return 'self';
+}
+function getFirstChildName(){
+  // Best-effort: from cached linked children
+  if(S._linkedChildren&&S._linkedChildren.length){
+    const c=S._linkedChildren[0];
+    return (c.name||'').trim().split(' ')[0]||'Mi hijo/a';
+  }
+  return 'Mi hijo/a';
+}
+function updateNavTabs(){
+  const forWhom=getOnboardingFor();
+  const yoBtn=document.getElementById('bnav-yo');
+  const yoLbl=yoBtn?yoBtn.querySelector('.bnav-lbl'):null;
+  let childBtn=document.getElementById('bnav-hijo');
+  if(forWhom==='child'){
+    // The "Yo" tab becomes the child's profile
+    if(yoLbl) yoLbl.textContent=getFirstChildName();
+    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'child\')');
+    if(childBtn) childBtn.style.display='none';
+  }else if(forWhom==='both'){
+    // Keep "Yo", add a separate child tab before "Más"
+    if(yoLbl) yoLbl.textContent='Yo';
+    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
+    if(!childBtn){
+      const masBtn=document.getElementById('bnav-mas');
+      if(masBtn&&masBtn.parentNode){
+        childBtn=document.createElement('button');
+        childBtn.className='bnav';childBtn.id='bnav-hijo';
+        childBtn.setAttribute('onclick','navTo(\'child\')');
+        childBtn.innerHTML='<div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><span class="bnav-lbl">'+getFirstChildName()+'</span>';
+        masBtn.parentNode.insertBefore(childBtn,masBtn);
+      }
+    }else{
+      childBtn.style.display='';
+      const cl=childBtn.querySelector('.bnav-lbl');if(cl)cl.textContent=getFirstChildName();
+    }
+  }else{
+    // self
+    if(yoLbl) yoLbl.textContent='Yo';
+    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
+    if(childBtn) childBtn.style.display='none';
+  }
+}
 function navTo(dest){
   if(S.role==='doctor' && !S.patientOverride){ showDoctorHome(); return; }
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
-  const map={home:'bnav-inicio', profile:'bnav-yo',
+  const map={home:'bnav-inicio', profile:'bnav-yo', child:'bnav-yo',
              scales:'bnav-mas', diary:'bnav-mas', pvt:'bnav-mas',
              history:'bnav-mas', docs:'bnav-mas'};
+  const forWhom=getOnboardingFor();
+  if(dest==='child'&&forWhom==='both'){map.child='bnav-hijo';}
   const btn=document.getElementById(map[dest]);
   if(btn) btn.classList.add('active');
   if(dest==='home'){showHome();}
   else if(dest==='profile'){showProfile();}
+  else if(dest==='child'){openChildProfile();}
   else if(dest==='scales'){showScalesScreen();}
   else if(dest==='diary'){showDiaryHome();}
   else if(dest==='pvt'){showPVT();}
@@ -4757,10 +4814,19 @@ function drawChart(records,canvasId,key){
 
 async function showProfile(){
   const _nav=document.getElementById('main-nav');if(_nav)_nav.style.display='flex';
+  // If currently in a child profile, switch back to the adult account for "Yo"
+  if(S.user&&S.user.parent_email&&S.childMode){
+    const parentEmail=S.user.parent_email;
+    try{
+      const pd=await db.get('patients?email=eq.'+encodeURIComponent(parentEmail)+'&select=*');
+      if(pd&&pd[0]){S.user=pd[0];setPatientMode(pd[0].dob);}
+    }catch(e){}
+  }
   showScreen('profile');S.profileEditing=false;const _peb=document.getElementById('profile-edit-btn');if(_peb)_peb.textContent='Editar';
+  try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
   const _yb=document.getElementById('bnav-yo');if(_yb)_yb.classList.add('active');
-  if(!S.user){showScreen('landing');return;}
+  if(!S.user){renderProfileView();return;}
   // Personalized header title
   const _pht=document.getElementById('profile-header-title');
   if(_pht){const fn=(S.user.name||'').trim().split(' ')[0];_pht.textContent=fn?('Hola, '+fn):'Yo';}
@@ -4782,10 +4848,13 @@ function getActivityLabel(u){
 }
 
 function renderProfileView(){
-  if(!S.user) return;
-  const u=S.user;
   const cont=document.getElementById('profile-content');
   if(!cont) return;
+  if(!S.user){
+    cont.innerHTML='<div style="padding:40px 16px;text-align:center;color:rgba(255,255,255,0.6)"><div style="font-size:14px">Cargando tu perfil…</div></div>';
+    return;
+  }
+  const u=S.user;
   const name=(u.name||'')+(u.lname?' '+u.lname:'');
   const age=u.dob?(new Date().getFullYear()-new Date(u.dob).getFullYear())+' años':'';
   const sex=u.sex||'';
@@ -5108,17 +5177,17 @@ async function showDiaryTab_(tab){
         '</div>'+
         '<div id="score-panel-wrap">'+renderSleepScorePanel(scoreEntries)+'</div>'
       +`
-        <div class="sec-title" style="margin-top:12px">Pilares del sueño</div>
+        <div class="sec-title" style="margin-top:12px;color:#fff">Pilares del sueño</div>
         <div id="diary-pillar-bars" style="margin-bottom:8px"></div>
-        <div class="chart-wrap" style="height:180px;margin-top:8px"><canvas id="diary-chart-pillars"></canvas></div>
+        <div style="background:#fff;border-radius:14px;padding:12px 10px;margin-top:8px"><div class="chart-wrap" style="height:180px"><canvas id="diary-chart-pillars"></canvas></div></div>
         <div style="height:8px"></div>
         <div id="diary-clinical-metrics" style="margin:8px 0"></div>
-        <div class="sec-title" style="margin-top:12px">Actograma — horarios de sueño</div>
-        <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
-        <div style="overflow-x:auto;padding-bottom:4px">
+        <div class="sec-title" style="margin-top:12px;color:#fff">Actograma — horarios de sueño</div>
+        <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
+        <div style="background:#fff;border-radius:14px;padding:12px 10px;overflow-x:auto;padding-bottom:8px">
           <canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas>
         </div>
-        <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 14px">
+        <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0 14px">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
@@ -5397,6 +5466,28 @@ function removeAlcItem(i){alcItems.splice(i,1);renderAlcItems();}
 function renderAlcItems(){const cont=document.getElementById('alcohol-items');if(!cont)return;const total=Math.round(alcItems.reduce((a,x)=>a+x.ua,0)*10)/10;cont.innerHTML=alcItems.map((x,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${x.label} <span style="color:var(--ink3)">(${x.ua} UA)</span></span><button onclick="removeAlcItem(${i})" style="border:none;background:none;color:var(--ink4);cursor:pointer;font-size:18px;line-height:1">✕</button></div>`).join('');const totalEl=document.getElementById('alc-total');if(totalEl)totalEl.innerHTML=alcItems.length?'Total: '+total+' unidades de alcohol':'';const hid=document.getElementById('d-alc');if(hid)hid.value=Math.round(total);}
 
 
+async function deleteDiaryEntry(id){
+  if(!confirm('¿Borrar este registro de sueño? Esta acción no se puede deshacer.'))return;
+  try{
+    const r=await fetch(SU+'/rest/v1/sleep_diary?id=eq.'+encodeURIComponent(id),{
+      method:'DELETE',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Prefer':'return=minimal'}
+    });
+    if(!r.ok&&r.status!==204){throw new Error('HTTP '+r.status);}
+    toast('Registro borrado');
+    // Refresh whichever diary view is active
+    const activeTab=document.querySelector('#screen-diary-home .tab.active');
+    if(activeTab){
+      const isGraf=activeTab.textContent.includes('Gráficos');
+      showDiaryTab_(isGraf?'graficos':'list');
+    }else if(typeof showChildTab==='function'&&S.childMode){
+      const cd=document.getElementById('ch-tab-diary');if(cd)showChildTab('diary',cd);
+    }
+  }catch(e){
+    console.error('deleteDiaryEntry:',e);
+    toast('Error al borrar el registro');
+  }
+}
 async function editDiaryEntry(id){
   try{
     const rows = await db.get('sleep_diary?id=eq.'+id+'&select=*');
@@ -8701,8 +8792,20 @@ function showChildFromHome(){
 }
 function showChildHome(){
   if(!S.user) return;
+  const _forWhom=(typeof getOnboardingFor==='function')?getOnboardingFor():'self';
   const _mnav=document.getElementById('main-nav');
-  if(_mnav) _mnav.style.setProperty('display','none','important');
+  if(_mnav){
+    if(_forWhom==='both'){
+      // Keep nav visible so user can switch back to their own profile
+      _mnav.style.removeProperty('display');
+      _mnav.style.display='flex';
+      try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
+      document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+      const hb=document.getElementById('bnav-hijo');if(hb)hb.classList.add('active');
+    }else{
+      _mnav.style.setProperty('display','none','important');
+    }
+  }
   showScreen('child-home');
   const u = S.user;
   const norm = SLEEP_NORMS[S.ageGroup] || SLEEP_NORMS.school;
