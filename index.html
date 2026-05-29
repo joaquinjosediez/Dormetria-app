@@ -3917,6 +3917,9 @@ async function showHome(){
   if(metaEl) metaEl.textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
 
   showScreen('home');
+  // CONFIRM HOME IS SHOWING
+  const _hmeta = document.getElementById('home-meta');
+  if(_hmeta) _hmeta.textContent = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
   const _hb=document.getElementById('bnav-inicio');if(_hb)_hb.classList.add('active');
 
@@ -9392,7 +9395,11 @@ async function tryAutoLogin(){
     const {email,role}=JSON.parse(s); S.role=role;
     const t=role==='patient'?'patients':'doctors';
     const d=await db.get(t+'?email=eq.'+encodeURIComponent(email)+'&select=*');
-    if(d&&d.length){ S.user=d[0];trackUsage(); if(role==='patient'){setPatientMode(d[0].dob);showHome().catch(function(e){console.error('showHome:',e);showScreen('landing');});}else{showDoctorHome();} }
+    if(d&&d.length){ S.user=d[0];trackUsage(); if(role==='patient'){setPatientMode(d[0].dob);showHome().catch(function(e){
+      console.error('showHome crash:',e.message,e.stack);
+      // Show landing as fallback
+      showScreen('landing');
+    });}else{showDoctorHome();} }
     else localStorage.removeItem('dm_s');
   }catch(e){ console.error('AutoLogin:',e.message); showScreen('landing'); }
 }
