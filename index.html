@@ -272,7 +272,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-primary);color
 .err.show{display:block;}
 
 /* ── LOGIN ── */
-.login-outer{display:flex;align-items:flex-start;justify-content:center;padding:24px 24px 90px;background:transparent;min-height:100%;}
+.login-outer{display:flex;align-items:center;justify-content:center;padding:24px;background:transparent;min-height:100%;}
 .login-wrap{width:100%;max-width:380px;background:rgba(10,28,20,0.92);border-radius:16px;padding:24px 20px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 40px rgba(0,0,0,0.5);}
 .login-logo{text-align:center;margin-bottom:32px;}
 .login-icon{
@@ -2941,7 +2941,15 @@ async function doLogin(){
     if(window.PublicKeyCredential && !localStorage.getItem('dm_cred_'+email)){
       setTimeout(()=>offerBiometric(email), 800);
     }
-    S.role==='patient'?showHome():showDoctorHome();}
+    if(S.role==='patient'){
+      showHome().catch(function(e){
+        console.error('[LOGIN] showHome crash:',e.message,e.stack);
+        // Fallback: show home screen directly
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        var h=document.getElementById('screen-home');
+        if(h){h.classList.add('active');var n=document.getElementById('main-nav');if(n)n.style.display='flex';}
+      });
+    }else{showDoctorHome();}}
   catch(e){
     const el=document.getElementById('login-error');
     el.classList.add('show');
@@ -3948,8 +3956,9 @@ async function showHome(){
     try{renderScales('scales-list');setTimeout(fixScaleColors,100);setTimeout(loadDoctorSuggestions,500);}
     catch(re){console.error('renderScales ERROR:',re.message,re.stack);const el=document.getElementById('scales-list');if(el)el.innerHTML='<div class="empty-state" style="font-size:11px">Error: '+re.message+'</div>';}
   }catch(e){
-    console.error('showHome error:',e);
-    document.getElementById('scales-list').innerHTML='<div class="empty-state">Error al cargar. <button class="btn btn-s" onclick="showHome()" style="margin-top:10px">Reintentar</button></div>';
+    console.error('showHome error:',e.message);
+    const _sl=document.getElementById('scales-list');
+    if(_sl)_sl.innerHTML='<div class="empty-state">Error al cargar. <button class="btn btn-s" onclick="showHome()" style="margin-top:10px">Reintentar</button></div>';
   }
 }
 
