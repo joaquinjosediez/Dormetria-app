@@ -1522,19 +1522,19 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     </div>
 
     <!-- Todo sobre el sueño -->
-    <div onclick="showSleepInfo()" style="background:linear-gradient(135deg,rgba(126,200,164,0.18),rgba(45,107,74,0.15));border:1px solid rgba(126,200,164,0.3);border-radius:16px;padding:16px;cursor:pointer;position:relative;overflow:hidden">
-      <div style="position:absolute;top:-8px;right:-4px;font-size:46px;opacity:0.18">🌙</div>
-      <div style="display:flex;align-items:center;gap:12px;position:relative">
-        <div style="font-size:26px">💡</div>
+    <div onclick="showSleepInfo()" style="background:linear-gradient(135deg,rgba(126,200,164,0.18),rgba(45,107,74,0.15));border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:14px 16px;cursor:pointer">
+      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">💡 Información</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:#fff;line-height:1.25">Todo lo que siempre quisiste saber del sueño</div>
-          <div style="font-size:12px;color:rgba(126,200,164,0.9);margin-top:3px">Respuestas claras a las dudas más comunes →</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;line-height:1.3">Todo lo que siempre quisiste saber del sueño</div>
+          <div style="font-size:12px;color:rgba(126,200,164,0.9);margin-top:3px">Respuestas a las dudas más comunes</div>
         </div>
+        <div style="color:#7ec8a4;font-size:20px;flex-shrink:0">›</div>
       </div>
     </div>
 
     <!-- Código profesional -->
-    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showPatientCode()">
+    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showPatientCode()">
       <div style="width:32px;height:32px;border-radius:8px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
       </div>
@@ -4428,15 +4428,11 @@ function updateNavTabs(){
   const yoBtn=document.getElementById('bnav-yo');
   const yoLbl=yoBtn?yoBtn.querySelector('.bnav-lbl'):null;
   let childBtn=document.getElementById('bnav-hijo');
-  if(forWhom==='child'){
-    // The "Yo" tab becomes the child's profile
-    if(yoLbl) yoLbl.textContent=getFirstChildName();
-    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'child\')');
-    if(childBtn) childBtn.style.display='none';
-  }else if(forWhom==='both'){
-    // Keep "Yo", add a separate child tab before "Más"
-    if(yoLbl) yoLbl.textContent='Yo';
-    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
+  // "Yo" ALWAYS goes to the adult's own profile — never hijack it
+  if(yoLbl) yoLbl.textContent='Yo';
+  if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
+  if(forWhom==='child'||forWhom==='both'){
+    // Add/show a dedicated child tab before "Más"
     if(!childBtn){
       const masBtn=document.getElementById('bnav-mas');
       if(masBtn&&masBtn.parentNode){
@@ -4451,9 +4447,7 @@ function updateNavTabs(){
       const cl=childBtn.querySelector('.bnav-lbl');if(cl)cl.textContent=getFirstChildName();
     }
   }else{
-    // self
-    if(yoLbl) yoLbl.textContent='Yo';
-    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
+    // self only — hide child tab
     if(childBtn) childBtn.style.display='none';
   }
 }
@@ -4635,12 +4629,18 @@ async function showPatientCode(){
 
 // SCALES
 function startScale(id){
-  S.scale=SCALES.find(s=>s.id===id);
-  if(!S.scale){toast('Escala no encontrada');return;}
-  if(!S.scale.qs||!S.scale.qs.length){toast('Esta escala requiere entrevista clínica');return;}
-  S.qIdx=0;S.answers=new Array(S.scale.qs.length).fill(null);
-  document.getElementById('scale-title').textContent=S.scale.name;
-  renderQ();showScreen('scale');
+  try{
+    S.scale=SCALES.find(s=>s.id===id);
+    if(!S.scale){toast('Escala no encontrada');console.error('[ESCALA] no encontrada:',id);return;}
+    if(!S.scale.qs||!S.scale.qs.length){toast('Esta escala requiere entrevista clínica');return;}
+    S.qIdx=0;S.answers=new Array(S.scale.qs.length).fill(null);
+    const _st=document.getElementById('scale-title');if(_st)_st.textContent=S.scale.name;
+    showScreen('scale');
+    renderQ();
+  }catch(e){
+    console.error('[ESCALA] startScale error:',e.message,e.stack);
+    toast('Error al abrir la escala');
+  }
 }
 function renderQ(){
   const sc=S.scale;const q=sc.qs[S.qIdx];
@@ -6379,7 +6379,7 @@ async function showDrTab_(tab){
         }
       }catch(e){/* RLS blocked - use cache only */}
       if(!cachedEmails.length){
-        cont.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>No tenés pacientes vinculados.<br>Usá la pestaña <b>Vincular</b> para agregar pacientes con su código.</div>';
+        cont.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>No tenés pacientes vinculados.<br><br><button class="btn btn-g" style="max-width:240px;margin:0 auto" onclick="showDrTab(\'link\',document.getElementById(\'drnav-link\'))">+ Vincular paciente por código</button></div>';
         return;
       }
       const pts=await Promise.all(cachedEmails.map(async pEmail=>{
@@ -6409,6 +6409,7 @@ async function showDrTab_(tab){
       cont.innerHTML=`<div style="position:sticky;top:0;background:var(--bg);z-index:10;padding:10px 0 6px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div class="sec-title" id="dr-patient-count" style="margin:0">Pacientes vinculados (${validPts.length})</div>
+          <button onclick="showDrTab('link',document.getElementById('drnav-link'))" style="background:#1a4a3a;border:none;border-radius:10px;padding:7px 14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">+ Vincular</button>
         </div>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--label-3)">🔍</span>
@@ -6517,14 +6518,23 @@ async function showDrTab_(tab){
       if(alerts&&alerts.length) buildAlertCards(alerts, document.getElementById('alerts-card-container'));
     }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||'')+'</div>';}
   }
-  if(tab==='link'){cont.innerHTML=`<div style="padding-top:14px;color:rgba(255,255,255,0.9)"><div class="sec-title" style="color:rgba(255,255,255,0.5)">Vincular paciente por código</div><p style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:18px;line-height:1.6">Pedile al paciente su código. Lo encuentra en "Mi código" en la barra inferior.</p><div class="form-group"><label class="form-label">Código del paciente</label><input class="form-input" id="link-code" placeholder="ABC123" style="max-width:200px;font-size:20px;letter-spacing:.14em;font-family:'DM Mono',monospace;text-transform:uppercase"><div class="err" id="link-error">Código no encontrado.</div></div><button class="btn btn-g" style="max-width:220px" onclick="linkPatient()" id="link-btn">Vincular paciente</button></div>`;}
+  if(tab==='link'){cont.innerHTML=`<div style="padding-top:18px">
+    <div style="background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:16px;padding:20px">
+      <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:6px">🔗 Vincular paciente</div>
+      <p style="font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:18px;line-height:1.6">Pedile al paciente su código de 6 caracteres. Lo encuentra en <b style="color:#7ec8a4">"Mis especialistas"</b> dentro de su perfil.</p>
+      <label style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:8px">Código del paciente</label>
+      <input id="link-code" placeholder="ABC123" maxlength="6" style="width:100%;box-sizing:border-box;padding:14px;border:1.5px solid rgba(255,255,255,0.2);border-radius:12px;font-size:24px;letter-spacing:.18em;font-family:'DM Mono',monospace;text-transform:uppercase;text-align:center;background:rgba(255,255,255,0.08);color:#fff;margin-bottom:6px">
+      <div id="link-error" style="display:none;color:#fca5a5;font-size:13px;margin-bottom:10px">Código no encontrado.</div>
+      <button onclick="linkPatient()" id="link-btn" style="width:100%;margin-top:12px;padding:15px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">Vincular paciente</button>
+    </div>
+  </div>`;}
     if(tab==='profile'){
     tab='drprofile';  // redirect directly
   }
 }
 async function linkPatient(){
   const code=document.getElementById('link-code').value.trim().toUpperCase();
-  const err=document.getElementById('link-error');err.classList.remove('show');setBtn('link-btn',true);
+  const err=document.getElementById('link-error');if(err)err.style.display='none';setBtn('link-btn',true);
   function _cacheAndShow(email,name){
     const ck='dm_dr_pts_'+S.user.email;
     const ca=JSON.parse(localStorage.getItem(ck)||'[]');
@@ -6536,16 +6546,15 @@ async function linkPatient(){
   }
   try{
     const found=await db.get(`patients?code=eq.${code}&select=*`);
-    if(!found||!found.length){err.classList.add('show');return;}
+    if(!found||!found.length){if(err)err.style.display='block';return;}
     const p=found[0];
     try{
       await db.post('doctor_patients',{doctor_email:S.user.email,patient_email:p.email},'');
       _cacheAndShow(p.email,`${p.name} ${p.lname||''}`);
     }catch(insertErr){
-      // Duplicate or RLS error - patient was already linked, just cache and show
       _cacheAndShow(p.email,`${p.name} ${p.lname||''}`);
     }
-  }catch(e){err.classList.add('show');}
+  }catch(e){if(err)err.style.display='block';}
   finally{setBtn('link-btn',false,'Vincular paciente');}
 }
 async function viewPatient(email){
