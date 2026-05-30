@@ -4813,6 +4813,7 @@ function drawChart(records,canvasId,key){
 
 
 async function showProfile(){
+  console.log('[YO] showProfile start. S.user=',S.user?S.user.email:'NULL','childMode=',S.childMode);
   const _nav=document.getElementById('main-nav');if(_nav)_nav.style.display='flex';
   // If currently in a child profile, switch back to the adult account for "Yo"
   if(S.user&&S.user.parent_email&&S.childMode){
@@ -4849,6 +4850,7 @@ function getActivityLabel(u){
 
 function renderProfileView(){
   const cont=document.getElementById('profile-content');
+  console.log('[YO] renderProfileView. cont=',!!cont,'S.user=',S.user?S.user.email:'NULL');
   if(!cont) return;
   if(!S.user){
     cont.innerHTML='<div style="padding:40px 16px;text-align:center;color:rgba(255,255,255,0.6)"><div style="font-size:14px">Cargando tu perfil…</div></div>';
@@ -5194,6 +5196,7 @@ async function showDiaryTab_(tab){
         </div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
+        try{
         killChart('ds');killChart('dm');killChart('acto');killChart('dp');
         const sorted=[...entries].filter(e=>!(e.notes&&e.notes.startsWith('Importado'))).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
@@ -5426,6 +5429,7 @@ async function showDiaryTab_(tab){
             }
           });
         }
+        }catch(chartErr){console.error("[GRAFICOS] Error dibujando:",chartErr.message,chartErr.stack);}
       },100);
       // Update clinical metrics after charts render
       setTimeout(()=>updateClinicalMetrics(scoreEntries),150);
