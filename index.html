@@ -171,6 +171,8 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 #screen-pvt-intro .scroll, #screen-pvt-intro [class*="panel"]{background:#f4efe5;}
 #screen-pvt-result{background:#f4efe5;}
 #screen-pvt-calib{background:#f4efe5;}
+#screen-scale{background:#f4efe5;}
+#screen-result{background:#f4efe5;}
 
 /* ── SECTION HEADERS (iOS grouped style) ── */
 .section{padding:24px 16px 0;}
@@ -1519,13 +1521,16 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       </div>
     </div>
 
-    <!-- Qué es Dormetria -->
-    <div onclick="showScreen('about')" style="background:rgba(126,200,164,0.08);border:1px solid rgba(126,200,164,0.18);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
-      <div style="width:32px;height:32px;border-radius:8px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
+    <!-- Todo sobre el sueño -->
+    <div onclick="showSleepInfo()" style="background:linear-gradient(135deg,rgba(126,200,164,0.18),rgba(45,107,74,0.15));border:1px solid rgba(126,200,164,0.3);border-radius:16px;padding:16px;cursor:pointer;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-8px;right:-4px;font-size:46px;opacity:0.18">🌙</div>
+      <div style="display:flex;align-items:center;gap:12px;position:relative">
+        <div style="font-size:26px">💡</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;color:#fff;line-height:1.25">Todo lo que siempre quisiste saber del sueño</div>
+          <div style="font-size:12px;color:rgba(126,200,164,0.9);margin-top:3px">Respuestas claras a las dudas más comunes →</div>
+        </div>
       </div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:500;color:#7ec8a4">¿Cómo usar Dormetria?</div></div>
-      <div style="color:rgba(255,255,255,0.2);font-size:18px">›</div>
     </div>
 
     <!-- Código profesional -->
@@ -3859,6 +3864,57 @@ function startScaleOfDay(){
   if(S._todayScaleId) startScale(S._todayScaleId);
 }
 
+function showSleepInfo(){
+  var FAQS=[
+    {q:'¿Cuántas horas hay que dormir?',a:'<p>La mayoría de los adultos necesitan <strong>entre 7 y 9 horas</strong> por noche. Pero la cantidad ideal varía con la edad y entre personas.</p><p style="margin-top:10px"><strong>Por edad (rangos recomendados):</strong></p><ul style="margin-top:6px;padding-left:16px"><li style="margin-bottom:3px">Recién nacidos (0–3 m): 14–17 h</li><li style="margin-bottom:3px">Bebés (4–11 m): 12–15 h</li><li style="margin-bottom:3px">Niños (1–5 años): 10–14 h</li><li style="margin-bottom:3px">Escolares (6–13): 9–11 h</li><li style="margin-bottom:3px">Adolescentes (14–17): 8–10 h</li><li style="margin-bottom:3px">Adultos: 7–9 h</li><li style="margin-bottom:3px">Adultos mayores (65+): 7–8 h</li></ul><p style="margin-top:10px">La mejor señal de que dormís lo suficiente es <strong>cómo te sentís al día siguiente</strong>: si despertás descansado y rendís bien, vas bien. Dormir de forma habitual menos de 7 horas se asocia a mayor riesgo de hipertensión, diabetes y problemas cardíacos.</p>'},
+    {q:'¿Por qué me despierto cansado aunque duerma muchas horas?',a:'<p>Dormir muchas horas no garantiza un sueño <strong>reparador</strong>. Las causas más frecuentes de despertar cansado son:</p><ul style="margin-top:8px;padding-left:16px"><li style="margin-bottom:4px"><strong>Sueño fragmentado</strong> por microdespertares (a menudo por apnea del sueño)</li><li style="margin-bottom:4px">Horarios irregulares que desincronizan tu reloj biológico</li><li style="margin-bottom:4px">Alcohol o pantallas antes de dormir, que reducen la calidad del sueño profundo</li><li style="margin-bottom:4px">Despertar en medio de un ciclo de sueño en vez de al final</li></ul><p style="margin-top:10px">Si roncás y te despertás cansado pese a dormir 8 horas, conviene descartar apnea del sueño.</p>'},
+    {q:'¿Es malo dormir 5 horas?',a:'<p>De forma <strong>ocasional</strong>, dormir 5 horas solo genera fatiga, irritabilidad y menor concentración al día siguiente. El problema es cuando se vuelve <strong>habitual</strong>.</p><p style="margin-top:10px">Dormir crónicamente 5 horas o menos se asocia con mayor riesgo de hipertensión, diabetes tipo 2, obesidad, problemas de memoria y enfermedad cardiovascular. En personas mayores de 50 años, el riesgo de enfermedades crónicas aumenta de forma significativa.</p><p style="margin-top:10px">Hay muy pocas personas (menos del 1%) que genéticamente funcionan bien con poco sueño. La gran mayoría que cree pertenecer a ese grupo en realidad está acumulando deuda de sueño.</p>'},
+    {q:'¿La siesta es buena o mala?',a:'<p>Depende de <strong>cuánto</strong> y <strong>cuándo</strong>.</p><p style="margin-top:10px"><strong>Siesta saludable:</strong> 10–20 minutos, antes de las 15 h. Mejora el estado de alerta y el ánimo sin afectar el sueño nocturno.</p><p style="margin-top:10px"><strong>Siesta contraproducente:</strong> más de 30 minutos o muy tarde en el día. Puede generar inercia del sueño (sensación de aturdimiento) y dificultar conciliar el sueño por la noche.</p><p style="margin-top:10px">Si necesitás siestas largas todos los días para funcionar, puede ser señal de que no dormís bien de noche.</p>'},
+    {q:'¿Sirve recuperar el sueño el fin de semana?',a:'<p>Solo en parte. Dormir de más el fin de semana puede aliviar algo de la fatiga acumulada, pero <strong>no revierte</strong> todos los efectos de la falta de sueño durante la semana.</p><p style="margin-top:10px">Además, dormir muy distinto entre semana y fin de semana genera el llamado <strong>"jetlag social"</strong>: tu reloj biológico se desincroniza, como si viajaras de zona horaria cada lunes. Esto se asocia a peor ánimo, dificultad para concentrarse y riesgos metabólicos.</p><p style="margin-top:10px">Lo ideal es mantener horarios <strong>regulares todos los días</strong>, con una diferencia máxima de 1 hora entre semana y fin de semana.</p>'},
+    {q:'¿Qué puedo hacer para dormir mejor esta noche?',a:'<p>Las medidas con mejor respaldo científico (higiene del sueño):</p><ul style="margin-top:8px;padding-left:16px"><li style="margin-bottom:4px">Acostate y levantate a la <strong>misma hora</strong> todos los días</li><li style="margin-bottom:4px">Exponete a <strong>luz solar</strong> en la primera hora de la mañana</li><li style="margin-bottom:4px">Evitá cafeína después del mediodía</li><li style="margin-bottom:4px">Apagá pantallas brillantes 1–2 horas antes de dormir</li><li style="margin-bottom:4px">Mantené el dormitorio fresco, oscuro y silencioso</li><li style="margin-bottom:4px">Si no podés dormir en 20 minutos, levantate y hacé algo relajante hasta tener sueño</li><li style="margin-bottom:4px">Reservá la cama solo para dormir (no trabajar ni mirar el teléfono)</li></ul><p style="margin-top:10px">Si el problema persiste más de 3–4 semanas, la Terapia Cognitivo-Conductual para el Insomnio (TCC-I) es el tratamiento más eficaz.</p>'},
+    {q:'¿Cuánto debe dormir mi hijo?',a:'<p>Las necesidades de sueño infantil cambian mucho con la edad:</p><ul style="margin-top:8px;padding-left:16px"><li style="margin-bottom:3px"><strong>0–3 meses:</strong> 14–17 h (repartidas día y noche)</li><li style="margin-bottom:3px"><strong>4–11 meses:</strong> 12–15 h (incluye siestas)</li><li style="margin-bottom:3px"><strong>1–2 años:</strong> 11–14 h</li><li style="margin-bottom:3px"><strong>3–5 años:</strong> 10–13 h</li><li style="margin-bottom:3px"><strong>6–13 años:</strong> 9–11 h</li><li style="margin-bottom:3px"><strong>14–17 años:</strong> 8–10 h</li></ul><p style="margin-top:10px">Más importante que el número exacto es observar si el niño se despierta descansado, mantiene buen humor y atención durante el día. Cada niño tiene su propio ritmo, y la autonomía del sueño se desarrolla gradualmente.</p>'},
+    {q:'¿Está bien usar el celular en la cama?',a:'<p>No es lo ideal. El uso de pantallas en la cama afecta el sueño por dos motivos:</p><ul style="margin-top:8px;padding-left:16px"><li style="margin-bottom:4px"><strong>La luz</strong> (especialmente azul) suprime la melatonina y retrasa la señal de que es hora de dormir</li><li style="margin-bottom:4px"><strong>El contenido estimulante</strong> (redes, noticias, trabajo) mantiene el cerebro en estado de alerta</li></ul><p style="margin-top:10px">Además, usar el teléfono en la cama hace que el cerebro asocie la cama con estar despierto, lo que puede contribuir al insomnio. Lo recomendable es dejar el teléfono fuera del dormitorio o al menos no usarlo en la última hora antes de dormir.</p>'}
+  ];
+  var existing=document.getElementById('sleepinfo-modal');
+  if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='sleepinfo-modal';
+  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:flex-end;';
+  var sheet=document.createElement('div');
+  sheet.style.cssText='background:#1a2e23;border-radius:20px 20px 0 0;width:100%;max-width:430px;margin:0 auto;max-height:88vh;overflow-y:auto;padding:22px 18px 48px;';
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;';
+  var ttlwrap=document.createElement('div');
+  ttlwrap.innerHTML='<div style="font-size:19px;font-weight:700;color:#fff;line-height:1.25">Todo sobre el sueño</div><div style="font-size:12px;color:rgba(126,200,164,0.9);margin-top:3px">Las preguntas que más se hacen — tocá para ver la respuesta</div>';
+  var cls=document.createElement('button');
+  cls.style.cssText='background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,0.6);font-size:16px;cursor:pointer;flex-shrink:0;margin-left:10px';
+  cls.textContent='✕';
+  cls.onclick=function(){modal.remove();};
+  hdr.appendChild(ttlwrap);hdr.appendChild(cls);
+  sheet.appendChild(hdr);
+  var list=document.createElement('div');
+  list.style.cssText='margin-top:14px;display:flex;flex-direction:column;gap:8px;';
+  FAQS.forEach(function(f){
+    var det=document.createElement('details');
+    det.style.cssText='background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;';
+    var sum=document.createElement('summary');
+    sum.style.cssText='padding:14px 16px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;';
+    sum.innerHTML='<span style="flex:1">'+f.q+'</span><span style="color:#7ec8a4;font-size:13px;flex-shrink:0">＋</span>';
+    var ans=document.createElement('div');
+    ans.style.cssText='padding:0 16px 16px;font-size:13px;color:rgba(255,255,255,0.78);line-height:1.7;';
+    ans.innerHTML=f.a;
+    det.appendChild(sum);det.appendChild(ans);
+    list.appendChild(det);
+  });
+  sheet.appendChild(list);
+  var foot=document.createElement('div');
+  foot.style.cssText='margin-top:16px;font-size:11px;color:rgba(255,255,255,0.4);text-align:center;line-height:1.5';
+  foot.textContent='Información general basada en evidencia. No reemplaza la consulta con un profesional.';
+  sheet.appendChild(foot);
+  modal.appendChild(sheet);
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
 function showSleepArticle(id){
   var ARTICLES={
     insomnia:{title:'Insomnio',body:'<p><strong>¿Qué es?</strong></p><p style="margin-top:8px">El insomnio es el trastorno del sueño más frecuente. Se define como dificultad para iniciar el sueño, para mantenerlo durante la noche, o para volver a dormirse tras un despertar, al menos 3 noches por semana durante más de 3 meses, a pesar de tener condiciones adecuadas para dormir. Afecta al 10–15% de la población adulta y hasta el 30% tiene síntomas ocasionales.</p><p style="margin-top:12px"><strong>Tipos</strong></p><ul style="margin-top:6px;padding-left:16px"><li style="margin-bottom:4px"><strong>De inicio:</strong> dificultad para quedarse dormido al acostarse (latencia mayor a 30 minutos).</li><li style="margin-bottom:4px"><strong>De mantenimiento:</strong> despertares frecuentes o prolongados durante la noche.</li><li style="margin-bottom:4px"><strong>Terminal:</strong> despertar demasiado temprano sin poder volver a dormirse.</li></ul><p style="margin-top:12px"><strong>Causas frecuentes</strong></p><p style="margin-top:6px">Estrés, ansiedad, depresión, malos hábitos de sueño, uso de pantallas antes de dormir, consumo de cafeína o alcohol, dolor crónico, y ciertos medicamentos. En muchos casos el insomnio se vuelve "aprendido": el cerebro asocia la cama con el estado de alerta.</p><p style="margin-top:12px"><strong>Tratamiento</strong></p><p style="margin-top:6px">La <strong>Terapia Cognitivo-Conductual para el Insomnio (TCC-I)</strong> es el tratamiento de primera línea según todas las guías internacionales. Es más eficaz que los somníferos a largo plazo y sin efectos secundarios. Incluye restricción de sueño, control de estímulos, relajación y reestructuración cognitiva. Los medicamentos pueden usarse a corto plazo como complemento, nunca como solución única.</p><p style="margin-top:12px"><strong>¿Cuándo consultar?</strong></p><p style="margin-top:6px">Si los problemas para dormir afectan tu funcionamiento diario (concentración, humor, rendimiento) durante más de 4 semanas, es momento de consultar a un especialista en medicina del sueño.</p>'},
@@ -3941,7 +3997,7 @@ async function switchToChild(childEmail){
   }catch(e){ toast('Error: '+e.message); }
 }
 async function showHome(){
-  const _navEl=document.getElementById('main-nav');if(_navEl)_navEl.style.display='flex';
+  const _navEl=document.getElementById('main-nav');if(_navEl){_navEl.style.setProperty('display','flex','important');}
   try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
   if(S.childMode){ showChildHome(); return; }
   const u=S.user;
@@ -3982,7 +4038,7 @@ async function showHome(){
   if(factEl) factEl.textContent=FACTS[new Date().getDate()%FACTS.length];
 
   // Escala del día (rota por día de la semana)
-  const SCALE_ROTATION=['isi','esss','psqi','gasq','isi','esss','psqi'];
+  const SCALE_ROTATION=['isi','ess','psqi','gasq','isi','ess','psqi'];
   const todayScaleId=SCALE_ROTATION[new Date().getDay()];
   const todayScale=SCALES.find(s=>s.id===todayScaleId);
   const scaleNameEl=document.getElementById('home-scale-name');
@@ -4814,30 +4870,30 @@ function drawChart(records,canvasId,key){
 
 async function showProfile(){
   console.log('[YO] showProfile start. S.user=',S.user?S.user.email:'NULL','childMode=',S.childMode);
-  const _nav=document.getElementById('main-nav');if(_nav)_nav.style.display='flex';
-  // If currently in a child profile, switch back to the adult account for "Yo"
+  const _nav=document.getElementById('main-nav');if(_nav){_nav.style.setProperty('display','flex','important');}
+  showScreen('profile');S.profileEditing=false;const _peb=document.getElementById('profile-edit-btn');if(_peb)_peb.textContent='Editar';
+  try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+  const _yb=document.getElementById('bnav-yo');if(_yb)_yb.classList.add('active');
+  // If currently viewing a child, switch back to the adult account
   if(S.user&&S.user.parent_email&&S.childMode){
     const parentEmail=S.user.parent_email;
     try{
       const pd=await db.get('patients?email=eq.'+encodeURIComponent(parentEmail)+'&select=*');
       if(pd&&pd[0]){S.user=pd[0];setPatientMode(pd[0].dob);}
-    }catch(e){}
+    }catch(e){console.warn('parent switch failed',e);}
   }
-  showScreen('profile');S.profileEditing=false;const _peb=document.getElementById('profile-edit-btn');if(_peb)_peb.textContent='Editar';
-  try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
-  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
-  const _yb=document.getElementById('bnav-yo');if(_yb)_yb.classList.add('active');
-  if(!S.user){renderProfileView();return;}
   // Personalized header title
   const _pht=document.getElementById('profile-header-title');
-  if(_pht){const fn=(S.user.name||'').trim().split(' ')[0];_pht.textContent=fn?('Hola, '+fn):'Yo';}
-  // Show with cached data immediately
+  if(_pht&&S.user){const fn=(S.user.name||'').trim().split(' ')[0];_pht.textContent=fn?('Hola, '+fn):'Yo';}
   renderProfileView();
   // Refresh from DB silently
-  try{
-    const d=await db.get('patients?email=eq.'+encodeURIComponent(S.user.email)+'&select=*');
-    if(d&&d[0]){S.user=d[0];S.user.country=localStorage.getItem('dm_country_'+S.user.email)||'';renderProfileView();}
-  }catch(e){console.warn('Profile DB refresh failed');}
+  if(S.user&&S.user.email){
+    try{
+      const d=await db.get('patients?email=eq.'+encodeURIComponent(S.user.email)+'&select=*');
+      if(d&&d[0]){S.user=d[0];S.user.country=localStorage.getItem('dm_country_'+S.user.email)||'';renderProfileView();}
+    }catch(e){console.warn('Profile DB refresh failed');}
+  }
 }
 
 function getActivityLabel(u){
