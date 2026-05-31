@@ -4871,7 +4871,6 @@ function drawChart(records,canvasId,key){
 
 
 async function showProfile(){
-  console.log('[YO] showProfile start. S.user=',S.user?S.user.email:'NULL','childMode=',S.childMode);
   const _nav=document.getElementById('main-nav');if(_nav){_nav.style.setProperty('display','flex','important');}
   showScreen('profile');S.profileEditing=false;const _peb=document.getElementById('profile-edit-btn');if(_peb)_peb.textContent='Editar';
   try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
@@ -4908,7 +4907,6 @@ function getActivityLabel(u){
 
 function renderProfileView(){
   const cont=document.getElementById('profile-content');
-  console.log('[YO] renderProfileView. cont=',!!cont,'S.user=',S.user?S.user.email:'NULL');
   if(!cont) return;
   if(!S.user){
     cont.innerHTML='<div style="padding:40px 16px;text-align:center;color:rgba(255,255,255,0.6)"><div style="font-size:14px">Cargando tu perfil…</div></div>';
@@ -10638,7 +10636,7 @@ function showOnboarding() {
       <button onclick="addCustomMed()" style="background:#1a4a3a;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">+</button>
     </div>
   </div>
-</div></div></div>
+</div></div>
 <div id="screen-hygiene" class="screen" style="background:#1a2e23">
   <div class="topbar">
     <button class="topbar-btn" onclick="showHome()">← Volver</button>
@@ -10655,7 +10653,6 @@ function showOnboarding() {
     <div style="width:70px"></div>
   </div>
   <div class="scroll" id="consult-content" style="background:#1a2e23;padding-top:0"></div>
-</div>
 </div>
 
 
@@ -10725,6 +10722,7 @@ function showOnboarding() {
       🩺 Consultar un profesional de sueño
     </button>
   </div>
+</div>
 </div>
 
 </body>
