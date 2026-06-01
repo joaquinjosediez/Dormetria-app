@@ -1541,7 +1541,8 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
       </div>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.7)">Mi código para el especialista</div>
+        <div style="font-size:13px;font-weight:500;color:#fff">Mi especialista</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px">Tu código · Directorio · Profesionales conectados</div>
       </div>
       <div style="color:rgba(255,255,255,0.2);font-size:18px">›</div>
     </div>
@@ -1872,6 +1873,13 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <div id="child-codes-list"></div>
     </div>
 
+    <!-- Directorio de profesionales -->
+    <div style="margin-top:20px;text-align:left;border-top:1px solid rgba(255,255,255,0.1);padding-top:20px">
+      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">📋 Directorio de especialistas</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:10px">Profesionales que usan Dormetria y aceptan nuevos pacientes.</div>
+      <input type="text" id="code-consult-search" placeholder="Buscar por nombre o especialidad…" oninput="filterCodeConsultDirs()" style="width:100%;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <div id="code-consult-list" style="font-size:13px;color:rgba(255,255,255,0.6)">Cargá la pantalla para ver el directorio…</div>
+    </div>
     <div style="margin-top:24px"><button class="btn btn-g" onclick="showScreen('home')">Entendido</button></div>
   </div>
 </div>
@@ -1968,7 +1976,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 <!-- CHILD MODE HOME SCREEN -->
 <div id="screen-child-home" class="screen" style="background:#1a2e23">
   <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.08)">
-    <button class="topbar-btn" onclick="switchToParentProfile()" style="font-size:12px;color:#e8f5f0;font-weight:600;display:flex;align-items:center;gap:4px">← Adulto</button>
+    <button class="topbar-btn" onclick="switchToParentProfile()" style="font-size:13px;color:#7ec8a4">← Mi perfil</button>
     <div style="text-align:center">
       <div style="font-size:11px;opacity:0.7;color:#e8f5f0;letter-spacing:.08em;text-transform:uppercase">Dormetria</div>
       <div id="ch-name" style="font-size:15px;font-weight:600;color:#e8f5f0">Sueño infantil</div>
@@ -1999,12 +2007,17 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   <div id="ch-panel-info" style="display:none;flex:1;overflow-y:auto;padding:0 0 80px">
     <div id="ch-info-content"></div>
   </div>
-  <div style="display:flex;border-top:1px solid rgba(255,255,255,0.08);background:#1a2e23;flex-shrink:0">
-    <button id="ch-tab-home" onclick="showChildTab('home',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:700;color:#fff;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Inicio</button>
-    <button id="ch-tab-diary" onclick="showChildTab('diary',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>Diario</button>
-    <button id="ch-tab-scales" onclick="showChildTab('scales',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Escalas</button>
-    <button id="ch-tab-info" onclick="showChildTab('info',this)" style="flex:1;padding:10px 4px;border:none;background:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Info</button>
+</div>
+
+
+<!-- EEDSI · Escala Evolutiva Dimensional del Sueño Infantil -->
+<div id="screen-eedsi" class="screen" style="background:#1a2e23">
+  <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.08)">
+    <button class="topbar-btn" onclick="showChildHome()" style="font-size:13px;color:#7ec8a4">← Volver</button>
+    <div style="text-align:center"><div style="font-size:14px;font-weight:600;color:#fff">EEDSI</div><div style="font-size:10px;color:rgba(255,255,255,0.5)">Sueño infantil</div></div>
+    <div style="width:70px"></div>
   </div>
+  <div class="scroll" id="eedsi-content" style="background:#1a2e23"></div>
 </div>
 
 <!-- CONSULT DIRECTORY -->
@@ -2052,15 +2065,6 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
     </div>
 
-    <!-- Directorio de profesionales -->
-    <div onclick="showDocsScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
-      </div>
-      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Directorio de especialistas</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Encontrá un profesional del sueño</div></div>
-      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
-    </div>
-
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-top:6px;margin-bottom:2px">Información</div>
 
     <!-- Cuándo consultar -->
@@ -2072,58 +2076,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
     </div>
 
-    <!-- Información: quiero saber más de... -->
-    <div style="background:rgba(126,200,164,0.08);border:1px solid rgba(126,200,164,0.18);border-radius:14px;padding:16px;">
-      <div style="font-size:13px;font-weight:600;color:#7ec8a4;margin-bottom:4px">Quiero saber más de…</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:14px">Explicaciones breves y basadas en evidencia sobre los temas de sueño más consultados.</div>
-      <div style="display:flex;flex-direction:column;gap:9px">
-
-        <div onclick="showSleepArticle('insomnia')" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.05);border-radius:11px;padding:11px 13px;">
-          <div style="font-size:20px">😴</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">Insomnio</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Qué es, tipos y tratamientos</div></div>
-          <div style="color:rgba(126,200,164,0.5);font-size:16px">›</div>
-        </div>
-
-        <div onclick="showSleepArticle('apnea')" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.05);border-radius:11px;padding:11px 13px;">
-          <div style="font-size:20px">😤</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">Apneas del sueño</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Síntomas, riesgos y diagnóstico</div></div>
-          <div style="color:rgba(126,200,164,0.5);font-size:16px">›</div>
-        </div>
-
-        <div onclick="showSleepArticle('snoring')" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.05);border-radius:11px;padding:11px 13px;">
-          <div style="font-size:20px">💤</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">Ronquido</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Cuándo es simple y cuándo es alarma</div></div>
-          <div style="color:rgba(126,200,164,0.5);font-size:16px">›</div>
-        </div>
-
-        <div onclick="showSleepArticle('rls')" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.05);border-radius:11px;padding:11px 13px;">
-          <div style="font-size:20px">🦵</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">Síndrome de piernas inquietas</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Por qué ocurre y cómo se trata</div></div>
-          <div style="color:rgba(126,200,164,0.5);font-size:16px">›</div>
-        </div>
-
-        <div onclick="showSleepArticle('circadian')" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.05);border-radius:11px;padding:11px 13px;">
-          <div style="font-size:20px">🕐</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">¿Qué es el ritmo circadiano?</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Cronotipo y jetlag social</div></div>
-          <div style="color:rgba(126,200,164,0.5);font-size:16px">›</div>
-        </div>
-
-        <div onclick="showSleepArticle('parasomnia')" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.05);border-radius:11px;padding:11px 13px;">
-          <div style="font-size:20px">👻</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">Parasomnias</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Sonambulismo, terrores nocturnos</div></div>
-          <div style="color:rgba(126,200,164,0.5);font-size:16px">›</div>
-        </div>
-
-        <div onclick="showSleepArticle('hypersomnia')" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.05);border-radius:11px;padding:11px 13px;">
-          <div style="font-size:20px">☀️</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">Somnolencia excesiva</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">Hipersomnia y narcolepsia</div></div>
-          <div style="color:rgba(126,200,164,0.5);font-size:16px">›</div>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
+</div>
 </div>
 
 <div id="screen-admin" class="screen" style="background:#fff">
@@ -2802,58 +2755,17 @@ const SCALES=[
 }
 
 ,{id:'eedsi',
-  ref:'EEDSI — Escala de Evaluación del Desarrollo del Sueño Infantil. Instrumento en desarrollo (Dormetria).',
-  name:'EEDSI — Evaluación del Sueño Infantil',
+  ref:'EEDSI · Escala Evolutiva Dimensional del Sueño e Insomnio Infantil. Versión piloto · Dr. Joaquín J. Diez (2026).',
+  name:'EEDSI — Sueño infantil (evolutiva)',
   cat:'pediatric',
-  max:40,
-  ageGroups:['infant','preschool','school'],
-  desc:'Evaluación del desarrollo del sueño en menores de 10 años. Respondida por el cuidador.',
+  max:0,
+  ageGroups:['infant','preschool','school','teen'],
+  desc:'Evaluación dimensional según etapa: lactante / preescolar / escolar / adolescente.',
   icon:'🌙',
   bg:'#f0f9ff',
-  qs:[
-    {t:'INICIO DEL SUEÑO — ¿El niño/a se queda dormido/a solo/a (sin presencia del cuidador)?',
-     opts:['Siempre solo/a sin problemas','Generalmente solo/a','Necesita presencia pero se duerme','Necesita presencia activa (brazo, pecho, etc.)'],
-     sc:[0,1,2,3]},
-    {t:'INICIO DEL SUEÑO — ¿Cuánto tiempo tarda en dormirse desde que se acuesta?',
-     opts:['Menos de 15 minutos','15 a 30 minutos','30 a 60 minutos','Más de 60 minutos'],
-     sc:[0,1,2,3]},
-    {t:'MANTENIMIENTO — ¿Con qué frecuencia se despierta durante la noche?',
-     opts:['No se despierta o raramente','1 vez por noche','2 a 3 veces por noche','Más de 3 veces por noche'],
-     sc:[0,1,2,3]},
-    {t:'MANTENIMIENTO — Cuando se despierta, ¿puede volver a dormirse solo/a?',
-     opts:['Siempre solo/a','Generalmente solo/a','A veces necesita ayuda','Siempre necesita ayuda del cuidador'],
-     sc:[0,1,2,3]},
-    {t:'MANTENIMIENTO — ¿Cuánto dura el período de vigilia nocturna (suma total)?',
-     opts:['Menos de 15 minutos','15 a 30 minutos','30 a 60 minutos','Más de 60 minutos'],
-     sc:[0,1,2,3]},
-    {t:'DESPERTAR — ¿A qué hora se despierta habitualmente por la mañana?',
-     opts:['Hora consistente y adecuada para su edad','Varía ±30 minutos','Varía ±1 hora','Muy variable o muy temprano (antes de las 6h)'],
-     sc:[0,1,2,3]},
-    {t:'SIESTAS — ¿El niño/a realiza siestas acordes a su edad?',
-     opts:['Sí, apropiadas para su edad','Siestas algo irregulares','Siestas excesivas o muy cortas','No duerme siesta cuando debería, o siesta tardía'],
-     sc:[0,1,2,3]},
-    {t:'CONDUCTAS ASOCIADAS — ¿El niño/a presenta conductas disruptivas al momento de dormir (llanto prolongado, rabietas, salir de la cama)?',
-     opts:['Nunca o raramente','Ocasionalmente (1-2/semana)','Frecuentemente (3-4/semana)','Casi todas las noches'],
-     sc:[0,1,2,3]},
-    {t:'CONDUCTAS ASOCIADAS — ¿Presenta ronquidos, respiración ruidosa o pausas respiratorias al dormir?',
-     opts:['No','Leve, sin pausas','Moderado','Ronquido fuerte o pausas observadas'],
-     sc:[0,1,2,3]},
-    {t:'IMPACTO DIURNO — ¿El niño/a presenta irritabilidad, dificultad de concentración o somnolencia durante el día que atribuís a su sueño?',
-     opts:['No','Leve, ocasional','Moderado, frecuente','Severo, interfiere con actividades diarias'],
-     sc:[0,1,2,3]},
-    {t:'IMPACTO DIURNO — ¿El problema de sueño afecta el descanso de los cuidadores?',
-     opts:['No afecta','Afecta levemente','Afecta moderadamente','Afecta significativamente'],
-     sc:[0,1,2,3]},
-    {t:'CONTEXTO — ¿Existe una rutina pre-sueño consistente (secuencia de pasos antes de acostarse)?',
-     opts:['Sí, siempre la misma secuencia','Generalmente consistente','Poco consistente','Sin rutina establecida'],
-     sc:[0,1,2,3]}
-  ],
-  interp:function(s){
-    if(s<=8)  return {l:'Desarrollo del sueño adecuado',        c:'#14532d',bg:'#f0fdf4'};
-    if(s<=16) return {l:'Dificultades leves — seguimiento',      c:'#92400e',bg:'#fef3c7'};
-    if(s<=24) return {l:'Dificultades moderadas — consulta',     c:'#c2410c',bg:'#fff7ed'};
-                return {l:'Dificultades significativas — derivar',c:'#991b1b',bg:'#fef2f2'};
-  }
+  custom:'eedsi',
+  qs:[],
+  interp:function(s){return{l:'Datos registrados',c:'#7ec8a4',bg:'#1a4a3a'};}
 }
 ];
 
@@ -4537,7 +4449,7 @@ function renderScaleCard(sc, records, isGASQ){
       </div>`;
     } else {
       const pct = last.max_score ? Math.round(last.score / last.max_score * 100) : 50;
-      badge = `<span class="badge" style="background:${i.bg};color:${i.c}">${i.l}</span>`;
+      badge = `<span class="badge" style="background:${i.c}33;color:#fff;border:1px solid ${i.c}">${i.l}</span>`;
       bar = `<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;
     }
   } else {
@@ -4636,6 +4548,53 @@ async function showPatientCode(){
   }catch(e){
     childList.innerHTML='<div style="font-size:12px;color:var(--label-3)">No se pudieron cargar los perfiles.</div>';
   }
+  // Cargar directorio de profesionales en la misma pantalla
+  loadCodeConsultDirectory();
+}
+
+// Directorio de profesionales dentro de la pantalla "Mi especialista"
+async function loadCodeConsultDirectory(){
+  const list = document.getElementById('code-consult-list');
+  if(!list) return;
+  list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,0.5)">Cargando profesionales…</div>';
+  try{
+    const docs = await db.get('doctors?public_profile=eq.true&select=email,name,lname,specialty,gender,city,bio&order=name.asc');
+    window._codeConsultDocs = docs || [];
+    renderCodeConsultList(window._codeConsultDocs);
+  }catch(e){
+    list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px">No se pudo cargar el directorio.</div>';
+  }
+}
+function renderCodeConsultList(docs){
+  const list = document.getElementById('code-consult-list');
+  if(!list) return;
+  if(!docs || !docs.length){
+    list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px">No hay profesionales registrados públicamente todavía.</div>';
+    return;
+  }
+  const sL = {psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',endocrinology:'Endocrinología',internal:'Medicina interna',family:'Medicina familiar',general:'General',other:'Otro'};
+  list.innerHTML = docs.map(d => {
+    const sp = sL[d.specialty] || d.specialty || '';
+    const initials = ((d.name||'?').charAt(0) + (d.lname||'').charAt(0)).toUpperCase();
+    return '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:6px">'+
+      '<div style="width:36px;height:36px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;color:#7ec8a4;font-weight:600;font-size:13px;flex-shrink:0">'+initials+'</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dr/Dra. '+(d.name||'')+' '+(d.lname||'')+'</div>'+
+        '<div style="font-size:11px;color:rgba(255,255,255,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+sp+(d.city?' · '+d.city:'')+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function filterCodeConsultDirs(){
+  const q = (document.getElementById('code-consult-search')?.value || '').toLowerCase().trim();
+  const docs = window._codeConsultDocs || [];
+  if(!q){ renderCodeConsultList(docs); return; }
+  const sL = {psychiatry:'psiquiatría',neurology:'neurología',pneumology:'neumonología',ent:'orl',pediatrics:'pediatría',cardiology:'cardiología',endocrinology:'endocrinología',internal:'medicina interna',family:'medicina familiar',general:'general',other:'otro'};
+  const filtered = docs.filter(d => {
+    const blob = ((d.name||'')+' '+(d.lname||'')+' '+(sL[d.specialty]||d.specialty||'')+' '+(d.city||'')).toLowerCase();
+    return blob.includes(q);
+  });
+  renderCodeConsultList(filtered);
 }
 
 // SCALES
@@ -4643,6 +4602,8 @@ function startScale(id){
   try{
     S.scale=SCALES.find(s=>s.id===id);
     if(!S.scale){toast('Escala no encontrada');console.error('[ESCALA] no encontrada:',id);return;}
+    // EEDSI: pantalla custom con 4 subescalas según edad
+    if(S.scale.custom==='eedsi'){ startEEDSI(); return; }
     if(!S.scale.qs||!S.scale.qs.length){toast('Esta escala requiere entrevista clínica');return;}
     S.qIdx=0;S.answers=new Array(S.scale.qs.length).fill(null);
     const _st=document.getElementById('scale-title');if(_st)_st.textContent=S.scale.name;
@@ -4814,7 +4775,7 @@ function renderPHTab(tab){
           <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:1px">${e.d} · ${e.n} evaluación${e.n!==1?'es':''}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
-          <span style="font-size:12px;padding:3px 10px;border-radius:20px;background:${e.i.bg};color:${e.i.c};font-weight:600">${e.i.l}</span>
+          <span style="font-size:12px;padding:3px 10px;border-radius:20px;background:${e.i.c}33;color:#fff;border:1px solid ${e.i.c};font-weight:600">${e.i.l}</span>
           ${e.trend?'<div style="font-size:18px;font-weight:700;color:'+e.trendColor+';margin-top:2px">'+e.trend+'</div>':""}
         </div>
       </div>`).join('')+'</div>';
@@ -4966,6 +4927,15 @@ function renderProfileView(){
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
         <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mi historial</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Evolución de mis evaluaciones</div></div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+
+      <!-- Mis estudios -->
+      <div onclick="showDocsScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-top:8px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis estudios</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Laboratorios, polisomnografías y CPAP</div></div>
         <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
       </div>
 
@@ -5263,7 +5233,12 @@ async function showDiaryTab_(tab){
       setTimeout(()=>{
         try{
         console.log('[GRAFICOS] setTimeout corriendo. Chart=',typeof Chart,'entries=',entries.length);
-        if(typeof Chart==='undefined'){console.error('[GRAFICOS] Chart.js NO cargó');return;}
+        if(typeof Chart==='undefined'){
+          console.error('[GRAFICOS] Chart.js NO cargó');
+          const wrap=document.getElementById('diary-chart-actogram')?.parentElement?.parentElement;
+          if(wrap) wrap.innerHTML='<div style="padding:20px;text-align:center;color:rgba(255,255,255,0.6);font-size:13px">⚠️ Los gráficos no se pudieron cargar. Verificá tu conexión a internet.</div>';
+          return;
+        }
         killChart('ds');killChart('dm');killChart('acto');killChart('dp');
         const sorted=[...entries].filter(e=>!(e.notes&&e.notes.startsWith('Importado'))).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
@@ -5287,7 +5262,8 @@ async function showDiaryTab_(tab){
         
         const bedStats=meanStd(bedOffsets);
         const wakeStats=meanStd(wakeOffsets);
-        ctxA=document.getElementById('diary-chart-actogram');
+        let ctxA=document.getElementById('diary-chart-actogram');
+        console.log('[GRAFICOS] ctxA=',!!ctxA,'sorted.length=',sorted.length);
         if(ctxA){
           // Store stats for afterDraw
           ctxA._bedStats=bedStats; ctxA._wakeStats=wakeStats; ctxA._weekendRows=weekendRows;
@@ -6657,7 +6633,7 @@ async function showDrPTab_(tab){
       +`
         <div class="sec-title" style="margin-top:4px">ACTOGRAMA — HORARIOS DE SUEÑO</div>
         <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
-        <div style="overflow-x:auto;padding-bottom:4px">
+        <div style="background:#fff;border-radius:12px;padding:10px;overflow-x:auto;padding-bottom:8px">
           <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
         </div>
         <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 14px">
@@ -6665,7 +6641,7 @@ async function showDrPTab_(tab){
         </div>
         <div class="sec-title" style="margin-top:4px">PILARES DEL SUEÑO</div>
         <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
-        <div class="chart-wrap" style="height:180px;margin-top:8px"><canvas id="dr-pillar-chart"></canvas></div>
+        <div style="background:#fff;border-radius:12px;padding:10px;margin-top:8px"><div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div></div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
         killChart('dr-acto');killChart('dp-dr');
@@ -6812,7 +6788,7 @@ async function showDrPTab_(tab){
     }else if(tab==='history'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);S.viewRecs=recs||[];
       if(!recs||!recs.length){cont.innerHTML='<div class="empty-state">Sin evaluaciones</div>';return;}
-      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500">${r.scale_name}</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:500">${r.score}/${r.max_score}</div><span class="badge" style="background:${i.bg};color:${i.c}">${i.l}</span></div><span style="color:var(--label-3);font-size:16px">›</span></div></div>`;}).join('');
+      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500">${r.scale_name}</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:500">${r.score}/${r.max_score}</div><span class="badge" style="background:${i.c}33;color:#fff;border:1px solid ${i.c}">${i.l}</span></div><span style="color:var(--label-3);font-size:16px">›</span></div></div>`;}).join('');
     }else if(tab==='notes'){
       renderConsultNotes();
       return;
@@ -8873,18 +8849,17 @@ function showChildFromHome(){
 function showChildHome(){
   if(!S.user) return;
   const _forWhom=(typeof getOnboardingFor==='function')?getOnboardingFor():'self';
+  // SIEMPRE mostrar la nav principal en child mode (mismo formato que adulto)
   const _mnav=document.getElementById('main-nav');
   if(_mnav){
-    if(_forWhom==='both'){
-      // Keep nav visible so user can switch back to their own profile
-      _mnav.style.removeProperty('display');
-      _mnav.style.display='flex';
-      try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
-      document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
-      const hb=document.getElementById('bnav-hijo');if(hb)hb.classList.add('active');
-    }else{
-      _mnav.style.setProperty('display','none','important');
-    }
+    _mnav.style.removeProperty('display');
+    _mnav.style.display='flex';
+    try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
+    document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+    const hb=document.getElementById('bnav-hijo');
+    const ib=document.getElementById('bnav-inicio');
+    if(hb) hb.classList.add('active');
+    else if(ib) ib.classList.add('active');
   }
   showScreen('child-home');
   const u = S.user;
@@ -8904,7 +8879,7 @@ function showChildHome(){
   if(snote) snote.textContent = norm.note;
   // Quick actions
   renderChildQuickActions();
-  showChildTab('home', document.getElementById('ch-tab-home'));
+  showChildTab('home', null);
 }
 
 function showChildTab(tab, btn){
@@ -8966,11 +8941,11 @@ function renderChildScales(){
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
           <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div>
           <div style="flex:1">
-            <div style="font-size:14px;font-weight:600;color:#fff">${sc.id==='eedsi'?getEEDSISubScaleName(S.ageGroup):sc.name}</div>
+            <div style="font-size:14px;font-weight:600;color:#fff">${sc.id==='eedsi'?(EEDSI?EEDSI.meta.short+' · '+EEDSI.labels[EEDSI.pickSubscale(S.patientAge)]:sc.name):sc.name}</div>
             <div style="font-size:12px;color:rgba(255,255,255,0.5)">${sc.id==='eedsi'?'Escala evolutiva · '+sc.desc:sc.desc}</div>
           </div>
         </div>
-        ${last?`<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="font-size:13px;font-weight:600;color:#fff">${last.score}</span><span style="font-size:12px;padding:3px 10px;border-radius:20px;background:${i.bg};color:${i.c}">${i.l}</span></div>`:'<div style="margin-top:6px"><span style="display:inline-block;background:#1a4a3a;color:#7ec8a4;font-size:12px;font-weight:600;padding:6px 16px;border-radius:20px;border:1px solid rgba(126,200,164,0.3)">Completar →</span></div>'}
+        ${last?`<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="font-size:13px;font-weight:600;color:#fff">${last.score}</span><span style="font-size:12px;padding:3px 10px;border-radius:20px;background:${i.c}33;color:#fff;border:1px solid ${i.c}">${i.l}</span></div>`:'<div style="margin-top:6px"><span style="display:inline-block;background:#1a4a3a;color:#7ec8a4;font-size:12px;font-weight:600;padding:6px 16px;border-radius:20px;border:1px solid rgba(126,200,164,0.3)">Completar →</span></div>'}
       </div>`;
     }).join('');
 }
@@ -9359,10 +9334,7 @@ function renderParentInfo(){
   ];
 
   el.innerHTML = `<div style="padding:16px 0 8px">` + sections.map((s,i) =>
-    `<!-- 3. AYUDANOS A MEJORAR -->
-    <div style="margin:10px 16px 0">
-      
-    <div style="margin:0 16px 10px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1)">
+    `<div style="margin:0 16px 10px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1)">
       <div onclick="const c=this.nextElementSibling;const isOpen=c.style.display==='block';document.querySelectorAll('#ch-panel-info .pi-content').forEach(x=>x.style.display='none');if(!isOpen)c.style.display='block';" style="display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;background:rgba(255,255,255,0.06)">
         <span style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:9px;box-sizing:border-box">${s.iconSvg||s.icon}</span>
         <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.95);flex:1;line-height:1.35">${s.title}</span>
@@ -9810,6 +9782,436 @@ setTimeout(function(){
   const el=document.getElementById('landing-scale-count');
   if(el) el.textContent=SCALES.length+' validadas';
 })();
+
+
+// ──────────────────────────────────────────────────────────────────────
+// EEDSI · Escala Evolutiva Dimensional del Sueño e Insomnio Infantil
+// Autor: Dr. Joaquín J. Diez · Versión piloto - recolección · Mayo 2026
+// 4 subescalas según edad. NO genera score interpretado: registra datos crudos.
+// ──────────────────────────────────────────────────────────────────────
+const EEDSI_FREQ_OPTS = [
+  {v:'0', l:'Nunca o casi nunca'},
+  {v:'1', l:'Ocasionalmente'},
+  {v:'2', l:'Algunas veces por semana'},
+  {v:'3', l:'Muchas veces por semana'},
+  {v:'4', l:'Casi todas las noches'},
+  {v:'nc', l:'No corresponde (N/C)'}
+];
+const EEDSI_FLAG_OPTS = [
+  {v:'no', l:'No'},
+  {v:'av', l:'A veces'},
+  {v:'si', l:'Sí, marcado'},
+  {v:'ns', l:'No sé'}
+];
+const EEDSI_DUR_OPTS = [
+  {v:'none', l:'No hay dificultades'},
+  {v:'<1', l:'Menos de 1 mes'},
+  {v:'1-3', l:'1 a 3 meses'},
+  {v:'3-6', l:'3 a 6 meses'},
+  {v:'>6', l:'Más de 6 meses'}
+];
+const EEDSI = {
+  meta: {
+    name: 'EEDSI · Escala Evolutiva Dimensional del Sueño e Insomnio Infantil',
+    short: 'EEDSI',
+    author: 'Dr. Joaquín J. Diez',
+    version: 'Piloto · recolección · Mayo 2026',
+    desc: 'Escala evolutiva, dimensional y sistémica del sueño infantil. Versión piloto: registra datos crudos, no genera score interpretado.',
+    note: 'Las respuestas describen cómo se presenta el sueño en este momento. No indican severidad ni patología por sí solas. Respondé pensando en cómo ha sido el sueño durante el último mes.'
+  },
+  // Selección de subescala según edad
+  pickSubscale: function(ageYears){
+    if(ageYears == null) return 'P'; // default preescolar
+    if(ageYears < 2) return 'I';
+    if(ageYears <= 6) return 'P';
+    if(ageYears <= 10) return 'S';
+    return 'A';
+  },
+  // Configuración común (3 preguntas) — descriptivo, no puntúa
+  config: {
+    IPS: [ // lactante, preescolar, escolar (tercera persona)
+      {id:'sleep_location', label:'¿Dónde se duerme al inicio de la noche?',
+       opts:['Cuna/cama propia, en su habitación','Cuna/cama propia, en la habitación de los cuidadores','En la misma cama que los cuidadores','Varía según la noche']},
+      {id:'wake_location', label:'¿Dónde suele estar al despertar por la mañana?',
+       opts:['En su propio espacio','En la cama de los cuidadores','Varía']},
+      {id:'cosleep_type', label:'Si comparte cama (colecho), ¿cómo lo describiría?',
+       opts:['Es una elección de la familia (intencional)','Ocurre en respuesta a despertares o dificultades (reactivo)','Una combinación de ambos','No hay colecho']}
+    ],
+    A: [ // adolescente, primera persona
+      {id:'sleep_location', label:'¿Dónde dormís habitualmente?',
+       opts:['En mi habitación, solo/a','En una habitación compartida','En la habitación de un cuidador','Varía']}
+    ]
+  },
+  // Parámetros básicos (numéricos / texto libre) — común a todas
+  params: [
+    {id:'bedtime_typ', label:'Hora habitual de acostarse', type:'time'},
+    {id:'waketime_typ', label:'Hora habitual de despertar', type:'time'},
+    {id:'latency_min', label:'Tiempo aprox. en dormirse (minutos)', type:'number', min:0, max:240},
+    {id:'awakenings_n', label:'Despertares por noche (aprox.)', type:'number', min:0, max:20},
+    {id:'naps_desc', label:'Siestas (cantidad y duración)', type:'text'}
+  ],
+  // Dominios por subescala
+  domains: {
+    I: [
+      {id:'S1', title:'S1. Fenomenología del sueño', items:[
+        'Tarda un tiempo prolongado en quedarse dormido al inicio de la noche.',
+        'Presenta despertares nocturnos frecuentes.',
+        'Luego de despertarse, le cuesta volver a dormir sin ayuda.',
+        'El sueño nocturno es fragmentado (se distribuye en tramos cortos).',
+        'El patrón de sueño es muy variable entre noches.',
+        'El sueño y la vigilia se distribuyen de manera irregular entre el día y la noche.'
+      ]},
+      {id:'S2', title:'S2. Co-regulación y asistencia interpersonal', note:'Describe la modalidad de acompañamiento. Requerir presencia, contacto o alimentación no constituye un problema en sí mismo.', items:[
+        'Inicia el sueño con la presencia de un cuidador.',
+        'Se duerme con contacto físico (en brazos, mecido, al pecho o biberón).',
+        'Para volver a dormir durante la noche, busca el mismo acompañamiento con que se durmió.',
+        'Se alimenta durante la noche al despertarse.',
+        'Comienza la noche en un espacio y termina en otro (por ejemplo, pasa a la cama de los cuidadores).'
+      ]},
+      {id:'S3', title:'S3. Capacidad regulatoria disponible', items:[
+        'Le cuesta calmarse cuando se altera.',
+        'Luego de un despertar, le cuesta volver a un estado de calma.',
+        'Reacciona intensamente ante la separación al momento de dormir.'
+      ]},
+      {id:'S4', title:'S4. Rigidez, persistencia y flexibilidad', note:'Observa la flexibilidad del patrón y la posibilidad de transición gradual.', items:[
+        'El sueño depende de condiciones muy específicas y poco flexibles.',
+        'Cambios pequeños en la rutina o el entorno alteran de forma marcada su sueño.',
+        'Resulta difícil introducir variaciones graduales en su forma de dormir.',
+        'Las dificultades para dormir se presentan la mayoría de las noches.'
+      ]},
+      {id:'S5', title:'S5. Impacto diurno infantil', items:[
+        'Se muestra irritable o malhumorado durante el día.',
+        'Parece cansado o somnoliento durante el día.',
+        'El descanso nocturno parece influir en su estado emocional diurno.'
+      ]},
+      {id:'S6', title:'S6. Impacto sistémico familiar', items:[
+        'El sueño del niño afecta el descanso de los cuidadores.',
+        'Los cuidadores se sienten agotados por el patrón de sueño del niño.',
+        'El patrón de sueño genera tensión o estrés en la familia.',
+        'El sueño insuficiente afecta el funcionamiento cotidiano de los cuidadores.'
+      ]},
+      {id:'S7', title:'S7. Expectativas y percepción familiar', satellite:true, note:'Interpretativo. Refleja expectativas, no dificultad ni patología.', items:[
+        'La familia percibe el sueño del niño como diferente de lo que esperaba.',
+        'Los despertares nocturnos generan preocupación en los cuidadores.',
+        'La familia tiene dudas sobre qué es esperable para la edad del niño en cuanto al sueño.',
+        'Las expectativas sobre la autonomía nocturna generan malestar o frustración en la familia.'
+      ]},
+      {id:'S8', title:'S8. Factores contextuales y ambientales', items:[
+        'Los horarios de sueño son irregulares.',
+        'Las rutinas previas al sueño son difíciles de sostener de forma estable.',
+        'El ambiente donde duerme (luz, ruido, temperatura) dificulta el sueño.',
+        'El espacio de sueño cambia con frecuencia (dónde o con quién duerme varía).'
+      ]},
+      {id:'S9', title:'S9. Banderas clínicas diferenciales', flags:true, note:'"Sí, marcado" sugiere considerar derivación. "A veces" → observar y reconsultar.', items:[
+        'Ronquidos frecuentes o pausas respiratorias durante el sueño.',
+        'Movimientos llamativos o inquietud intensa durante la noche.',
+        'Molestias físicas que parecen interferir con el sueño (reflujo, dolor, otras).',
+        'Condiciones médicas o del neurodesarrollo que podrían influir en el sueño.'
+      ]}
+    ],
+    P: [
+      {id:'S1', title:'S1. Fenomenología del sueño', items:[
+        'Demora un tiempo prolongado en quedarse dormido al acostarse.',
+        'Le cuesta relajarse o bajar la actividad al momento de dormir.',
+        'Presenta despertares nocturnos frecuentes.',
+        'Luego de despertarse, le cuesta volver a dormir sin ayuda.',
+        'El sueño nocturno es fragmentado.',
+        'El patrón de sueño es muy variable entre noches.'
+      ]},
+      {id:'S2', title:'S2. Co-regulación y asistencia interpersonal', note:'Describe la modalidad de acompañamiento. Requerir presencia o cercanía no constituye un problema en sí mismo.', items:[
+        'Necesita la compañía de un cuidador para dormirse.',
+        'Necesita contacto físico o cercanía para dormir.',
+        'Solicita la presencia de los cuidadores durante la noche.',
+        'Para dormir, recurre habitualmente a un mismo cuidador o modalidad.',
+        'Comienza la noche en su espacio y termina en otro (por ejemplo, pasa a la cama de los cuidadores).'
+      ]},
+      {id:'S3', title:'S3. Capacidad regulatoria disponible', items:[
+        'Reacciona intensamente ante la separación nocturna.',
+        'Le cuesta calmarse al momento de dormir.',
+        'Luego de despertarse, le cuesta volver a la calma.',
+        'Presenta miedos intensos al momento de dormir.'
+      ]},
+      {id:'S4', title:'S4. Rigidez, persistencia y flexibilidad', note:'Observa la flexibilidad del patrón y la posibilidad de transición gradual.', items:[
+        'El sueño depende de condiciones o rituales muy específicos.',
+        'Le cuesta dormir fuera de su entorno o rutina habitual.',
+        'Cambios pequeños generan alteraciones marcadas del sueño.',
+        'Las dificultades para dormir se presentan la mayoría de las noches.',
+        'Las estrategias habituales de la familia resultan poco efectivas.'
+      ]},
+      {id:'S5', title:'S5. Impacto diurno infantil', items:[
+        'Parece cansado o somnoliento durante el día.',
+        'Se muestra irritable en relación con el descanso.',
+        'Presenta inquietud o dificultad para regular sus emociones.',
+        'El descanso parece afectar su atención o su conducta.'
+      ]},
+      {id:'S6', title:'S6. Impacto sistémico familiar', items:[
+        'El sueño del niño afecta el descanso de los cuidadores.',
+        'Los cuidadores se sienten agotados por el patrón de sueño.',
+        'El patrón de sueño genera tensión familiar.',
+        'Genera desacuerdos entre cuidadores sobre cómo manejarlo.',
+        'Afecta la disponibilidad emocional de los cuidadores.'
+      ]},
+      {id:'S7', title:'S7. Expectativas y percepción familiar', satellite:true, note:'Interpretativo. Refleja expectativas, no dificultad ni patología.', items:[
+        'La familia percibe el sueño del niño como diferente de lo esperado.',
+        'Los despertares generan preocupación en los cuidadores.',
+        'La familia tiene dudas sobre qué es esperable para la edad del niño.',
+        'Las expectativas sobre la autonomía nocturna generan malestar o frustración.'
+      ]},
+      {id:'S8', title:'S8. Factores contextuales y ambientales', items:[
+        'Los horarios de sueño son irregulares.',
+        'Las rutinas previas al sueño son difíciles de sostener.',
+        'La estimulación o actividad nocturna dificulta el inicio del sueño.',
+        'El uso de pantallas forma parte de la rutina previa al sueño.',
+        'El ambiente donde duerme dificulta el descanso.'
+      ]},
+      {id:'S9', title:'S9. Banderas clínicas diferenciales', flags:true, note:'"Sí, marcado" sugiere considerar derivación. "A veces" → observar y reconsultar.', items:[
+        'Ronquidos frecuentes o pausas respiratorias.',
+        'Movimientos llamativos o inquietud intensa durante la noche.',
+        'Molestias físicas que parecen afectar el sueño.',
+        'Condiciones médicas o del neurodesarrollo que podrían influir en el sueño.'
+      ]}
+    ],
+    S: [
+      {id:'S1', title:'S1. Fenomenología del sueño', items:[
+        'Le cuesta quedarse dormido o tarda mucho en dormirse al acostarse.',
+        'Se despierta durante la noche y le cuesta volver a dormir.',
+        'El sueño es irregular (los horarios o la duración cambian mucho).'
+      ]},
+      {id:'S2', title:'S2. Co-regulación y asistencia interpersonal', note:'Describe la modalidad de acompañamiento. Requerir presencia o cercanía no constituye un problema en sí mismo.', items:[
+        'Necesita compañía o presencia de un adulto para dormirse.',
+        'Busca la cercanía de un cuidador durante la noche.',
+        'Comienza la noche en su espacio y termina en otro.'
+      ]},
+      {id:'S3', title:'S3. Capacidad regulatoria disponible', items:[
+        'Presenta preocupaciones o pensamientos que dificultan el inicio del sueño.',
+        'Le cuesta calmarse o relajarse para dormir.',
+        'Presenta miedos nocturnos.'
+      ]},
+      {id:'S4', title:'S4. Rigidez, persistencia y flexibilidad', note:'Observa la flexibilidad del patrón y la posibilidad de transición gradual.', items:[
+        'El sueño depende de condiciones muy específicas.',
+        'Las dificultades para dormir se presentan la mayoría de las noches.',
+        'Le cuesta dormir fuera de su entorno habitual.'
+      ]},
+      {id:'S5', title:'S5. Impacto diurno infantil', items:[
+        'Se muestra cansado o somnoliento durante el día.',
+        'El descanso afecta su atención o su rendimiento escolar.',
+        'Se muestra irritable o con cambios de ánimo en relación con el sueño.'
+      ]},
+      {id:'S6', title:'S6. Impacto sistémico familiar', items:[
+        'Las dificultades de sueño generan tensión familiar.',
+        'El sueño del niño afecta el descanso de los cuidadores.',
+        'Generan conflictos en torno a la rutina nocturna.'
+      ]},
+      {id:'S7', title:'S7. Expectativas y percepción familiar', satellite:true, note:'Interpretativo. Refleja expectativas, no dificultad ni patología.', items:[
+        'La familia considera que el niño debería dormir de forma más autónoma.',
+        'La familia percibe el sueño del niño como diferente del de otros niños de su edad.',
+        'La familia tiene dudas sobre qué es esperable para la edad del niño en cuanto al sueño.'
+      ]},
+      {id:'S8', title:'S8. Factores contextuales y ambientales', items:[
+        'El uso de pantallas interfiere con el sueño.',
+        'Los horarios cambian mucho entre días de semana y fines de semana.',
+        'Las actividades o exigencias de la tarde dificultan el inicio del sueño.'
+      ]},
+      {id:'S9', title:'S9. Banderas clínicas diferenciales', flags:true, note:'"Sí, marcado" sugiere considerar derivación. "A veces" → observar y reconsultar.', items:[
+        'Ronquidos frecuentes o pausas respiratorias.',
+        'Molestias físicas que parecen afectar el sueño.',
+        'Condiciones médicas o del neurodesarrollo que podrían influir en el sueño.'
+      ]}
+    ],
+    A: [
+      {id:'S1', title:'S1. Fenomenología del sueño', items:[
+        'Me cuesta quedarme dormido/a cuando me acuesto.',
+        'Me despierto durante la noche y me cuesta volver a dormir.',
+        'Mis horarios de sueño son muy irregulares.'
+      ]},
+      {id:'S2', title:'S2. Co-regulación y asistencia interpersonal', note:'Describe la modalidad de acompañamiento. Requerir presencia o cercanía no constituye un problema en sí mismo.', items:[
+        'Necesito cierta compañía o presencia para poder dormirme.',
+        'Me resulta más fácil dormir cuando hay alguien cerca.',
+        'Dependo de algún hábito o condición específica para dormir.'
+      ]},
+      {id:'S3', title:'S3. Capacidad regulatoria disponible', items:[
+        'Cuando me acuesto, mi mente sigue muy activa (pensamientos que no se detienen).',
+        'Me cuesta relajarme o "desconectar" para dormir.',
+        'Me preocupo por no poder dormir, y eso me dificulta dormir aún más.'
+      ]},
+      {id:'S4', title:'S4. Rigidez, persistencia y flexibilidad', note:'Observa la flexibilidad del patrón y la posibilidad de transición gradual.', items:[
+        'Mis dificultades para dormir ocurren la mayoría de las noches.',
+        'Me cuesta dormir fuera de mi entorno habitual.',
+        'Necesito que las condiciones para dormir sean siempre las mismas (luz, sonido, temperatura).',
+        'Pequeños cambios en mi rutina nocturna afectan bastante mi sueño.'
+      ]},
+      {id:'S5', title:'S5. Impacto diurno', items:[
+        'Durante el día me siento somnoliento/a o con poca energía.',
+        'Me cuesta concentrarme o estoy más irritable por dormir poco.',
+        'Necesito recuperar sueño los fines de semana porque durante la semana duermo poco.'
+      ]},
+      {id:'S6', title:'S6. Impacto sistémico familiar', items:[
+        'Mis dificultades de sueño generan conflicto o preocupación en mi familia.',
+        'Mis horarios de sueño generan tensión o discusiones en casa.',
+        'Mi forma de dormir afecta la rutina o el descanso de otras personas en casa.'
+      ]},
+      {id:'S7', title:'S7. Expectativas y percepción', satellite:true, note:'Interpretativo. Refleja expectativas, no dificultad ni patología.', items:[
+        'Siento que mi sueño es bastante diferente al de la mayoría de mis pares.',
+        'Me preocupa no dormir lo suficiente.',
+        'Siento presión (familiar, escolar o propia) por dormir de cierta manera u horarios.'
+      ]},
+      {id:'S8', title:'S8. Factores contextuales y ambientales', items:[
+        'El uso de pantallas o redes a la noche me dificulta dormir.',
+        'Las exigencias académicas o sociales interfieren con mi sueño.',
+        'Consumo cafeína o bebidas energizantes que pueden afectar mi sueño.'
+      ]},
+      {id:'S9', title:'S9. Banderas clínicas diferenciales', flags:true, note:'"Sí, marcado" sugiere considerar derivación. "A veces" → observar y reconsultar.', items:[
+        'Ronquidos, pausas respiratorias o dificultad para respirar al dormir.',
+        'Molestias físicas que parecen afectar mi sueño (dolor, picazón en las piernas, otras).',
+        'Dificultades emocionales o de salud mental que podrían afectar mi sueño.'
+      ]}
+    ]
+  },
+  labels: { I:'Lactante (<2 años)', P:'Preescolar (2–6 años)', S:'Escolar (6–10 años)', A:'Adolescente (>10 años)' }
+};
+
+// ─── Pantalla EEDSI ────────────────────────────────────────────────────
+let EEDSI_STATE = { subscale:'P', answers:{}, params:{}, config:{} };
+
+function startEEDSI(forcedSub){
+  // Determinar subescala según edad del niño activo (S.viewData o S.user)
+  const u = S.viewData || S.user || {};
+  let years = null;
+  if(u.dob){
+    const days = (new Date() - new Date(u.dob)) / 86400000;
+    years = days / 365.25;
+  }
+  const sub = forcedSub || EEDSI.pickSubscale(years);
+  EEDSI_STATE = { subscale:sub, answers:{}, params:{}, config:{} };
+  renderEEDSI();
+  showScreen('eedsi');
+}
+
+function renderEEDSI(){
+  const sub = EEDSI_STATE.subscale;
+  const cfg = sub === 'A' ? EEDSI.config.A : EEDSI.config.IPS;
+  const doms = EEDSI.domains[sub];
+  const isAdo = sub === 'A';
+  const label = EEDSI.labels[sub];
+
+  let html = '<div style="padding:14px;background:#1a2e23;color:#fff;min-height:100%">';
+  html += '<div style="background:rgba(126,200,164,0.08);border:1px solid rgba(126,200,164,0.18);border-radius:12px;padding:12px;margin-bottom:14px">';
+  html += '<div style="font-size:12px;color:#7ec8a4;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">EEDSI · '+label+'</div>';
+  html += '<div style="font-size:12px;color:rgba(255,255,255,0.7);line-height:1.55">'+EEDSI.meta.note+'</div>';
+  html += '</div>';
+
+  // Selector de subescala (por si la edad no fue detectada bien)
+  html += '<div style="margin-bottom:14px"><div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Subescala</div>';
+  html += '<select onchange="EEDSI_STATE.subscale=this.value;renderEEDSI();" style="width:100%;padding:9px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px">';
+  ['I','P','S','A'].forEach(s => {
+    html += '<option value="'+s+'"'+(s===sub?' selected':'')+'>'+EEDSI.labels[s]+'</option>';
+  });
+  html += '</select></div>';
+
+  // Configuración
+  html += '<div style="font-size:13px;font-weight:600;color:#fff;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px">Configuración del sueño</div>';
+  html += '<div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:10px">Descriptivo · no puntúa</div>';
+  cfg.forEach(c => {
+    html += '<div style="margin-bottom:14px"><div style="font-size:13px;color:rgba(255,255,255,0.85);margin-bottom:6px">'+c.label+'</div>';
+    c.opts.forEach((o,i) => {
+      const sel = EEDSI_STATE.config[c.id] === String(i);
+      html += '<div onclick="EEDSI_STATE.config[\''+c.id+'\']=\''+i+'\';renderEEDSI()" style="padding:9px 12px;margin-bottom:4px;border-radius:10px;background:'+(sel?'rgba(126,200,164,0.18)':'rgba(255,255,255,0.04)')+';border:1px solid '+(sel?'#7ec8a4':'rgba(255,255,255,0.1)')+';cursor:pointer;font-size:13px;color:#fff">'+o+'</div>';
+    });
+    html += '</div>';
+  });
+
+  // Parámetros básicos
+  html += '<div style="font-size:13px;font-weight:600;color:#fff;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px">Parámetros básicos</div>';
+  html += '<div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:10px">Una noche habitual del último mes</div>';
+  EEDSI.params.forEach(p => {
+    html += '<div style="margin-bottom:10px"><label style="font-size:12px;color:rgba(255,255,255,0.7);display:block;margin-bottom:4px">'+p.label+'</label>';
+    if(p.type === 'text'){
+      html += '<input type="text" id="eedsi-p-'+p.id+'" value="'+(EEDSI_STATE.params[p.id]||'')+'" onchange="EEDSI_STATE.params[\''+p.id+'\']=this.value" style="width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;box-sizing:border-box">';
+    } else {
+      html += '<input type="'+p.type+'" id="eedsi-p-'+p.id+'" value="'+(EEDSI_STATE.params[p.id]||'')+'" onchange="EEDSI_STATE.params[\''+p.id+'\']=this.value" style="width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;box-sizing:border-box"';
+      if(p.min !== undefined) html += ' min="'+p.min+'"';
+      if(p.max !== undefined) html += ' max="'+p.max+'"';
+      html += '>';
+    }
+    html += '</div>';
+  });
+  // Duración de las dificultades
+  html += '<div style="margin-bottom:14px"><label style="font-size:12px;color:rgba(255,255,255,0.7);display:block;margin-bottom:6px">Duración de las dificultades de sueño</label>';
+  EEDSI_DUR_OPTS.forEach(o => {
+    const sel = EEDSI_STATE.params._duration === o.v;
+    html += '<div onclick="EEDSI_STATE.params._duration=\''+o.v+'\';renderEEDSI()" style="padding:9px 12px;margin-bottom:4px;border-radius:10px;background:'+(sel?'rgba(126,200,164,0.18)':'rgba(255,255,255,0.04)')+';border:1px solid '+(sel?'#7ec8a4':'rgba(255,255,255,0.1)')+';cursor:pointer;font-size:13px;color:#fff">'+o.l+'</div>';
+  });
+  html += '</div>';
+
+  // Dominios S1–S9
+  doms.forEach(d => {
+    html += '<div style="font-size:13px;font-weight:600;color:'+(d.satellite?'#7ec8a4':'#fff')+';margin:20px 0 6px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px">'+d.title;
+    if(d.satellite) html += ' <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.5)">· se registra aparte</span>';
+    html += '</div>';
+    if(d.note) html += '<div style="font-size:11px;color:rgba(255,255,255,0.55);font-style:italic;margin-bottom:8px;line-height:1.5">'+d.note+'</div>';
+    d.items.forEach((it,idx) => {
+      const itemId = d.id + '_' + (idx+1);
+      html += '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;margin-bottom:8px">';
+      html += '<div style="font-size:13px;color:rgba(255,255,255,0.9);margin-bottom:8px;line-height:1.5">'+it+'</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
+      const opts = d.flags ? EEDSI_FLAG_OPTS : EEDSI_FREQ_OPTS;
+      opts.forEach(o => {
+        const cur = EEDSI_STATE.answers[itemId];
+        const sel = cur === String(o.v);
+        html += '<button onclick="EEDSI_STATE.answers[\''+itemId+'\']=\''+o.v+'\';renderEEDSI()" style="flex:'+(d.flags?'1':'0 0 auto')+';padding:6px 10px;border-radius:14px;background:'+(sel?'#7ec8a4':'rgba(255,255,255,0.06)')+';color:'+(sel?'#0f2820':'rgba(255,255,255,0.75)')+';border:1px solid '+(sel?'#7ec8a4':'rgba(255,255,255,0.1)')+';font-size:11px;font-weight:'+(sel?'600':'500')+';cursor:pointer;min-width:32px">'+(d.flags?o.l:(o.v==='nc'?'N/C':o.v))+'</button>';
+      });
+      html += '</div></div>';
+    });
+  });
+
+  // Botón guardar
+  html += '<div style="margin:20px 0 30px"><button onclick="saveEEDSI()" style="width:100%;padding:13px;background:#7ec8a4;color:#0f2820;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">Guardar respuestas</button></div>';
+  html += '<div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:20px;line-height:1.5">Versión piloto · recolección.<br>Los datos se registran como puntaje crudo por dominio.<br>Durante el piloto la escala no asigna niveles.</div>';
+  html += '</div>';
+
+  const el = document.getElementById('eedsi-content');
+  if(el){
+    // Preservar scroll position al re-renderizar
+    const sc = el.scrollTop;
+    el.innerHTML = html;
+    el.scrollTop = sc;
+  }
+}
+
+function saveEEDSI(){
+  const sub = EEDSI_STATE.subscale;
+  const doms = EEDSI.domains[sub];
+  // Calcular sumas crudas por dominio
+  const summary = {};
+  doms.forEach(d => {
+    let sum = 0, answered = 0, nc = 0, flagsYes = 0, flagsAv = 0;
+    d.items.forEach((it,idx) => {
+      const v = EEDSI_STATE.answers[d.id + '_' + (idx+1)];
+      if(d.flags){
+        if(v === 'si') flagsYes++;
+        else if(v === 'av') flagsAv++;
+        if(v) answered++;
+      } else {
+        if(v === 'nc'){ nc++; }
+        else if(v != null && v !== ''){ sum += parseInt(v); answered++; }
+      }
+    });
+    summary[d.id] = d.flags ? {flagsYes, flagsAv, answered} : {sum, answered, nc};
+  });
+  const payload = {
+    patient_email: S.viewData?.email || S.user?.email,
+    scale_id: 'eedsi_'+sub.toLowerCase(),
+    score: 0,
+    max_score: 0,
+    interpretation: 'EEDSI '+EEDSI.labels[sub]+' · datos registrados (piloto, sin score interpretado)',
+    answers: JSON.stringify({subscale:sub, config:EEDSI_STATE.config, params:EEDSI_STATE.params, items:EEDSI_STATE.answers, summary})
+  };
+  db.post('evaluations', payload).then(()=>{
+    toast('EEDSI · datos registrados ✓');
+    setTimeout(()=>{ if(S.role==='patient') showChildHome(); else showScreen('home'); }, 600);
+  }).catch(e => toast('Error al guardar: '+e.message));
+}
+
 
 // service worker disabled
 // ── MEDICATION MODAL ──
@@ -10264,7 +10666,7 @@ async function renderConsultNotes(){
     const r=lastScores[id]; if(!r) return null;
     const sc=SCALES.find(s=>s.id===id); if(!sc) return null;
     const i=sc.interp(r.score);
-    return `<span style="font-size:11px;padding:3px 8px;border-radius:10px;background:${i.bg};color:${i.c};font-weight:600">${sc.name.split('(')[0].trim()} ${r.score}</span>`;
+    return `<span style="font-size:11px;padding:3px 8px;border-radius:10px;background:${i.c}33;color:#fff;border:1px solid ${i.c};font-weight:600">${sc.name.split('(')[0].trim()} ${r.score}</span>`;
   }).filter(Boolean).join(' ');
 
   const typeColors = {session:'rgba(99,102,241,0.2)',followup:'rgba(16,185,129,0.2)',alert:'rgba(239,68,68,0.25)',plan:'rgba(245,158,11,0.2)',other:'rgba(255,255,255,0.06)'};
@@ -10325,7 +10727,7 @@ async function saveConsultNote(patEmail, btn){
     const r = lastScores[id]; if(!r) return null;
     const sc = SCALES.find(s=>s.id===id); if(!sc) return null;
     const i = sc.interp(r.score);
-    return `<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${i.bg};color:${i.c};font-weight:600">${sc.name.split('(')[0].trim()} ${r.score}</span>`;
+    return `<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${i.c}33;color:#fff;border:1px solid ${i.c};font-weight:600">${sc.name.split('(')[0].trim()} ${r.score}</span>`;
   }).filter(Boolean).join(' ');
 
   try {
