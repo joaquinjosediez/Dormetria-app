@@ -1021,6 +1021,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 
 </style>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="toast"></div>
@@ -1400,6 +1401,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="login-email" placeholder="tucorreo@email.com"></div>
       <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="login-pass" placeholder="••••••••"><div class="err" id="login-error">Correo o contraseña incorrectos</div></div>
       <button class="btn btn-g" onclick="doLogin()" id="login-btn">Ingresar</button>
+      <div style="text-align:center;margin-top:10px"><span onclick="showForgotPasswordPrompt()" style="cursor:pointer;color:rgba(255,255,255,0.55);font-size:12px;text-decoration:underline">¿Olvidaste tu contraseña?</span></div>
       <div class="toggle-link" id="reg-toggle">¿Primera vez? <span onclick="showRegister()">Crear cuenta</span></div>
     </div>
     <div id="register-form" style="display:none">
@@ -1466,6 +1468,29 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       </div>
       <button class="btn btn-g" onclick="doRegister()" id="reg-btn">Crear cuenta</button>
       <div class="toggle-link">¿Ya tenés cuenta? <span onclick="showLogin()">Ingresar</span></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- SET PASSWORD (invite / recovery) -->
+<div id="screen-set-password" class="screen" style="background:rgba(10,28,20,0.97);z-index:50;overflow-y:auto">
+  <div class="login-outer"><div class="login-wrap">
+    <div class="login-logo" style="text-align:center;margin-bottom:24px">
+      <div style="font-size:22px;font-weight:600;color:#fff;margin-bottom:8px" id="sp-title">Creá tu contraseña</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.5" id="sp-desc">Definí una contraseña segura para tu cuenta.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nueva contraseña</label>
+      <input class="form-input" type="password" id="sp-pass1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirmar contraseña</label>
+      <input class="form-input" type="password" id="sp-pass2" placeholder="Repetí la contraseña" autocomplete="new-password">
+      <div class="err" id="sp-error">Las contraseñas no coinciden</div>
+    </div>
+    <button class="btn btn-g" onclick="submitNewPassword()" id="sp-btn">Guardar contraseña</button>
+    <div class="toggle-link" style="margin-top:14px">
+      <span onclick="showScreen('login')" style="cursor:pointer;color:rgba(255,255,255,0.5);font-size:12px">Volver al inicio</span>
     </div>
   </div></div>
 </div>
@@ -2114,6 +2139,33 @@ if(window.location.protocol === 'file:'){
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvanZzYndwcWR3anV2ZXpkaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzA2MjcsImV4cCI6MjA5MzEwNjYyN30.WiERGJ6PYcKGxQ5jgVGJ2U_t0cvviam2dYvqt9_GoA8';
 
+// ─── Cliente Supabase (Auth + REST autenticada con RLS) ──────────────────
+// El SDK detecta tokens en la URL automáticamente (invite, reset, magic link)
+// y maneja persistencia de sesión en localStorage.
+let supa = null;
+function initSupabase(){
+  if(supa) return supa;
+  if(typeof window.supabase==='undefined' || !window.supabase.createClient){
+    console.error('[AUTH] SDK Supabase no cargó — la app no podrá autenticar');
+    return null;
+  }
+  supa = window.supabase.createClient(SU, SK, {
+    auth:{
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    }
+  });
+  // Escuchar cambios de auth (login, logout, refresh) para refrescar UI
+  supa.auth.onAuthStateChange((event, session) => {
+    console.log('[AUTH] event:', event, 'session:', !!session);
+    if(event==='SIGNED_OUT'){ S.user=null; }
+  });
+  return supa;
+}
+
+
 const S={
   role:'patient',user:null,records:[],childMode:false,ageGroup:'adult',patientAge:null,pvtRTs:[],pvtState:'idle',pvtStart:null,
   pvtTimer:null,pvtCountdown:null,pvtDot:false,pvtDuration:5,pvtCountdownTimer:null,
@@ -2122,12 +2174,26 @@ const S={
   charts:{}
 };
 
+// ─── Helper db: usa el token JWT del usuario logueado para que RLS funcione
+// Si no hay sesión, usa la anon key (para flujos públicos como signup).
 const db={
+  async _getAuthHeader(){
+    try{
+      if(supa){
+        const {data}=await supa.auth.getSession();
+        if(data && data.session && data.session.access_token){
+          return 'Bearer '+data.session.access_token;
+        }
+      }
+    }catch(e){ console.warn('[DB] getSession error:',e.message); }
+    return 'Bearer '+SK; // fallback a anon (solo funciona si RLS lo permite)
+  },
   async q(path,opts={}){
     const {headers:extraHeaders,...restOpts}=opts;
+    const authHeader = await this._getAuthHeader();
     const r=await fetch(SU+'/rest/v1/'+path,{
       method:restOpts.method||'GET',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json',...(extraHeaders||{})},
+      headers:{'apikey':SK,'Authorization':authHeader,'Content-Type':'application/json',...(extraHeaders||{})},
       ...(restOpts.body?{body:restOpts.body}:{})
     });
     if(!r.ok&&r.status!==201){const e=await r.json().catch(()=>({}));throw new Error(e.message||r.status);}
@@ -2876,64 +2942,187 @@ function showLogin(){document.getElementById('register-form').style.display='non
 async function doLogin(){
   const email=document.getElementById('login-email').value.trim().toLowerCase();
   const pass=document.getElementById('login-pass').value;
-  document.getElementById('login-error').classList.remove('show');setBtn('login-btn',true);
+  const errEl=document.getElementById('login-error');
+  errEl.classList.remove('show');
+  setBtn('login-btn',true);
   try{
-    const t=S.role==='patient'?'patients':'doctors';
-    let d;
-    try{
-      d=await db.get(`${t}?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(pass)}&select=*`);
-    }catch(netErr){
-      const el=document.getElementById('login-error');
-      el.classList.add('show');
-      el.textContent='Sin conexion con el servidor. El proyecto Supabase puede estar pausado — ingresa a supabase.com para reactivarlo.';
-      const cc=document.getElementById('conn-check');if(cc)cc.style.display='block';
-      setBtn('login-btn',false,'Ingresar');return;
-    }
-    if(!d||!d.length){
-      const errEl=document.getElementById('login-error');
+    if(!supa){ initSupabase(); }
+    if(!supa){
+      errEl.textContent='Error de inicialización. Recargá la página.';
       errEl.classList.add('show');
-      errEl.textContent='Correo o contrasena incorrectos.';
-      const cc=document.getElementById('conn-check');if(cc)cc.style.display='block';
       return;
-    }S.user=d[0];localStorage.setItem('dm_s',JSON.stringify({email,role:S.role}));trackUsage();
-    // Offer biometric registration on first login
+    }
+    // Auth con Supabase (bcrypt automático, RLS aplicado a partir de acá)
+    const {data, error} = await supa.auth.signInWithPassword({email, password: pass});
+    if(error){
+      errEl.textContent = error.message.includes('Email not confirmed')
+        ? 'Tenés que confirmar tu email primero. Revisá tu casilla.'
+        : error.message.includes('Invalid')
+          ? 'Correo o contraseña incorrectos.'
+          : 'Error: '+error.message;
+      errEl.classList.add('show');
+      return;
+    }
+    if(!data || !data.user){
+      errEl.textContent='No se pudo iniciar sesión.';
+      errEl.classList.add('show');
+      return;
+    }
+    // Buscar el perfil correspondiente en patients o doctors usando auth_id
+    const authUid = data.user.id;
+    let profile = null;
+    // Intentar primero como paciente (mayoría de usuarios), después doctor
+    try{
+      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+      if(p && p.length){ profile = p[0]; S.role='patient'; }
+    }catch(e){ console.warn('[LOGIN] patients lookup:',e.message); }
+    if(!profile){
+      try{
+        const dr = await db.get('doctors?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+        if(dr && dr.length){ profile = dr[0]; S.role='doctor'; }
+      }catch(e){ console.warn('[LOGIN] doctors lookup:',e.message); }
+    }
+    if(!profile){
+      // Usuario en auth.users pero sin perfil vinculado: caso de cuenta nueva sin onboarding
+      errEl.textContent='Tu cuenta está autenticada pero no tiene perfil. Contactanos para vincularla.';
+      errEl.classList.add('show');
+      await supa.auth.signOut();
+      return;
+    }
+    S.user = profile;
+    trackUsage();
     if(window.PublicKeyCredential && !localStorage.getItem('dm_cred_'+email)){
       setTimeout(()=>offerBiometric(email), 800);
     }
     if(S.role==='patient'){
+      setPatientMode(profile.dob);
       showHome().catch(function(e){
         console.error('[LOGIN] showHome crash:',e.message,e.stack);
-        // Fallback: show home screen directly
         document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
         var h=document.getElementById('screen-home');
         if(h){h.classList.add('active');var n=document.getElementById('main-nav');if(n)n.style.display='flex';}
       });
-    }else{showDoctorHome();}}
-  catch(e){
-    const el=document.getElementById('login-error');
-    el.classList.add('show');
-    el.textContent=e&&e.message&&e.message.includes('fetch')?
-      'Sin conexión con el servidor. ¿Está activo el proyecto de Supabase?':
-      'Error: '+(e&&e.message||'intenta de nuevo');
+    } else {
+      showDoctorHome();
+    }
+  } catch(e){
+    console.error('[LOGIN] error:',e);
+    errEl.textContent='Error: '+(e.message||'intentá de nuevo');
+    errEl.classList.add('show');
+  } finally {
+    setBtn('login-btn',false,'Ingresar');
   }
-  finally{setBtn('login-btn',false,'Ingresar');}
 }
 async function doRegister(){
   const email=document.getElementById('reg-email').value.trim().toLowerCase();
   const pass=document.getElementById('reg-pass').value;
   const err=document.getElementById('reg-error');err.classList.remove('show');setBtn('reg-btn',true);
   try{
-    if(S.role==='patient'){const name=document.getElementById('reg-name').value.trim();const lname=document.getElementById('reg-lname').value.trim();const dob=document.getElementById('reg-dob').value;if(!name||!lname||!email||pass.length<6){err.classList.add('show');return;}
+    if(!supa){ initSupabase(); }
+    if(pass.length<8){ err.textContent='La contraseña debe tener al menos 8 caracteres.'; err.classList.add('show'); return; }
+    if(S.role==='patient'){
+      const name=document.getElementById('reg-name').value.trim();
+      const lname=document.getElementById('reg-lname').value.trim();
+      const dob=document.getElementById('reg-dob').value;
+      if(!name||!lname||!email){ err.classList.add('show'); return; }
       const rc1=document.getElementById('reg-c1'),rc2=document.getElementById('reg-c2'),rc4=document.getElementById('reg-c4');
-      if(!rc1||!rc1.checked||!rc2.checked||!rc4.checked){err.textContent='Aceptá los términos obligatorios para continuar.';err.classList.add('show');return;}
+      if(!rc1||!rc1.checked||!rc2.checked||!rc4.checked){
+        err.textContent='Aceptá los términos obligatorios para continuar.';err.classList.add('show');return;
+      }
       const rc3=document.getElementById('reg-c3');
-      localStorage.setItem('dm_consent_v1',JSON.stringify({v:1,date:new Date().toISOString(),storage:true,doctorAccess:true,research:rc3?rc3.checked:false,alerts:true}));const patientData={name,lname,email,password:pass,code:genCode()};
+      localStorage.setItem('dm_consent_v1',JSON.stringify({v:1,date:new Date().toISOString(),storage:true,doctorAccess:true,research:rc3?rc3.checked:false,alerts:true}));
+      // Paso 1: crear usuario en Supabase Auth
+      const {data: authData, error: authErr} = await supa.auth.signUp({
+        email,
+        password: pass,
+        options:{
+          emailRedirectTo: window.location.origin + window.location.pathname,
+          data: { role: 'patient', name, lname }
+        }
+      });
+      if(authErr){
+        err.textContent = authErr.message.includes('already registered')
+          ? 'Este correo ya está registrado. ¿Querés ingresar?'
+          : 'Error al crear cuenta: '+authErr.message;
+        err.classList.add('show');
+        return;
+      }
+      if(!authData || !authData.user){
+        err.textContent='Error al crear cuenta. Intentá de nuevo.'; err.classList.add('show'); return;
+      }
+      // Paso 2: crear fila en patients vinculada por auth_id
+      const patientData={ name, lname, email, code: genCode(), auth_id: authData.user.id };
       if(dob) patientData.dob=dob;
-      const d=await db.post('patients',patientData);
-      if(!d){ err.textContent='Error al crear la cuenta. Intentá de nuevo.';err.classList.add('show');setBtn('reg-btn',false,'Crear cuenta');return; }
-      S.user=Array.isArray(d)?d[0]:d;}
-    else{const name=document.getElementById('dreg-name').value.trim();const lname=document.getElementById('dreg-lname').value.trim();const mat=document.getElementById('dreg-mat').value.trim();const inst=document.getElementById('dreg-inst').value.trim();if(!name||!lname||!email||pass.length<6){err.classList.add('show');return;}const d=await db.post('doctors',{name,lname,mat,inst,email,password:pass,specialty:document.getElementById('reg-specialty')?.value||'physician',sex:document.getElementById('reg-sex-dr')?.value||''});S.user=Array.isArray(d)?d[0]:d;}
-    localStorage.setItem('dm_s',JSON.stringify({email,role:S.role}));if(S.role==='patient'){var _ob=localStorage.getItem('dm_onboarding');_ob?showHome():showOnboarding();}else{showDoctorHome();}
+      try{
+        const d=await db.post('patients', patientData);
+        S.user = Array.isArray(d) ? d[0] : d;
+      } catch(profErr){
+        console.error('[REGISTER] crear patient profile:', profErr);
+        // El usuario se creó en Auth pero falló el perfil — informar pero no bloquear
+        err.textContent='Cuenta creada. Confirmá el email y luego completá tu perfil.';
+        err.classList.add('show');
+      }
+      // Si Confirm email está activado, Auth NO devuelve sesión activa
+      if(!authData.session){
+        // Mostrar mensaje claro: tiene que ir al mail
+        err.textContent='✓ Cuenta creada. Te enviamos un mail para confirmar tu cuenta.';
+        err.style.color='#7ec8a4';
+        err.classList.add('show');
+        return;
+      }
+    } else {
+      // Registro de doctor
+      const name=document.getElementById('dreg-name').value.trim();
+      const lname=document.getElementById('dreg-lname').value.trim();
+      const mat=document.getElementById('dreg-mat').value.trim();
+      const inst=document.getElementById('dreg-inst').value.trim();
+      if(!name||!lname||!email){ err.classList.add('show'); return; }
+      const {data: authData, error: authErr} = await supa.auth.signUp({
+        email,
+        password: pass,
+        options:{
+          emailRedirectTo: window.location.origin + window.location.pathname,
+          data: { role: 'doctor', name, lname }
+        }
+      });
+      if(authErr){
+        err.textContent = authErr.message.includes('already registered')
+          ? 'Este correo ya está registrado. ¿Querés ingresar?'
+          : 'Error al crear cuenta: '+authErr.message;
+        err.classList.add('show');
+        return;
+      }
+      if(!authData || !authData.user){
+        err.textContent='Error al crear cuenta. Intentá de nuevo.'; err.classList.add('show'); return;
+      }
+      const doctorData={
+        name, lname, mat, inst, email,
+        auth_id: authData.user.id,
+        specialty: document.getElementById('reg-specialty')?.value||'physician',
+        sex: document.getElementById('reg-sex-dr')?.value||''
+      };
+      try{
+        const d=await db.post('doctors', doctorData);
+        S.user = Array.isArray(d) ? d[0] : d;
+      } catch(profErr){
+        console.error('[REGISTER] crear doctor profile:', profErr);
+        err.textContent='Cuenta creada. Confirmá el email y luego completá tu perfil.';
+        err.classList.add('show');
+      }
+      if(!authData.session){
+        err.textContent='✓ Cuenta creada. Te enviamos un mail para confirmar tu cuenta.';
+        err.style.color='#7ec8a4';
+        err.classList.add('show');
+        return;
+      }
+    }
+    // Solo llegamos acá si la sesión está activa (confirm email desactivado, no nuestro caso)
+    if(S.role==='patient'){
+      const _ob=localStorage.getItem('dm_onboarding');
+      _ob ? showHome() : showOnboarding();
+    } else {
+      showDoctorHome();
+    }
   }catch(e){
     console.error('Register error:', e.message);
     if(e.message.includes('unique')||e.message.includes('duplicate')){
@@ -3875,7 +4064,16 @@ function showSleepArticle(id){
   modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
 }
-function doLogout(){S.user=null;localStorage.removeItem('dm_s');Object.keys(S.charts).forEach(k=>killChart(k));pvtStop();showScreen('login');}
+async function doLogout(){
+  try{
+    if(supa){ await supa.auth.signOut(); }
+  }catch(e){ console.warn('[LOGOUT] signOut error:',e.message); }
+  S.user=null;
+  localStorage.removeItem('dm_s'); // legacy, por si quedó
+  Object.keys(S.charts).forEach(k=>killChart(k));
+  pvtStop();
+  showScreen('login');
+}
 
 // PATIENT HOME
 
@@ -9628,19 +9826,195 @@ function setPatientMode(dob){
 }
 async function tryAutoLogin(){
   try{
-    const s=localStorage.getItem('dm_s'); if(!s) return;
-    const {email,role}=JSON.parse(s); S.role=role;
-    const t=role==='patient'?'patients':'doctors';
-    // Timeout 6s para evitar que la app quede trabada si la red es lenta
-    const fetchPromise=db.get(t+'?email=eq.'+encodeURIComponent(email)+'&select=*');
-    const timeoutPromise=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000));
-    const d=await Promise.race([fetchPromise,timeoutPromise]);
-    if(d&&d.length){ S.user=d[0];trackUsage(); if(role==='patient'){setPatientMode(d[0].dob);showHome().catch(function(e){
-      console.error('showHome crash:',e.message,e.stack);
-      showScreen('landing');
-    });}else{showDoctorHome();} }
-    else localStorage.removeItem('dm_s');
-  }catch(e){ console.error('AutoLogin:',e.message||e); showScreen('landing'); }
+    if(!supa){ initSupabase(); }
+    if(!supa){ console.warn('[AUTO] supa no disponible'); return; }
+    // Timeout 6s para evitar que la app quede trabada
+    const sessionPromise = supa.auth.getSession();
+    const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000));
+    const {data: {session}} = await Promise.race([sessionPromise, timeoutPromise]);
+    if(!session || !session.user){
+      console.log('[AUTO] no hay sesión activa');
+      return;
+    }
+    const authUid = session.user.id;
+    // Buscar perfil en patients primero, después en doctors
+    let profile = null, role = null;
+    try{
+      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+      if(p && p.length){ profile = p[0]; role = 'patient'; }
+    }catch(e){ console.warn('[AUTO] patients lookup:',e.message); }
+    if(!profile){
+      try{
+        const dr = await db.get('doctors?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+        if(dr && dr.length){ profile = dr[0]; role = 'doctor'; }
+      }catch(e){ console.warn('[AUTO] doctors lookup:',e.message); }
+    }
+    if(!profile){
+      console.warn('[AUTO] sesión sin perfil vinculado');
+      return;
+    }
+    S.user = profile;
+    S.role = role;
+    trackUsage();
+    if(role==='patient'){
+      setPatientMode(profile.dob);
+      showHome().catch(function(e){
+        console.error('showHome crash:',e.message,e.stack);
+        showScreen('landing');
+      });
+    } else {
+      showDoctorHome();
+    }
+  }catch(e){
+    console.error('[AUTO] AutoLogin error:', e.message||e);
+    showScreen('landing');
+  }
+}
+
+// ─── Manejo de redirects desde mails (invite, recovery) ──────────────────
+// El SDK Supabase detecta automáticamente tokens en la URL (con detectSessionInUrl:true)
+// y dispara eventos. Acá los interceptamos para mostrar la pantalla correcta.
+function handleAuthRedirect(){
+  if(!supa){ initSupabase(); }
+  if(!supa) return;
+  // Escuchar PASSWORD_RECOVERY → mostrar pantalla de cambio de contraseña
+  // Escuchar SIGNED_IN (proviene de invite confirmado) → idem
+  supa.auth.onAuthStateChange((event, session) => {
+    console.log('[AUTH-REDIRECT] event=', event, 'has session=', !!session);
+    if(event === 'PASSWORD_RECOVERY'){
+      // Usuario hizo click en "Reset password" del mail
+      showSetPasswordScreen('recovery');
+    } else if(event === 'SIGNED_IN' && session){
+      // Detectar si es la primera vez (recién confirmó invitación):
+      // En ese caso user.created_at es muy reciente y no hay perfil aún
+      checkIfNeedsPasswordSetup(session);
+    }
+  });
+  // También chequear al cargar la página si hay hash de tipo recovery
+  if(window.location.hash){
+    const hash = window.location.hash.toLowerCase();
+    if(hash.includes('type=recovery') || hash.includes('type=invite')){
+      // El SDK ya procesó el token; solo mostramos la pantalla apropiada
+      setTimeout(()=>showSetPasswordScreen('invite'), 500);
+    }
+  }
+}
+
+async function checkIfNeedsPasswordSetup(session){
+  // Llega acá cuando alguien clickeó link de invitación y se logueó.
+  // Necesitamos detectar si tiene perfil vinculado en patients/doctors.
+  // Si NO tiene perfil, asumimos que es un invitado nuevo → mostrar setup.
+  try{
+    const authUid = session.user.id;
+    const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=id');
+    const dr = await db.get('doctors?auth_id=eq.'+encodeURIComponent(authUid)+'&select=id');
+    if((!p || !p.length) && (!dr || !dr.length)){
+      // Sin perfil — es un invitado que necesita crear contraseña + perfil
+      showSetPasswordScreen('invite');
+    }
+    // Si tiene perfil, no hacemos nada (tryAutoLogin ya lo va a procesar)
+  }catch(e){
+    console.warn('[AUTH-REDIRECT] checkIfNeedsPasswordSetup:', e.message);
+  }
+}
+
+function showSetPasswordScreen(mode){
+  // mode: 'invite' (primera vez) o 'recovery' (olvidé contraseña)
+  showScreen('set-password');
+  const title = document.getElementById('sp-title');
+  const desc = document.getElementById('sp-desc');
+  if(mode === 'invite'){
+    if(title) title.textContent = 'Creá tu contraseña';
+    if(desc) desc.textContent = 'Bienvenido/a a Dormetria. Definí una contraseña para tu cuenta.';
+  } else {
+    if(title) title.textContent = 'Nueva contraseña';
+    if(desc) desc.textContent = 'Elegí una contraseña nueva para tu cuenta.';
+  }
+}
+
+async function submitNewPassword(){
+  const p1 = document.getElementById('sp-pass1').value;
+  const p2 = document.getElementById('sp-pass2').value;
+  const err = document.getElementById('sp-error');
+  err.classList.remove('show');
+  if(p1.length < 8){
+    err.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+    err.classList.add('show'); return;
+  }
+  if(p1 !== p2){
+    err.textContent = 'Las contraseñas no coinciden.';
+    err.classList.add('show'); return;
+  }
+  setBtn('sp-btn', true);
+  try{
+    if(!supa){ initSupabase(); }
+    const {data, error} = await supa.auth.updateUser({password: p1});
+    if(error){
+      err.textContent = 'Error: '+error.message;
+      err.classList.add('show'); return;
+    }
+    // Limpiar hash de la URL
+    if(window.history && window.history.replaceState){
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    // Después de setear contraseña, intentar cargar perfil o redirigir a onboarding
+    const {data: {session}} = await supa.auth.getSession();
+    if(!session){
+      toast('Contraseña creada. Iniciá sesión.');
+      showScreen('login');
+      return;
+    }
+    const authUid = session.user.id;
+    let profile = null, role = null;
+    try{
+      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+      if(p && p.length){ profile = p[0]; role = 'patient'; }
+    }catch(e){}
+    if(!profile){
+      try{
+        const dr = await db.get('doctors?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+        if(dr && dr.length){ profile = dr[0]; role = 'doctor'; }
+      }catch(e){}
+    }
+    if(profile){
+      S.user = profile; S.role = role;
+      toast('Contraseña actualizada ✓');
+      if(role === 'patient'){
+        setPatientMode(profile.dob);
+        showHome();
+      } else {
+        showDoctorHome();
+      }
+    } else {
+      // Sin perfil: completar onboarding básico
+      toast('Contraseña creada. Completá tu perfil.');
+      showOnboarding();
+    }
+  } catch(e){
+    console.error('[SET-PASS] error:', e);
+    err.textContent = 'Error: '+(e.message||'intentá de nuevo');
+    err.classList.add('show');
+  } finally {
+    setBtn('sp-btn', false, 'Guardar contraseña');
+  }
+}
+
+// ─── "Olvidé mi contraseña" ──────────────────────────────────────────────
+function showForgotPasswordPrompt(){
+  const email = prompt('Ingresá tu email para recibir un link de recuperación:');
+  if(!email) return;
+  const cleanEmail = email.trim().toLowerCase();
+  if(!cleanEmail.includes('@')){ toast('Email inválido'); return; }
+  if(!supa){ initSupabase(); }
+  supa.auth.resetPasswordForEmail(cleanEmail, {
+    redirectTo: window.location.origin + window.location.pathname
+  }).then(({error}) => {
+    if(error){
+      toast('Error: '+error.message);
+    } else {
+      toast('Te enviamos un mail con instrucciones.');
+    }
+  });
 }
 
 function exportPatientPDF(){ toast('Exportación PDF no disponible en esta versión'); }
@@ -9770,6 +10144,9 @@ async function scheduleDiaryReminder(){
   }catch(e){console.log("Diary reminder:",e.message);}
 }
 
+// Inicializar Supabase y manejar redirects de mails (invite/recovery)
+initSupabase();
+handleAuthRedirect();
 tryAutoLogin();
 // Reminders: defer 3s para no bloquear el startup
 setTimeout(function(){
