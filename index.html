@@ -2968,6 +2968,12 @@ async function doLogin(){
       errEl.classList.add('show');
       return;
     }
+    // Si el usuario tiene flag must_change_password, forzar cambio antes de cargar el perfil
+    if(data.user?.user_metadata?.must_change_password === true){
+      setBtn('login-btn',false,'Ingresar');
+      showSetPasswordScreen('recovery');
+      return;
+    }
     // Buscar el perfil correspondiente en patients o doctors usando auth_id
     const authUid = data.user.id;
     let profile = null;
@@ -9836,6 +9842,11 @@ async function tryAutoLogin(){
       console.log('[AUTO] no hay sesión activa');
       return;
     }
+    // Si el usuario tiene flag must_change_password, forzar cambio
+    if(session.user?.user_metadata?.must_change_password === true){
+      showSetPasswordScreen('recovery');
+      return;
+    }
     const authUid = session.user.id;
     // Buscar perfil en patients primero, después en doctors
     let profile = null, role = null;
@@ -9958,7 +9969,7 @@ async function submitNewPassword(){
   setBtn('sp-btn', true);
   try{
     if(!supa){ initSupabase(); }
-    const {data, error} = await supa.auth.updateUser({password: p1});
+    const {data, error} = await supa.auth.updateUser({password: p1, data: {must_change_password: false}});
     if(error){
       err.textContent = 'Error: '+error.message;
       err.classList.add('show'); return;
