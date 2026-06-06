@@ -9905,6 +9905,12 @@ function handleAuthRedirect(){
 }
 
 async function checkIfNeedsPasswordSetup(session){
+  // Solo actuar si el usuario fue creado hace menos de 5 minutos (recién confirmó invite)
+  try{
+    const createdAt = new Date(session.user.created_at).getTime();
+    const now = Date.now();
+    if(now - createdAt > 5*60*1000){ return; }
+  }catch(e){ return; }
   // Llega acá cuando alguien clickeó link de invitación y se logueó.
   // Necesitamos detectar si tiene perfil vinculado en patients/doctors.
   // Si NO tiene perfil, asumimos que es un invitado nuevo → mostrar setup.
