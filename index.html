@@ -9895,7 +9895,11 @@ function handleAuthRedirect(){
     const hash = window.location.hash.toLowerCase();
     if(hash.includes('type=recovery') || hash.includes('type=invite')){
       // El SDK ya procesó el token; solo mostramos la pantalla apropiada
-      setTimeout(()=>showSetPasswordScreen('invite'), 500);
+      setTimeout(async ()=>{
+  const {data:{session}} = await supa.auth.getSession();
+  if(session){ showSetPasswordScreen('invite'); }
+  else { showScreen('login'); }
+}, 2000);
     }
   }
 }
