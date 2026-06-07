@@ -822,6 +822,14 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 #screen-profile select option { background: #1a2e23; color: #fff; }
 #screen-profile .divider { background: rgba(255,255,255,0.07) !important; }
 
+/* ── DOCTOR PATIENT VIEW (dark green screen) — mismo tratamiento que screen-profile ── */
+#screen-doctor-patient .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+#screen-doctor-patient .info-label { color: rgba(255,255,255,0.5) !important; }
+#screen-doctor-patient .info-val   { color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-patient .info-row   { border-bottom-color: rgba(255,255,255,0.07) !important; }
+#screen-doctor-patient .tag { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.85) !important; }
+#screen-doctor-patient .divider { background: rgba(255,255,255,0.07) !important; }
+
 /* ── LOGIN SCREEN ── */
 #screen-login { background: #1a2e23 !important; }
 #screen-login { background: #0f2820 !important; justify-content: center !important; align-items: center !important; }
@@ -2503,7 +2511,7 @@ const SCALES=[
   {t:'Tener dificultad para concentrarse',opts:['Nada','Un poco','Moderado','Bastante','Extremadamente'],sc:[0,1,2,3,4]},
   {t:'Tener problemas para dormir',opts:['Nada','Un poco','Moderado','Bastante','Extremadamente'],sc:[0,1,2,3,4]}
 ],
- interp:s=>s<=32?{l:'Probable TEPT',c:'#9b1c1c',bg:'#fee2e2'}:s<=49?{l:'Síntomas moderados',c:'#c2410c',bg:'#ffedd5'}:{l:'Sin TEPT probable',c:'#14532d',bg:'#dcfce7'}
+ interp:s=>s<33?{l:'Sin TEPT probable',c:'#14532d',bg:'#dcfce7'}:{l:'TEPT probable',c:'#9b1c1c',bg:'#fee2e2'}
 },
 {id:'sated',ref:'Carney CE et al. (2012). The SATED. Sleep, 35(12), 1593–1601.',name:'SATED',cat:'sleep',max:10,desc:'Satisfacción, alerta, timing, eficiencia y duración del sueño',
  qs:[
@@ -2918,6 +2926,18 @@ const SCALES=[
 function killChart(k){try{S.charts[k].destroy();}catch(e){}S.charts[k]=null;}
 function timeToOffset(t){if(!t)return null;const p=t.split(':').map(Number);const h=p[0],m=p[1]||0;return(h>=12?h-12:h+12)+m/60;}
 function meanStd(arr){if(!arr||!arr.length)return{mean:0,std:0};const mean=arr.reduce((a,b)=>a+b,0)/arr.length;const variance=arr.reduce((a,b)=>a+(b-mean)*(b-mean),0)/arr.length;return{mean:mean,std:Math.sqrt(variance)};}
+function computePillarScore(e){
+  const mins=e.sleep_minutes||0;
+  let qty=0;
+  if(mins>=420&&mins<=540)qty=50;
+  else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);
+  else if(mins>540&&mins<=600)qty=Math.round(50*(600-mins)/60);
+  else if(mins>=300)qty=Math.round(50*(mins-240)/180);
+  qty=Math.max(0,Math.min(50,qty));
+  const awk=e.awakenings||0;
+  const frag=Math.max(0,20-awk*5);
+  return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
+}
 function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
 function pillarBar(v,color){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+color+';width:'+v+'%;transition:width .6s ease"></div></div>';}
 
@@ -5547,8 +5567,8 @@ async function showDiaryTab_(tab){
         const bedOffsets=sorted.map(e=>e.bedtime?timeToOffset(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
         const wakeOffsets=sorted.map(e=>e.wake_time?timeToOffset(e.wake_time.slice(0,5)):null).filter(v=>v!==null);
         
-        const bedStats=meanStd(bedOffsets);
-        const wakeStats=meanStd(wakeOffsets);
+        const _bedMS=meanStd(bedOffsets); const bedStats={m:_bedMS.mean,s:_bedMS.std};
+        const _wakeMS=meanStd(wakeOffsets); const wakeStats={m:_wakeMS.mean,s:_wakeMS.std};
         try{
         let ctxA=document.getElementById('diary-chart-actogram');
         console.log('[GRAFICOS] ctxA=',!!ctxA,'sorted.length=',sorted.length);
@@ -6861,7 +6881,7 @@ async function showDrPTab_(tab){
     if(tab==='summary'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);S.viewRecs=recs||[];
       const last={};(recs||[]).forEach(r=>{last[r.scale_id]=r;});
-      const alerts=Object.values(last).filter(r=>{const t=ALERT_THR[r.scale_id];return t&&r.score>=t;});
+      const alerts=Object.values(last).filter(r=>{const t=ALERT_THR[r.scale_id];return t&&r.score>=t.score;});
       // ── KEY FINDINGS ──
       const kf=[];
       // Pathological scales
