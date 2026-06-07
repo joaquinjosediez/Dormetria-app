@@ -5549,6 +5549,7 @@ async function showDiaryTab_(tab){
         
         const bedStats=meanStd(bedOffsets);
         const wakeStats=meanStd(wakeOffsets);
+        try{
         let ctxA=document.getElementById('diary-chart-actogram');
         console.log('[GRAFICOS] ctxA=',!!ctxA,'sorted.length=',sorted.length);
         if(ctxA){
@@ -5586,7 +5587,7 @@ async function showDiaryTab_(tab){
 ,
           plugins:[{
             id:'actoOverlay',
-            beforeDatasetsDraw:(chart)=>{
+            beforeDatasetsDraw:(chart)=>{try{
                   // Shade free/weekend rows (draws behind bars)
                   const cv2=chart.canvas;
                   const freeRows2=cv2?._weekendRows||[];
@@ -5605,8 +5606,9 @@ async function showDiaryTab_(tab){
                     });
                     cx2.restore();
                   }
+                }catch(_e0){}
                 },
-            afterDraw:(chart)=>{
+            afterDraw:(chart)=>{try{
                   const cv=chart.canvas;
                   const freeRows=cv?._weekendRows||[];
                   const bedStats=cv?._bedStats;
@@ -5673,9 +5675,11 @@ async function showDiaryTab_(tab){
                     }
                     cx.restore();
                   }
+                }catch(_e1){}
                 }
           }]          });
         }
+        }catch(_aErr){console.error('[GRAFICOS] actograma:',_aErr&&_aErr.message,_aErr&&_aErr.stack); var _ab=document.getElementById('diary-chart-actogram'); if(_ab&&_ab.parentElement){_ab.parentElement.innerHTML='<div style="padding:16px;color:#b45309;font-size:12px;text-align:center;background:#fffbeb;border-radius:8px">No se pudo dibujar el actograma. El resto de tus graficos si funciona.<br><span style="font-size:10px;color:#999">('+(_aErr&&_aErr.message||'error')+')</span></div>';}}
         const labels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}));
 
         // ── ACTOGRAM: add mean bedtime/waketime reference lines ──
