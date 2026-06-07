@@ -36,6 +36,7 @@
   --ios-indigo:#2d6b56;
   
   /* Backgrounds */
+  --bg:#FFFFFF;
   --bg-primary:#F2F2F7;
   --bg-secondary:#FFFFFF;
   --bg-tertiary:#F2F2F7;
@@ -1018,6 +1019,85 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 #screen-doctor-home #dr-content .form-input::placeholder { color: rgba(255,255,255,0.35) !important; }
 #screen-doctor-home #dr-content select option { background: #1a2e23; color: #fff; }
 #screen-doctor-home #dr-content .sec-title { color: rgba(255,255,255,0.5) !important; }
+
+/* ───────────── CONTRAST SAFETY NET v80 ─────────────
+   (1) Texto blanco sobre cualquier fondo verde oscuro inline.
+   (2) Texto oscuro dentro de cards claras en pantallas oscuras. */
+[style*="background:#0f2820"],[style*="background: #0f2820"],
+[style*="background:#1a4a3a"],[style*="background: #1a4a3a"],
+[style*="background:#1a2e23"],[style*="background: #1a2e23"],
+[style*="background:#1e3a2c"],[style*="background: #1e3a2c"],
+[style*="background:#162a1e"],[style*="background: #162a1e"],
+[style*="background:#1e3d2f"],[style*="background: #1e3d2f"],
+[style*="background:#2d6b55"],[style*="background: #2d6b55"],
+[style*="background:#2d6b56"],[style*="background: #2d6b56"],
+[style*="background:#2d4a3a"],[style*="background: #2d4a3a"],
+[style*="background:#21614c"],[style*="background: #21614c"],
+[style*="background:rgba(26,74,58"],[style*="background: rgba(26,74,58"],
+[style*="background:rgba(15,40,32"],[style*="background: rgba(15,40,32"]{color:#fff !important;}
+#screen-doctor-home [style*="background:#fff"]:not(button):not(.btn),
+#screen-doctor-home [style*="background: #fff"]:not(button):not(.btn),
+#screen-doctor-home [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-doctor-home [style*="background:white"]:not(button):not(.btn),
+#screen-doctor-home [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-patient-history [style*="background:#fff"]:not(button):not(.btn),
+#screen-patient-history [style*="background: #fff"]:not(button):not(.btn),
+#screen-patient-history [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-patient-history [style*="background:white"]:not(button):not(.btn),
+#screen-patient-history [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-home [style*="background:#fff"]:not(button):not(.btn),
+#screen-home [style*="background: #fff"]:not(button):not(.btn),
+#screen-home [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-home [style*="background:white"]:not(button):not(.btn),
+#screen-home [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-profile [style*="background:#fff"]:not(button):not(.btn),
+#screen-profile [style*="background: #fff"]:not(button):not(.btn),
+#screen-profile [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-profile [style*="background:white"]:not(button):not(.btn),
+#screen-profile [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-scales [style*="background:#fff"]:not(button):not(.btn),
+#screen-scales [style*="background: #fff"]:not(button):not(.btn),
+#screen-scales [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-scales [style*="background:white"]:not(button):not(.btn),
+#screen-scales [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-child-home [style*="background:#fff"]:not(button):not(.btn),
+#screen-child-home [style*="background: #fff"]:not(button):not(.btn),
+#screen-child-home [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-child-home [style*="background:white"]:not(button):not(.btn),
+#screen-child-home [style*="background:var(--bg-secondary)"]:not(button):not(.btn){color:var(--label) !important;}
+#screen-doctor-home [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path){color:var(--label) !important;}
+[style*="background:#f4efe5"],[style*="background: #f4efe5"],
+[style*="background:#c2e8d4"],[style*="background: #c2e8d4"],
+[style*="background:#e8f0eb"],[style*="background: #e8f0eb"]{color:var(--label) !important;}
 
 </style>
 
@@ -3589,7 +3669,7 @@ async function submitRating(email, btn){
 async function unlinkDoctor(email){
   if(!confirm('¿Desvincularte de este profesional?')) return;
   try{
-    await fetch(SU+'/rest/v1/doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+'&doctor_email=eq.'+encodeURIComponent(email),{method:'DELETE',headers:{'apikey':SK,'Authorization':'Bearer '+SK}});
+    await fetch(SU+'/rest/v1/doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+'&doctor_email=eq.'+encodeURIComponent(email),{method:'DELETE',headers:{'apikey':SK,'Authorization':await db._getAuthHeader()}});
     toast('Profesional desvinculado');
     renderLinkedDoctors();
   }catch(e){ toast('Error al desvincular'); }
@@ -3914,7 +3994,7 @@ async function testConnection(){
   const btn=document.querySelector('#conn-check button');
   if(btn) btn.textContent='Verificando...';
   try{
-    const r=await fetch(SU+'/rest/v1/patients?limit=1',{headers:{'apikey':SK,'Authorization':'Bearer '+SK}});
+    const r=await fetch(SU+'/rest/v1/patients?limit=1',{headers:{'apikey':SK,'Authorization':await db._getAuthHeader()}});
     const s=r.status;
     if(s===200||s===406){if(btn)btn.textContent='Servidor activo — revisa email y contrasena';}
     else if(s===503||s===502){if(btn)btn.textContent='Proyecto Supabase pausado — entra a supabase.com';}
@@ -4879,11 +4959,11 @@ async function finishScale(){
     // Try saving with answers column first, fall back without if column doesn't exist
     const _pl={patient_email:S.user.email,scale_id:sc.id,scale_name:sc.name,score,max_score:sc.max??null,answers:answersJson};
     const payload=Object.fromEntries(Object.entries(_pl).filter(([,v])=>v!==undefined));
-    let evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    let evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
     if(evalResp.status===400){
       // answers column may not exist - retry without it
       const {answers:_,...payloadNoAnswers}=payload;
-      evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payloadNoAnswers)});
+      evalResp=await fetch(SU+'/rest/v1/evaluations',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payloadNoAnswers)});
     }
     if(!evalResp.ok&&evalResp.status!==201){
       const ed=await evalResp.json().catch(()=>({}));
@@ -5401,7 +5481,10 @@ async function showDiaryTab_(tab){
       return;
     }
     if(tab==='graficos'){
-    if(!entries||!entries.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div>Necesitás al menos 3 registros para ver patrones.</div>';return;}
+    if(!entries||!entries.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div>Aún no tenés registros del diario.<br><span style="font-size:13px;color:var(--label-2)">Cargá algunos desde el tab Registros para ver tus gráficos.</span></div>';return;}
+    if(entries.length<3){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div>Necesitás al menos 3 registros para ver patrones.<br><span style="font-size:13px;color:var(--label-2)">Llevás '+entries.length+' por ahora.</span></div>';return;}
+    const _entriesWithHorarios=entries.filter(e=>e.bedtime&&e.wake_time);
+    if(_entriesWithHorarios.length<3){cont.innerHTML='<div class="empty-state"><div class="empty-icon">⏰</div>Tus registros no incluyen horarios suficientes.<br><span style="font-size:13px;color:var(--label-2)">De '+entries.length+' registros, solo '+_entriesWithHorarios.length+' tienen hora de acostarse y levantarse. Editá los registros faltantes para ver el actograma.</span></div>';return;}
       const subjEntries=entries.filter(e=>!(e.notes&&e.notes.startsWith('Importado')));
       // Default: show last 30 days for score
       window._graficosSubjEntries = subjEntries;
@@ -5722,7 +5805,7 @@ async function deleteDiaryEntry(id){
   try{
     const r=await fetch(SU+'/rest/v1/sleep_diary?id=eq.'+encodeURIComponent(id),{
       method:'DELETE',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Prefer':'return=minimal'}
+      headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Prefer':'return=minimal'}
     });
     if(!r.ok&&r.status!==204){throw new Error('HTTP '+r.status);}
     toast('Registro borrado');
@@ -6493,7 +6576,7 @@ async function pvtFinish(){
   const e={patient_email:S.user.email,mean_rt:meanRT,lapses,alert_score:Math.max(0,Math.round(100-(deviation/3)-(lapses*8))),alert_level:level+' ('+dur+'min)',test_hour:testHour,prior_sleep_hours:priorSleep||null,device_type:deviceType};
     try{
       console.log('Saving PVT: user='+S.user.email+' dur='+dur+' rt='+meanRT);
-      const pvtResp=await fetch(SU+'/rest/v1/pvt_tests',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(e)});
+      const pvtResp=await fetch(SU+'/rest/v1/pvt_tests',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(e)});
       if(!pvtResp.ok&&pvtResp.status!==201){const ed=await pvtResp.json().catch(()=>({}));console.error('PVT save FAILED:',pvtResp.status,JSON.stringify(ed));toast('Error guardando test: '+pvtResp.status+(ed.message?' — '+ed.message:''));}
       else{console.log('PVT saved OK');showSuccessBanner('Test guardado ✓ — TR: '+meanRT+'ms');}
     }catch(e1){console.error('PVT fetch error:',e1.message);}
@@ -6670,7 +6753,7 @@ async function showDrTab_(tab){
       if(alerts&&alerts.length){
         fetch(SU+'/rest/v1/doctor_alerts?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&seen=eq.false',{
           method:'PATCH',
-          headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
+          headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},
           body:JSON.stringify({seen:true})
         }).catch(()=>{});
         // Hide badge
@@ -7369,7 +7452,7 @@ function showDrEvalAnswers(evalId, scaleId, score, scaleName, date, answersJson)
 
 async function markSuggestionCompleted(scaleId){
   try{
-    await fetch(SU+'/rest/v1/doctor_suggestions?patient_email=eq.'+encodeURIComponent(S.user.email)+'&scale_id=eq.'+encodeURIComponent(scaleId)+'&completed=eq.false',{method:'PATCH',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({completed:true,seen:true})}).catch(()=>{});
+    await fetch(SU+'/rest/v1/doctor_suggestions?patient_email=eq.'+encodeURIComponent(S.user.email)+'&scale_id=eq.'+encodeURIComponent(scaleId)+'&completed=eq.false',{method:'PATCH',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({completed:true,seen:true})}).catch(()=>{});
     document.querySelectorAll('[data-scid="'+scaleId+'"]').forEach(el=>{const card=el.closest('[style*=border]');if(card){card.style.opacity='0';card.style.transition='opacity 0.3s';setTimeout(()=>card.remove(),300);}});
   }catch(e){}
 }
@@ -7390,7 +7473,7 @@ async function sendScaleSuggestion(){
     try{
       const r = await fetch(SU+'/rest/v1/doctor_suggestions', {
         method:'POST',
-        headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
+        headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},
         body: JSON.stringify({
           doctor_email: S.user.email,
           doctor_name: ((S.user.gender==='Masculino')?'Dr. ':(S.user.gender==='Femenino')?'Dra. ':'Dr/a. ')+S.user.name+' '+(S.user.lname||''),
@@ -7463,7 +7546,7 @@ async function dismissSuggestion(id){
   try{
     await fetch(SU+'/rest/v1/doctor_suggestions?id=eq.'+encodeURIComponent(id),{
       method:'PATCH',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
+      headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},
       body:JSON.stringify({seen:true})
     });
     const el=document.querySelector('[data-sid="'+id+'"]')?.closest('[style*="border:1.5px"]');
@@ -7654,7 +7737,7 @@ async function deleteEval(id){
     try{
       const r = await fetch(SU+'/rest/v1/evaluations?id=eq.'+encodeURIComponent(id), {
         method: 'DELETE',
-        headers: {'apikey': SK, 'Authorization': 'Bearer '+SK, 'Content-Type': 'application/json'}
+        headers: {'apikey': SK, 'Authorization': await db._getAuthHeader(), 'Content-Type': 'application/json'}
       });
       if(r.ok || r.status === 204){
         toast('Registro eliminado ✓');
@@ -7678,7 +7761,7 @@ async function deletePVT(id,btn){
   if(!confirm('¿Eliminar este test de alerta?')) return;
   try{
     const r=await fetch(SU+'/rest/v1/pvt_tests?id=eq.'+encodeURIComponent(id),{
-      method:'DELETE',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Prefer':'return=minimal'}
+      method:'DELETE',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Prefer':'return=minimal'}
     });
     if(r.ok||r.status===204){
       toast('Test eliminado ✓');
@@ -7759,7 +7842,7 @@ async function checkAndAlertDoctors(sc, score, label){
       try{
         const alertResp = await fetch(SU+'/rest/v1/doctor_alerts', {
           method: 'POST',
-          headers: {'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
+          headers: {'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},
           body: JSON.stringify({
             doctor_email: link.doctor_email,
             patient_email: S.user.email,
@@ -7966,7 +8049,7 @@ async function saveDoc(){
       method: 'POST',
       headers: {
         'apikey': SK,
-        'Authorization': 'Bearer '+SK,
+        'Authorization': await db._getAuthHeader(),
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
@@ -8056,7 +8139,7 @@ async function deleteDoc(id){
     try{
       const r = await fetch(SU+'/rest/v1/patient_documents?id=eq.'+encodeURIComponent(id),{
         method:'DELETE',
-        headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'}
+        headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json'}
       });
       if(r.ok||r.status===204){ toast('Estudio eliminado ✓'); showDocsScreen(); }
       else{ const d=await r.json().catch(()=>({})); toast('Error: '+(d.message||r.status)); }
@@ -8485,7 +8568,7 @@ async function performDeleteAccount(){
       try{
         await fetch(SU+'/rest/v1/'+path, {
           method:'DELETE',
-          headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'}
+          headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json'}
         });
       }catch(ex){ console.warn('Delete error for', path, ex.message); }
     }
@@ -8710,7 +8793,7 @@ async function finishDrivePVT(){
       console.log('Drive save body:', JSON.stringify(saveBody));
       const resp=await fetch(SU+'/rest/v1/pvt_tests',{
         method:'POST',
-        headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
+        headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},
         body:JSON.stringify(saveBody)
       });
       console.log('Drive PVT save response:',resp.status);
@@ -9708,7 +9791,7 @@ async function sendConsultRequest(doctorEmail, doctorName){
     };
     const r = await fetch(SU+'/rest/v1/consultation_requests',{
       method:'POST',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
+      headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},
       body:JSON.stringify(body)
     });
     if(r.ok||r.status===201){
@@ -9772,7 +9855,7 @@ async function updateConsultStatus(id, status, btn){
   try{
     await fetch(SU+'/rest/v1/consultation_requests?id=eq.'+id,{
       method:'PATCH',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json'},
       body:JSON.stringify({status})
     });
     const card=btn.closest('[style*="border-radius:14px"]');
@@ -9787,7 +9870,7 @@ async function toggleDoctorPublicProfile(){
   try{
     await fetch(SU+'/rest/v1/doctors?email=eq.'+encodeURIComponent(S.user.email),{
       method:'PATCH',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json'},
       body:JSON.stringify({public_profile:newVal})
     });
     S.user.public_profile = newVal;
@@ -11223,7 +11306,7 @@ function fixScaleColors(){
 async function unlinkPatient(email, name){
   if(!confirm('¿Archivar a '+name+'? No aparecerá en la lista activa.')) return;
   try{
-    await fetch(SU+'/rest/v1/doctor_patients?patient_email=eq.'+encodeURIComponent(email)+'&doctor_email=eq.'+encodeURIComponent(S.user.email),{method:'DELETE',headers:{'apikey':SK,'Authorization':'Bearer '+SK}});
+    await fetch(SU+'/rest/v1/doctor_patients?patient_email=eq.'+encodeURIComponent(email)+'&doctor_email=eq.'+encodeURIComponent(S.user.email),{method:'DELETE',headers:{'apikey':SK,'Authorization':await db._getAuthHeader()}});
     toast(name+' archivado/a');
     showDrTab('patients',document.getElementById('drnav-patients'));
   }catch(e){ toast('Error: '+e.message); }
