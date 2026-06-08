@@ -919,6 +919,26 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   color: rgba(255,255,255,0.4) !important;
 }
 
+/* ── AUDITORÍA DE CONTRASTE — ambos perfiles sobre verde ── */
+/* Vista del profesional sobre el paciente: faltaban los catch-all de label */
+#screen-doctor-patient [style*="color:var(--label)"]   { color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-patient [style*="color:var(--label-2)"] { color: rgba(255,255,255,0.6) !important; }
+#screen-doctor-patient [style*="color:var(--label-3)"] { color: rgba(255,255,255,0.4) !important; }
+/* var(--ink*) inline queda invisible sobre verde en AMBOS perfiles → claro */
+#screen-doctor-patient [style*="color:var(--ink)"],
+#screen-profile        [style*="color:var(--ink)"]   { color: rgba(255,255,255,0.85) !important; }
+#screen-doctor-patient [style*="color:var(--ink2)"],
+#screen-profile        [style*="color:var(--ink2)"]  { color: rgba(255,255,255,0.6) !important; }
+#screen-doctor-patient [style*="color:var(--ink3)"],
+#screen-profile        [style*="color:var(--ink3)"]  { color: rgba(255,255,255,0.45) !important; }
+/* Tarjetas claras dentro del verde → mantener texto oscuro (gana por especificidad) */
+#screen-doctor-patient [style*="background:#fff"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background: #fff"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:white"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:var(--card)"]:not(button):not(.btn) { color: var(--label) !important; }
+
 /* Patient history - force dark on all children */
 #screen-patient-history .tab-bar {
   background: #1a2e23 !important;
@@ -3079,7 +3099,7 @@ async function doLogin(){
     let profile = null;
     // Intentar primero como paciente (mayoría de usuarios), después doctor
     try{
-      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&parent_email=is.null&select=*');
       if(p && p.length){ profile = p[0]; S.role='patient'; }
     }catch(e){ console.warn('[LOGIN] patients lookup:',e.message); }
     if(!profile){
@@ -3089,11 +3109,31 @@ async function doLogin(){
       }catch(e){ console.warn('[LOGIN] doctors lookup:',e.message); }
     }
     if(!profile){
-      // Usuario en auth.users pero sin perfil vinculado: caso de cuenta nueva sin onboarding
-      errEl.textContent='Tu cuenta está autenticada pero no tiene perfil. Contactanos para vincularla.';
-      errEl.classList.add('show');
-      await supa.auth.signOut();
-      return;
+      // Cuenta nueva confirmada: el perfil no se pudo crear durante el signUp porque
+      // todavía no había sesión activa (RLS bloquea el INSERT). Ahora sí hay sesión,
+      // así que lo creamos desde los metadatos guardados en Auth.
+      const md = (data.user && data.user.user_metadata) || {};
+      const wantRole = md.role || S.role || 'patient';
+      try{
+        if(wantRole==='doctor'){
+          const doctorData={ name: md.name||'', lname: md.lname||'', email, auth_id: authUid };
+          const d=await db.post('doctors', doctorData);
+          profile = Array.isArray(d)?d[0]:d; S.role='doctor';
+        } else {
+          const patientData={ name: md.name||'', lname: md.lname||'', email, code: genCode(), auth_id: authUid };
+          const d=await db.post('patients', patientData);
+          profile = Array.isArray(d)?d[0]:d; S.role='patient';
+        }
+      }catch(createErr){
+        console.error('[LOGIN] auto-crear perfil:', createErr);
+        const msg=(createErr&&createErr.message)||'';
+        errEl.textContent=(msg.includes('duplicate')||msg.includes('unique'))
+          ? 'Tu cuenta existe pero el perfil quedó sin vincular. Avisale a tu profesional para vincularla.'
+          : 'Tu cuenta está autenticada pero no se pudo crear el perfil. Probá de nuevo o contactanos.';
+        errEl.classList.add('show');
+        await supa.auth.signOut();
+        return;
+      }
     }
     S.user = profile;
     trackUsage();
@@ -4572,17 +4612,27 @@ function renderScales(targetId){
     }
   }
 
-  // ── MAIN SCALES BLOCK ──
-  const mainScaleIds = ['psqi','ess','isi','stopbang','meq'];
-  const mainScales = SCALES.filter(s => mainScaleIds.includes(s.id) && isScaleVisibleForProfile(s));
-  if(mainScales.length){
-    const header = document.createElement('div');
-    header.innerHTML = '<div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;padding:0 2px">Escalas principales</div>';
-    list.appendChild(header);
-    mainScaleIds.forEach(id => {
-      const sc = mainScales.find(s=>s.id===id);
-      if(sc){ const tmp=document.createElement('div');tmp.innerHTML=renderScaleCard(sc,S.records,false);list.appendChild(tmp.firstChild); }
-    });
+  // ── COMPLETADAS ──
+  const _completedIds = new Set(S.records.map(r=>r.scale_id));
+  const completadas = SCALES.filter(s => s.id!=='gasq' && _completedIds.has(s.id) && isScaleVisibleForProfile(s));
+  if(completadas.length){
+    const ch=document.createElement('div');
+    ch.innerHTML='<div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;padding:0 2px">Completadas</div>';
+    list.appendChild(ch);
+    completadas.forEach(sc=>{const tmp=document.createElement('div');tmp.innerHTML=renderScaleCard(sc,S.records,false);list.appendChild(tmp.firstChild);});
+  }
+
+  // ── PARA COMPLETAR (set curado por defecto + sugeridas por el profesional, sin las ya hechas) ──
+  const DEFAULT_SET = ['isi','psqi','ess','stopbang','phq9','gad7','meq','hama','hamd','sassv_screen'];
+  const toCompleteIds = [...new Set([...DEFAULT_SET, ...((S._docSuggIds)||[])])]
+    .filter(id => id!=='gasq' && !_completedIds.has(id));
+  const paraCompletar = toCompleteIds.map(id=>SCALES.find(s=>s.id===id)).filter(s=>s && isScaleVisibleForProfile(s));
+  const mainScaleIds = paraCompletar.map(s=>s.id); // se excluyen de "Más escalas" abajo
+  if(paraCompletar.length){
+    const ph=document.createElement('div');
+    ph.innerHTML='<div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;padding:0 2px">Para completar</div>';
+    list.appendChild(ph);
+    paraCompletar.forEach(sc=>{const tmp=document.createElement('div');tmp.innerHTML=renderScaleCard(sc,S.records,false);list.appendChild(tmp.firstChild);});
   }
 
   // ── MORE SCALES (collapsible) ──
@@ -4600,7 +4650,7 @@ function renderScales(targetId){
   // ── GROUP by category (in more scales) ──
   const catOrder = ['sleep','sleepiness','circadian','shiftwork','movement','parasomnia','mental','trauma','sexuality','tech','neurological','pediatric','performance','qol'];
   catOrder.forEach(cat => {
-    const catScales = SCALES.filter(s => s.cat === cat && s.id !== 'gasq' && !mainScaleIds.includes(s.id) && isScaleVisibleForProfile(s));
+    const catScales = SCALES.filter(s => s.cat === cat && s.id !== 'gasq' && !mainScaleIds.includes(s.id) && !_completedIds.has(s.id) && isScaleVisibleForProfile(s));
     if(!catScales.length) return;
     const catInfo = SCALE_CATS[cat] || {label:cat, color:'#888', bg:'#eee', icon:'📋'};
     const msc = moreScalesDiv;
@@ -4731,6 +4781,31 @@ async function showScalesScreen(){
 }
 
 
+// Títulos en lenguaje claro para el paciente (el nombre técnico se muestra debajo).
+// Las escalas sin entrada acá caen al nombre técnico.
+const PTITLES = {
+  gasq:'Primer cuestionario para conocer tu sueño',
+  isi:'¿Cuánto te cuesta dormir y descansar?',
+  psqi:'¿Cómo dormiste este último mes?',
+  dbas:'¿Qué pensás y sentís a la hora de dormir?',
+  psas:'¿Llegás a la cama con la cabeza acelerada?',
+  sated:'¿Tu sueño te deja satisfecho y con energía?',
+  ess:'¿Te ganás el sueño durante el día?',
+  fosq10:'¿El sueño te afecta las actividades del día?',
+  stopbang:'¿Podrías tener pausas en la respiración al dormir?',
+  sassv:'¿Roncás o te falta el aire mientras dormís?',
+  meq:'¿Sos más de madrugar o de trasnochar?',
+  mctq:'Tu reloj interno según tus días libres',
+  phq9:'¿Cómo estuvo tu ánimo estas dos semanas?',
+  gad7:'¿Cuánta preocupación o nervios venís sintiendo?',
+  pcl5:'¿Algo que viviste te sigue afectando hoy?',
+  fss:'¿Cuánto cansancio venís arrastrando?',
+  irls:'¿Sentís necesidad de mover las piernas al acostarte?',
+  hamd:'¿Cómo estuvo tu ánimo últimamente?',
+  hama:'¿Cuánta ansiedad venís sintiendo?',
+  bdi2:'¿Cómo venís sintiéndote últimamente?',
+};
+
 function renderScaleCard(sc, records, isGASQ){
   const bg='rgba(255,255,255,0.1)';const icon=sc.icon||'📋';
   const scR = records.filter(r => r.scale_id === sc.id);
@@ -4764,8 +4839,8 @@ function renderScaleCard(sc, records, isGASQ){
   return `<div class="sc-card" style="border:${border};background:rgba(255,255,255,0.07)" onclick="startScale('${sc.id}')">
     <div class="sc-icon" style="background:${bg}">${icon}</div>
     <div class="sc-info">
-      <div class="sc-name">${sc.name}</div>
-      <div class="sc-desc">${sc.desc}</div>
+      <div class="sc-name">${PTITLES[sc.id]||sc.name}</div>
+      <div class="sc-desc">${PTITLES[sc.id]?sc.name:sc.desc}</div>
       ${sc.ref?'<div style="font-size:10px;color:var(--label-3);margin-top:2px;font-style:italic">'+sc.ref.split('(')[0].trim()+'</div>':''}
       <div style="margin-top:4px">${badge}${cnt}</div>
       ${bar}
@@ -7544,6 +7619,7 @@ async function loadDoctorSuggestions(){
       '&completed=eq.false&order=created_at.desc&select=*'
     );
     if(!suggestions||!suggestions.length) return;
+    S._docSuggIds = suggestions.map(s=>s.scale_id);
     
     // Show suggestion cards above the GASQ section
     const list = document.getElementById('scales-list');
@@ -8295,13 +8371,17 @@ async function saveChildProfile(){
   try{
     // Store child with parent_email reference and unique identifier email = parent+child_name
     const childEmail = S.user.email + '+' + name.toLowerCase().replace(/\s+/g,'') + '@child';
+    // El niño no tiene cuenta propia: la fila queda a nombre del auth_id del adulto,
+    // así RLS (auth_id = auth.uid()) permite crearla/leerla/editarla bajo la sesión del padre/madre.
+    let parentAuthId = S.user.auth_id;
+    if(!parentAuthId && typeof supa!=='undefined' && supa){ try{ const {data:_u}=await supa.auth.getUser(); parentAuthId=_u&&_u.user?_u.user.id:null; }catch(_e){} }
     const body = {
       name, lname, dob,
       email: childEmail,
-      password: 'child_linked_' + S.user.email,
       parent_email: S.user.email,
       caregiver_relation: rel,
-      code: genCode()
+      code: genCode(),
+      auth_id: parentAuthId
     };
     const d = await db.post('patients', body);
     if(d){
@@ -9958,7 +10038,7 @@ async function tryAutoLogin(){
     // Buscar perfil en patients primero, después en doctors
     let profile = null, role = null;
     try{
-      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&parent_email=is.null&select=*');
       if(p && p.length){ profile = p[0]; role = 'patient'; }
     }catch(e){ console.warn('[AUTO] patients lookup:',e.message); }
     if(!profile){
@@ -10095,7 +10175,7 @@ async function submitNewPassword(){
     const authUid = session.user.id;
     let profile = null, role = null;
     try{
-      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&parent_email=is.null&select=*');
       if(p && p.length){ profile = p[0]; role = 'patient'; }
     }catch(e){}
     if(!profile){
