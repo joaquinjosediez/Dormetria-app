@@ -939,6 +939,141 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 #screen-doctor-patient [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
 #screen-doctor-patient [style*="background:var(--card)"]:not(button):not(.btn) { color: var(--label) !important; }
 
+/* ── BARRIDO GLOBAL DE CONTRASTE: tokens oscuros -> claro en pantallas verdes ──
+   Las tarjetas claras (resultados) usan hex propios, no estos tokens, así que no se rompen. */
+#screen-home [style*="color:var(--label)"],
+#screen-home [style*="color:var(--ink)"],
+#screen-scales [style*="color:var(--label)"],
+#screen-scales [style*="color:var(--ink)"],
+#screen-profile [style*="color:var(--label)"],
+#screen-profile [style*="color:var(--ink)"],
+#screen-mas [style*="color:var(--label)"],
+#screen-mas [style*="color:var(--ink)"],
+#screen-doctor-home [style*="color:var(--label)"],
+#screen-doctor-home [style*="color:var(--ink)"],
+#screen-doctor-patient [style*="color:var(--label)"],
+#screen-doctor-patient [style*="color:var(--ink)"],
+#screen-patient-history [style*="color:var(--label)"],
+#screen-patient-history [style*="color:var(--ink)"],
+#screen-child-home [style*="color:var(--label)"],
+#screen-child-home [style*="color:var(--ink)"],
+#screen-diary-home [style*="color:var(--label)"],
+#screen-diary-home [style*="color:var(--ink)"],
+#screen-result [style*="color:var(--label)"],
+#screen-result [style*="color:var(--ink)"],
+#screen-hygiene [style*="color:var(--label)"],
+#screen-hygiene [style*="color:var(--ink)"],
+#screen-consult-guide [style*="color:var(--label)"],
+#screen-consult-guide [style*="color:var(--ink)"],
+#screen-consult-dir [style*="color:var(--label)"],
+#screen-consult-dir [style*="color:var(--ink)"],
+#screen-scale [style*="color:var(--label)"],
+#screen-scale [style*="color:var(--ink)"],
+#screen-landing [style*="color:var(--label)"],
+#screen-landing [style*="color:var(--ink)"],
+#screen-docs [style*="color:var(--label)"],
+#screen-docs [style*="color:var(--ink)"],
+#screen-pvt [style*="color:var(--label)"],
+#screen-pvt [style*="color:var(--ink)"],
+#screen-code [style*="color:var(--label)"],
+#screen-code [style*="color:var(--ink)"],
+#screen-consult [style*="color:var(--label)"],
+#screen-consult [style*="color:var(--ink)"],
+#screen-child-scales [style*="color:var(--label)"],
+#screen-child-scales [style*="color:var(--ink)"],
+#screen-diary [style*="color:var(--label)"],
+#screen-diary [style*="color:var(--ink)"] {
+  color: rgba(255,255,255,0.92) !important;
+}
+#screen-home [style*="color:var(--label-2)"],
+#screen-home [style*="color:var(--ink2)"],
+#screen-scales [style*="color:var(--label-2)"],
+#screen-scales [style*="color:var(--ink2)"],
+#screen-profile [style*="color:var(--label-2)"],
+#screen-profile [style*="color:var(--ink2)"],
+#screen-mas [style*="color:var(--label-2)"],
+#screen-mas [style*="color:var(--ink2)"],
+#screen-doctor-home [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="color:var(--ink2)"],
+#screen-patient-history [style*="color:var(--label-2)"],
+#screen-patient-history [style*="color:var(--ink2)"],
+#screen-child-home [style*="color:var(--label-2)"],
+#screen-child-home [style*="color:var(--ink2)"],
+#screen-diary-home [style*="color:var(--label-2)"],
+#screen-diary-home [style*="color:var(--ink2)"],
+#screen-result [style*="color:var(--label-2)"],
+#screen-result [style*="color:var(--ink2)"],
+#screen-hygiene [style*="color:var(--label-2)"],
+#screen-hygiene [style*="color:var(--ink2)"],
+#screen-consult-guide [style*="color:var(--label-2)"],
+#screen-consult-guide [style*="color:var(--ink2)"],
+#screen-consult-dir [style*="color:var(--label-2)"],
+#screen-consult-dir [style*="color:var(--ink2)"],
+#screen-scale [style*="color:var(--label-2)"],
+#screen-scale [style*="color:var(--ink2)"],
+#screen-landing [style*="color:var(--label-2)"],
+#screen-landing [style*="color:var(--ink2)"],
+#screen-docs [style*="color:var(--label-2)"],
+#screen-docs [style*="color:var(--ink2)"],
+#screen-pvt [style*="color:var(--label-2)"],
+#screen-pvt [style*="color:var(--ink2)"],
+#screen-code [style*="color:var(--label-2)"],
+#screen-code [style*="color:var(--ink2)"],
+#screen-consult [style*="color:var(--label-2)"],
+#screen-consult [style*="color:var(--ink2)"],
+#screen-child-scales [style*="color:var(--label-2)"],
+#screen-child-scales [style*="color:var(--ink2)"],
+#screen-diary [style*="color:var(--label-2)"],
+#screen-diary [style*="color:var(--ink2)"] {
+  color: rgba(255,255,255,0.62) !important;
+}
+#screen-home [style*="color:var(--label-3)"],
+#screen-home [style*="color:var(--ink3)"],
+#screen-scales [style*="color:var(--label-3)"],
+#screen-scales [style*="color:var(--ink3)"],
+#screen-profile [style*="color:var(--label-3)"],
+#screen-profile [style*="color:var(--ink3)"],
+#screen-mas [style*="color:var(--label-3)"],
+#screen-mas [style*="color:var(--ink3)"],
+#screen-doctor-home [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="color:var(--ink3)"],
+#screen-patient-history [style*="color:var(--label-3)"],
+#screen-patient-history [style*="color:var(--ink3)"],
+#screen-child-home [style*="color:var(--label-3)"],
+#screen-child-home [style*="color:var(--ink3)"],
+#screen-diary-home [style*="color:var(--label-3)"],
+#screen-diary-home [style*="color:var(--ink3)"],
+#screen-result [style*="color:var(--label-3)"],
+#screen-result [style*="color:var(--ink3)"],
+#screen-hygiene [style*="color:var(--label-3)"],
+#screen-hygiene [style*="color:var(--ink3)"],
+#screen-consult-guide [style*="color:var(--label-3)"],
+#screen-consult-guide [style*="color:var(--ink3)"],
+#screen-consult-dir [style*="color:var(--label-3)"],
+#screen-consult-dir [style*="color:var(--ink3)"],
+#screen-scale [style*="color:var(--label-3)"],
+#screen-scale [style*="color:var(--ink3)"],
+#screen-landing [style*="color:var(--label-3)"],
+#screen-landing [style*="color:var(--ink3)"],
+#screen-docs [style*="color:var(--label-3)"],
+#screen-docs [style*="color:var(--ink3)"],
+#screen-pvt [style*="color:var(--label-3)"],
+#screen-pvt [style*="color:var(--ink3)"],
+#screen-code [style*="color:var(--label-3)"],
+#screen-code [style*="color:var(--ink3)"],
+#screen-consult [style*="color:var(--label-3)"],
+#screen-consult [style*="color:var(--ink3)"],
+#screen-child-scales [style*="color:var(--label-3)"],
+#screen-child-scales [style*="color:var(--ink3)"],
+#screen-diary [style*="color:var(--label-3)"],
+#screen-diary [style*="color:var(--ink3)"] {
+  color: rgba(255,255,255,0.45) !important;
+}
+
 /* Patient history - force dark on all children */
 #screen-patient-history .tab-bar {
   background: #1a2e23 !important;
@@ -2181,7 +2316,14 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Herramientas</div>
 
     <!-- PVT -->
-    <div onclick="navTo('pvt')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+    <div onclick="showScalesScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Cuestionarios y escalas</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Todas las escalas autoadministrables</div></div>
+        <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+      </div>
+      <div onclick="navTo('pvt')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
       <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
       </div>
@@ -4789,9 +4931,9 @@ const PTITLES = {
   psqi:'¿Cómo dormiste este último mes?',
   dbas:'¿Qué pensás y sentís a la hora de dormir?',
   psas:'¿Llegás a la cama con la cabeza acelerada?',
-  sated:'¿Tu sueño te deja satisfecho y con energía?',
-  ess:'¿Te ganás el sueño durante el día?',
-  fosq10:'¿El sueño te afecta las actividades del día?',
+  sated:'¿Te levantás descansado y con energía?',
+  ess:'¿Cuánta somnolencia tenés durante el día?',
+  fosq10:'¿El mal sueño te afecta en el día?',
   stopbang:'¿Podrías tener pausas en la respiración al dormir?',
   sassv:'¿Roncás o te falta el aire mientras dormís?',
   meq:'¿Sos más de madrugar o de trasnochar?',
@@ -5270,7 +5412,7 @@ function renderProfileView(){
     <div style="display:flex;flex-direction:column;gap:10px">
 
       <!-- Info de perfil -->
-      <div onclick="toggleProfileEdit()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div onclick="openMiPerfil()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
         <div style="width:46px;height:46px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         </div>
@@ -5406,6 +5548,92 @@ function toggleProfileEdit(){
   if(btn)btn.textContent='Editar';
   renderProfileView();
 }
+
+/* ── MI PERFIL: ver datos cargados + editar (autónomo) ── */
+function _mpRow(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><span style="font-size:13px;color:rgba(255,255,255,0.55)">'+l+'</span><span style="font-size:14px;color:#fff;font-weight:500;text-align:right">'+(v||'—')+'</span></div>';}
+function _mpAge(dob){if(!dob)return '—';var d=new Date(dob);if(isNaN(d))return '—';var t=new Date(),a=t.getFullYear()-d.getFullYear(),m=t.getMonth()-d.getMonth();if(m<0||(m===0&&t.getDate()<d.getDate()))a--;return a+' años';}
+function _mpImc(h,w){if(!h||!w)return '—';var m=h/100,v=w/(m*m);if(!isFinite(v))return '—';var c=v<18.5?'bajo peso':v<25?'normal':v<30?'sobrepeso':'obesidad';return v.toFixed(1)+' · '+c;}
+function _mpSex(s){return ({M:'Masculino',F:'Femenino',male:'Masculino',female:'Femenino'})[s]||(s||'—');}
+function _mpPaths(p){return !p?'—':Array.isArray(p)?(p.length?p.join(', '):'—'):p;}
+function _mpEsc(v){return (v==null?'':String(v)).replace(/"/g,'&quot;');}
+
+function openMiPerfil(){
+  if(!S.user){toast('Cargando perfil…');return;}
+  var ex=document.getElementById('mp-modal'); if(ex) ex.remove();
+  var modal=document.createElement('div');
+  modal.id='mp-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML='<div data-mp="1" style="background:var(--bg);border-radius:20px 20px 0 0;padding:22px 20px 32px;width:100%;max-width:480px;max-height:88vh;overflow:auto"></div>';
+  modal.onclick=function(e){ if(e.target===modal) modal.remove(); };
+  document.body.appendChild(modal);
+  renderMiPerfilView(modal.querySelector('[data-mp]'));
+}
+
+function renderMiPerfilView(card){
+  if(!card)return; var u=S.user||{};
+  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#fff">Mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer">✕</button></div>'
+   +_mpRow('Nombre',((u.name||'')+' '+(u.lname||'')).trim())
+   +_mpRow('Fecha de nacimiento',u.dob)
+   +_mpRow('Edad',_mpAge(u.dob))
+   +_mpRow('Sexo biológico',_mpSex(u.sex))
+   +_mpRow('Altura',u.height_cm?u.height_cm+' cm':'')
+   +_mpRow('Peso',u.weight_kg?u.weight_kg+' kg':'')
+   +_mpRow('IMC',_mpImc(u.height_cm,u.weight_kg))
+   +_mpRow('Patologías',_mpPaths(u.pathologies))
+   +_mpRow('Medicación',u.medications)
+   +_mpRow('Alcohol',u.alcohol)
+   +_mpRow('Tabaco',u.tobacco)
+   +_mpRow('Actividad física',u.physical_activity)
+   +'<button onclick="renderMiPerfilEdit(this.closest(\'[data-mp]\'))" style="width:100%;margin-top:18px;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Editar mis datos</button>';
+}
+
+function renderMiPerfilEdit(card){
+  if(!card)return; var u=S.user||{};
+  var inp=function(id,lbl,val,type){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:5px">'+lbl+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+_mpEsc(val)+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;font-size:14px"></div>';};
+  var sel=function(id,lbl,val,opts){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:5px">'+lbl+'</label><select id="'+id+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;font-size:14px">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>';};
+  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#fff">Editar mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer">✕</button></div>'
+   +inp('mp-name','Nombre',u.name)
+   +inp('mp-lname','Apellido',u.lname)
+   +inp('mp-dob','Fecha de nacimiento',u.dob,'date')
+   +sel('mp-sex','Sexo biológico',u.sex,[['','—'],['M','Masculino'],['F','Femenino']])
+   +inp('mp-height','Altura (cm)',u.height_cm,'number')
+   +inp('mp-weight','Peso (kg)',u.weight_kg,'number')
+   +inp('mp-paths','Patologías (separadas por coma)',Array.isArray(u.pathologies)?u.pathologies.join(', '):(u.pathologies||''))
+   +inp('mp-meds','Medicación',u.medications)
+   +sel('mp-alcohol','Alcohol',u.alcohol,[['','—'],['nunca','Nunca'],['ocasional','Ocasional'],['frecuente','Frecuente'],['diario','Diario']])
+   +sel('mp-tobacco','Tabaco',u.tobacco,[['','—'],['no','No'],['ex','Ex fumador'],['si','Sí']])
+   +sel('mp-activity','Actividad física',u.physical_activity,[['','—'],['sedentario','Sedentario'],['leve','Leve'],['moderada','Moderada'],['intensa','Intensa']])
+   +'<div style="display:flex;gap:10px;margin-top:16px"><button onclick="renderMiPerfilView(this.closest(\'[data-mp]\'))" style="flex:1;padding:13px;border:1px solid rgba(255,255,255,0.18);border-radius:12px;background:transparent;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button><button onclick="saveMiPerfil(this)" style="flex:1;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Guardar</button></div>';
+}
+
+async function saveMiPerfil(btn){
+  if(!S.user)return; if(btn)btn.disabled=true;
+  var g=function(id){return document.getElementById(id);};
+  var pathsRaw=(g('mp-paths')&&g('mp-paths').value||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
+  var upd={
+    name:(g('mp-name')&&g('mp-name').value.trim())||S.user.name,
+    lname:(g('mp-lname')&&g('mp-lname').value.trim())||S.user.lname,
+    dob:(g('mp-dob')&&g('mp-dob').value)||S.user.dob,
+    sex:(g('mp-sex')&&g('mp-sex').value)||null,
+    height_cm:parseFloat(g('mp-height')&&g('mp-height').value)||null,
+    weight_kg:parseFloat(g('mp-weight')&&g('mp-weight').value)||null,
+    pathologies:pathsRaw.length?pathsRaw:null,
+    medications:(g('mp-meds')&&g('mp-meds').value.trim())||null,
+    alcohol:(g('mp-alcohol')&&g('mp-alcohol').value)||null,
+    tobacco:(g('mp-tobacco')&&g('mp-tobacco').value)||null,
+    physical_activity:(g('mp-activity')&&g('mp-activity').value)||null
+  };
+  try{
+    await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),upd);
+    var d=await db.get('patients?email=eq.'+encodeURIComponent(S.user.email)+'&select=*');
+    if(d&&d[0]) S.user=d[0];
+    toast('Perfil actualizado ✓');
+    var m=document.getElementById('mp-modal'); if(m) renderMiPerfilView(m.querySelector('[data-mp]'));
+    if(typeof renderProfileView==='function') renderProfileView();
+  }catch(e){ toast('Error al guardar: '+e.message); }
+  finally{ if(btn)btn.disabled=false; }
+}
+
 
 async function saveProfile(){
   // Validate required fields
@@ -11701,7 +11929,7 @@ function showOnboarding() {
   <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.06)">
     <div style="width:60px"></div>
     <div style="text-align:center;flex:1"><div style="font-size:17px;font-weight:700;color:#fff" id="profile-header-title">Yo</div></div>
-    <button class="topbar-btn" id="profile-edit-btn" onclick="toggleProfileEdit()">Editar</button>
+    <button class="topbar-btn" id="profile-edit-btn" onclick="openMiPerfil()">Editar</button>
   </div>
   <div style="background:#1a2e23;flex:1;overflow-y:auto;padding-bottom:80px;min-height:0"><div id="profile-content" style="padding:16px"></div></div>
 </div>
