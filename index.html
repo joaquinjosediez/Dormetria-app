@@ -5550,7 +5550,7 @@ function toggleProfileEdit(){
 }
 
 /* ── MI PERFIL: ver datos cargados + editar (autónomo) ── */
-function _mpRow(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><span style="font-size:13px;color:rgba(255,255,255,0.55)">'+l+'</span><span style="font-size:14px;color:#fff;font-weight:500;text-align:right">'+(v||'—')+'</span></div>';}
+function _mpRow(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.08)"><span style="font-size:13px;color:#6b7280">'+l+'</span><span style="font-size:14px;color:#10231c;font-weight:500;text-align:right">'+(v||'—')+'</span></div>';}
 function _mpAge(dob){if(!dob)return '—';var d=new Date(dob);if(isNaN(d))return '—';var t=new Date(),a=t.getFullYear()-d.getFullYear(),m=t.getMonth()-d.getMonth();if(m<0||(m===0&&t.getDate()<d.getDate()))a--;return a+' años';}
 function _mpImc(h,w){if(!h||!w)return '—';var m=h/100,v=w/(m*m);if(!isFinite(v))return '—';var c=v<18.5?'bajo peso':v<25?'normal':v<30?'sobrepeso':'obesidad';return v.toFixed(1)+' · '+c;}
 function _mpSex(s){return ({M:'Masculino',F:'Femenino',male:'Masculino',female:'Femenino'})[s]||(s||'—');}
@@ -5571,7 +5571,7 @@ function openMiPerfil(){
 
 function renderMiPerfilView(card){
   if(!card)return; var u=S.user||{};
-  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#fff">Mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer">✕</button></div>'
+  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#10231c">Mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer">✕</button></div>'
    +_mpRow('Nombre',((u.name||'')+' '+(u.lname||'')).trim())
    +_mpRow('Fecha de nacimiento',u.dob)
    +_mpRow('Edad',_mpAge(u.dob))
@@ -5589,9 +5589,9 @@ function renderMiPerfilView(card){
 
 function renderMiPerfilEdit(card){
   if(!card)return; var u=S.user||{};
-  var inp=function(id,lbl,val,type){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:5px">'+lbl+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+_mpEsc(val)+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;font-size:14px"></div>';};
-  var sel=function(id,lbl,val,opts){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:5px">'+lbl+'</label><select id="'+id+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.06);color:#fff;font-size:14px">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>';};
-  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#fff">Editar mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer">✕</button></div>'
+  var inp=function(id,lbl,val,type){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6b7280;margin-bottom:5px">'+lbl+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+_mpEsc(val)+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px"></div>';};
+  var sel=function(id,lbl,val,opts){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6b7280;margin-bottom:5px">'+lbl+'</label><select id="'+id+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>';};
+  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#10231c">Editar mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer">✕</button></div>'
    +inp('mp-name','Nombre',u.name)
    +inp('mp-lname','Apellido',u.lname)
    +inp('mp-dob','Fecha de nacimiento',u.dob,'date')
@@ -5603,7 +5603,7 @@ function renderMiPerfilEdit(card){
    +sel('mp-alcohol','Alcohol',u.alcohol,[['','—'],['nunca','Nunca'],['ocasional','Ocasional'],['frecuente','Frecuente'],['diario','Diario']])
    +sel('mp-tobacco','Tabaco',u.tobacco,[['','—'],['no','No'],['ex','Ex fumador'],['si','Sí']])
    +sel('mp-activity','Actividad física',u.physical_activity,[['','—'],['sedentario','Sedentario'],['leve','Leve'],['moderada','Moderada'],['intensa','Intensa']])
-   +'<div style="display:flex;gap:10px;margin-top:16px"><button onclick="renderMiPerfilView(this.closest(\'[data-mp]\'))" style="flex:1;padding:13px;border:1px solid rgba(255,255,255,0.18);border-radius:12px;background:transparent;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button><button onclick="saveMiPerfil(this)" style="flex:1;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Guardar</button></div>';
+   +'<div style="display:flex;gap:10px;margin-top:16px"><button onclick="renderMiPerfilView(this.closest(\'[data-mp]\'))" style="flex:1;padding:13px;border:1px solid #d1d5db;border-radius:12px;background:transparent;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button><button onclick="saveMiPerfil(this)" style="flex:1;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Guardar</button></div>';
 }
 
 async function saveMiPerfil(btn){
