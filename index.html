@@ -8079,7 +8079,7 @@ async function showDrPTab_(tab){
       if(diaryForSummary&&diaryForSummary.length>=3){const sc2=calcSleepScore(diaryForSummary);if(sc2)kf.unshift('<div style="background:linear-gradient(135deg,'+sc2.color+'18,'+sc2.color+'08);border-radius:10px;padding:9px 13px;margin-bottom:6px;border-left:4px solid '+sc2.color+'"><strong style="color:'+sc2.color+'">Sueño: '+sc2.total+'/100</strong> — '+sc2.label+' <span style="font-size:11px;color:var(--label-2)">('+sc2.nNights+' noches)</span></div>');const avgLat=diaryForSummary.filter(e=>e.sleep_latency_mins>0).reduce((a,b,i,arr)=>a+b.sleep_latency_mins/arr.length,0);if(avgLat>20)kf.push('<div style="background:#fef3c7;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#92400e">⏱ <strong>Latencia de inicio prolongada</strong>: ~'+Math.round(avgLat)+' min</div>');const hasMeds=diaryForSummary.some(e=>e.medications&&e.medications!=='[]'&&e.medications!=='');if(hasMeds)kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir registrada</strong></div>');}
       const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div>'+kf.join(''):'';
       const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div>'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'</div>';}).join(''):'');
-      const latest=SCALES.map(sc=>{const scR=(recs||[]).filter(r=>r.scale_id===sc.id);return scR.length?{sc,r:scR[scR.length-1]}:null;}).filter(Boolean);
+      const latest=SCALES.filter(sc=>isScaleVisibleForProfile(sc, S.viewData)).map(sc=>{const scR=(recs||[]).filter(r=>r.scale_id===sc.id);return scR.length?{sc,r:scR[scR.length-1]}:null;}).filter(Boolean);
       // Build a natural-language summary
       const summaryParts=[];
       const pathScales=Object.values(last).filter(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);if(!sc)return false;const i=sc.interp(r.score);return i&&(i.bg==='#fee2e2'||i.bg==='#fef2f2');});
@@ -12374,10 +12374,14 @@ async function renderConsultNotes(){
   const cont = document.getElementById('dr-patient-content');
   if(!cont) return;
   cont.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.5)"><div class="spinner" style="margin:0 auto 12px"></div>Cargando notas...</div>';
+  try {
   
   let notes = [];
   try {
-    const res = await db.get(`consultation_notes?doctor_email=eq.${encodeURIComponent(S.user.email)}&patient_email=eq.${encodeURIComponent(patEmail)}&order=created_at.desc&select=*`);
+    const res = await Promise.race([
+      db.get(`consultation_notes?doctor_email=eq.${encodeURIComponent(S.user.email)}&patient_email=eq.${encodeURIComponent(patEmail)}&order=created_at.desc&select=*`),
+      new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},4000);})
+    ]);
     notes = res || [];
   } catch(e) {
     // Table may not exist yet - show empty state
@@ -12436,6 +12440,11 @@ async function renderConsultNotes(){
       }).join('') : '<div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);font-size:14px">No hay notas aún.<br>Empezá escribiendo la primera nota de consulta.</div>'}
     </div>
   `;
+
+  } catch(_renderErr) {
+    console.error('[renderConsultNotes] error:', _renderErr);
+    cont.innerHTML = '<div style="padding:16px"><div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;margin-bottom:20px"><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">📝 Nueva nota</div><textarea id="note-text" placeholder="Observaciones clínicas..." style="width:100%;min-height:120px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;color:#fff;font-size:14px;font-family:var(--font);resize:vertical;box-sizing:border-box;line-height:1.5"></textarea><div style="margin-top:8px;display:flex;gap:8px"><select id="note-type" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px;color:#fff;font-size:13px;font-family:var(--font)"><option value="session">Sesión clínica</option><option value="followup">Seguimiento</option><option value="alert">⚡ Urgente</option><option value="plan">Plan terapéutico</option><option value="other">Nota libre</option></select><button onclick="saveConsultNote(\'' + patEmail + '\',this)" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 18px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Guardar</button></div><input type="hidden" id="note-email" value="' + patEmail + '"></div><div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;padding:8px">Las notas anteriores no se cargaron (la tabla puede no existir o estar bloqueada). Igual podés escribir y guardar nuevas notas.</div></div>';
+  }
 }
 
 async function saveConsultNote(patEmail, btn){
