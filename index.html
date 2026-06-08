@@ -5556,6 +5556,8 @@ function _mpImc(h,w){if(!h||!w)return '—';var m=h/100,v=w/(m*m);if(!isFinite(v
 function _mpSex(s){return ({M:'Masculino',F:'Femenino',male:'Masculino',female:'Femenino'})[s]||(s||'—');}
 function _mpPaths(p){return !p?'—':Array.isArray(p)?(p.length?p.join(', '):'—'):p;}
 function _mpEsc(v){return (v==null?'':String(v)).replace(/"/g,'&quot;');}
+function _mpAct(v){if(!v)return '—';var L={child:'Niño/a',teen:'Adolescente',student:'Estudiante',athlete:'Deportista/Atleta',shift:'Trabajo en turnos',night:'Trabajo nocturno',healthcare:'Profesional de salud',office:'Trabajo de oficina',remote:'Trabajo remoto',retired:'Jubilado/a',other:'Otro'};var a=Array.isArray(v)?v:[v];return a.map(function(x){return L[x]||x;}).join(', ');}
+function _mpWork(v){if(!v)return '—';var L={diurno:'Diurno',nocturno:'Nocturno',guardias:'Guardias',rotativo:'Turnos rotativos',fijo:'Horario fijo'};var a=Array.isArray(v)?v:String(v).split(',').filter(Boolean);return a.map(function(x){return L[x]||x;}).join(', ');}
 
 function openMiPerfil(){
   if(!S.user){toast('Cargando perfil…');return;}
@@ -5584,6 +5586,8 @@ function renderMiPerfilView(card){
    +_mpRow('Alcohol',u.alcohol)
    +_mpRow('Tabaco',u.tobacco)
    +_mpRow('Actividad física',u.physical_activity)
+   +_mpRow('Actividad principal',_mpAct(u.activity_type))
+   +_mpRow('Horario laboral',_mpWork(u.work_schedule))
    +'<button onclick="renderMiPerfilEdit(this.closest(\'[data-mp]\'))" style="width:100%;margin-top:18px;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Editar mis datos</button>';
 }
 
@@ -5603,6 +5607,8 @@ function renderMiPerfilEdit(card){
    +sel('mp-alcohol','Alcohol',u.alcohol,[['','—'],['nunca','Nunca'],['ocasional','Ocasional'],['frecuente','Frecuente'],['diario','Diario']])
    +sel('mp-tobacco','Tabaco',u.tobacco,[['','—'],['no','No'],['ex','Ex fumador'],['si','Sí']])
    +sel('mp-activity','Actividad física',u.physical_activity,[['','—'],['sedentario','Sedentario'],['leve','Leve'],['moderada','Moderada'],['intensa','Intensa']])
+   +sel('mp-acttype','Actividad principal',Array.isArray(u.activity_type)?u.activity_type[0]:u.activity_type,[['','—'],['student','Estudiante'],['athlete','Deportista / Atleta'],['shift','Trabajador en turnos'],['night','Trabajador nocturno'],['healthcare','Profesional de salud'],['office','Trabajo de oficina'],['remote','Trabajo remoto'],['retired','Jubilado/a'],['other','Otro']])
+   +sel('mp-worksched','Horario laboral',Array.isArray(u.work_schedule)?u.work_schedule[0]:u.work_schedule,[['','—'],['diurno','Diurno'],['nocturno','Nocturno'],['guardias','Guardias'],['rotativo','Turnos rotativos'],['fijo','Horario fijo']])
    +'<div style="display:flex;gap:10px;margin-top:16px"><button onclick="renderMiPerfilView(this.closest(\'[data-mp]\'))" style="flex:1;padding:13px;border:1px solid #d1d5db;border-radius:12px;background:transparent;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button><button onclick="saveMiPerfil(this)" style="flex:1;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Guardar</button></div>';
 }
 
@@ -5621,7 +5627,9 @@ async function saveMiPerfil(btn){
     medications:(g('mp-meds')&&g('mp-meds').value.trim())||null,
     alcohol:(g('mp-alcohol')&&g('mp-alcohol').value)||null,
     tobacco:(g('mp-tobacco')&&g('mp-tobacco').value)||null,
-    physical_activity:(g('mp-activity')&&g('mp-activity').value)||null
+    physical_activity:(g('mp-activity')&&g('mp-activity').value)||null,
+    activity_type:(g('mp-acttype')&&g('mp-acttype').value)||null,
+    work_schedule:(g('mp-worksched')&&g('mp-worksched').value)||null
   };
   try{
     await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),upd);
@@ -7146,8 +7154,8 @@ async function linkPatient(){
     document.querySelectorAll('#screen-doctor-home .tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   }
   try{
-    const found=await db.get(`patients?code=eq.${code}&select=*`);
-    if(!found||!found.length){if(err)err.style.display='block';return;}
+    const {data:found,error:rpcErr}=await supa.rpc('find_patient_by_code',{p_code:code});
+    if(rpcErr||!found||!found.length){if(err)err.style.display='block';return;}
     const p=found[0];
     try{
       await db.post('doctor_patients',{doctor_email:S.user.email,patient_email:p.email},'');
