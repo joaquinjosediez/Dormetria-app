@@ -3407,6 +3407,38 @@ const SCALES=[
   {t:'¿Con qué frecuencia tuvo dificultades para mantenerse despierto?',opts:['Ninguna vez','<1 vez/semana','1-2 veces/semana','3+ veces/semana'],sc:[0,1,2,3]},
   {t:'¿Cuánto problema representa mantener el entusiasmo?',opts:['Ningún problema','Solo leve','Bastante problema','Mucho problema'],sc:[0,1,2,3]}
  ],
+ customScore:function(ans){
+  // PSQI Buysse 1989 — score por componentes (0-21)
+  // Orden de respuestas: 0=acostarse, 1=latencia, 2=levantarse, 3=duración, 4=Q5a,
+  // 5-12=Q5b-Q5i (madrugada, baño, respirar, toser, frío, calor, sueños, dolores),
+  // 13=calidad (Q9), 14=medicación (Q6), 15=despierto (Q7), 16=entusiasmo (Q8)
+  const v=i=>(ans[i]==null?0:ans[i]);
+  // C1: Calidad subjetiva
+  const C1=v(13);
+  // C2: latencia (Q2) + Q5a → suma mapeada
+  const c2raw=v(1)+v(4);
+  const C2=c2raw===0?0:c2raw<=2?1:c2raw<=4?2:3;
+  // C3: duración del sueño (directo del bucket)
+  const C3=v(3);
+  // C4: eficiencia = (horas_sueño/tiempo_en_cama)×100 — estimo desde buckets
+  const hMap=[7.5,6.5,5.5,4];      // duración sueño en horas (promedio del bucket)
+  const bMap=[20.5,21.5,22.5,23.5]; // hora de acostarse
+  const wMap=[5.5,6.5,7.5,8.5];     // hora de levantarse
+  let tib=wMap[v(2)]+24-bMap[v(0)]; // tiempo en cama
+  if(tib>12)tib-=24;
+  if(tib<4)tib=8;
+  const eff=(hMap[v(3)]/tib)*100;
+  const C4=eff>85?0:eff>=75?1:eff>=65?2:3;
+  // C5: suma de Q5b-Q5i (8 ítems, índices 5-12)
+  let c5raw=0; for(let i=5;i<=12;i++) c5raw+=v(i);
+  const C5=c5raw===0?0:c5raw<=9?1:c5raw<=18?2:3;
+  // C6: medicación
+  const C6=v(14);
+  // C7: dificultad mantenerse despierto + entusiasmo
+  const c7raw=v(15)+v(16);
+  const C7=c7raw===0?0:c7raw<=2?1:c7raw<=4?2:3;
+  return C1+C2+C3+C4+C5+C6+C7;
+ },
  interp:s=>s<=4?{l:'Calidad normal',c:'#14532d',bg:'#dcfce7'}:s<=8?{l:'Leve alteración',c:'#92400e',bg:'#fef3c7'}:s<=14?{l:'Alteración moderada',c:'#c2410c',bg:'#ffedd5'}:{l:'Alteración severa',c:'#9b1c1c',bg:'#fee2e2'}
 },
 {id:'ess',ref:'Johns MW. (1991). A new method for measuring daytime sleepiness: the Epworth Sleepiness Scale. Sleep, 14(6), 540–545.',name:'Epworth (ESS)',cat:'sleepiness',max:24,desc:'Somnolencia diurna — riesgo de quedarse dormido en situaciones cotidianas',
@@ -6088,7 +6120,13 @@ const ALERT_THR = {
 };
 async function finishScale(){
   if(S.answers[S.qIdx]===null){toast('Seleccioná una opción');return;}
-  const sc=S.scale;let score=0;sc.qs.forEach((q,i)=>{if(S.answers[i]!==null)score+=q.sc[S.answers[i]];});
+  const sc=S.scale;
+  let score=0;
+  if(typeof sc.customScore==='function'){
+    score=sc.customScore(S.answers);
+  } else {
+    sc.qs.forEach((q,i)=>{if(S.answers[i]!==null)score+=q.sc[S.answers[i]];});
+  }
   try{
     // Store answers as JSON string for history display
     const answersJson=JSON.stringify(S.answers);
