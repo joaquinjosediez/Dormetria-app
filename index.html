@@ -4414,6 +4414,24 @@ function showDrRegisterForm(){
         <input id="dreg-inst" class="form-input" type="text" placeholder="Hospital, clínica o consultorio" value="${u.institution||''}" style="width:100%;box-sizing:border-box"></div>
       <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Ciudad</label>
         <input id="dreg-city" class="form-input" type="text" placeholder="Ciudad donde atendés" value="${u.city||''}" style="width:100%;box-sizing:border-box"></div>
+      <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">País</label>
+        <select id="dreg-country" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;background:#fff">
+          <option value="AR" ${(u.country||'AR')==='AR'?'selected':''}>🇦🇷 Argentina</option>
+          <option value="UY" ${u.country==='UY'?'selected':''}>🇺🇾 Uruguay</option>
+          <option value="CL" ${u.country==='CL'?'selected':''}>🇨🇱 Chile</option>
+          <option value="BR" ${u.country==='BR'?'selected':''}>🇧🇷 Brasil</option>
+          <option value="PY" ${u.country==='PY'?'selected':''}>🇵🇾 Paraguay</option>
+          <option value="BO" ${u.country==='BO'?'selected':''}>🇧🇴 Bolivia</option>
+          <option value="PE" ${u.country==='PE'?'selected':''}>🇵🇪 Perú</option>
+          <option value="CO" ${u.country==='CO'?'selected':''}>🇨🇴 Colombia</option>
+          <option value="VE" ${u.country==='VE'?'selected':''}>🇻🇪 Venezuela</option>
+          <option value="EC" ${u.country==='EC'?'selected':''}>🇪🇨 Ecuador</option>
+          <option value="MX" ${u.country==='MX'?'selected':''}>🇲🇽 México</option>
+          <option value="ES" ${u.country==='ES'?'selected':''}>🇪🇸 España</option>
+          <option value="OT" ${u.country==='OT'?'selected':''}>🌎 Otro</option>
+        </select></div>
+      <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Foto de perfil (URL, opcional)</label>
+        <input id="dreg-photo" class="form-input" type="url" placeholder="https://... (link a foto profesional)" value="${u.photo_url||''}" style="width:100%;box-sizing:border-box"></div>
       <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Descripción breve (opcional)</label>
         <textarea id="dreg-bio" class="form-input" rows="2" placeholder="Áreas de interés, enfoque, modalidad de atención..." style="width:100%;box-sizing:border-box;resize:none">${u.bio||''}</textarea></div>
       <div style="padding:10px 0 4px"><div style="font-size:11px;font-weight:700;color:#1a4a3a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Datos de contacto (opcionales)</div>
@@ -4469,19 +4487,31 @@ async function saveDrRegisterForm(){
     // Save to localStorage immediately (works without server)
     const drKey='dm_dr_profile_'+(u.email||'');
     localStorage.setItem(drKey,JSON.stringify({...u,...upd,_appliedForDirectory:true}));
-    // Save only guaranteed columns to DB, rest stays in localStorage
+    // Save ALL directory fields to DB so admin can review from any device
     const dbSafeUpd={
       name:upd.name||u.name,
       lname:upd.lname||u.lname||'',
-      gender:upd.gender||u.gender||'',
+      sex:upd.sex||u.sex||'',
       specialty:upd.specialty||u.specialty||'',
       mat:upd.mat||u.mat||'',
+      institution:upd.institution||'',
+      city:upd.city||'',
+      country:document.getElementById('dreg-country')?.value||'AR',
+      bio:upd.bio||'',
+      phone_cc:upd.phone_cc||'+54',
+      phone:upd.phone||'',
+      email_public:upd.email_public||'',
+      photo_url:document.getElementById('dreg-photo')?.value||'',
+      available_online:upd.available_online||false,
+      available_presencial:upd.available_presencial||false,
+      listed:'pending'
     };
     try{
       await db.patch('doctors?email=eq.'+encodeURIComponent(u.email),dbSafeUpd);
-      console.log('DB saved: name, sex, specialty, mat, listed');
+      console.log('DB: directorio persistido completo');
     }catch(dbErr){
       console.log('DB patch error:', dbErr.message);
+      toast('⚠ Se guardó local pero falló la persistencia en DB. Pedí al admin que agregue las columnas.');
     }
     Object.assign(S.user,upd);
     if(_activeReminderModal){_activeReminderModal.remove();_activeReminderModal=null;}
