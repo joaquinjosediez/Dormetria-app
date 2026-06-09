@@ -3087,8 +3087,32 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
       <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Mi perfil</span>
     </button>
+    <button class="bnav" id="drnav-more" onclick="showDrTab('more',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Más</span>
+    </button>
   </div>
   <div class="scroll"><div id="dr-content" style="padding:0 16px"></div></div>
+</div>
+
+<!-- CBT-I PATIENT LIST -->
+<div id="screen-cbti-list" class="screen" style="background:#0F2820;color:#fff">
+  <div class="topbar" style="background:#0F2820;border-bottom:1px solid rgba(255,255,255,0.08)">
+    <button class="back" onclick="showDrTab_('more')" style="color:#fff">← Volver</button>
+    <div style="font-weight:700;font-size:16px;color:#fff">🌿 Módulo CBT-I</div>
+    <div style="width:24px"></div>
+  </div>
+  <div class="scroll" style="padding:16px"><div id="cbti-list-content"></div></div>
+</div>
+
+<!-- CBT-I PROTOCOL (per patient) -->
+<div id="screen-cbti-protocol" class="screen" style="background:#0F2820;color:#fff">
+  <div class="topbar" style="background:#0F2820;border-bottom:1px solid rgba(255,255,255,0.08)">
+    <button class="back" onclick="openCbtiModule()" style="color:#fff">← Volver</button>
+    <div id="cbti-protocol-title" style="font-weight:700;font-size:16px;color:#fff;text-align:center;flex:1">Protocolo CBT-I</div>
+    <div style="width:24px"></div>
+  </div>
+  <div class="scroll" style="padding:16px"><div id="cbti-protocol-content"></div></div>
 </div>
 
 <!-- DOCTOR PATIENT -->
@@ -8096,6 +8120,26 @@ async function showDrTab_(tab){
       <button onclick="linkPatient()" id="link-btn" style="width:100%;margin-top:12px;padding:15px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">Vincular paciente</button>
     </div>
   </div>`;}
+    if(tab==='more'){
+      cont.innerHTML=`<div style="padding:0 4px">
+        <div style="margin:6px 0 16px;font-size:12px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.06em">Herramientas clínicas</div>
+        <div onclick="openCbtiModule()" style="background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:18px;cursor:pointer;margin-bottom:14px;position:relative">
+          <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:8px;letter-spacing:0.06em">PREMIUM</div>
+          <div style="font-size:30px;margin-bottom:6px">🌿</div>
+          <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:4px">Módulo CBT-I</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.5">Protocolo guiado de terapia cognitivo-conductual para insomnio. Seguimiento por paciente con checklist y progreso.</div>
+        </div>
+        <div style="margin:18px 0 14px;font-size:12px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.06em">Próximamente</div>
+        <div style="background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15);border-radius:12px;padding:14px;margin-bottom:8px;opacity:0.55">
+          <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:2px">📑 Reportes clínicos PDF</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.55)">Exportá un reporte estructurado del paciente</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15);border-radius:12px;padding:14px;opacity:0.55">
+          <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:2px">📚 Material educativo para pacientes</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.55)">Recursos compartibles desde la app</div>
+        </div>
+      </div>`;
+    }
     if(tab==='profile'){
     tab='drprofile';  // redirect directly
   }
@@ -12860,6 +12904,239 @@ function showOnboarding() {
 }
 // ── END ONBOARDING ────────────────────────────────────────────────────────────
 
+
+// ── CBT-I MÓDULO (premium) ──
+const CBTI_PROTOCOL = {
+  modules: [
+    {id:'M1', name:'Psicoeducación', icon:'📘', items:[
+      {id:'M1_1', label:'Explicación del modelo del sueño normal (arquitectura, ciclos, REM/NREM)'},
+      {id:'M1_2', label:'Modelo conductual del insomnio: 3 P de Spielman (predisponentes, precipitantes, perpetuantes)'},
+      {id:'M1_3', label:'Introducción del diario de sueño y compromiso de registro diario'},
+      {id:'M1_4', label:'Revisión de mitos comunes sobre el sueño (necesidad de 8h, recuperar el fin de semana, etc.)'},
+      {id:'M1_5', label:'Expectativas del tratamiento y compromiso del paciente'}
+    ]},
+    {id:'M2', name:'Higiene del sueño + Control de estímulos', icon:'🛏️', items:[
+      {id:'M2_1', label:'Revisión de cafeína, alcohol, ejercicio, exposición a luz y comidas'},
+      {id:'M2_2', label:'Regla: la cama es solo para dormir y actividad sexual'},
+      {id:'M2_3', label:'Salir de la cama si no se duerme en 15-20 minutos'},
+      {id:'M2_4', label:'Hora de despertar fija (incluyendo fines de semana)'},
+      {id:'M2_5', label:'Eliminar siestas o limitarlas a ≤30 min antes de las 15h'}
+    ]},
+    {id:'M3', name:'Restricción del sueño', icon:'⏱️', items:[
+      {id:'M3_1', label:'Calcular eficiencia del sueño desde el diario (≥7 noches)'},
+      {id:'M3_2', label:'Establecer ventana de tiempo en cama = TST medio + 15 min'},
+      {id:'M3_3', label:'Acordar hora de acostarse y despertarse'},
+      {id:'M3_4', label:'Mínimo 5h en cama (regla de seguridad)'},
+      {id:'M3_5', label:'Plan de ajuste semanal: +15 min si eficiencia >85%, -15 min si <80%'}
+    ]},
+    {id:'M4', name:'Reestructuración cognitiva', icon:'🧠', items:[
+      {id:'M4_1', label:'Identificar creencias disfuncionales (vincular con DBAS si disponible)'},
+      {id:'M4_2', label:'Trabajar catastrofización ("si no duermo 8 horas no funciono")'},
+      {id:'M4_3', label:'Reestructuración guiada de pensamientos automáticos'},
+      {id:'M4_4', label:'Constructive worry: programar tiempo de preocupación fuera de la cama'}
+    ]},
+    {id:'M5', name:'Relajación / manejo del arousal', icon:'🌊', items:[
+      {id:'M5_1', label:'Entrenamiento en relajación muscular progresiva (Jacobson)'},
+      {id:'M5_2', label:'Respiración diafragmática (4-7-8 u otra)'},
+      {id:'M5_3', label:'Imaginería guiada / mindfulness'},
+      {id:'M5_4', label:'Manejo de mente activa nocturna y rumiación'}
+    ]},
+    {id:'M6', name:'Consolidación y prevención de recaídas', icon:'🏁', items:[
+      {id:'M6_1', label:'Revisión cuantitativa de avances (eficiencia, ISI, diario)'},
+      {id:'M6_2', label:'Identificar disparadores de recaída posibles'},
+      {id:'M6_3', label:'Plan de mantenimiento post-tratamiento'},
+      {id:'M6_4', label:'Criterios de alta y seguimiento a 3-6 meses'}
+    ]}
+  ]
+};
+const CBTI_TOTAL_ITEMS = CBTI_PROTOCOL.modules.reduce((n,m)=>n+m.items.length,0);
+let CBTI_STATE = { patientEmail:null, patientName:null, progress:{}, cbtiPatients:[] };
+
+async function openCbtiModule(){
+  showScreen('cbti-list');
+  const cont = document.getElementById('cbti-list-content');
+  cont.innerHTML = '<div style="text-align:center;padding:40px 0;color:rgba(255,255,255,0.55)"><div class="spinner" style="margin:0 auto 12px"></div>Cargando pacientes…</div>';
+  try{
+    const drEmail = S.user?.email;
+    if(!drEmail){ cont.innerHTML='<div style="padding:20px">Sesión no iniciada.</div>'; return; }
+    // Pacientes vinculados
+    const links = await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(drEmail)+'&select=patient_email').catch(()=>[]);
+    const emails = (links||[]).map(l=>l.patient_email);
+    if(!emails.length){
+      cont.innerHTML = '<div style="text-align:center;padding:40px 16px;color:rgba(255,255,255,0.55)"><div style="font-size:36px;margin-bottom:10px">👥</div>No tenés pacientes vinculados todavía.<br><br>Vinculá un paciente primero desde la pestaña Vincular.</div>';
+      return;
+    }
+    // Datos de pacientes
+    const patients = await db.get('patients?email=in.('+emails.map(e=>encodeURIComponent(e)).join(',')+')&select=email,name,lname').catch(()=>[]);
+    // Pacientes ya marcados en CBT-I
+    let cbtiPats = [];
+    try{ cbtiPats = await db.get('cbti_patients?doctor_email=eq.'+encodeURIComponent(drEmail)+'&active=eq.true&select=patient_email'); }catch(_){}
+    CBTI_STATE.cbtiPatients = (cbtiPats||[]).map(c=>c.patient_email);
+    // Progreso por paciente
+    let progressData = [];
+    if(CBTI_STATE.cbtiPatients.length){
+      try{ progressData = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&completed=eq.true&select=patient_email,item_id'); }catch(_){}
+    }
+    const progressByPatient = {};
+    (progressData||[]).forEach(r=>{ progressByPatient[r.patient_email] = (progressByPatient[r.patient_email]||0)+1; });
+    // Ordenar: primero los que están en CBT-I, luego el resto
+    const inCbti = patients.filter(p=>CBTI_STATE.cbtiPatients.includes(p.email));
+    const notInCbti = patients.filter(p=>!CBTI_STATE.cbtiPatients.includes(p.email));
+    let html = '';
+    if(inCbti.length){
+      html += '<div style="font-size:11px;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;font-weight:700">En tratamiento CBT-I</div>';
+      html += inCbti.map(p=>{
+        const done = progressByPatient[p.email]||0;
+        const pct = Math.round(done/CBTI_TOTAL_ITEMS*100);
+        const full = p.name + (p.lname?' '+p.lname:'');
+        return '<div onclick="openCbtiProtocol(\''+p.email+'\',\''+full.replace(/\\/g,"\\\\").replace(/'/g,"\\\'")+'\')" style="background:rgba(126,200,164,0.08);border:1px solid #7ec8a4;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:15px;font-weight:600;color:#fff">'+full+'</div><div style="font-size:13px;color:#7ec8a4;font-weight:700">'+done+'/'+CBTI_TOTAL_ITEMS+'</div></div>'+
+          '<div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ec8a4,#C8A96E)"></div></div>'+
+          '<div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:6px">'+pct+'% del protocolo</div>'+
+          '</div>';
+      }).join('');
+    }
+    html += '<div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px;font-weight:700">Pacientes vinculados</div>';
+    html += '<div style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:14px;line-height:1.5">Marcá los pacientes con los que estés trabajando un protocolo CBT-I.</div>';
+    html += (notInCbti.length?notInCbti:patients.filter(p=>!CBTI_STATE.cbtiPatients.includes(p.email))).map(p=>{
+      const full = p.name + (p.lname?' '+p.lname:'');
+      return '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'+
+        '<div style="font-size:14px;color:#fff;font-weight:500">'+full+'</div>'+
+        '<button onclick="toggleCbtiPatient(\''+p.email+'\',\''+full.replace(/\\/g,"\\\\").replace(/'/g,"\\\'")+'\',true)" style="background:#1a4a3a;border:1px solid #7ec8a4;border-radius:8px;padding:6px 12px;color:#7ec8a4;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Activar CBT-I</button>'+
+        '</div>';
+    }).join('');
+    cont.innerHTML = html;
+  }catch(err){
+    console.error('[CBT-I list] error:', err);
+    cont.innerHTML = '<div style="padding:20px;color:#fca5a5">Error al cargar. Verificá que las tablas cbti_patients y cbti_progress estén creadas en la base.</div>';
+  }
+}
+
+async function toggleCbtiPatient(patientEmail, patientName, activate){
+  const drEmail = S.user?.email; if(!drEmail) return;
+  try{
+    if(activate){
+      // Insert or update
+      await fetch(SU+'/rest/v1/cbti_patients',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({doctor_email:drEmail,patient_email:patientEmail,active:true})});
+      toast('✓ '+patientName+' activado en CBT-I');
+    } else {
+      await db.patch('cbti_patients?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patientEmail),{active:false});
+      toast('Desactivado de CBT-I');
+    }
+    openCbtiModule(); // refrescar lista
+  }catch(e){ console.error('toggleCbtiPatient:', e); toast('⚠ Error al guardar'); }
+}
+
+async function openCbtiProtocol(patientEmail, patientName){
+  CBTI_STATE.patientEmail = patientEmail;
+  CBTI_STATE.patientName = patientName;
+  CBTI_STATE.progress = {};
+  showScreen('cbti-protocol');
+  const titleEl = document.getElementById('cbti-protocol-title');
+  if(titleEl) titleEl.textContent = patientName;
+  const cont = document.getElementById('cbti-protocol-content');
+  cont.innerHTML = '<div style="text-align:center;padding:40px 0;color:rgba(255,255,255,0.55)"><div class="spinner" style="margin:0 auto 12px"></div>Cargando protocolo…</div>';
+  try{
+    const drEmail = S.user.email;
+    const rows = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patientEmail)+'&select=item_id,completed,completed_at,notes').catch(()=>[]);
+    (rows||[]).forEach(r=>{ CBTI_STATE.progress[r.item_id]={completed:!!r.completed,completed_at:r.completed_at,notes:r.notes||''}; });
+    renderCbtiProtocol();
+  }catch(err){
+    console.error('[CBT-I protocol] load error:', err);
+    cont.innerHTML = '<div style="padding:20px;color:#fca5a5">Error al cargar el protocolo. Asegurate de haber creado la tabla cbti_progress.</div>';
+  }
+}
+
+function renderCbtiProtocol(){
+  const cont = document.getElementById('cbti-protocol-content');
+  if(!cont) return;
+  const doneCount = Object.values(CBTI_STATE.progress).filter(p=>p.completed).length;
+  const pct = Math.round(doneCount/CBTI_TOTAL_ITEMS*100);
+  let html = '';
+  // Barra de progreso global
+  html += '<div style="background:rgba(126,200,164,0.08);border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:16px;margin-bottom:18px">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Progreso del protocolo</div><div style="font-size:22px;font-weight:700;color:#C8A96E">'+pct+'%</div></div>';
+  html += '<div style="height:10px;background:rgba(255,255,255,0.08);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ec8a4,#C8A96E);transition:width 0.3s"></div></div>';
+  html += '<div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:8px">'+doneCount+' de '+CBTI_TOTAL_ITEMS+' items completados</div>';
+  html += '</div>';
+  // Acordeón de módulos
+  CBTI_PROTOCOL.modules.forEach((mod,mIdx)=>{
+    const modDone = mod.items.filter(it=>CBTI_STATE.progress[it.id]?.completed).length;
+    const modPct = Math.round(modDone/mod.items.length*100);
+    const isComplete = modDone===mod.items.length;
+    const isPartial = modDone>0 && modDone<mod.items.length;
+    const accent = isComplete?'#7ec8a4':(isPartial?'#C8A96E':'rgba(255,255,255,0.15)');
+    html += '<div style="background:rgba(255,255,255,0.04);border:1px solid '+accent+';border-radius:14px;margin-bottom:12px;overflow:hidden">';
+    // Header
+    html += '<div onclick="document.getElementById(\'cbti-mod-'+mod.id+'\').classList.toggle(\'open\');this.querySelector(\'.cbti-chev\').style.transform=document.getElementById(\'cbti-mod-'+mod.id+'\').classList.contains(\'open\')?\'rotate(90deg)\':\'rotate(0deg)\';" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px">';
+    html += '<div style="font-size:24px">'+mod.icon+'</div>';
+    html += '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:2px">'+mod.name+'</div>';
+    html += '<div style="font-size:12px;color:rgba(255,255,255,0.6)">'+modDone+'/'+mod.items.length+' items'+(isComplete?' · ✓ completo':'')+'</div></div>';
+    html += '<div style="font-size:13px;font-weight:700;color:'+(isComplete?'#7ec8a4':(isPartial?'#C8A96E':'rgba(255,255,255,0.4)'))+'">'+modPct+'%</div>';
+    html += '<div class="cbti-chev" style="color:rgba(255,255,255,0.5);transition:transform 0.2s;font-size:14px">›</div>';
+    html += '</div>';
+    // Items (collapsible)
+    html += '<div id="cbti-mod-'+mod.id+'" class="cbti-mod-body" style="display:none;padding:0 16px 14px">';
+    html += '<div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:12px"></div>';
+    mod.items.forEach((it,iIdx)=>{
+      const p = CBTI_STATE.progress[it.id]||{};
+      const checked = !!p.completed;
+      const completedDate = p.completed_at?new Date(p.completed_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}):'';
+      html += '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">';
+      html += '<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">';
+      html += '<input type="checkbox" '+(checked?'checked':'')+' onchange="toggleCbtiItem(\''+it.id+'\',this.checked)" style="margin-top:3px;width:18px;height:18px;accent-color:#7ec8a4;flex-shrink:0;cursor:pointer">';
+      html += '<div style="flex:1"><div style="font-size:13px;color:'+(checked?'rgba(255,255,255,0.5)':'#fff')+';line-height:1.5;'+(checked?'text-decoration:line-through':'')+'">'+it.label+'</div>';
+      if(completedDate) html += '<div style="font-size:10.5px;color:#7ec8a4;margin-top:2px">✓ '+completedDate+'</div>';
+      html += '</div></label>';
+      // Notas
+      const showNotes = checked || (p.notes && p.notes.length);
+      html += '<div style="margin-top:8px;margin-left:28px">';
+      html += '<textarea data-itemid="'+it.id+'" onblur="saveCbtiNote(\''+it.id+'\',this.value)" placeholder="Nota del clínico (opcional)…" style="width:100%;box-sizing:border-box;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-family:var(--font);font-size:12px;resize:vertical;min-height:'+(showNotes?'48px':'32px')+';line-height:1.5">'+(p.notes||'')+'</textarea>';
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  // Botón "Desactivar CBT-I"
+  html += '<div style="margin-top:24px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;text-align:center">';
+  html += '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px">Si terminás el tratamiento o el paciente abandona</div>';
+  html += '<button onclick="confirmDeactivateCbti()" style="background:transparent;border:1px solid rgba(252,165,165,0.4);color:#fca5a5;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Desactivar paciente del módulo</button>';
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+async function toggleCbtiItem(itemId, checked){
+  const drEmail = S.user?.email; const patEmail = CBTI_STATE.patientEmail;
+  if(!drEmail||!patEmail) return;
+  const modId = itemId.split('_')[0];
+  const payload = { doctor_email:drEmail, patient_email:patEmail, module_id:modId, item_id:itemId, completed:checked, completed_at:checked?new Date().toISOString():null };
+  try{
+    await fetch(SU+'/rest/v1/cbti_progress',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
+    CBTI_STATE.progress[itemId] = {...(CBTI_STATE.progress[itemId]||{}), completed:checked, completed_at:payload.completed_at};
+    renderCbtiProtocol();
+  }catch(e){ console.error('toggleCbtiItem:', e); toast('⚠ Error al guardar'); }
+}
+
+async function saveCbtiNote(itemId, notes){
+  const drEmail = S.user?.email; const patEmail = CBTI_STATE.patientEmail;
+  if(!drEmail||!patEmail) return;
+  const modId = itemId.split('_')[0];
+  const existing = CBTI_STATE.progress[itemId]||{};
+  if((existing.notes||'')===(notes||'')) return; // sin cambios
+  const payload = { doctor_email:drEmail, patient_email:patEmail, module_id:modId, item_id:itemId, notes:notes||'' };
+  // Preservar completed si ya estaba marcado
+  if(existing.completed){ payload.completed=true; payload.completed_at=existing.completed_at; }
+  try{
+    await fetch(SU+'/rest/v1/cbti_progress',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
+    CBTI_STATE.progress[itemId] = {...existing, notes};
+  }catch(e){ console.error('saveCbtiNote:', e); }
+}
+
+function confirmDeactivateCbti(){
+  if(!confirm('¿Desactivar a '+CBTI_STATE.patientName+' del módulo CBT-I? El progreso registrado se mantendrá guardado.')) return;
+  toggleCbtiPatient(CBTI_STATE.patientEmail, CBTI_STATE.patientName, false);
+  setTimeout(()=>openCbtiModule(),300);
+}
 </script>
 
 <!-- MODAL MEDICAMENTOS -->
