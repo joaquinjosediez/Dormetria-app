@@ -3552,16 +3552,6 @@ const SCALES=[
 ],
  interp:s=>s<33?{l:'Sin TEPT probable',c:'#14532d',bg:'#dcfce7'}:{l:'TEPT probable',c:'#9b1c1c',bg:'#fee2e2'}
 },
-{id:'sated',ref:'Carney CE et al. (2012). The SATED. Sleep, 35(12), 1593–1601.',name:'SATED',cat:'sleep',max:10,desc:'Satisfacción, alerta, timing, eficiencia y duración del sueño',
- qs:[
-  {t:'¿Está satisfecho/a con su sueño?',opts:['Raramente/nunca','A veces','Usualmente/siempre'],sc:[0,1,2]},
-  {t:'¿Se mantiene despierto/a mientras conduce, come o realiza actividades sociales?',opts:['Raramente/nunca','A veces','Usualmente/siempre'],sc:[2,1,0]},
-  {t:'¿Se despierta a la misma hora todos los días?',opts:['Raramente/nunca','A veces','Usualmente/siempre'],sc:[0,1,2]},
-  {t:'¿Duerme 6 o más horas por noche?',opts:['Raramente/nunca','A veces','Usualmente/siempre'],sc:[0,1,2]},
-  {t:'¿Duerme entre 6 y 9 horas por noche?',opts:['Raramente/nunca','A veces','Usualmente/siempre'],sc:[0,1,2]}
- ],
- interp:s=>s<=4?{l:'Sueño problemático',c:'#9b1c1c',bg:'#fee2e2'}:s<=7?{l:'Sueño marginal',c:'#92400e',bg:'#fef3c7'}:{l:'Sueño saludable',c:'#14532d',bg:'#dcfce7'}
-},
 {id:'dbas',ref:'Morin CM. (1993). Dysfunctional Beliefs and Attitudes about Sleep (DBAS). Guilford Press.',name:'Creencias sobre el sueño (DBAS-16)',cat:'sleep',max:160,desc:'Creencias y actitudes disfuncionales sobre el sueño',
  qs:[
   {t:'Necesito 8 horas de sueño para sentirme descansado/a y funcionar bien al día siguiente',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
@@ -3597,15 +3587,17 @@ const SCALES=[
   {t:'¿Con qué frecuencia la somnolencia le genera dificultades en actividades recreativas (hobbies, deportes)?',opts:['No tengo este problema','Raramente','A veces','Frecuentemente'],sc:[0,1,2,3]}
 ],
  interp:s=>s<=10?{l:'Sin impacto',c:'#15803d',bg:'#dcfce7'}:s<=20?{l:'Impacto leve',c:'#92400e',bg:'#fef3c7'}:{l:'Impacto severo',c:'#991b1b',bg:'#fee2e2'}},
-{id:'sns',ref:'Benbadis SR et al. Sleep Neurological Screening Questionnaire.',name:'Cribado neurológico del sueño (SNS)',cat:'sleep',max:20,desc:'Evaluación rápida de trastornos del sueño',
+{id:'gses',ref:'Broomfield NM, Espie CA. (2005). Towards a valid, reliable measure of sleep effort. Journal of Sleep Research, 14(4), 401–407.',name:'Esfuerzo de sueño (GSES)',cat:'insomnia',max:14,desc:'Identifica insomnio psicofisiológico — esfuerzo paradójico por dormir',
  qs:[
-  {t:'¿Con qué frecuencia tiene problemas para conciliar el sueño?',opts:['Nunca','Raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3,4]},
-  {t:'¿Con qué frecuencia se despierta durante la noche sin poder volver a dormir?',opts:['Nunca','Raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3,4]},
-  {t:'¿Con qué frecuencia se siente excesivamente cansado/a durante el día?',opts:['Nunca','Raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3,4]},
-  {t:'¿Con qué frecuencia ronca fuerte o le dicen que deja de respirar mientras duerme?',opts:['Nunca','Raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3,4]},
-  {t:'¿Con qué frecuencia siente molestias en las piernas que mejoran al moverse?',opts:['Nunca','Raramente','A veces','Frecuentemente','Siempre'],sc:[0,1,2,3,4]}
+  {t:'Pongo demasiado esfuerzo en dormirme cuando debería ser algo natural',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]},
+  {t:'Siento que debería poder controlar mi sueño durante la noche',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]},
+  {t:'Pospongo ir a la cama por miedo a no poder dormir',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]},
+  {t:'Me preocupa no poder dormir si no logro hacerlo rápido',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]},
+  {t:'No soy bueno/a para dormir por la noche',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]},
+  {t:'Me pongo ansioso/a por dormir antes de acostarme',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]},
+  {t:'Me preocupan las consecuencias de no dormir',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]}
  ],
- interp:s=>s<=4?{l:'Sin alteraciones',c:'#15803d',bg:'#dcfce7'}:s<=9?{l:'Leve',c:'#92400e',bg:'#fef3c7'}:{l:'Requiere evaluación',c:'#991b1b',bg:'#fee2e2'}},
+ interp:s=>s<=2?{l:'Sin esfuerzo de sueño',c:'#14532d',bg:'#dcfce7'}:s<=6?{l:'Esfuerzo moderado',c:'#92400e',bg:'#fef3c7'}:{l:'Esfuerzo elevado — candidato a CBT-I',c:'#991b1b',bg:'#fee2e2'}},
 {id:'psas',ref:'Nicassio PM et al. (1985). The phenomenology of the pre-sleep state. Behav Res Ther.',name:'Activación pre-sueño (PSAS)',cat:'insomnia',max:80,desc:'Nivel de activación cognitiva y somática antes de dormir',
  qs:[
   {note:'¿Qué tan frecuente experimentás esto cuando intentás dormir?',t:'Mi mente sigue activa, con pensamientos o imágenes',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
@@ -8127,7 +8119,7 @@ async function showDrPTab_(tab){
         '<textarea id="dr-annot" rows="3" placeholder="Notas del profesional..." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sep-opaque);border-radius:10px;font-size:13px;font-family:var(--font);resize:none;line-height:1.5;background:var(--bg-secondary)">'+savedNote+'</textarea>'+
         '<button class="save-annot-btn" style="margin-top:6px;padding:7px 16px;border:none;border-radius:8px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Guardar nota</button>';
 
-      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div><div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div></div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div><div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div></div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>');
+      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div><div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div></div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>');
     }else if(tab==='profile'){
       const u=S.viewData;const dob=u.dob?new Date(u.dob):null;const age=dob?Math.floor((new Date()-dob)/31557600000):null;const imc=(u.weight_kg&&u.height_cm)?((u.weight_kg/((u.height_cm/100)**2)).toFixed(1)):null;const paths=(u.pathologies||[]).map(p=>`<span class="tag">${p}</span>`).join('');
       const photoHtml=u.photo_url?
@@ -11850,13 +11842,22 @@ function renderEEDSI(){
   html += '<div style="font-size:12px;color:rgba(255,255,255,0.7);line-height:1.55">'+EEDSI.meta.note+'</div>';
   html += '</div>';
 
-  // Selector de subescala (por si la edad no fue detectada bien)
-  html += '<div style="margin-bottom:14px"><div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Subescala</div>';
-  html += '<select onchange="EEDSI_STATE.subscale=this.value;renderEEDSI();" style="width:100%;padding:9px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px">';
-  ['I','P','S','A'].forEach(s => {
-    html += '<option value="'+s+'"'+(s===sub?' selected':'')+'>'+EEDSI.labels[s]+'</option>';
-  });
-  html += '</select></div>';
+  // Selector de subescala — solo si no se detectó edad
+  const ageDetected = (typeof S !== 'undefined' && S.patientAge != null);
+  if(!ageDetected){
+    html += '<div style="margin-bottom:14px"><div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Subescala</div>';
+    html += '<select onchange="EEDSI_STATE.subscale=this.value;renderEEDSI();" style="width:100%;padding:9px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px">';
+    ['I','P','S','A'].forEach(s => {
+      html += '<option value="'+s+'"'+(s===sub?' selected':'')+'>'+EEDSI.labels[s]+'</option>';
+    });
+    html += '</select></div>';
+  }
+
+  // Leyenda escala Likert 0-4
+  html += '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:11.5px;line-height:1.7;color:rgba(255,255,255,0.7)">';
+  html += '<div style="font-weight:600;color:rgba(255,255,255,0.85);margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Cómo responder</div>';
+  html += '<div><strong style="color:#7ec8a4">0</strong> Nunca · <strong style="color:#7ec8a4">1</strong> Raramente · <strong style="color:#7ec8a4">2</strong> A veces · <strong style="color:#7ec8a4">3</strong> Frecuentemente · <strong style="color:#7ec8a4">4</strong> Siempre · <strong style="color:#7ec8a4">N/C</strong> No corresponde / No sé</div>';
+  html += '</div>';
 
   // Configuración
   html += '<div style="font-size:13px;font-weight:600;color:#fff;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px">Configuración del sueño</div>';
