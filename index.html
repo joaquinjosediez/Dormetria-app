@@ -2531,6 +2531,14 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
           <div class="form-group"><label class="form-label">Apellido</label><input class="form-input" id="reg-lname" placeholder="García"></div>
         </div>
         <div class="form-group"><label class="form-label">Fecha de nacimiento <span style="color:#dc2626">*</span></label><input class="form-input" type="date" id="reg-dob"></div>
+        <div class="form-group"><label class="form-label">Sexo <span style="color:#dc2626">*</span></label>
+          <select class="form-select" id="reg-sex">
+            <option value="">Seleccioná...</option>
+            <option value="F">Femenino</option>
+            <option value="M">Masculino</option>
+            <option value="X">Prefiero no especificar / otro</option>
+          </select>
+        </div>
       </div>
       <div class="form-group" id="reg-activity-wrap" style="display:none">
         <label class="form-label">Actividad principal</label>
@@ -3480,29 +3488,30 @@ const SCALES=[
  ],
  interp:s=>s<=2?{l:'Riesgo bajo de apnea',c:'#14532d',bg:'#dcfce7'}:s<=4?{l:'Riesgo moderado de apnea',c:'#92400e',bg:'#fef3c7'}:{l:'Riesgo alto de apnea',c:'#9b1c1c',bg:'#fee2e2'}
 },
-{id:'meq',ref:'Horne JA, Östberg O. (1976). A self-assessment questionnaire to determine morningness-eveningness. Int J Chronobiol, 4(2), 97–110.',name:'Cronótipo (MEQ)',cat:'circadian',max:86,desc:'Cronótipo: si la persona es alondra (mañana) o búho (noche)',
+{id:'meq',ref:'Horne JA, Östberg O. (1976). A self-assessment questionnaire to determine morningness-eveningness. Int J Chronobiol, 4(2), 97–110. Versión castellana: Rol de Lama MA, Baño Otálora B, Mondéjar Abenza MT, Sarabia Carazo JA / CET, www.cet.org.',name:'Cronótipo (MEQ)',cat:'circadian',max:86,desc:'Cronótipo: matutinidad / vespertinidad (Horne y Östberg)',
+ note:'Respondé en función de cómo te sentiste en las últimas semanas. Para cada pregunta, elegí la opción que mejor se ajuste a tu caso.',
  qs:[
-  {t:'¿A qué hora preferiría levantarse si fuera completamente libre de planear su día?',opts:['5:00-6:30','6:30-7:45','7:45-9:45','9:45-11:00','11:00-12:00'],sc:[5,4,3,2,1]},
-  {t:'¿A qué hora preferiría acostarse si fuera libre de planear su noche?',opts:['20:00-21:00','21:00-22:15','22:15-00:30','00:30-01:45','01:45-03:00'],sc:[5,4,3,2,1]},
-  {t:'Si debe levantarse a las 7:00, ¿cuánto depende del despertador?',opts:['Nada','Ligeramente','Bastante','Mucho'],sc:[4,3,2,1]},
-  {t:'¿Qué tan fácil le resulta levantarse por la mañana?',opts:['Muy difícil','Bastante difícil','Bastante fácil','Muy fácil'],sc:[1,2,3,4]},
-  {t:'¿Qué tan activo/a se siente en la primera media hora después de levantarse?',opts:['Muy poco activo','Poco activo','Bastante activo','Muy activo'],sc:[1,2,3,4]},
-  {t:'¿Cuándo se siente mejor durante el día?',opts:['Mañana temprano','Mañana','Tarde','Noche'],sc:[4,3,2,1]},
-  {t:'¿A qué hora del día cree que está en su mejor momento?',opts:['5-8h','8-10h','10-17h','17-22h','22-5h'],sc:[5,4,3,2,1]},
-  {t:'Después de 1 semana de noche, ¿a qué hora del día se sentiría mejor?',opts:['Nunca se recupera','Preferiría de día','Sin preferencia','Preferiría de noche','Solo de noche'],sc:[4,3,2,1,0]},
-  {t:'¿Qué tan cansado/a se siente a las 23:00 una noche normal?',opts:['Muy cansado','Bastante cansado','Poco cansado','Nada cansado'],sc:[4,3,2,1]},
-  {t:'Si se acuesta a las 23:00, ¿cuánta dificultad para levantarse a las 7:00?',opts:['Ninguna','Poca','Bastante','Mucha'],sc:[4,3,2,1]},
-  {t:'¿Con qué facilidad puede cambiar su horario una hora más temprano por una semana?',opts:['Muy difícil','Difícil','Bastante fácil','Muy fácil'],sc:[1,2,3,4]},
-  {t:'¿Tendería a definirse como una persona matutina o vespertina?',opts:['Muy matutina','Más matutina','Más vespertina','Muy vespertina'],sc:[6,4,2,0]},
-  {t:'¿Con qué facilidad puede quedarse despierto hasta tarde si trabaja hasta la 1am con amigos?',opts:['Muy fácil','Algo difícil','Bastante difícil','Muy difícil'],sc:[0,2,4,6]},
-  {t:'¿Puede activarse en la mañana para llegar puntual a una reunión?',opts:['Siempre','Casi siempre','A veces','Raramente'],sc:[4,3,2,1]},
-  {t:'Tiempo de actividad física intensa preferido',opts:['5-8h','8-10h','10-17h','17-22h','22-5h'],sc:[5,4,3,2,1]},
-  {t:'Para una prueba exigente, ¿cuándo preferiría realizarla?',opts:['8-10h','11-13h','15-17h','19h o más tarde'],sc:[4,3,2,1]},
-  {t:'Si todos los días tuviera que trabajar 2 horas en la noche (2-4am), ¿qué preferiría?',opts:['Solo si hubiera compensación','Nunca haría esas horas','Solo en caso de necesidad','Sin dificultades'],sc:[1,2,3,4]},
-  {t:'Si pudiera elegir su horario de trabajo de 5h, ¿cuándo sería?',opts:['00:00-5:00','3:00-8:00','9:00-14:00','14:00-19:00','17:00-22:00'],sc:[1,2,4,3,2]},
-  {t:'¿A qué hora se va a la cama habitualmente cuando no trabaja al día siguiente?',opts:['Antes de 22h','22-00h','Después de medianoche','Variable'],sc:[3,2,1,0]}
+  {t:'Si sólo pensaras en cuando te sentirías mejor y fueras totalmente libre de planificarte el día. ¿A qué hora te levantarías?',opts:['Entre las 05:00 y 06:30 de la mañana','Entre las 06:30 y las 07:45 de la mañana','Entre las 07:45 y las 09:45 de la mañana','Entre las 09:45 y las 11:00 de la mañana','Entre las 11:00 de la mañana y las 12:00 del mediodía'],sc:[5,4,3,2,1]},
+  {t:'Si sólo pensaras en cuando te sentirías mejor y fueras totalmente libre de planificarte el día. ¿A qué hora te acostarías?',opts:['A las 20:00 – 21:00','A las 21:00 – 22:15','A las 22:15 – 00:30','A las 00:30 – 01:45','A las 01:45 – 03:00'],sc:[5,4,3,2,1]},
+  {t:'Para levantarte por la mañana a una hora específica. ¿Hasta qué punto necesitás que te avise el despertador?',opts:['No lo necesito','Lo necesito poco','Lo necesito bastante','Lo necesito mucho'],sc:[4,3,2,1]},
+  {t:'¿Te resulta fácil levantarte por las mañanas? (cuando no te despiertan de forma inesperada)',opts:['Nada fácil','No muy fácil','Bastante fácil','Muy fácil'],sc:[1,2,3,4]},
+  {t:'Una vez levantado por las mañanas. ¿Qué tal te encontrás durante la primera media hora?',opts:['Nada alerta','Poco alerta','Bastante alerta','Muy alerta'],sc:[1,2,3,4]},
+  {t:'Una vez levantado por las mañanas. ¿Cómo es tu apetito durante la primera media hora?',opts:['Muy escaso','Bastante escaso','Bastante bueno','Muy bueno'],sc:[1,2,3,4]},
+  {t:'Una vez levantado por las mañanas. ¿Qué tal te sentís durante la primera media hora?',opts:['Muy cansado','Bastante cansado','Bastante descansado','Muy descansado'],sc:[1,2,3,4]},
+  {t:'Cuando no tenés compromisos al día siguiente. ¿A qué hora te acostás en relación con tu hora habitual?',opts:['Nunca o raramente más tarde','Menos de 1 hora más tarde','De 1 a 2 horas más tarde','Más de 2 horas más tarde'],sc:[4,3,2,1]},
+  {t:'Has decidido hacer un poco de ejercicio físico. Un amigo te propone hacerlo una hora dos veces por semana y según él, la mejor hora sería de 7 a 8 de la mañana. No teniendo nada más en cuenta salvo tu propio reloj interno, ¿cómo creés que te encontrarías?',opts:['Estaría en buena forma','Estaría en una forma aceptable','Me resultaría difícil','Me resultaría muy difícil'],sc:[4,3,2,1]},
+  {t:'¿A qué hora aproximada de la noche te sentís cansado y como consecuencia necesitás dormir?',opts:['A las 20:00 – 21:00','A las 21:00 – 22:15','A las 22:15 – 00:45','A las 00:45 – 02:00','A las 02:00 – 03:00'],sc:[5,4,3,2,1]},
+  {t:'Querés estar en tu punto máximo de rendimiento para una prueba de dos horas que va a ser mentalmente agotadora. Siendo totalmente libre de planificar el día y pensando sólo en cuando te sentirías mejor. ¿Qué horario elegirías?',opts:['De 08:00 a 10:00','De 11:00 a 13:00','De 13:00 a 17:00','De 19:00 a 21:00'],sc:[6,4,2,0]},
+  {t:'Si te acostaras a las 23:00. ¿Qué nivel de cansancio notarías?',opts:['Ningún cansancio','Algún cansancio','Bastante cansancio','Mucho cansancio'],sc:[0,2,3,5]},
+  {t:'Por algún motivo te has acostado varias horas más tarde de lo habitual, aunque al día siguiente no tenés que levantarte a ninguna hora en particular. ¿Cuándo creés que te despertarías?',opts:['A la hora habitual y ya no dormiría más','A la hora habitual y luego dormitaría','A la hora habitual y volvería a dormirme','Más tarde de lo habitual'],sc:[4,3,2,1]},
+  {t:'Una noche tenés que permanecer despierto de 4 a 6 de la madrugada debido a una guardia nocturna. Sin tener ningún compromiso al día siguiente, ¿qué preferirías?',opts:['No acostarme hasta pasada la guardia','Echar una siesta antes y dormir después','Echar un buen sueño antes y una siesta después','Sólo dormirías antes de la guardia'],sc:[1,2,3,4]},
+  {t:'Tenés que hacer dos horas de trabajo físico pesado. Sos totalmente libre para planificarte el día. Pensando sólo en cuando te sentirías mejor, ¿qué horario escogerías?',opts:['De 08:00 a 10:00','De 11:00 a 13:00','De 13:00 a 17:00','De 19:00 a 21:00'],sc:[4,3,2,1]},
+  {t:'Has decidido hacer ejercicio físico intenso. Un amigo te sugiere practicar una hora dos veces por semana de 22:00 a 23:00. Pensando sólo en cuando te sentirías mejor, ¿cómo creés que te sentaría?',opts:['Estaría en buena forma','Estaría en una forma aceptable','Me resultaría difícil','Me resultaría muy difícil'],sc:[1,2,3,4]},
+  {t:'Imaginate que podés escoger tu horario de trabajo. Suponé que tu jornada es de CINCO horas al día (incluyendo los descansos) y que tu actividad es interesante y remunerada según tu rendimiento. ¿Qué cinco horas consecutivas seleccionarías? (¿Empezando en qué hora?)',opts:['Entre las 04:00 y las 08:00','Entre las 08:00 y las 09:00','Entre las 09:00 y las 14:00','Entre las 14:00 y las 17:00','Entre las 17:00 y las 04:00'],sc:[5,4,3,2,1]},
+  {t:'¿A qué hora del día creés que alcanzás tu máximo bienestar?',opts:['Entre las 05:00 y las 08:00','Entre las 08:00 y las 10:00','Entre las 10:00 y las 17:00','Entre las 17:00 y las 22:00','Entre las 22:00 y las 05:00'],sc:[5,4,3,2,1]},
+  {t:'Se habla de personas de tipo matutino y vespertino. ¿Cuál de estos tipos te considerás?',opts:['Un tipo claramente matutino','Un tipo más matutino que vespertino','Un tipo más vespertino que matutino','Un tipo claramente vespertino'],sc:[6,4,2,0]}
  ],
- interp:s=>s<=30?{l:'Definitivamente vespertino',c:'#4338ca',bg:'#ede9fe'}:s<=41?{l:'Moderadamente vespertino',c:'#7c3aed',bg:'#ede9fe'}:s<=58?{l:'Intermedio',c:'#92400e',bg:'#fef3c7'}:s<=69?{l:'Moderadamente matutino',c:'#065f46',bg:'#d1fae5'}:{l:'Definitivamente matutino',c:'#14532d',bg:'#dcfce7'}
+ interp:s=>s<=30?{l:'Vespertino extremo',c:'#4338ca',bg:'#ede9fe'}:s<=41?{l:'Vespertino moderado',c:'#7c3aed',bg:'#ede9fe'}:s<=58?{l:'Intermedio',c:'#92400e',bg:'#fef3c7'}:s<=69?{l:'Matutino moderado',c:'#065f46',bg:'#d1fae5'}:{l:'Matutino extremo',c:'#14532d',bg:'#dcfce7'}
 },
 {id:'phq9',ref:'Kroenke K, Spitzer RL, Williams JB. (2001). The PHQ-9. J Gen Intern Med, 16(9), 606–613.',name:'Depresión (PHQ-9)',cat:'mental',max:27,desc:'Síntomas depresivos de las últimas 2 semanas',
  qs:[
@@ -4213,7 +4222,19 @@ async function doRegister(){
       const name=document.getElementById('reg-name').value.trim();
       const lname=document.getElementById('reg-lname').value.trim();
       const dob=document.getElementById('reg-dob').value;
-      if(!name||!lname||!email){ err.classList.add('show'); return; }
+      const sex=document.getElementById('reg-sex')?.value||'';
+      // Validación de campos obligatorios con mensaje específico
+      const missing=[];
+      if(!name) missing.push('Nombre');
+      if(!lname) missing.push('Apellido');
+      if(!email) missing.push('Email');
+      if(!dob) missing.push('Fecha de nacimiento');
+      if(!sex) missing.push('Sexo');
+      if(missing.length){
+        err.textContent='Completá los siguientes campos obligatorios: '+missing.join(', ')+'.';
+        err.classList.add('show');
+        return;
+      }
       const rc1=document.getElementById('reg-c1'),rc2=document.getElementById('reg-c2'),rc4=document.getElementById('reg-c4');
       if(!rc1||!rc1.checked||!rc2.checked||!rc4.checked){
         err.textContent='Aceptá los términos obligatorios para continuar.';err.classList.add('show');return;
@@ -4242,6 +4263,7 @@ async function doRegister(){
       // Paso 2: crear fila en patients vinculada por auth_id
       const patientData={ name, lname, email, code: genCode(), auth_id: authData.user.id };
       if(dob) patientData.dob=dob;
+      if(sex) patientData.sex=sex;
       try{
         const d=await db.post('patients', patientData);
         S.user = Array.isArray(d) ? d[0] : d;
@@ -8820,20 +8842,27 @@ async function loadDoctorSuggestions(){
     const list = document.getElementById('scales-list');
     if(!list) return;
     
-    const suggestHtml = suggestions.map(s=>{
+    const cardsHtml = suggestions.map(s=>{
       const sc = SCALES.find(sc=>sc.id===s.scale_id);
-      return '<div style="background:#eef8f5;border:1.5px solid #1a4a3a;border-radius:12px;padding:14px 16px;margin-bottom:10px">'+
+      return '<div style="background:#FFFFFF;border:1.5px solid #C8A96E;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,40,32,0.06)">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
-        '<div style="font-size:12px;font-weight:600;color:#1a4a3a;text-transform:uppercase;letter-spacing:0.04em">👨‍⚕️ Tu médico te sugiere</div>'+
-        '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:var(--label-3);font-size:16px;cursor:pointer;padding:0">✕</button>'+
+        '<div style="font-size:11px;font-weight:700;color:#8B6F3D;text-transform:uppercase;letter-spacing:0.06em">📋 Sugerida por tu profesional</div>'+
+        '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:var(--label-3);font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>'+
         '</div>'+
         '<div style="font-size:15px;font-weight:600;color:var(--label);margin-bottom:2px">'+(sc?.name||s.scale_name)+'</div>'+
-        (s.message?'<div style="font-size:13px;color:var(--label-2);margin-bottom:10px">'+s.message+'</div>':'<div style="margin-bottom:10px"></div>')+
+        (s.message?'<div style="font-size:13px;color:var(--label-2);margin-bottom:10px;font-style:italic">"'+s.message+'"</div>':'<div style="margin-bottom:10px"></div>')+
         '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" class="btn btn-g" style="padding:10px">Completar ahora</button>'+
         '</div>';
     }).join('');
     
-    list.insertAdjacentHTML('afterbegin', suggestHtml);
+    // Contenedor con header destacado en Oro (paleta Dormetria)
+    const bannerHtml = '<div id="doc-sugg-banner" style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:1px solid #C8A96E;border-radius:14px;padding:14px 14px 10px;margin-bottom:14px">'+
+      '<div style="font-size:13px;font-weight:700;color:#0F2820;margin-bottom:4px;letter-spacing:0.01em">⭐ Estas escalas te recomienda tu profesional</div>'+
+      '<div style="font-size:12px;color:#5C6B61;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
+      cardsHtml+
+      '</div>';
+    
+    list.insertAdjacentHTML('afterbegin', bannerHtml);
   }catch(e){ console.warn('Suggestions load error:', e.message); }
 }
 
