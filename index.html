@@ -3052,11 +3052,14 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <button id="dir-register-btn" onclick="showDrRegisterForm()" style="padding:8px 16px;border:none;border-radius:20px;background:#2d6b56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
         🏥 Registrarme en el directorio
       </button>
-      <button onclick="showAdminSetup()" style="padding:8px 14px;border:none;border-radius:20px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+      <button id="admin-setup-btn" onclick="showAdminSetup()" style="display:none;padding:8px 14px;border:none;border-radius:20px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
         🔑 Activar acceso admin
       </button>
       <button id="admin-btn" onclick="showAdminPanel()" style="display:none;padding:8px 16px;border:none;border-radius:20px;background:#14532d;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
         🔐 Panel Admin
+      </button>
+      <button id="feedback-btn" onclick="showFeedbackModal()" style="padding:8px 16px;border:none;border-radius:20px;background:#C8A96E;color:#0F2820;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+        💡 Ayudanos a mejorar Dormetria
       </button>
     </div>
   </div>
@@ -3469,7 +3472,9 @@ const SCALES=[
   // C7: dificultad mantenerse despierto + entusiasmo
   const c7raw=v(15)+v(16);
   const C7=c7raw===0?0:c7raw<=2?1:c7raw<=4?2:3;
-  return C1+C2+C3+C4+C5+C6+C7;
+  const total=C1+C2+C3+C4+C5+C6+C7;
+  console.log('[PSQI Buysse]',{C1_calidad:C1,C2_latencia:C2,c2raw,C3_duracion:C3,C4_eficiencia:C4,eff_pct:Math.round(eff),tib_h:tib,C5_alteraciones:C5,c5raw,C6_medicacion:C6,C7_disfuncion:C7,c7raw,TOTAL:total});
+  return total;
  },
  interp:s=>s<=4?{l:'Calidad normal',c:'#14532d',bg:'#dcfce7'}:s<=8?{l:'Leve alteración',c:'#92400e',bg:'#fef3c7'}:s<=14?{l:'Alteración moderada',c:'#c2410c',bg:'#ffedd5'}:{l:'Alteración severa',c:'#9b1c1c',bg:'#fee2e2'}
 },
@@ -4062,6 +4067,8 @@ function adminReApprove(email){
 }
 function checkAdminAccess(){
   if(!S.user||!S.user.email) return false;
+  // Admin de Dormetria: solo Joaquín
+  if(S.user.email.toLowerCase()==='drjoaquindiez@gmail.com') return true;
   return getAdminEmails().includes(S.user.email.toLowerCase());
 }
 function getAdminEmails(){
@@ -7945,11 +7952,14 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
   document.getElementById('dr-name').textContent=_drTitle+' '+d.name+(d.lname?' '+d.lname:'');const specLabels={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General',other_health:'Profesional de salud'};
   const specLabel=specLabels[d.specialty]||'Panel profesional';
   document.getElementById('dr-meta').textContent=(d.mat?d.mat+' · ':'')+specLabel;
-  if(checkAdminAccess()){const ab=document.getElementById('admin-btn');if(ab)ab.style.display='inline-flex';}
+  if(checkAdminAccess()){
+    const ab=document.getElementById('admin-btn');if(ab)ab.style.display='inline-flex';
+    const asb=document.getElementById('admin-setup-btn');if(asb)asb.style.display='inline-flex';
+  }
   const _pl=document.getElementById('dr-panel-label'); if(_pl) _pl.textContent=(['psychiatry','neurology','pneumology','ent','pediatrics','cardiology','general'].includes(d.specialty)?'Panel profesional':'Panel profesional');showScreen('doctor-home');showDrTab_('patients');setTimeout(()=>{updateDrAvailBtn();updateDrListedBtn();},200);}
 function showDrTab(tab,el){
   // Update bottom nav
-  ['patients','alerts','link','profile'].forEach(t=>{
+  ['patients','alerts','link','profile','more'].forEach(t=>{
     const b=document.getElementById('drnav-'+t);
     if(b){b.style.color=t===tab?'#fff':'rgba(255,255,255,0.5)';const lbl=b.querySelector('.bnav-lbl');if(lbl&&lbl.childNodes[0])lbl.childNodes[0].textContent=lbl.childNodes[0].textContent;}
   });
@@ -12515,22 +12525,8 @@ async function renderConsultNotes(){
   if(!patEmail){ return; }
   const cont = document.getElementById('dr-patient-content');
   if(!cont) return;
-  cont.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.5)"><div class="spinner" style="margin:0 auto 12px"></div>Cargando notas...</div>';
-  try {
-  
-  let notes = [];
-  try {
-    const res = await Promise.race([
-      db.get(`consultation_notes?doctor_email=eq.${encodeURIComponent(S.user.email)}&patient_email=eq.${encodeURIComponent(patEmail)}&order=created_at.desc&select=*`),
-      new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},4000);})
-    ]);
-    notes = res || [];
-  } catch(e) {
-    // Table may not exist yet - show empty state
-    notes = [];
-  }
 
-  const u = S.viewData||{};
+  // Build snapshot inmediato (no necesita DB)
   const lastScores = {};
   (S.patientRecords||[]).forEach(r=>{ if(!lastScores[r.scale_id]) lastScores[r.scale_id]=r; });
   const keyScales = ['psqi','ess','isi','phq9','gad7','stopbang'];
@@ -12541,15 +12537,13 @@ async function renderConsultNotes(){
     return `<span style="font-size:11px;padding:3px 8px;border-radius:10px;background:${i.c}33;color:#fff;border:1px solid ${i.c};font-weight:600">${sc.name.split('(')[0].trim()} ${r.score}</span>`;
   }).filter(Boolean).join(' ');
 
-  const typeColors = {session:'rgba(99,102,241,0.2)',followup:'rgba(16,185,129,0.2)',alert:'rgba(239,68,68,0.25)',plan:'rgba(245,158,11,0.2)',other:'rgba(255,255,255,0.06)'};
-  const typeLabels = {session:'Sesión clínica',followup:'Seguimiento',alert:'⚡ Urgente',plan:'Plan terapéutico',other:'Nota'};
-
+  // RENDER FORM INMEDIATAMENTE (no loader que bloquee)
   cont.innerHTML = `
     <div style="padding:16px 16px 100px">
       <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">📝 Nueva nota</div>
         ${snapshotItems ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${snapshotItems}</div>` : ''}
-        <textarea id="note-text" placeholder="Observaciones clínicas de esta sesión..." 
+        <textarea id="note-text" placeholder="Observaciones clínicas de esta sesión..."
           style="width:100%;min-height:100px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;color:#fff;font-size:14px;font-family:var(--font);resize:vertical;box-sizing:border-box;line-height:1.5"></textarea>
         <div style="margin-top:8px;display:flex;gap:8px">
           <select id="note-type" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px;color:#fff;font-size:13px;font-family:var(--font)">
@@ -12560,33 +12554,56 @@ async function renderConsultNotes(){
             <option value="other">Nota libre</option>
           </select>
           <button id="save-note-btn" onclick="saveConsultNote(document.getElementById('note-email').value,this)" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 18px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Guardar</button>
-        <input type="hidden" id="note-email" value="${patEmail}">
+          <input type="hidden" id="note-email" value="${patEmail}">
         </div>
       </div>
-      
-      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Historial clínico (${notes.length} entradas)</div>
-      ${notes.length ? notes.map(n=>{
-        const d = new Date(n.created_at);
-        const dateStr = d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-        const timeStr = d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-        return `<div style="background:${typeColors[n.note_type]||'rgba(255,255,255,0.06)'};border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 16px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">
-            <div>
-              <div style="font-size:13px;font-weight:700;color:#fff;text-transform:capitalize">${dateStr}</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.4)">${timeStr} · ${typeLabels[n.note_type]||'Nota'}</div>
-            </div>
-          </div>
-          ${n.snapshot ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px">${n.snapshot}</div>` : ''}
-          <div style="font-size:14px;color:rgba(255,255,255,0.9);line-height:1.6;white-space:pre-wrap">${(n.note||'').replace(/</g,'&lt;')}</div>
-        </div>`;
-      }).join('') : '<div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);font-size:14px">No hay notas aún.<br>Empezá escribiendo la primera nota de consulta.</div>'}
+      <div id="notes-history-container">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Historial clínico <span id="notes-count" style="color:rgba(255,255,255,0.3);font-weight:500">(cargando…)</span></div>
+        <div id="notes-history-list"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px"><div class="spinner" style="margin:0 auto 8px;width:18px;height:18px"></div>Cargando historial…</div></div>
+      </div>
     </div>
   `;
 
-  } catch(_renderErr) {
-    console.error('[renderConsultNotes] error:', _renderErr);
-    cont.innerHTML = '<div style="padding:16px"><div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;margin-bottom:20px"><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">📝 Nueva nota</div><textarea id="note-text" placeholder="Observaciones clínicas..." style="width:100%;min-height:120px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;color:#fff;font-size:14px;font-family:var(--font);resize:vertical;box-sizing:border-box;line-height:1.5"></textarea><div style="margin-top:8px;display:flex;gap:8px"><select id="note-type" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px;color:#fff;font-size:13px;font-family:var(--font)"><option value="session">Sesión clínica</option><option value="followup">Seguimiento</option><option value="alert">⚡ Urgente</option><option value="plan">Plan terapéutico</option><option value="other">Nota libre</option></select><button onclick="saveConsultNote(\'' + patEmail + '\',this)" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 18px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Guardar</button></div><input type="hidden" id="note-email" value="' + patEmail + '"></div><div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;padding:8px">Las notas anteriores no se cargaron (la tabla puede no existir o estar bloqueada). Igual podés escribir y guardar nuevas notas.</div></div>';
-  }
+  // Cargar historial en background (no bloquea el form)
+  setTimeout(async ()=>{
+    const histList = document.getElementById('notes-history-list');
+    const histCount = document.getElementById('notes-count');
+    if(!histList) return; // usuario ya navegó a otro tab
+    let notes = [];
+    try {
+      const res = await Promise.race([
+        db.get(`consultation_notes?doctor_email=eq.${encodeURIComponent(S.user.email)}&patient_email=eq.${encodeURIComponent(patEmail)}&order=created_at.desc&select=*`),
+        new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},5000);})
+      ]);
+      notes = res || [];
+    } catch(e) {
+      console.warn('[renderConsultNotes] historial no se pudo cargar:', e.message);
+      if(histCount) histCount.textContent='(no se pudo cargar)';
+      if(histList) histList.innerHTML='<div style="text-align:center;padding:16px;color:rgba(255,255,255,0.3);font-size:12px">Las notas anteriores no se cargaron.<br>Igualmente podés escribir y guardar nuevas notas.</div>';
+      return;
+    }
+    if(!document.getElementById('notes-history-list')) return; // usuario navegó
+    const typeColors = {session:'rgba(99,102,241,0.2)',followup:'rgba(16,185,129,0.2)',alert:'rgba(239,68,68,0.25)',plan:'rgba(245,158,11,0.2)',other:'rgba(255,255,255,0.06)'};
+    const typeLabels = {session:'Sesión clínica',followup:'Seguimiento',alert:'⚡ Urgente',plan:'Plan terapéutico',other:'Nota'};
+    if(histCount) histCount.textContent='('+notes.length+' entradas)';
+    if(!notes.length){
+      histList.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);font-size:14px">No hay notas aún.<br>Empezá escribiendo la primera nota de consulta.</div>';
+      return;
+    }
+    histList.innerHTML = notes.map(n=>{
+      const d = new Date(n.created_at);
+      const dateStr = d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      const timeStr = d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      return `<div style="background:${typeColors[n.note_type]||'rgba(255,255,255,0.06)'};border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">
+          <div><div style="font-size:13px;font-weight:700;color:#fff;text-transform:capitalize">${dateStr}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4)">${timeStr} · ${typeLabels[n.note_type]||'Nota'}</div></div>
+        </div>
+        ${n.snapshot ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px">${n.snapshot}</div>` : ''}
+        <div style="font-size:14px;color:rgba(255,255,255,0.9);line-height:1.6;white-space:pre-wrap">${(n.note||'').replace(/</g,'&lt;')}</div>
+      </div>`;
+    }).join('');
+  }, 50);
 }
 
 async function saveConsultNote(patEmail, btn){
@@ -13136,6 +13153,76 @@ function confirmDeactivateCbti(){
   if(!confirm('¿Desactivar a '+CBTI_STATE.patientName+' del módulo CBT-I? El progreso registrado se mantendrá guardado.')) return;
   toggleCbtiPatient(CBTI_STATE.patientEmail, CBTI_STATE.patientName, false);
   setTimeout(()=>openCbtiModule(),300);
+}
+
+// ── FEEDBACK MODAL (sugerencias a admin) ──
+function showFeedbackModal(){
+  const existing=document.getElementById('feedback-modal');
+  if(existing) existing.remove();
+  const m=document.createElement('div');
+  m.id='feedback-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(15,40,32,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML='<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:18px;font-weight:700;color:#0F2820">💡 Ayudanos a mejorar Dormetria</div><button onclick="document.getElementById(\'feedback-modal\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1;padding:0">×</button></div>'+
+    '<div style="font-size:13px;color:#5C6B61;line-height:1.5;margin-bottom:16px">Contanos qué te gustaría mejorar, qué bug encontraste, o qué función te haría falta. Tu feedback nos llega directamente.</div>'+
+    '<div class="form-group" style="margin-bottom:12px"><label style="font-size:12px;font-weight:600;color:#0F2820;display:block;margin-bottom:6px">Tipo</label>'+
+    '<select id="fb-type" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:var(--font);background:#fff;box-sizing:border-box">'+
+    '<option value="idea">💡 Idea / sugerencia</option>'+
+    '<option value="bug">🐛 Reporte de bug</option>'+
+    '<option value="correction">✏️ Corrección clínica</option>'+
+    '<option value="ux">🎨 UX / interfaz</option>'+
+    '<option value="other">Otro</option></select></div>'+
+    '<div class="form-group" style="margin-bottom:12px"><label style="font-size:12px;font-weight:600;color:#0F2820;display:block;margin-bottom:6px">Mensaje</label>'+
+    '<textarea id="fb-text" placeholder="Escribí tu sugerencia, idea o reporte aquí…" style="width:100%;min-height:120px;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:var(--font);resize:vertical;box-sizing:border-box;line-height:1.5"></textarea></div>'+
+    '<div id="fb-status" style="font-size:13px;margin-bottom:10px;display:none"></div>'+
+    '<button onclick="submitFeedback()" id="fb-submit" style="width:100%;padding:13px;border:none;border-radius:10px;background:#1F4738;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Enviar feedback</button>'+
+    '</div>';
+  document.body.appendChild(m);
+  m.onclick=e=>{if(e.target===m) m.remove();};
+}
+
+async function submitFeedback(){
+  const type=document.getElementById('fb-type').value;
+  const text=document.getElementById('fb-text').value.trim();
+  const status=document.getElementById('fb-status');
+  const btn=document.getElementById('fb-submit');
+  if(!text){
+    status.textContent='⚠ Escribí un mensaje antes de enviar.';
+    status.style.color='#dc2626';status.style.display='block';
+    return;
+  }
+  btn.disabled=true; btn.textContent='Enviando…'; status.style.display='none';
+  const u=S.user||{};
+  const payload={
+    _subject:'[Dormetria Feedback] '+type+' — '+(u.name||'?')+' '+(u.lname||''),
+    tipo:type,
+    mensaje:text,
+    profesional:(u.name||'')+' '+(u.lname||''),
+    email:u.email||'',
+    matricula:u.mat||'',
+    especialidad:u.specialty||'',
+    fecha:new Date().toLocaleString('es-AR')
+  };
+  try{
+    const res=await fetch('https://formspree.io/f/mykvzkqk',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(res.ok){
+      status.textContent='✓ Gracias. Tu feedback fue enviado.';
+      status.style.color='#14532d';status.style.display='block';
+      document.getElementById('fb-text').value='';
+      setTimeout(()=>{document.getElementById('feedback-modal')?.remove();},1800);
+    } else {
+      throw new Error('Formspree '+res.status);
+    }
+  }catch(err){
+    console.error('feedback error:',err);
+    status.textContent='⚠ No se pudo enviar. Revisá tu conexión y reintentá.';
+    status.style.color='#dc2626';status.style.display='block';
+    btn.disabled=false; btn.textContent='Enviar feedback';
+  }
 }
 </script>
 
