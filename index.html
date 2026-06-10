@@ -2677,6 +2677,9 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     </div>
 
     <!-- Todo sobre el sueño -->
+    <!-- Banner sugerencias del profesional (al tope, visible) -->
+    <div id="home-doctor-suggestions" style="display:none;margin-bottom:14px"></div>
+
     <div onclick="showSleepInfo()" style="background:linear-gradient(135deg,rgba(126,200,164,0.18),rgba(45,107,74,0.15));border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:14px 16px;cursor:pointer">
       <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">💡 Información</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -3013,6 +3016,15 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     </div>
     <div style="font-size:12px;color:rgba(255,255,255,0.4)">Código único y permanente de tu cuenta</div>
 
+    <!-- Compartir por WhatsApp -->
+    <div style="margin:20px auto 0;max-width:320px">
+      <button onclick="sharePatientCodeWhatsApp()" style="width:100%;background:#25D366;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 12px rgba(37,211,102,0.25)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        Compartir con mi médico por WhatsApp
+      </button>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:6px;line-height:1.4">Te abre WhatsApp con un mensaje listo para enviar al médico que elijas.</div>
+    </div>
+
     <!-- Linked doctors section -->
     <div style="margin-top:24px;text-align:left;border-top:1px solid rgba(255,255,255,0.1);padding-top:20px">
       <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">🩺 Profesionales que te siguen</div>
@@ -3091,8 +3103,8 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Mi perfil</span>
     </button>
     <button class="bnav" id="drnav-more" onclick="showDrTab('more',this)" style="color:rgba(255,255,255,0.5)">
-      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></div>
-      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Más</span>
+      <div class="bnav-icon" style="font-size:18px;line-height:1">🌿</div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">CBT-I</span>
     </button>
   </div>
   <div class="scroll"><div id="dr-content" style="padding:0 16px"></div></div>
@@ -8492,8 +8504,16 @@ async function showDrPTab_(tab){
         return '<button type="button" onclick="_applySuggestBundle('+idsLit+')" style="background:var(--bg-secondary);border:1px solid var(--sep);border-radius:14px;padding:7px 12px;font-size:13px;color:var(--label);cursor:pointer;font-family:inherit">'+b[0]+'</button>';
       }).join('');
       window._applySuggestBundle=function(ids){
-        document.querySelectorAll('#suggest-scale-list .suggest-label input[type="checkbox"]').forEach(function(cb){
-          if(ids.indexOf(cb.value)>=0 && !cb.checked){
+        const boxes = Array.from(document.querySelectorAll('#suggest-scale-list .suggest-label input[type="checkbox"]'));
+        const targets = boxes.filter(cb=>ids.indexOf(cb.value)>=0);
+        if(!targets.length) return;
+        // Si TODAS las del bundle ya están marcadas, las desmarco. Sino, las marco todas.
+        const allChecked = targets.every(cb=>cb.checked);
+        targets.forEach(cb=>{
+          if(allChecked && cb.checked){
+            cb.checked=false;
+            cb.dispatchEvent(new Event('change',{bubbles:true}));
+          } else if(!allChecked && !cb.checked){
             cb.checked=true;
             cb.dispatchEvent(new Event('change',{bubbles:true}));
           }
@@ -8889,34 +8909,34 @@ async function loadDoctorSuggestions(){
       'doctor_suggestions?patient_email=eq.'+encodeURIComponent(S.user.email)+
       '&completed=eq.false&order=created_at.desc&select=*'
     );
-    if(!suggestions||!suggestions.length) return;
+    const banner = document.getElementById('home-doctor-suggestions');
+    if(!suggestions||!suggestions.length){
+      // sin sugerencias pendientes: ocultar banner
+      if(banner){ banner.style.display='none'; banner.innerHTML=''; }
+      return;
+    }
     S._docSuggIds = suggestions.map(s=>s.scale_id);
-    
-    // Show suggestion cards above the GASQ section
-    const list = document.getElementById('scales-list');
-    if(!list) return;
+    if(!banner) return;
     
     const cardsHtml = suggestions.map(s=>{
       const sc = SCALES.find(sc=>sc.id===s.scale_id);
-      return '<div style="background:#FFFFFF;border:1.5px solid #C8A96E;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,40,32,0.06)">'+
+      return '<div style="background:#FFFFFF;border:1.5px solid #C8A96E;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(200,169,110,0.25)">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
         '<div style="font-size:11px;font-weight:700;color:#8B6F3D;text-transform:uppercase;letter-spacing:0.06em">📋 Sugerida por tu profesional</div>'+
-        '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:var(--label-3);font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>'+
+        '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:#999;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>'+
         '</div>'+
-        '<div style="font-size:15px;font-weight:600;color:var(--label);margin-bottom:2px">'+(sc?.name||s.scale_name)+'</div>'+
-        (s.message?'<div style="font-size:13px;color:var(--label-2);margin-bottom:10px;font-style:italic">"'+s.message+'"</div>':'<div style="margin-bottom:10px"></div>')+
-        '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" class="btn btn-g" style="padding:10px">Completar ahora</button>'+
+        '<div style="font-size:15px;font-weight:600;color:#0F2820;margin-bottom:2px">'+(sc?.name||s.scale_name)+'</div>'+
+        (s.message?'<div style="font-size:13px;color:#5C6B61;margin-bottom:10px;font-style:italic">"'+s.message+'"</div>':'<div style="margin-bottom:10px"></div>')+
+        '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" style="background:#1F4738;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;font-family:var(--font)">Completar ahora</button>'+
         '</div>';
     }).join('');
     
-    // Contenedor con header destacado en Oro (paleta Dormetria)
-    const bannerHtml = '<div id="doc-sugg-banner" style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:1px solid #C8A96E;border-radius:14px;padding:14px 14px 10px;margin-bottom:14px">'+
+    banner.innerHTML = '<div style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:2px solid #C8A96E;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(200,169,110,0.2)">'+
       '<div style="font-size:13px;font-weight:700;color:#0F2820;margin-bottom:4px;letter-spacing:0.01em">⭐ Estas escalas te recomienda tu profesional</div>'+
       '<div style="font-size:12px;color:#5C6B61;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
       cardsHtml+
       '</div>';
-    
-    list.insertAdjacentHTML('afterbegin', bannerHtml);
+    banner.style.display='block';
   }catch(e){ console.warn('Suggestions load error:', e.message); }
 }
 
@@ -12521,9 +12541,10 @@ function toggleDrScale(id, lbl){
 }
 
 async function renderConsultNotes(){
-  const patEmail = S.viewData?.email;
+  const patEmail = S.viewData?.email || S.viewEmail;
   if(!patEmail){ return; }
-  const cont = document.getElementById('dr-patient-content');
+  // El contenedor real de la vista del paciente es drp-content (no dr-patient-content)
+  const cont = document.getElementById('drp-content');
   if(!cont) return;
 
   // Build snapshot inmediato (no necesita DB)
@@ -13168,7 +13189,7 @@ function showFeedbackModal(){
     '<div class="form-group" style="margin-bottom:12px"><label style="font-size:12px;font-weight:600;color:#0F2820;display:block;margin-bottom:6px">Tipo</label>'+
     '<select id="fb-type" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:var(--font);background:#fff;box-sizing:border-box">'+
     '<option value="idea">💡 Idea / sugerencia</option>'+
-    '<option value="bug">🐛 Reporte de bug</option>'+
+    '<option value="bug">🐛 Reporte de error</option>'+
     '<option value="correction">✏️ Corrección clínica</option>'+
     '<option value="ux">🎨 UX / interfaz</option>'+
     '<option value="other">Otro</option></select></div>'+
@@ -13223,6 +13244,16 @@ async function submitFeedback(){
     status.style.color='#dc2626';status.style.display='block';
     btn.disabled=false; btn.textContent='Enviar feedback';
   }
+}
+
+// ── Compartir código del paciente por WhatsApp ──
+function sharePatientCodeWhatsApp(){
+  const code = S.user?.code || '';
+  const name = (S.user?.name||'')+' '+(S.user?.lname||'');
+  if(!code){ toast('Tu código aún no se generó.'); return; }
+  const text = 'Hola, te comparto mi código de Dormetria para que puedas vincularte como mi profesional y ver mis registros:\n\nCódigo: '+code+'\nPaciente: '+name.trim()+'\n\nIngresá a https://dormetria.com (o la app) → Vincular paciente → Pegá el código.';
+  const url = 'https://wa.me/?text='+encodeURIComponent(text);
+  window.open(url,'_blank');
 }
 </script>
 
