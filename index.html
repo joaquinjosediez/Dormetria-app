@@ -3049,6 +3049,16 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   </div>
 </div>
 
+<!-- PATIENT TCC-I VIEW (locked items unlock as doctor marks them) -->
+<div id="screen-patient-tcci" class="screen" style="background:#0F2820;color:#fff">
+  <div class="topbar" style="background:#0F2820;border-bottom:1px solid rgba(255,255,255,0.08)">
+    <button class="back" onclick="navTo('mas')" style="color:#fff">← Volver</button>
+    <div style="font-weight:700;font-size:15px;color:#fff;text-align:center;flex:1">🌿 Mi Protocolo TCC-I</div>
+    <div style="width:24px"></div>
+  </div>
+  <div class="scroll" style="padding:16px"><div id="patient-tcci-content"></div></div>
+</div>
+
 <!-- DOCTOR QR PRINT SCREEN -->
 <div id="screen-dr-qr-print" class="screen" style="background:#fff">
   <div class="topbar" style="background:#fff;border-bottom:1px solid #e2e8f0">
@@ -3257,6 +3267,17 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   <div class="scroll" style="background:#1a2e23;padding:16px 16px 96px;display:flex;flex-direction:column;gap:10px">
 
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Herramientas</div>
+
+    <!-- TCC-I para paciente (oculto por default, visible solo si tiene protocolo activo) -->
+    <div id="patient-tcci-card" onclick="openPatientCbtiView()" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:16px;cursor:pointer;position:relative;margin-bottom:4px">
+      <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:8px;letter-spacing:0.06em">TU TRATAMIENTO</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:32px;line-height:1">🌿</div>
+        <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Mi Protocolo TCC-I</div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,0.7);line-height:1.45">Terapia cognitivo-conductual para el insomnio. <span id="patient-tcci-progress" style="color:#7ec8a4;font-weight:600"></span></div></div>
+        <div style="color:rgba(255,255,255,0.4);font-size:18px">›</div>
+      </div>
+    </div>
 
     <!-- PVT -->
     <div onclick="showScalesScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -3507,7 +3528,7 @@ const SCALES=[
   console.log('[PSQI Buysse]',{C1_calidad:C1,C2_latencia:C2,c2raw,C3_duracion:C3,C4_eficiencia:C4,eff_pct:Math.round(eff),tib_h:tib,C5_alteraciones:C5,c5raw,C6_medicacion:C6,C7_disfuncion:C7,c7raw,TOTAL:total});
   return total;
  },
- interp:s=>s<=4?{l:'Calidad normal',c:'#14532d',bg:'#dcfce7'}:s<=8?{l:'Leve alteración',c:'#92400e',bg:'#fef3c7'}:s<=14?{l:'Alteración moderada',c:'#c2410c',bg:'#ffedd5'}:{l:'Alteración severa',c:'#9b1c1c',bg:'#fee2e2'}
+ interp:s=>s<=4?{l:'Calidad de sueño normal',c:'#14532d',bg:'#dcfce7'}:{l:'Calidad de sueño patológica',c:'#9b1c1c',bg:'#fee2e2'}
 },
 {id:'ess',ref:'Johns MW. (1991). A new method for measuring daytime sleepiness: the Epworth Sleepiness Scale. Sleep, 14(6), 540–545.',name:'Epworth (ESS)',cat:'sleepiness',max:24,desc:'Somnolencia diurna — riesgo de quedarse dormido en situaciones cotidianas',
  note:'¿Cuál es la probabilidad de quedarte dormido/a en las siguientes situaciones hipotéticas? Aunque no hayas estado en alguna de ellas recientemente, imaginá cómo te afectarían.',
@@ -3571,7 +3592,7 @@ const SCALES=[
   {t:'¿A qué hora del día creés que alcanzás tu máximo bienestar?',opts:['Entre las 05:00 y las 08:00','Entre las 08:00 y las 10:00','Entre las 10:00 y las 17:00','Entre las 17:00 y las 22:00','Entre las 22:00 y las 05:00'],sc:[5,4,3,2,1]},
   {t:'Se habla de personas de tipo matutino y vespertino. ¿Cuál de estos tipos te considerás?',opts:['Un tipo claramente matutino','Un tipo más matutino que vespertino','Un tipo más vespertino que matutino','Un tipo claramente vespertino'],sc:[6,4,2,0]}
  ],
- interp:s=>s<=30?{l:'Vespertino extremo',c:'#4338ca',bg:'#ede9fe'}:s<=41?{l:'Vespertino moderado',c:'#7c3aed',bg:'#ede9fe'}:s<=58?{l:'Intermedio',c:'#92400e',bg:'#fef3c7'}:s<=69?{l:'Matutino moderado',c:'#065f46',bg:'#d1fae5'}:{l:'Matutino extremo',c:'#14532d',bg:'#dcfce7'}
+ interp:s=>s<=30?{l:'Vespertino extremo',c:'#4338ca',bg:'#ede9fe'}:s<=41?{l:'Vespertino moderado',c:'#7c3aed',bg:'#ede9fe'}:s<=58?{l:'Intermedio',c:'#0F2820',bg:'#f3f4f6'}:s<=69?{l:'Matutino moderado',c:'#065f46',bg:'#d1fae5'}:{l:'Matutino extremo',c:'#14532d',bg:'#d1fae5'}
 },
 {id:'phq9',ref:'Kroenke K, Spitzer RL, Williams JB. (2001). The PHQ-9. J Gen Intern Med, 16(9), 606–613.',name:'Depresión (PHQ-9)',cat:'mental',max:27,desc:'Síntomas depresivos de las últimas 2 semanas',
  qs:[
@@ -5944,7 +5965,7 @@ function navTo(dest){
   else if(dest==='mas'){showMas();}
 }
 
-function showMasMenu(){
+function showMasMenu(){ if(typeof checkPatientTcciCard==='function') setTimeout(checkPatientTcciCard,100);
   showMas();
 }
 
@@ -6325,6 +6346,33 @@ function showResult(sc,score){
         '<div style="color:var(--label)">TOTAL ICSP</div><div style="font-size:20px;color:var(--label)">'+score+' / 21</div></div>'+
         '</div>';
     }catch(_){}
+  }
+  // PSQI: vista simplificada (sin desglose), sólo el ICSP con explicación del corte
+  if(sc.id==='psqi'){
+    const isPath = score >= 5;
+    document.getElementById('r-content').innerHTML=`
+      <div class="r-head">
+        <div style="font-size:12px;color:var(--g200);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">${sc.name}</div>
+        <div><span class="r-num">${score}</span><span class="r-denom"> / 21</span></div>
+        <div class="r-label">${i.l}</div>${trend}
+      </div>
+      <div style="padding:16px">
+        <div style="background:${isPath?'#fee2e2':'#dcfce7'};border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid ${isPath?'#fca5a5':'#86efac'}">
+          <div style="font-size:13px;font-weight:700;color:${isPath?'#9b1c1c':'#14532d'};margin-bottom:4px">Valor de corte clínico: 5</div>
+          <div style="font-size:13px;color:${isPath?'#9b1c1c':'#14532d'};line-height:1.5">
+            ${isPath
+              ? 'Tu puntuación de '+score+'/21 está por encima del corte de 5, lo que sugiere alteraciones en la calidad del sueño. Es importante consultar con un profesional para evaluarlo en profundidad.'
+              : 'Tu puntuación de '+score+'/21 está por debajo del corte de 5, lo que es compatible con una buena calidad del sueño.'}
+          </div>
+        </div>
+        ${sc.ref?`<div style="margin-top:14px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;border-left:3px solid var(--g400)"><div style="font-size:10px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Referencia</div><div style="font-size:11px;color:var(--label-2);line-height:1.5;font-style:italic">${sc.ref}</div></div>`:''}
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="btn btn-s" onclick="showPatientHistory()" style="flex:1">Ver historial</button>
+          <button class="btn btn-g" onclick="showHome()" style="flex:1">Inicio</button>
+        </div>
+      </div>`;
+    showScreen('result');
+    return;
   }
   document.getElementById('r-content').innerHTML=`
     <div class="r-head">
@@ -8135,11 +8183,21 @@ async function showDrTab_(tab){
     return;
   }
   if(tab==='drprofile'){
-    // Load doctor profile for editing
+    // Render INMEDIATAMENTE con datos de S.user (sin esperar DB)
+    const u=S.user||{};
+    const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiología',general:'Clínica Gral',physician:'Médico/a'};
+    // Cargar DB en background con timeout para enriquecer datos
+    let dr = {...u};
     try{
-      const u=S.user;
-      const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiología',general:'Clínica Gral',physician:'Médico/a'};
-      const dr=await db.get('doctors?email=eq.'+encodeURIComponent(u.email)+'&select=*').then(d=>d&&d[0]||{});
+      const dbDr = await Promise.race([
+        db.get('doctors?email=eq.'+encodeURIComponent(u.email)+'&select=*').then(d=>d&&d[0]||{}),
+        new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},3000);})
+      ]);
+      if(dbDr) dr={...u,...dbDr};
+    }catch(timeoutErr){
+      console.warn('[drprofile] DB timeout, usando datos locales:', timeoutErr.message);
+    }
+    try{
       cont.innerHTML=`<div style="padding:16px 0">
         <div class="sec-title" style="margin-bottom:12px">Datos del perfil profesional</div>
         <div class="form-group"><label class="form-label">Nombre <span style="color:#dc2626">*</span></label>
@@ -8154,7 +8212,7 @@ async function showDrTab_(tab){
         <div class="form-group"><label class="form-label">Matrícula</label>
           <input class="form-input" id="dr-edit-mat" value="${dr.mat||''}" placeholder="MN 000000"></div>
         <div class="form-group"><label class="form-label">Institución</label>
-          <input class="form-input" id="dr-edit-inst" value="${dr.inst||''}" placeholder="Hospital / Clínica"></div>
+          <input class="form-input" id="dr-edit-inst" value="${dr.inst||dr.institution||''}" placeholder="Hospital / Clínica"></div>
         <div class="form-group"><label class="form-label">Género</label>
           <select class="form-select" id="dr-edit-gender">
             <option value="">Seleccionar</option>
@@ -8215,6 +8273,14 @@ async function showDrTab_(tab){
       const cacheKey='dm_dr_pts_'+S.user.email;
       const cachedPts=JSON.parse(localStorage.getItem(cacheKey)||'[]');
       let pathResults=[];
+      // Fetch patient names in batch
+      let patientNames={};
+      if(cachedPts.length){
+        try{
+          const ptInfo = await db.get('patients?email=in.('+cachedPts.map(e=>encodeURIComponent(e)).join(',')+')&select=email,name,lname').catch(()=>[]);
+          (ptInfo||[]).forEach(p=>{ patientNames[p.email] = (p.name||'') + ' ' + (p.lname||''); });
+        }catch(_){}
+      }
       if(cachedPts.length){
         for(const pEmail of cachedPts){
           const pRecs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(pEmail)}&order=created_at.desc&select=*`).catch(()=>[]);
@@ -8222,8 +8288,18 @@ async function showDrTab_(tab){
           Object.values(last).forEach(r=>{
             const sc=SCALES.find(s=>s.id===r.scale_id);if(!sc)return;
             const i=sc.interp(r.score);
-            if(i&&(i.bg==='#fee2e2'||i.bg==='#fef2f2'||i.bg==='#fef3c7'))
-              pathResults.push({...r,_patientEmail:pEmail,_interp:i,_scName:sc.name});
+            if(!i) return;
+            // MEQ: solo extremos y moderados disparan alerta (intermedio NO)
+            if(sc.id==='meq'){
+              if(i.l !== 'Intermedio'){
+                pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_interp:i,_scName:sc.name});
+              }
+              return;
+            }
+            // Resto de escalas: filtro por color de fondo (red/yellow = alerta)
+            if(i.bg==='#fee2e2'||i.bg==='#fef2f2'||i.bg==='#fef3c7'){
+              pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_interp:i,_scName:sc.name});
+            }
           });
         }
       }
@@ -8234,9 +8310,10 @@ async function showDrTab_(tab){
       let alertHtml='<div class="sec-title" style="margin-top:14px">Resultados que requieren atención</div>';
       if(pathResults.length){
         alertHtml+=pathResults.map(r=>`<div onclick="viewPatient('${r._patientEmail}')" style="background:${r._interp.bg||'#fee2e2'};border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-size:13px;font-weight:600;color:${r._interp.c}">${r._scName}</div>
-          <div style="font-size:11px;color:var(--label-2)">${r._patientEmail.split('@')[0]} · ${new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})}</div></div>
-          <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:${r._interp.c}">${r.score}</div><div style="font-size:11px;color:var(--label-3)">/${r.max_score}</div></div>
+          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:${r._interp.c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r._patientName.trim()||r._patientEmail.split('@')[0]}</div>
+          <div style="font-size:12px;font-weight:600;color:${r._interp.c};margin-top:2px">${r._scName} · ${r._interp.l}</div>
+          <div style="font-size:11px;color:var(--label-2)">${new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'})}</div></div>
+          <div style="text-align:right;flex-shrink:0;margin-left:10px"><div style="font-size:22px;font-weight:700;color:${r._interp.c};line-height:1">${r.score}</div><div style="font-size:11px;color:var(--label-3);margin-top:2px">/${r.max_score||'?'}</div></div>
         </div>`).join('');
       }
       cont.innerHTML=alertHtml+'<div id="alerts-card-container"></div>';
@@ -13531,6 +13608,130 @@ function offerEmailToPatient(patEmail, scaleNames, message){
   m.onclick = e=>{ if(e.target===m) m.remove(); };
   document.getElementById('mail-skip').onclick = ()=>m.remove();
   document.getElementById('mail-go').onclick = ()=>{ window.location.href = mailto; m.remove(); };
+}
+
+// ── TCC-I VISTA DEL PACIENTE (desbloqueable a medida que el médico marca items) ──
+// Contenido educativo breve por item, visible al paciente cuando el médico lo marca como completado
+const CBTI_PATIENT_CONTENT = {
+  M1_1: 'El sueño normal tiene varias fases (ligero, profundo y REM) que se alternan a lo largo de la noche. Saber cómo funciona te ayuda a entender por qué dormís como dormís.',
+  M1_2: 'El modelo de las 3 P explica el insomnio: factores predisponentes (los que te hacen vulnerable), precipitantes (los que lo dispararon) y perpetuantes (los que lo mantienen). El tratamiento apunta a los perpetuantes.',
+  M1_3: 'El diario de sueño es la herramienta más importante. Lo completás cada mañana al despertarte. Te ayuda a ver patrones que no son obvios mirando una sola noche.',
+  M1_4: 'Hay muchos mitos sobre el sueño ("necesito 8 horas exactas", "si no dormí lo voy a pagar todo el día"). Tu profesional te va a ayudar a distinguir cuáles son ciertos y cuáles no.',
+  M1_5: 'El TCC-I no es magia inmediata. Suele tomar 4 a 8 semanas verlo en plenitud. La constancia es lo que más cuenta.',
+  M2_1: 'Cafeína, alcohol y nicotina alteran el sueño. La cafeína dura hasta 8 horas en el cuerpo. El alcohol parece relajar pero fragmenta el sueño profundo. Revisar exposición a pantallas, comidas tarde y luz también.',
+  M2_2: 'La cama tiene que asociarse solo con dormir (y con tener sexo). Trabajar, mirar series, scrollear o discutir en la cama hace que tu cerebro asocie el lugar con vigilia.',
+  M2_3: 'Si pasaron 15-20 minutos y no te dormís, levantate. Salí del dormitorio, hacé algo aburrido con luz tenue, y volvé solo cuando tengas sueño real. Suena contraintuitivo pero funciona.',
+  M2_4: 'Despertarte siempre a la misma hora (incluso los fines de semana) es la herramienta más poderosa para regular tu reloj biológico. Más importante que la hora de acostarte.',
+  M2_5: 'Si dormís de día, le robás presión de sueño a la noche. Lo ideal es eliminar siestas durante la fase aguda del tratamiento.',
+  M3_1: 'La eficiencia del sueño se calcula así: horas dormidas / horas en la cama × 100. Si te metés a la cama 8 horas pero dormís 5, tu eficiencia es 62%. El objetivo es estar arriba del 85%.',
+  M3_2: 'Vamos a limitar tu tiempo en la cama al promedio que estás durmiendo + 15 minutos. Al principio vas a estar más cansado, pero esto consolida el sueño rápidamente.',
+  M3_3: 'Vamos a acordar una hora de acostarte y una de despertarte. No te acuestes antes (aunque tengas sueño), no te quedes después (aunque tengas sueño).',
+  M3_4: 'Aunque tu sueño promedio sea de 4 horas, nunca pasamos de menos de 5 horas en cama. Es regla de seguridad.',
+  M3_5: 'Cada semana revisamos cómo viene. Si la eficiencia supera el 85%, agregamos 15 minutos. Si está por debajo del 80%, los sacamos. Así se ajusta progresivamente.',
+  M4_1: 'Las creencias sobre el sueño influyen muchísimo. "Si no duermo 8 horas no funciono", "tengo que dormirme rápido o se arruina la noche". Vamos a identificar las tuyas.',
+  M4_2: 'Catastrofizar el sueño ("voy a estar destruido todo el día") activa el sistema de alerta y dificulta dormir. Es un círculo vicioso que vamos a romper.',
+  M4_3: 'Vamos a aprender a cuestionar pensamientos automáticos. No reemplazar por positivos forzados, sino chequear qué evidencia tenés realmente para esa idea.',
+  M4_4: 'Te voy a enseñar la técnica del "constructive worry": durante el día, dedicás 15 minutos a anotar tus preocupaciones y posibles soluciones. Así no te asaltan en la cama.',
+  M5_1: 'Relajación muscular progresiva: tensar y relajar grupos musculares por turno. Se aprende y se practica fuera de la cama primero.',
+  M5_2: 'Respiración diafragmática (4-7-8): inhalás 4 segundos, retenés 7, exhalás 8. Activa el sistema parasimpático.',
+  M5_3: 'Imaginería guiada o mindfulness ayudan a sacar a la mente del bucle de preocupación. Hay apps que te pueden guiar.',
+  M5_4: 'Si tu mente sigue activa en la cama, es señal de que necesitás bajar antes de acostarte. Implementamos rutina pre-sueño y "tiempo de mente activa" fuera del dormitorio.',
+  M6_1: 'Vamos a revisar cómo viene tu progreso con datos concretos: eficiencia, escalas, diario.',
+  M6_2: 'Las recaídas son comunes y no significan fracaso. Identificamos qué situaciones (viajes, estrés, cambios de horario) son riesgo para vos.',
+  M6_3: 'Vas a salir con un plan claro de qué hacer si algunas técnicas se pierden con el tiempo.',
+  M6_4: 'Vamos a definir cuándo se considera que terminamos el tratamiento, y plan de seguimiento a 3-6 meses para sostener los logros.'
+};
+
+async function openPatientCbtiView(){
+  showScreen('patient-tcci');
+  const cont = document.getElementById('patient-tcci-content');
+  cont.innerHTML = '<div style="text-align:center;padding:40px 0;color:rgba(255,255,255,0.55)"><div class="spinner" style="margin:0 auto 12px"></div>Cargando…</div>';
+  try{
+    const patEmail = S.user?.email;
+    if(!patEmail){ cont.innerHTML='<div style="padding:20px">Sesión no iniciada.</div>'; return; }
+    // Buscar todos los médicos que activaron CBT-I para este paciente
+    const active = await db.get('cbti_patients?patient_email=eq.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email').catch(()=>[]);
+    if(!active || !active.length){
+      cont.innerHTML = '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,0.6)"><div style="font-size:36px;margin-bottom:10px">🌿</div>Tu profesional aún no activó un protocolo TCC-I para vos.<br><br><span style="font-size:12px">Cuando lo haga, vas a poder ver el contenido del tratamiento acá.</span></div>';
+      return;
+    }
+    const drEmail = active[0].doctor_email; // si hay varios, mostramos el primero
+    // Cargar progreso
+    const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patEmail)+'&select=item_id,completed,completed_at,notes').catch(()=>[]);
+    const progressMap = {};
+    (prog||[]).forEach(r=>{ progressMap[r.item_id] = {completed:!!r.completed, completed_at:r.completed_at, notes:r.notes||''}; });
+    // Render
+    const doneCount = Object.values(progressMap).filter(p=>p.completed).length;
+    const pct = Math.round(doneCount/CBTI_TOTAL_ITEMS*100);
+    let html = '';
+    html += '<div style="background:linear-gradient(135deg,rgba(126,200,164,0.12),rgba(200,169,110,0.08));border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:16px;margin-bottom:18px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Tu progreso</div><div style="font-size:22px;font-weight:700;color:#C8A96E">'+pct+'%</div></div>';
+    html += '<div style="height:10px;background:rgba(255,255,255,0.08);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ec8a4,#C8A96E);transition:width 0.3s"></div></div>';
+    html += '<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:10px;line-height:1.5">A medida que avances en consulta con tu profesional, se desbloquean los temas del protocolo. Tu profesional marca los puntos cuando los trabajan juntos.</div>';
+    html += '</div>';
+    // Modules
+    CBTI_PROTOCOL.modules.forEach((mod)=>{
+      const itemsDone = mod.items.filter(it=>progressMap[it.id]?.completed).length;
+      const isAllComplete = itemsDone===mod.items.length;
+      const isStarted = itemsDone>0;
+      const accent = isAllComplete?'#7ec8a4':(isStarted?'#C8A96E':'rgba(255,255,255,0.15)');
+      html += '<div style="background:rgba(255,255,255,0.04);border:1px solid '+accent+';border-radius:14px;margin-bottom:12px;overflow:hidden">';
+      html += '<div onclick="document.getElementById(\'pcbti-mod-'+mod.id+'\').classList.toggle(\'open\');var el=document.getElementById(\'pcbti-mod-'+mod.id+'\');el.style.display=el.style.display===\'block\'?\'none\':\'block\';this.querySelector(\'.pcbti-chev\').style.transform=el.style.display===\'block\'?\'rotate(90deg)\':\'rotate(0deg)\';" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px">';
+      html += '<div style="font-size:24px">'+mod.icon+'</div>';
+      html += '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:2px">'+mod.name+'</div>';
+      html += '<div style="font-size:11.5px;color:rgba(255,255,255,0.55)">'+itemsDone+' de '+mod.items.length+' temas desbloqueados</div></div>';
+      html += '<div class="pcbti-chev" style="color:rgba(255,255,255,0.5);transition:transform 0.2s;font-size:14px">›</div>';
+      html += '</div>';
+      // Items
+      html += '<div id="pcbti-mod-'+mod.id+'" style="display:none;padding:0 16px 14px"><div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:12px"></div>';
+      mod.items.forEach((it)=>{
+        const p = progressMap[it.id]||{};
+        const unlocked = !!p.completed;
+        const dateStr = p.completed_at ? new Date(p.completed_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '';
+        const content = CBTI_PATIENT_CONTENT[it.id] || '';
+        if(unlocked){
+          html += '<div style="background:rgba(126,200,164,0.05);border:1px solid rgba(126,200,164,0.25);border-radius:10px;padding:12px;margin-bottom:8px">';
+          html += '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="color:#7ec8a4;font-size:14px;line-height:1.5">✓</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff;line-height:1.45">'+it.label+'</div>';
+          if(dateStr) html += '<div style="font-size:10.5px;color:#7ec8a4;margin-top:2px">Trabajado con tu profesional · '+dateStr+'</div>';
+          html += '</div></div>';
+          if(content) html += '<div style="font-size:12.5px;color:rgba(255,255,255,0.78);line-height:1.55;padding-left:22px;margin-top:6px">'+content+'</div>';
+          html += '</div>';
+        } else {
+          html += '<div style="background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:12px;margin-bottom:8px;opacity:0.55">';
+          html += '<div style="display:flex;align-items:flex-start;gap:8px"><span style="font-size:13px;line-height:1.5">🔒</span><div style="flex:1"><div style="font-size:12.5px;font-weight:500;color:rgba(255,255,255,0.7);line-height:1.45">'+it.label+'</div>';
+          html += '<div style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-top:3px;font-style:italic">Tu profesional lo desbloqueará cuando lo aborden en consulta</div>';
+          html += '</div></div></div>';
+        }
+      });
+      html += '</div></div>';
+    });
+    cont.innerHTML = html;
+  }catch(err){
+    console.error('[patient-tcci] error:', err);
+    cont.innerHTML = '<div style="padding:20px;color:#fca5a5">Error al cargar tu protocolo. Intentá de nuevo en un momento.</div>';
+  }
+}
+
+// Detectar si el paciente tiene un protocolo TCC-I activo y mostrar la tarjeta en Más
+async function checkPatientTcciCard(){
+  try{
+    const card = document.getElementById('patient-tcci-card');
+    if(!card) return;
+    const patEmail = S.user?.email;
+    if(!patEmail) return;
+    const active = await db.get('cbti_patients?patient_email=eq.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email').catch(()=>[]);
+    if(active && active.length){
+      card.style.display='block';
+      // Calcular progreso para la tarjeta
+      const drEmail = active[0].doctor_email;
+      const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patEmail)+'&completed=eq.true&select=item_id').catch(()=>[]);
+      const done = (prog||[]).length;
+      const pctEl = document.getElementById('patient-tcci-progress');
+      if(pctEl) pctEl.textContent = done+' de '+CBTI_TOTAL_ITEMS+' temas desbloqueados';
+    } else {
+      card.style.display='none';
+    }
+  }catch(_){}
 }
 </script>
 
