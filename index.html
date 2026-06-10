@@ -3049,10 +3049,20 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   </div>
 </div>
 
+<!-- DOCTOR QR PRINT SCREEN -->
+<div id="screen-dr-qr-print" class="screen" style="background:#fff">
+  <div class="topbar" style="background:#fff;border-bottom:1px solid #e2e8f0">
+    <button class="topbar-btn" onclick="showScreen('doctor-home')" style="color:#0F2820">← Volver</button>
+    <div style="font-weight:700;color:#0F2820">Material para consultorio</div>
+    <button onclick="window.print()" style="background:#1F4738;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">🖨️ Imprimir</button>
+  </div>
+  <div class="scroll" style="padding:20px;background:#fff;color:#0F2820"><div id="dr-qr-print-content"></div></div>
+</div>
+
 <!-- DOCTOR HOME -->
 <div id="screen-doctor-home" class="screen">
   <div class="topbar">
-    <button onclick="toggleDrInstructivo()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;font-family:var(--font);padding:4px 8px">📖 Ayuda</button>
+    <button onclick="toggleDrInstructivo()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;font-family:var(--font);padding:4px 8px">📖 Cómo usar Dormetria</button>
     <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div><div style="font-size:10px;color:rgba(255,255,255,0.5)" id="dr-topbar-sub">Medicina del Sueño</div></div>
     <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
   </div>
@@ -3076,14 +3086,23 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     </div>
   </div>
   <div id="dr-instructivo" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:0 16px 12px;padding:14px 16px;font-size:13px;color:#374151;line-height:1.6">
-    <div style="font-weight:700;margin-bottom:8px;font-size:14px">📖 Cómo usar el Panel Profesional</div>
+    <div style="font-weight:700;margin-bottom:8px;font-size:14px;color:#0F2820">📖 Cómo usar Dormetria</div>
+    <div style="font-weight:700;font-size:12px;color:#0F2820;text-transform:uppercase;letter-spacing:0.04em;margin:10px 0 4px">Panel profesional</div>
     <ol style="padding-left:16px;margin:0 0 8px">
-      <li style="margin-bottom:4px"><strong>Mis pacientes</strong> — listado de pacientes vinculados, ordenado alfabéticamente. Hacé clic en un paciente para ver sus resultados.</li>
-      <li style="margin-bottom:4px"><strong>Alertas</strong> — resultados patológicos de escalas que requieren atención clínica.</li>
-      <li style="margin-bottom:4px"><strong>Vincular</strong> — generá o compartí el código de vinculación para que un paciente te agregue como su profesional.</li>
-      <li style="margin-bottom:4px"><strong>Mi perfil</strong> — completá tu nombre, especialidad, matrícula y país para aparecer correctamente en el directorio.</li>
+      <li style="margin-bottom:4px"><strong>Pacientes</strong> — listado de pacientes vinculados ordenado alfabéticamente. Clic en uno para ver sus escalas, diario, estudios y notas clínicas.</li>
+      <li style="margin-bottom:4px"><strong>Alertas</strong> — resultados patológicos de escalas que requieren atención clínica priorizada.</li>
+      <li style="margin-bottom:4px"><strong>Vincular</strong> — pegá el código de 6 caracteres que te dio el paciente para conectarte a su cuenta. También podés generar QRs imprimibles desde tu perfil.</li>
+      <li style="margin-bottom:4px"><strong>Mi perfil</strong> — completá nombre, especialidad, matrícula, país, foto y bio. Configurá tus sugerencias rápidas personalizadas.</li>
+      <li style="margin-bottom:4px"><strong>🌿 TCC-I</strong> — módulo de terapia cognitivo-conductual para insomnio con protocolo guiado por sesiones (función premium).</li>
     </ol>
-    <p style="font-size:12px;color:#6b7280;margin:0">Los pacientes completan las escalas de forma autónoma. Vos ves los resultados en tiempo real.</p>
+    <div style="font-weight:700;font-size:12px;color:#0F2820;text-transform:uppercase;letter-spacing:0.04em;margin:14px 0 6px">💬 Esto tenés que decirle al paciente</div>
+    <div style="background:#fef9e7;border-left:3px solid #C8A96E;padding:10px 12px;border-radius:6px;margin-bottom:8px">
+      <p style="margin:0 0 6px;font-size:12.5px"><strong>1. Para que se descargue la app:</strong> "Andá a <strong>dormetria.com</strong>, registrate como paciente con tu mail. Es gratis."</p>
+      <p style="margin:0 0 6px;font-size:12.5px"><strong>2. Para vincularse conmigo:</strong> "Entrá a la pestaña <strong>Mi especialista</strong>. Tu código de 6 caracteres está arriba. Apretá <strong>'Compartir con mi médico por WhatsApp'</strong> y mandámelo."</p>
+      <p style="margin:0 0 6px;font-size:12.5px"><strong>3. Para que registre su sueño:</strong> "Cada mañana, abrí Dormetria → <strong>Diario de sueño</strong> → '+ Nuevo'. Registrá hora de acostarte, despertarte, cuánto tardaste en dormirte y los despertares. Es muy rápido."</p>
+      <p style="margin:0;font-size:12.5px"><strong>4. Para que complete escalas:</strong> "Cuando yo te sugiera escalas, te van a aparecer en la pantalla de Inicio con un cartel dorado. Completá las que veas indicadas, así puedo evaluarte mejor."</p>
+    </div>
+    <p style="font-size:12px;color:#6b7280;margin:8px 0 0">Los pacientes completan todo de forma autónoma. Vos ves los resultados en tiempo real desde tu panel.</p>
   </div>
   <div class="bottomnav" id="dr-bottomnav" style="background:#1a2e23;border-top:1px solid rgba(255,255,255,0.08);display:flex">
     <button class="bnav active" id="drnav-patients" onclick="showDrTab('patients',this)" style="color:#fff">
@@ -4523,6 +4542,12 @@ function showDrRegisterForm(){
         <input id="dreg-photo" class="form-input" type="url" placeholder="https://... (link a foto profesional)" value="${u.photo_url||''}" style="width:100%;box-sizing:border-box"></div>
       <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Descripción breve (opcional)</label>
         <textarea id="dreg-bio" class="form-input" rows="2" placeholder="Áreas de interés, enfoque, modalidad de atención..." style="width:100%;box-sizing:border-box;resize:none">${u.bio||''}</textarea></div>
+      <div style="background:#fef9e7;border:1px solid #C8A96E;border-radius:10px;padding:12px;margin-top:4px">
+        <label style="font-size:12px;font-weight:700;color:#0F2820;display:block;margin-bottom:6px">📄 CV breve en PDF <span style="color:#dc2626">*</span></label>
+        <div style="font-size:11px;color:#5C6B61;line-height:1.4;margin-bottom:8px">El administrador revisa tu CV antes de aprobar tu perfil público. Subí un PDF de máximo 5 MB con tu formación, especialidad y experiencia. ${u.cv_url?'<br><strong style="color:#1a4a3a">✓ CV ya cargado</strong> · <a href="'+u.cv_url+'" target="_blank" style="color:#1F4738">Ver actual</a> — subí uno nuevo si querés actualizarlo.':''}</div>
+        <input id="dreg-cv" type="file" accept="application/pdf" style="width:100%;padding:8px;font-size:13px;background:#fff;border:1px solid #ddd;border-radius:8px;box-sizing:border-box">
+        <div id="dreg-cv-status" style="font-size:11px;margin-top:6px;color:#5C6B61"></div>
+      </div>
       <div style="padding:10px 0 4px"><div style="font-size:11px;font-weight:700;color:#1a4a3a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Datos de contacto (opcionales)</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">📞</span>
@@ -4571,7 +4596,38 @@ async function saveDrRegisterForm(){
   const u=S.user;if(!u)return;
   const fullName=document.getElementById('dreg-name').value.trim().split(' ');
   const sexVal=document.getElementById('dreg-sex')?.value||u.sex||'';
-  const upd={name:fullName[0]||u.name,lname:fullName.slice(1).join(' ')||u.lname||'',sex:sexVal,specialty:document.getElementById('dreg-spec').value,mat:document.getElementById('dreg-mat').value,institution:document.getElementById('dreg-inst').value,city:document.getElementById('dreg-city').value,bio:document.getElementById('dreg-bio').value,phone_cc:document.getElementById('dreg-phone-cc')?.value||'+54',phone:(document.getElementById('dreg-phone-cc')?.value||'+54')+' '+(document.getElementById('dreg-phone')?.value||''),email_public:document.getElementById('dreg-email-pub')?.value||'',available_online:document.getElementById('dreg-online')?.checked||false,available_presencial:document.getElementById('dreg-presencial')?.checked||false,listed:'pending'};
+  // CV PDF upload (si seleccionó uno nuevo)
+  let cvUrl = u.cv_url||'';
+  const cvInput = document.getElementById('dreg-cv');
+  const cvStatus = document.getElementById('dreg-cv-status');
+  if(cvInput && cvInput.files && cvInput.files[0]){
+    const file = cvInput.files[0];
+    if(file.size > 5*1024*1024){
+      if(cvStatus){ cvStatus.textContent='⚠ El PDF es demasiado pesado (máximo 5 MB)'; cvStatus.style.color='#dc2626'; }
+      return;
+    }
+    if(file.type !== 'application/pdf'){
+      if(cvStatus){ cvStatus.textContent='⚠ El archivo tiene que ser PDF'; cvStatus.style.color='#dc2626'; }
+      return;
+    }
+    if(cvStatus){ cvStatus.textContent='Subiendo CV…'; cvStatus.style.color='#5C6B61'; }
+    try{
+      const safeName = (u.email||'unknown').replace(/[^a-zA-Z0-9]/g,'_')+'_'+Date.now()+'.pdf';
+      const { data, error } = await supa.storage.from('doctor_cvs').upload(safeName, file, {contentType:'application/pdf',upsert:false});
+      if(error) throw error;
+      const { data: pub } = supa.storage.from('doctor_cvs').getPublicUrl(safeName);
+      cvUrl = pub.publicUrl;
+      if(cvStatus){ cvStatus.textContent='✓ CV subido correctamente'; cvStatus.style.color='#14532d'; }
+    }catch(uploadErr){
+      console.error('CV upload error:', uploadErr);
+      if(cvStatus){ cvStatus.textContent='⚠ No se pudo subir el CV: '+(uploadErr.message||'')+'. Pedí al admin que cree el bucket doctor_cvs.'; cvStatus.style.color='#dc2626'; }
+      return;
+    }
+  } else if(!cvUrl && !u.cv_url){
+    if(cvStatus){ cvStatus.textContent='⚠ El CV en PDF es obligatorio para aparecer en el directorio'; cvStatus.style.color='#dc2626'; }
+    return;
+  }
+  const upd={name:fullName[0]||u.name,lname:fullName.slice(1).join(' ')||u.lname||'',sex:sexVal,specialty:document.getElementById('dreg-spec').value,mat:document.getElementById('dreg-mat').value,institution:document.getElementById('dreg-inst').value,city:document.getElementById('dreg-city').value,bio:document.getElementById('dreg-bio').value,phone_cc:document.getElementById('dreg-phone-cc')?.value||'+54',phone:(document.getElementById('dreg-phone-cc')?.value||'+54')+' '+(document.getElementById('dreg-phone')?.value||''),email_public:document.getElementById('dreg-email-pub')?.value||'',available_online:document.getElementById('dreg-online')?.checked||false,available_presencial:document.getElementById('dreg-presencial')?.checked||false,cv_url:cvUrl,listed:'pending'};
   try{
     // Save to localStorage immediately (works without server)
     const drKey='dm_dr_profile_'+(u.email||'');
@@ -4591,6 +4647,7 @@ async function saveDrRegisterForm(){
       phone:upd.phone||'',
       email_public:upd.email_public||'',
       photo_url:document.getElementById('dreg-photo')?.value||'',
+      cv_url:cvUrl,
       available_online:upd.available_online||false,
       available_presencial:upd.available_presencial||false,
       listed:'pending'
@@ -4605,7 +4662,7 @@ async function saveDrRegisterForm(){
     Object.assign(S.user,upd);
     if(_activeReminderModal){_activeReminderModal.remove();_activeReminderModal=null;}
     showDoctorHome();
-    toast('✓ Datos guardados correctamente.');
+    toast('✓ Datos enviados. Esperá la aprobación del admin.');
   }catch(e){toast('Error: '+e.message);}
 }
 
@@ -8119,6 +8176,19 @@ async function showDrTab_(tab){
           <div style="font-size:12px;color:var(--label-3);margin-bottom:10px">Seleccioná las escalas de tu interés para que aparezcan destacadas en el panel de cada paciente</div>
           <div id="dr-scales-picker" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
         </div>
+        <div style="margin:18px 0 14px;padding:14px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.3);border-radius:12px">
+          <div style="font-size:12px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Herramientas del profesional</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button type="button" onclick="showCustomBundleConfig()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
+              <span style="font-size:18px">⭐</span>
+              <div style="flex:1"><div>Mis sugerencias rápidas</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Configurá tu bundle personalizado de escalas</div></div>
+            </button>
+            <button type="button" onclick="showDrQrPrint()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
+              <span style="font-size:18px">📱</span>
+              <div style="flex:1"><div>QR para el consultorio</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Hoja imprimible con QR de descarga + vinculación directa</div></div>
+            </button>
+          </div>
+        </div>
         <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:16px">Guardar cambios</button>
       </div>`;
       // Render scales picker after DOM is ready
@@ -8532,6 +8602,12 @@ async function showDrPTab_(tab){
         perfso:'Rendimiento cognitivo/deportivo/académico afectado por sueño',
       };
       const hdr=document.createElement('div');
+      var _customBundleIds = (typeof getCustomBundle==='function')?getCustomBundle():[];
+      var _customBundleHtml = '';
+      if(_customBundleIds && _customBundleIds.length){
+        var idsLit2 = '['+_customBundleIds.map(function(x){return "'"+x+"'";}).join(',')+']';
+        _customBundleHtml = '<button type="button" onclick="_applySuggestBundle('+idsLit2+')" style="background:linear-gradient(135deg,#C8A96E22,#C8A96E11);border:1.5px solid #C8A96E;border-radius:14px;padding:7px 12px;font-size:13px;color:#0F2820;font-weight:700;cursor:pointer;font-family:inherit">⭐ Mis sugerencias ('+_customBundleIds.length+')</button>';
+      }
       // Paquetes preseteados (clic para preseleccionar varias escalas)
       var _suggestBundlesHtml=[
         ['📋 Cribado inicial',['gasq']],
@@ -8544,6 +8620,7 @@ async function showDrPTab_(tab){
         var idsLit='['+b[1].map(function(x){return "'"+x+"'";}).join(',')+']';
         return '<button type="button" onclick="_applySuggestBundle('+idsLit+')" style="background:var(--bg-secondary);border:1px solid var(--sep);border-radius:14px;padding:7px 12px;font-size:13px;color:var(--label);cursor:pointer;font-family:inherit">'+b[0]+'</button>';
       }).join('');
+      _suggestBundlesHtml = _customBundleHtml + _suggestBundlesHtml;
       window._applySuggestBundle=function(ids){
         const boxes = Array.from(document.querySelectorAll('#suggest-scale-list .suggest-label input[type="checkbox"]'));
         const targets = boxes.filter(cb=>ids.indexOf(cb.value)>=0);
@@ -8935,9 +9012,17 @@ async function sendScaleSuggestion(){
   setBtn('suggest-btn',false,'Enviar sugerencias seleccionadas');
   if(sent>0){
     showSuccessBanner(sent+' sugerencia'+(sent>1?'s':'')+' enviada'+(sent>1?'s':'')+' al paciente ✓');
+    // Recolectar nombres de escalas enviadas para el mail
+    const sentScaleNames = Array.from(checkboxes).map(cb=>{
+      const sc = SCALES.find(s=>s.id===cb.value);
+      return sc?.name || cb.value;
+    });
     const msgEl=document.getElementById('suggest-msg');
+    const sentMsg = msgEl ? msgEl.value : '';
     if(msgEl) msgEl.value='';
     document.querySelectorAll('#suggest-scale-list input:checked').forEach(cb=>{ cb.checked=false; cb.closest('label').style.borderColor='transparent'; });
+    // Ofrecer mail al paciente
+    setTimeout(()=>{ if(typeof offerEmailToPatient==='function') offerEmailToPatient(patEmail, sentScaleNames, sentMsg); }, 600);
   } else {
     toast('Error al enviar — verificá el SQL en Supabase');
   }
@@ -13295,6 +13380,157 @@ function sharePatientCodeWhatsApp(){
   const text = 'Hola, te comparto mi código de Dormetria para que puedas vincularte como mi profesional y ver mis registros:\n\nCódigo: '+code+'\nPaciente: '+name.trim()+'\n\nIngresá a https://dormetria.com (o la app) → Vincular paciente → Pegá el código.';
   const url = 'https://wa.me/?text='+encodeURIComponent(text);
   window.open(url,'_blank');
+}
+
+// ── QR IMPRIMIBLE PARA CONSULTORIO ──
+function showDrQrPrint(){
+  const u = S.user;
+  if(!u){ toast('Sesión no iniciada'); return; }
+  const drCode = u.code || u.mat || u.email; // fallback
+  const drFullName = (u.sex==='Femenino'?'Dra. ':'Dr. ') + (u.name||'') + ' ' + (u.lname||'');
+  const specLabels = {psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General'};
+  const drSpec = specLabels[u.specialty] || u.specialty || '';
+  const drMat = u.mat || '';
+  const loginUrl = 'https://dormetria.com';
+  const drLinkUrl = 'https://dormetria.com/?dr=' + encodeURIComponent(u.email||'');
+  const qrLogin = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(loginUrl);
+  const qrDoctor = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(drLinkUrl);
+
+  const cont = document.getElementById('dr-qr-print-content');
+  cont.innerHTML = `
+    <style>
+      @media print {
+        body * { visibility:hidden; }
+        #screen-dr-qr-print, #screen-dr-qr-print * { visibility:visible; }
+        #screen-dr-qr-print { position:absolute; left:0; top:0; width:100%; }
+        #screen-dr-qr-print .topbar { display:none !important; }
+        .qr-no-print { display:none !important; }
+      }
+      .qr-card { background:#fff; border:2px solid #0F2820; border-radius:14px; padding:24px; text-align:center; }
+      .qr-card img { display:block; margin:12px auto; max-width:240px; width:100%; height:auto; }
+    </style>
+    <div class="qr-no-print" style="background:#f0f5f2;border:1px solid #cad8d1;border-radius:10px;padding:12px;margin-bottom:20px;font-size:13px;color:#0F2820;line-height:1.5">
+      💡 <strong>Para imprimir:</strong> tocá el botón Imprimir arriba a la derecha. Te recomiendo imprimir en color y plastificar para colgar en tu consultorio.
+    </div>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:24px;font-weight:700;color:#0F2820;letter-spacing:0.02em">🌙 Dormetria</div>
+      <div style="font-size:13px;color:#5C6B61;margin-top:4px">Medicina del sueño · Plataforma clínica</div>
+    </div>
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:18px;font-weight:700;color:#0F2820">${drFullName}</div>
+      ${drSpec?'<div style="font-size:13px;color:#5C6B61">'+drSpec+(drMat?' · '+drMat:'')+'</div>':''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+      <div class="qr-card">
+        <div style="font-size:13px;font-weight:700;color:#0F2820;text-transform:uppercase;letter-spacing:0.06em">PASO 1</div>
+        <div style="font-size:14px;font-weight:600;color:#0F2820;margin-top:4px">Descargá la app</div>
+        <img src="${qrLogin}" alt="QR de descarga">
+        <div style="font-size:11px;color:#5C6B61;line-height:1.4">Escaneá este QR con la cámara del celular. Te lleva a dormetria.com para crear tu cuenta de paciente.</div>
+      </div>
+      <div class="qr-card">
+        <div style="font-size:13px;font-weight:700;color:#0F2820;text-transform:uppercase;letter-spacing:0.06em">PASO 2</div>
+        <div style="font-size:14px;font-weight:600;color:#0F2820;margin-top:4px">Vinculate conmigo</div>
+        <img src="${qrDoctor}" alt="QR del profesional">
+        <div style="font-size:11px;color:#5C6B61;line-height:1.4">Una vez registrado, escaneá este QR para conectar tu cuenta directamente con mi perfil profesional.</div>
+      </div>
+    </div>
+    <div style="background:#fef9e7;border:1px solid #C8A96E;border-radius:10px;padding:14px;font-size:12px;color:#0F2820;line-height:1.6">
+      <strong>¿Para qué sirve Dormetria?</strong><br>
+      Es una plataforma donde podés registrar tu sueño día por día, completar escalas clínicas validadas que yo te indique, y compartir todo conmigo en tiempo real. Si seguís estas indicaciones, vamos a poder hacer un seguimiento mucho más preciso de tu evolución.
+    </div>
+    <div style="text-align:center;margin-top:18px;font-size:10px;color:#5C6B61">dormetria.com · ${(u.email_public||u.email||'')}${u.phone?' · '+u.phone:''}</div>
+  `;
+  showScreen('dr-qr-print');
+}
+
+// ── BUNDLE PERSONALIZADO DEL MÉDICO ──
+function getCustomBundle(){
+  // Lee de doctors.custom_bundle (JSON array) o localStorage como fallback
+  const u = S.user||{};
+  if(u.custom_bundle){
+    try{ const arr = typeof u.custom_bundle === 'string' ? JSON.parse(u.custom_bundle) : u.custom_bundle; if(Array.isArray(arr)) return arr; }catch(_){}
+  }
+  const ls = localStorage.getItem('dm_dr_bundle_'+(u.email||''));
+  if(ls){ try{ return JSON.parse(ls); }catch(_){} }
+  return [];
+}
+
+function showCustomBundleConfig(){
+  const u = S.user||{}; const current = getCustomBundle();
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:flex-end;justify-content:center;overflow-y:auto';
+  const visScales = SCALES.filter(s=>!['eedsi','bears','cshq'].includes(s.id)); // excluyo escalas pediátricas específicas
+  const opts = visScales.map(s=>{
+    const sel = current.includes(s.id);
+    return '<label style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:10px;background:'+(sel?'#eef8f5':'#fff')+';border:1.5px solid '+(sel?'#1F4738':'#e2e8f0')+';cursor:pointer;margin-bottom:5px">'+
+      '<input type="checkbox" value="'+s.id+'" '+(sel?'checked':'')+' style="accent-color:#1F4738;margin-top:3px;flex-shrink:0">'+
+      '<div><div style="font-size:13.5px;font-weight:600;color:#0F2820">'+s.name+'</div>'+
+      '<div style="font-size:11px;color:#5C6B61;margin-top:2px;line-height:1.4">'+(s.desc||'')+'</div></div></label>';
+  }).join('');
+  modal.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;padding:22px 18px 32px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.2)">'+
+    '<div style="font-size:17px;font-weight:700;color:#0F2820;margin-bottom:4px">⭐ Mis sugerencias rápidas</div>'+
+    '<div style="font-size:12.5px;color:#5C6B61;margin-bottom:14px;line-height:1.5">Seleccioná las escalas que más sugerís en tu práctica. Vas a poder activarlas todas con un solo botón cuando le sugerís escalas a un paciente.</div>'+
+    '<div id="cbundle-list" style="margin-bottom:14px">'+opts+'</div>'+
+    '<div style="display:flex;gap:10px"><button id="cbundle-cancel" style="flex:1;padding:12px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:14px;cursor:pointer;font-family:var(--font)">Cancelar</button>'+
+    '<button id="cbundle-save" style="flex:2;padding:12px;border:none;border-radius:10px;background:#1F4738;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar</button></div></div>';
+  document.body.appendChild(modal);
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  document.getElementById('cbundle-cancel').onclick = ()=>modal.remove();
+  document.getElementById('cbundle-list').addEventListener('change', e=>{
+    if(e.target.tagName==='INPUT'){
+      const lbl = e.target.closest('label');
+      lbl.style.background = e.target.checked?'#eef8f5':'#fff';
+      lbl.style.borderColor = e.target.checked?'#1F4738':'#e2e8f0';
+    }
+  });
+  document.getElementById('cbundle-save').onclick = async ()=>{
+    const selected = Array.from(document.querySelectorAll('#cbundle-list input:checked')).map(i=>i.value);
+    localStorage.setItem('dm_dr_bundle_'+(u.email||''), JSON.stringify(selected));
+    try{
+      await db.patch('doctors?email=eq.'+encodeURIComponent(u.email), {custom_bundle: JSON.stringify(selected)});
+      S.user.custom_bundle = JSON.stringify(selected);
+      toast('✓ Tus sugerencias rápidas se guardaron');
+    }catch(e){
+      console.warn('custom_bundle DB save error', e);
+      S.user.custom_bundle = JSON.stringify(selected);
+      toast('✓ Guardado localmente (la columna custom_bundle puede no existir en DB todavía)');
+    }
+    modal.remove();
+  };
+}
+
+// ── MAIL AL PACIENTE TRAS SUGERIR ESCALAS ──
+function offerEmailToPatient(patEmail, scaleNames, message){
+  const u = S.user||{};
+  const drName = (u.sex==='Femenino'?'Dra. ':'Dr. ') + (u.name||'') + ' ' + (u.lname||'');
+  const subject = '['+drName+'] Te sugerí escalas en Dormetria';
+  const bodyLines = [
+    'Hola,',
+    '',
+    'Te sugerí las siguientes escalas para que las completes en Dormetria:',
+    '',
+    ...scaleNames.map(n=>'• '+n),
+    '',
+    message ? 'Mensaje:\n'+message+'\n' : '',
+    'Ingresá a Dormetria (https://dormetria.com) con tu cuenta. En la pantalla de inicio te van a aparecer las escalas con un cartel dorado.',
+    '',
+    'Saludos,',
+    drName
+  ].filter(l=>l!==null);
+  const body = bodyLines.join('\n');
+  const mailto = 'mailto:'+encodeURIComponent(patEmail)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  // Modal de confirmación
+  const m = document.createElement('div');
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(15,40,32,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:420px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">'+
+    '<div style="font-size:18px;font-weight:700;color:#0F2820;margin-bottom:8px">✉️ ¿Avisarle por mail también?</div>'+
+    '<div style="font-size:13px;color:#5C6B61;line-height:1.5;margin-bottom:16px">Las sugerencias ya están guardadas en la app del paciente. Si querés que le llegue además un mail recordatorio, lo abrimos en tu cliente de mail con un mensaje listo.</div>'+
+    '<div style="display:flex;gap:10px"><button id="mail-skip" style="flex:1;padding:11px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:14px;cursor:pointer;font-family:var(--font);color:#5C6B61">No, gracias</button>'+
+    '<button id="mail-go" style="flex:1.5;padding:11px;border:none;border-radius:10px;background:#1F4738;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Abrir mail</button></div></div>';
+  document.body.appendChild(m);
+  m.onclick = e=>{ if(e.target===m) m.remove(); };
+  document.getElementById('mail-skip').onclick = ()=>m.remove();
+  document.getElementById('mail-go').onclick = ()=>{ window.location.href = mailto; m.remove(); };
 }
 </script>
 
