@@ -6607,8 +6607,8 @@ function renderProfileView(){
       </div>
 
       <!-- Mis estudios -->
-      <div onclick="showDocsScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-top:8px">
-        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <div onclick="showDocsScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </div>
         <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis estudios</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Laboratorios, polisomnografías y CPAP</div></div>
@@ -9118,40 +9118,57 @@ async function sendScaleSuggestion(){
 
 
 async function loadDoctorSuggestions(){
+  const banner = document.getElementById('home-doctor-suggestions');
+  const patEmail = S.user?.email;
+  console.log('[loadDoctorSuggestions] starting · patient_email=', patEmail, '· banner exists?', !!banner);
+  if(!patEmail || !banner){
+    console.warn('[loadDoctorSuggestions] abort: no email or no banner element');
+    return;
+  }
+  let suggestions = null;
+  let errMsg = null;
   try{
-    const suggestions = await db.get(
-      'doctor_suggestions?patient_email=eq.'+encodeURIComponent(S.user.email)+
+    suggestions = await db.get(
+      'doctor_suggestions?patient_email=eq.'+encodeURIComponent(patEmail)+
       '&completed=eq.false&order=created_at.desc&select=*'
     );
-    const banner = document.getElementById('home-doctor-suggestions');
-    if(!suggestions||!suggestions.length){
-      // sin sugerencias pendientes: ocultar banner
-      if(banner){ banner.style.display='none'; banner.innerHTML=''; }
-      return;
-    }
-    S._docSuggIds = suggestions.map(s=>s.scale_id);
-    if(!banner) return;
-    
-    const cardsHtml = suggestions.map(s=>{
-      const sc = SCALES.find(sc=>sc.id===s.scale_id);
-      return '<div style="background:#FFFFFF;border:1.5px solid #C8A96E;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(200,169,110,0.25)">'+
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
-        '<div style="font-size:11px;font-weight:700;color:#8B6F3D;text-transform:uppercase;letter-spacing:0.06em">📋 Sugerida por tu profesional</div>'+
-        '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:#999;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>'+
-        '</div>'+
-        '<div style="font-size:15px;font-weight:600;color:#0F2820;margin-bottom:2px">'+(sc?.name||s.scale_name)+'</div>'+
-        (s.message?'<div style="font-size:13px;color:#5C6B61;margin-bottom:10px;font-style:italic">"'+s.message+'"</div>':'<div style="margin-bottom:10px"></div>')+
-        '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" style="background:#1F4738;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;font-family:var(--font)">Completar ahora</button>'+
-        '</div>';
-    }).join('');
-    
-    banner.innerHTML = '<div style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:2px solid #C8A96E;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(200,169,110,0.2)">'+
-      '<div style="font-size:13px;font-weight:700;color:#0F2820;margin-bottom:4px;letter-spacing:0.01em">⭐ Estas escalas te recomienda tu profesional</div>'+
-      '<div style="font-size:12px;color:#5C6B61;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
-      cardsHtml+
-      '</div>';
+    console.log('[loadDoctorSuggestions] response:', suggestions);
+  }catch(err){
+    errMsg = err.message || String(err);
+    console.error('[loadDoctorSuggestions] DB ERROR:', err);
+  }
+  if(errMsg){
+    // Mostrar el error en el banner para diagnosticar
+    banner.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;font-size:12px;color:#991b1b"><strong>⚠ No se pudieron cargar las sugerencias.</strong><br>Error: '+errMsg+'<br><br>Probable causa: RLS de Supabase no permite leer doctor_suggestions. Ver SQL en la consulta del médico.</div>';
     banner.style.display='block';
-  }catch(e){ console.warn('Suggestions load error:', e.message); }
+    return;
+  }
+  if(!suggestions || !suggestions.length){
+    console.log('[loadDoctorSuggestions] sin sugerencias pendientes — banner oculto');
+    banner.style.display='none';
+    banner.innerHTML='';
+    return;
+  }
+  S._docSuggIds = suggestions.map(s=>s.scale_id);
+  const cardsHtml = suggestions.map(s=>{
+    const sc = SCALES.find(sc=>sc.id===s.scale_id);
+    return '<div style="background:#FFFFFF;border:1.5px solid #C8A96E;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(200,169,110,0.25)">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
+      '<div style="font-size:11px;font-weight:700;color:#8B6F3D;text-transform:uppercase;letter-spacing:0.06em">📋 Sugerida por tu profesional</div>'+
+      '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:#999;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>'+
+      '</div>'+
+      '<div style="font-size:15px;font-weight:600;color:#0F2820;margin-bottom:2px">'+(sc?.name||s.scale_name)+'</div>'+
+      (s.message?'<div style="font-size:13px;color:#5C6B61;margin-bottom:10px;font-style:italic">"'+s.message+'"</div>':'<div style="margin-bottom:10px"></div>')+
+      '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" style="background:#1F4738;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;font-family:var(--font)">Completar ahora</button>'+
+      '</div>';
+  }).join('');
+  banner.innerHTML = '<div style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:2px solid #C8A96E;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(200,169,110,0.2)">'+
+    '<div style="font-size:13px;font-weight:700;color:#0F2820;margin-bottom:4px;letter-spacing:0.01em">⭐ Estas escalas te recomienda tu profesional</div>'+
+    '<div style="font-size:12px;color:#5C6B61;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
+    cardsHtml+
+    '</div>';
+  banner.style.display='block';
+  console.log('[loadDoctorSuggestions] ✓ banner renderizado con', suggestions.length, 'sugerencias');
 }
 
 async function dismissSuggestion(id){
@@ -10930,10 +10947,14 @@ function showChildDiaryNew(){
 
     <div class="form-group" style="margin-bottom:14px">
       <label class="form-label">Tiempo hasta dormirse (latencia)</label>
-      <div style="display:flex;align-items:center;gap:10px">
-        <input class="form-input" type="number" id="d-latency" min="0" max="180" placeholder="minutos" style="max-width:110px">
-        <span style="font-size:13px;color:var(--label-2)">minutos desde que se intentó dormir</span>
-      </div>
+      <select class="form-input" id="d-latency" style="font-family:var(--font)">
+        <option value="">Seleccioná...</option>
+        <option value="2">Se durmió enseguida (&lt; 5 min)</option>
+        <option value="10">5 a 15 min</option>
+        <option value="22">15 a 30 min</option>
+        <option value="45">30 a 60 min</option>
+        <option value="90">Más de 60 min</option>
+      </select>
     </div>
 
     <div class="sec-title" style="margin-top:8px">Despertares nocturnos</div>
@@ -11007,7 +11028,7 @@ let _siestaCount = 0;
 function addSiestaRow(){
   _siestaCount++;
   const id = 'siesta-'+_siestaCount;
-  const moodOpts = [{v:'great',e:'😄'},{v:'good',e:'🙂'},{v:'ok',e:'😐'},{v:'tired',e:'😴'},{v:'grumpy',e:'😤'}];
+  const moodOpts = [{v:'grumpy',e:'😤'},{v:'tired',e:'😴'},{v:'ok',e:'😐'},{v:'good',e:'🙂'},{v:'great',e:'😄'}];
   const row = document.createElement('div');
   row.id = id;
   row.style.cssText='background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px;position:relative';
@@ -12227,17 +12248,19 @@ function renderEEDSI(){
   html += '<div style="font-size:13px;font-weight:600;color:#fff;margin:18px 0 8px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px">Parámetros básicos</div>';
   html += '<div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:10px">Una noche habitual del último mes</div>';
   EEDSI.params.forEach((p,idx) => {
-    // Render naps_count y naps_duration_min en pareja, lado a lado
+    // Render naps_count y naps_duration_min en pareja con sub-header
     if(p.id === 'naps_count') {
       const p2 = EEDSI.params.find(x=>x.id==='naps_duration_min');
-      html += '<div style="display:flex;gap:10px;margin-bottom:10px">';
+      html += '<div style="margin:14px 0 10px"><div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:6px">Siestas del día <span style="font-weight:400;color:rgba(255,255,255,0.4)">(cantidad y duración total)</span></div>';
+      html += '<div style="display:flex;gap:10px">';
       [p, p2].forEach(pp => {
         if(!pp) return;
-        html += '<div style="flex:1"><label style="font-size:12px;color:rgba(255,255,255,0.7);display:block;margin-bottom:4px">'+pp.label+'</label>';
-        html += '<input type="number" id="eedsi-p-'+pp.id+'" value="'+(EEDSI_STATE.params[pp.id]||'')+'" onchange="EEDSI_STATE.params[\''+pp.id+'\']=this.value" min="'+(pp.min||0)+'" max="'+(pp.max||999)+'" style="width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;box-sizing:border-box">';
+        const shortLbl = pp.id==='naps_count' ? 'Cantidad' : 'Duración total (min)';
+        html += '<div style="flex:1"><label style="font-size:11px;color:rgba(255,255,255,0.55);display:block;margin-bottom:4px">'+shortLbl+'</label>';
+        html += '<input type="number" id="eedsi-p-'+pp.id+'" value="'+(EEDSI_STATE.params[pp.id]||'')+'" placeholder="'+(pp.id==='naps_count'?'0':'min')+'" onchange="EEDSI_STATE.params[\''+pp.id+'\']=this.value" min="'+(pp.min||0)+'" max="'+(pp.max||999)+'" style="width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;box-sizing:border-box">';
         html += '</div>';
       });
-      html += '</div>';
+      html += '</div></div>';
       return;
     }
     if(p.id === 'naps_duration_min') return; // ya renderizado arriba
@@ -13024,7 +13047,7 @@ function renderChildAwakenings(){
           <option value="solo" ${a.method==='solo'?'selected':''}>Solo/a, sin ayuda</option>
           <option value="presence" ${a.method==='presence'?'selected':''}>Con presencia del padre/madre (sin alzar)</option>
           <option value="contact" ${a.method==='contact'?'selected':''}>Con contacto físico (abrazo, alzado)</option>
-          <option value="feeding" ${a.method==='feeding'?'selected':''}>Con alimentación (pecho/mamadera)</option>
+          <option value="feeding" ${a.method==='feeding'?'selected':''}>Con alimentación (teta/mamadera)</option>
           <option value="pacifier" ${a.method==='pacifier'?'selected':''}>Con chupete</option>
           <option value="movement" ${a.method==='movement'?'selected':''}>Con movimiento (caminar, hamaca)</option>
           <option value="hard" ${a.method==='hard'?'selected':''}>Le costó mucho (más de 30 min)</option>
@@ -13744,22 +13767,33 @@ async function openPatientCbtiView(){
 async function checkPatientTcciCard(){
   try{
     const card = document.getElementById('patient-tcci-card');
-    if(!card) return;
     const patEmail = S.user?.email;
-    if(!patEmail) return;
-    const active = await db.get('cbti_patients?patient_email=eq.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email').catch(()=>[]);
+    console.log('[checkPatientTcciCard] patient_email=', patEmail, '· card exists?', !!card);
+    if(!card || !patEmail) return;
+    let active = null;
+    try{
+      active = await db.get('cbti_patients?patient_email=eq.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email');
+      console.log('[checkPatientTcciCard] cbti_patients response:', active);
+    }catch(err){
+      console.error('[checkPatientTcciCard] DB ERROR:', err);
+      // Mostrar error en card para diagnosticar
+      card.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;font-size:11px;color:#991b1b"><strong>⚠ Error al leer cbti_patients</strong><br>'+(err.message||'')+'<br>Probable RLS faltante.</div>';
+      card.style.display='block';
+      return;
+    }
     if(active && active.length){
       card.style.display='block';
-      // Calcular progreso para la tarjeta
       const drEmail = active[0].doctor_email;
       const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patEmail)+'&completed=eq.true&select=item_id').catch(()=>[]);
       const done = (prog||[]).length;
       const pctEl = document.getElementById('patient-tcci-progress');
       if(pctEl) pctEl.textContent = done+' de '+CBTI_TOTAL_ITEMS+' temas desbloqueados';
+      console.log('[checkPatientTcciCard] ✓ card visible · doctor:', drEmail, '· items desbloqueados:', done);
     } else {
       card.style.display='none';
+      console.log('[checkPatientTcciCard] sin TCC-I activo · card oculta');
     }
-  }catch(_){}
+  }catch(e){ console.warn('[checkPatientTcciCard] error:', e); }
 }
 
 // Navegar a la vista del paciente y abrir directamente el historial de UNA escala específica
