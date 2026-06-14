@@ -3090,10 +3090,12 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <button id="admin-btn" onclick="showAdminPanel()" style="display:none;padding:8px 16px;border:none;border-radius:20px;background:#14532d;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
         🔐 Panel Admin
       </button>
-      <button id="feedback-btn" onclick="toggleDrInstructivo()" style="padding:8px 16px;border:none;border-radius:20px;background:rgba(255,255,255,0.1);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.2)">
-        📖 Cómo se usa Dormetria
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:nowrap">
+      <button id="feedback-btn" onclick="toggleDrInstructivo()" style="flex:1;padding:8px 10px;border:none;border-radius:20px;background:rgba(255,255,255,0.1);color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;justify-content:center;gap:5px;border:1px solid rgba(255,255,255,0.2);white-space:nowrap">
+        📖 Cómo se usa
       </button>
-      <button onclick="showFeedbackModal()" style="padding:8px 16px;border:none;border-radius:20px;background:#C8A96E;color:#0F2820;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+      <button onclick="showFeedbackModal()" style="flex:1;padding:8px 10px;border:none;border-radius:20px;background:#C8A96E;color:#0F2820;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 8px rgba(0,0,0,0.2);white-space:nowrap">
         💡 Ayudanos a mejorar
       </button>
     </div>
@@ -8444,7 +8446,7 @@ async function showDrPTab_(tab){
         '<textarea id="dr-annot" rows="3" placeholder="Notas del profesional..." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sep-opaque);border-radius:10px;font-size:13px;font-family:var(--font);resize:none;line-height:1.5;background:var(--bg-secondary)">'+savedNote+'</textarea>'+
         '<button class="save-annot-btn" style="margin-top:6px;padding:7px 16px;border:none;border-radius:8px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Guardar nota</button>';
 
-      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div><div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div></div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>');
+      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>');
     }else if(tab==='profile'){
       const u=S.viewData;const dob=u.dob?new Date(u.dob):null;const age=dob?Math.floor((new Date()-dob)/31557600000):null;const imc=(u.weight_kg&&u.height_cm)?((u.weight_kg/((u.height_cm/100)**2)).toFixed(1)):null;const paths=(u.pathologies||[]).map(p=>`<span class="tag">${p}</span>`).join('');
       const photoHtml=u.photo_url?
@@ -8991,7 +8993,12 @@ async function renderCircadianPattern(container){
 function showDrEvalAnswers(evalId, scaleId, score, scaleName, date, answersJson){
   const sc = SCALES.find(s=>s.id===scaleId);
   let answers = [];
-  try{ answers = JSON.parse(answersJson||'[]'); }catch(e){}
+  let eedsiData = null;
+  try{
+    const parsed = JSON.parse(answersJson||'[]');
+    if(Array.isArray(parsed)){ answers = parsed; }
+    else if(parsed && (parsed.items || parsed.subscale)){ eedsiData = parsed; }
+  }catch(e){}
   
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;display:flex;align-items:flex-end;justify-content:center';
@@ -9002,16 +9009,90 @@ function showDrEvalAnswers(evalId, scaleId, score, scaleName, date, answersJson)
   const header = document.createElement('div');
   header.style.cssText = 'padding:18px 20px 14px;border-bottom:0.5px solid var(--sep);flex-shrink:0';
   const interp = sc ? sc.interp(score) : {l:'',c:'#888',bg:'#eee'};
+  // Para PSQI el "/max" confunde (es score relativizado Buysse), mostramos solo el número + corte 5
+  const scoreDisplay = (scaleId==='psqi') ? score+' <span style="font-size:12px;color:var(--label-3)">(corte: 5)</span>' : score+'/'+sc?.max;
   header.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
     '<div style="font-size:17px;font-weight:700;color:var(--label);font-family:var(--font-display)">'+scaleName+'</div>'+
-    '<div style="text-align:right"><div style="font-size:20px;font-weight:700;color:'+interp.c+'">'+score+'/'+sc?.max+'</div>'+
+    '<div style="text-align:right"><div style="font-size:20px;font-weight:700;color:'+interp.c+'">'+scoreDisplay+'</div>'+
     '<span style="font-size:11px;background:'+interp.bg+';color:'+interp.c+';border-radius:6px;padding:2px 8px">'+interp.l+'</span></div></div>'+
     '<div style="font-size:12px;color:var(--label-2)">'+date+'</div>';
   
   const scroll = document.createElement('div');
   scroll.style.cssText = 'overflow-y:auto;flex:1;padding:16px 20px';
   
-  if(!sc || !answers.length){
+  // PSQI: desglose por componentes Buysse (no "pts" crudos que confunden)
+  if(scaleId==='psqi' && answers.length){
+    const v=k=>(answers[k]==null?0:answers[k]);
+    const C1=v(13);
+    const c2raw=v(1)+v(4); const C2=c2raw===0?0:c2raw<=2?1:c2raw<=4?2:3;
+    const C3=v(3);
+    const hMap=[7.5,6.5,5.5,4], bMap=[20.5,21.5,22.5,23.5], wMap=[5.5,6.5,7.5,8.5];
+    let tib=wMap[v(2)]+24-bMap[v(0)]; if(tib>12)tib-=24; if(tib<4)tib=8;
+    const eff=(hMap[v(3)]/tib)*100;
+    const C4=eff>85?0:eff>=75?1:eff>=65?2:3;
+    let c5raw=0; for(let k=5;k<=12;k++) c5raw+=v(k);
+    const C5=c5raw===0?0:c5raw<=9?1:c5raw<=18?2:3;
+    const C6=v(14);
+    const c7raw=v(15)+v(16); const C7=c7raw===0?0:c7raw<=2?1:c7raw<=4?2:3;
+    const comps=[['Calidad subjetiva',C1],['Latencia del sueño',C2],['Duración del sueño',C3],['Eficiencia habitual ('+Math.round(eff)+'%)',C4],['Alteraciones del sueño',C5],['Uso de medicación',C6],['Disfunción diurna',C7]];
+    scroll.innerHTML = '<div style="font-size:12px;color:var(--label-2);margin-bottom:12px;line-height:1.5">El PSQI se calcula con 7 componentes (Buysse 1989), cada uno de 0 a 3. El puntaje global va de 0 a 21; un valor ≥ 5 sugiere mala calidad del sueño.</div>'+
+      comps.map(c=>{
+        const col=c[1]===0?'#14532d':c[1]===1?'#92400e':c[1]===2?'#c2410c':'#9b1c1c';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid var(--sep)">'+
+          '<div style="font-size:14px;color:var(--label)">'+c[0]+'</div>'+
+          '<div style="font-size:17px;font-weight:700;color:'+col+';min-width:24px;text-align:right">'+c[1]+'</div></div>';
+      }).join('')+
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;font-weight:700"><div style="font-size:15px;color:var(--label)">Puntaje global</div><div style="font-size:19px;color:'+interp.c+'">'+score+' / 21</div></div>';
+  } else if(eedsiData){
+    // EEDSI: visor de respuestas con su estructura JSON propia
+    let h = '';
+    const sub = eedsiData.subscale || '';
+    const subNames = {I:'Lactante (0–12 meses)',II:'Preescolar (1–5 años)',III:'Escolar (6–9 años)',IV:'Adolescente (>10 años)'};
+    h += '<div style="font-size:12px;color:var(--label-2);margin-bottom:12px;line-height:1.5">Subescala: <strong>'+(subNames[sub]||sub)+'</strong>. Instrumento piloto, descriptivo (sin score interpretado).</div>';
+    // Parámetros básicos
+    const params = eedsiData.params || {};
+    const paramLabels = {bedtime_typ:'Hora de acostarse',waketime_typ:'Hora de despertar',latency_min:'Latencia (min)',awakenings_n:'Despertares/noche',naps_count:'Siestas (cant.)',naps_duration_min:'Siestas (min totales)',_duration:'Duración de dificultades'};
+    const durMap={none:'No hay dificultades','<1':'< 1 mes','1-3':'1 a 3 meses','3-6':'3 a 6 meses','>6':'> 6 meses'};
+    const paramKeys = Object.keys(params).filter(k=>params[k]!==''&&params[k]!=null);
+    if(paramKeys.length){
+      h += '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin:8px 0 6px">Parámetros básicos</div>';
+      paramKeys.forEach(k=>{
+        let val = params[k];
+        if(k==='_duration') val = durMap[val]||val;
+        h += '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--sep);font-size:13px"><span style="color:var(--label-2)">'+(paramLabels[k]||k)+'</span><span style="color:var(--label);font-weight:500">'+val+'</span></div>';
+      });
+    }
+    // Items por dominio
+    const items = eedsiData.items || {};
+    const summary = eedsiData.summary || {};
+    const domsForSub = (typeof EEDSI!=='undefined' && EEDSI.domains && EEDSI.domains[sub]) ? EEDSI.domains[sub] : null;
+    if(domsForSub){
+      const likertLabels={'0':'Nunca','1':'Raramente','2':'A veces','3':'Frecuentemente','4':'Siempre','nc':'N/C'};
+      const flagLabels={no:'No',av:'A veces',si:'Sí, marcado',ns:'No sé'};
+      domsForSub.forEach(d=>{
+        h += '<div style="font-size:11px;font-weight:700;color:'+(d.satellite?'#7ec8a4':'var(--label-2)')+';text-transform:uppercase;letter-spacing:0.05em;margin:14px 0 6px">'+d.title+'</div>';
+        d.items.forEach((it,idx)=>{
+          const itemId = d.id+'_'+(idx+1);
+          const v = items[itemId];
+          const label = d.flags ? (flagLabels[v]||'—') : (likertLabels[v]||'—');
+          h += '<div style="padding:9px 0;border-bottom:0.5px solid var(--sep)">'+
+            '<div style="font-size:12.5px;color:var(--label-2);margin-bottom:4px;line-height:1.4">'+(typeof it==='string'?it:it.label||it)+'</div>'+
+            '<div style="font-size:13px;font-weight:600;color:'+(v&&v!=='nc'?'var(--label)':'var(--label-3)')+'">'+label+'</div>'+
+            '</div>';
+        });
+      });
+    } else {
+      // Fallback: listar todos los items crudos
+      const keys = Object.keys(items);
+      if(keys.length){
+        h += '<div style="font-size:11px;font-weight:700;color:var(--label-2);margin:12px 0 6px">Respuestas registradas</div>';
+        keys.forEach(k=>{ h += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--sep);font-size:13px"><span style="color:var(--label-2)">'+k+'</span><span style="color:var(--label);font-weight:600">'+items[k]+'</span></div>'; });
+      } else {
+        h += '<div style="color:var(--label-2);text-align:center;padding:20px 0">Sin respuestas registradas.</div>';
+      }
+    }
+    scroll.innerHTML = h;
+  } else if(!sc || !answers.length){
     scroll.innerHTML = '<div style="color:var(--label-2);font-size:14px;padding:20px 0;text-align:center">No hay respuestas individuales registradas para esta evaluación.</div>';
   } else {
     const items = sc.qs.map((q,i)=>{
@@ -10875,26 +10956,80 @@ async function renderChildDiaryList(){
   if(!el||!S.user) return;
   el.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
-    const entries = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=diary_date.desc&limit=20&select=*');
+    const entries = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=diary_date.desc&limit=30&select=*');
     if(!entries||!entries.length){ el.innerHTML='<div style="text-align:center;padding:24px;color:var(--label-2);font-size:14px">Sin registros aún.<br>Tocá "+ Nuevo registro" para empezar.</div>'; return; }
     const norm = SLEEP_NORMS[S.ageGroup];
-    el.innerHTML = entries.map(e => {
+    // Datos para gráfico (cronológico ascendente)
+    const chrono = entries.slice().reverse();
+    const chartData = chrono.map(e=>({
+      date: e.diary_date,
+      hrs: e.sleep_minutes ? Math.round(e.sleep_minutes/60*10)/10 : null,
+      bedMin: e.bedtime ? timeToMin(e.bedtime) : null
+    })).filter(d=>d.hrs!=null);
+    // Calcular regularidad de hora de acostarse (desvío estándar de bedtime)
+    let regNote = '';
+    const beds = chartData.map(d=>d.bedMin).filter(v=>v!=null);
+    if(beds.length>=3){
+      const mean = beds.reduce((a,b)=>a+b,0)/beds.length;
+      const variance = beds.reduce((a,b)=>a+Math.pow(b-mean,2),0)/beds.length;
+      const sd = Math.sqrt(variance);
+      const sdMin = Math.round(sd);
+      const regColor = sdMin<=30?'#14532d':sdMin<=60?'#92400e':'#991b1b';
+      const regLabel = sdMin<=30?'Muy regular':sdMin<=60?'Moderadamente regular':'Irregular';
+      regNote = '<div style="background:var(--bg-secondary);border-radius:12px;padding:12px 14px;margin-bottom:14px;border-left:3px solid '+regColor+'">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Regularidad del horario</div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;color:'+regColor+';font-weight:600">'+regLabel+'</span><span style="font-size:12px;color:var(--label-3)">±'+sdMin+' min de variación</span></div>'+
+        '<div style="font-size:11px;color:var(--label-3);margin-top:4px;line-height:1.4">En niños, acostarse a un horario constante (variación menor a 30 min) favorece la consolidación del sueño.</div></div>';
+    }
+    // Chart container
+    let chartHtml = '';
+    if(chartData.length>=2){
+      chartHtml = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:14px">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Horas de sueño (últimos '+chartData.length+' registros)</div>'+
+        '<div style="position:relative;height:180px"><canvas id="ch-diary-chart"></canvas></div></div>';
+    }
+    // Lista
+    const listHtml = entries.map(e => {
       const hrs = e.sleep_minutes ? Math.round(e.sleep_minutes/60*10)/10 : null;
       const dateStr = new Date(e.diary_date+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'short'});
       const hrsColor = !hrs?'var(--label-2)':S.ageGroup==='infant'?(hrs>=12&&hrs<=16?'#14532d':hrs>=10?'#92400e':'#991b1b'):(hrs>=9?'#14532d':hrs>=7?'#92400e':'#991b1b');
       return `<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:14px;font-weight:600">${dateStr}</div>
-          ${e.bed_time&&e.wake_time?'<div style="font-size:12px;color:var(--label-2);margin-top:2px">'+e.bed_time+' → '+e.wake_time+'</div>':''}
+          ${e.bedtime&&e.wake_time?'<div style="font-size:12px;color:var(--label-2);margin-top:2px">'+e.bedtime+' → '+e.wake_time+'</div>':''}
           ${e.notes?'<div style="font-size:11px;color:var(--label-3);margin-top:2px">'+e.notes.slice(0,40)+'</div>':''}
         </div>
         <div style="text-align:right">
           ${hrs?'<div style="font-size:18px;font-weight:700;color:'+hrsColor+'">'+hrs+'h</div>':'<div style="font-size:12px;color:var(--label-3)">—</div>'}
-          <button onclick="deleteDiaryEntry('"+e.id+"',this)" style="font-size:11px;color:var(--label-3);background:none;border:none;cursor:pointer;padding:2px 0;margin-top:2px">🗑</button>
+          <button onclick="deleteDiaryEntry('`+`'+e.id+'`+`',this)" style="font-size:11px;color:var(--label-3);background:none;border:none;cursor:pointer;padding:2px 0;margin-top:2px">🗑</button>
         </div>
       </div>`;
     }).join('');
+    el.innerHTML = chartHtml + regNote + '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Registros</div>' + listHtml;
+    // Dibujar gráfico
+    if(chartData.length>=2){
+      setTimeout(()=>{
+        const ctx=document.getElementById('ch-diary-chart');
+        if(!ctx||typeof Chart==='undefined')return;
+        killChart('chDiary');
+        const labels=chartData.map(d=>new Date(d.date+'T12:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}));
+        const vals=chartData.map(d=>d.hrs);
+        const idealMin = S.ageGroup==='infant'?12:S.ageGroup==='school'?9:8;
+        S.charts.chDiary=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Horas de sueño',data:vals,borderColor:'#7ec8a4',backgroundColor:'rgba(126,200,164,0.15)',tension:0.35,pointRadius:4,pointBackgroundColor:'#1a4a3a',borderWidth:2,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:0},grid:{display:false}},y:{beginAtZero:false,suggestedMin:Math.max(0,Math.min(...vals)-1),suggestedMax:Math.max(...vals)+1,ticks:{font:{size:10},callback:v=>v+'h'},grid:{color:'rgba(0,0,0,0.04)'}}}},plugins:[{afterDraw:function(ch){const c=ch.ctx;c.save();c.strokeStyle='rgba(26,74,58,0.35)';c.lineWidth=1;c.setLineDash([4,4]);const y=ch.scales.y.getPixelForValue(idealMin);if(y>ch.chartArea.top&&y<ch.chartArea.bottom){c.beginPath();c.moveTo(ch.chartArea.left,y);c.lineTo(ch.chartArea.right,y);c.stroke();}c.restore();}}]});
+      },150);
+    }
   }catch(err){ el.innerHTML='<div style="padding:16px;color:var(--danger)">Error: '+err.message+'</div>'; }
+}
+
+function timeToMin(t){
+  if(!t)return null;
+  const m=t.match(/(\d{1,2}):(\d{2})/);
+  if(!m)return null;
+  let h=parseInt(m[1]),min=parseInt(m[2]);
+  // Normalizar: horas nocturnas (18-23) las dejamos, madrugada (0-6) sumamos 24 para continuidad
+  let total=h*60+min;
+  if(h<12) total+=24*60; // madrugada cuenta como continuación de la noche
+  return total;
 }
 
 
@@ -12654,8 +12789,15 @@ function showHygieneChecklist(){
   const total = SLEEP_HYGIENE.length;
   const done = SLEEP_HYGIENE.filter(h=>saved[h.id]).length;
   html += `<div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">Higiene del sueño</div>`;
-  html += `<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:4px">Marcá los hábitos que lograste incorporar</div>`;
-  html += `<div style="font-size:13px;color:#6ee7b7;font-weight:600;margin-bottom:16px">${done} de ${total} hábitos incorporados</div>`;
+  html += `<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:12px">Marcá los hábitos que lograste incorporar</div>`;
+  const hygPct = total ? Math.round(done/total*100) : 0;
+  html += `<div style="background:rgba(110,231,183,0.08);border:1px solid rgba(110,231,183,0.25);border-radius:12px;padding:14px;margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+      <div style="font-size:13px;color:#6ee7b7;font-weight:700">${done} de ${total} hábitos incorporados</div>
+      <div style="font-size:18px;font-weight:700;color:#6ee7b7">${hygPct}%</div>
+    </div>
+    <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden"><div style="height:100%;width:${hygPct}%;background:linear-gradient(90deg,#6ee7b7,#34d399);transition:width 0.3s"></div></div>
+  </div>`;
   cats.forEach(cat=>{
     const items = SLEEP_HYGIENE.filter(h=>h.cat===cat);
     const catDone = items.filter(h=>saved[h.id]).length;
@@ -13347,9 +13489,9 @@ function renderCbtiProtocol(){
   let html = '';
   // Barra de progreso global
   html += '<div style="background:rgba(126,200,164,0.08);border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:16px;margin-bottom:18px">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Progreso del protocolo</div><div style="font-size:22px;font-weight:700;color:#C8A96E">'+pct+'%</div></div>';
-  html += '<div style="height:10px;background:rgba(255,255,255,0.08);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ec8a4,#C8A96E);transition:width 0.3s"></div></div>';
-  html += '<div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:8px">'+doneCount+' de '+CBTI_TOTAL_ITEMS+' items completados</div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Progreso del protocolo</div><div id="cbti-global-pct" style="font-size:22px;font-weight:700;color:#C8A96E">'+pct+'%</div></div>';
+  html += '<div style="height:10px;background:rgba(255,255,255,0.08);border-radius:5px;overflow:hidden"><div id="cbti-global-bar" style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ec8a4,#C8A96E);transition:width 0.3s"></div></div>';
+  html += '<div id="cbti-global-count" style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:8px">'+doneCount+' de '+CBTI_TOTAL_ITEMS+' items completados</div>';
   html += '</div>';
   // Acordeón de módulos
   CBTI_PROTOCOL.modules.forEach((mod,mIdx)=>{
@@ -13363,8 +13505,8 @@ function renderCbtiProtocol(){
     html += '<div onclick="(function(self){var el=document.getElementById(\'cbti-mod-'+mod.id+'\');var open=el.style.display===\'block\';el.style.display=open?\'none\':\'block\';self.querySelector(\'.cbti-chev\').style.transform=open?\'rotate(0deg)\':\'rotate(90deg)\';})(this);" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px">';
     html += '<div style="font-size:24px">'+mod.icon+'</div>';
     html += '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:2px">'+mod.name+'</div>';
-    html += '<div style="font-size:12px;color:rgba(255,255,255,0.6)">'+modDone+'/'+mod.items.length+' items'+(isComplete?' · ✓ completo':'')+'</div></div>';
-    html += '<div style="font-size:13px;font-weight:700;color:'+(isComplete?'#7ec8a4':(isPartial?'#C8A96E':'rgba(255,255,255,0.4)'))+'">'+modPct+'%</div>';
+    html += '<div id="cbti-modcount-'+mod.id+'" style="font-size:12px;color:rgba(255,255,255,0.6)">'+modDone+'/'+mod.items.length+' items'+(isComplete?' · ✓ completo':'')+'</div></div>';
+    html += '<div id="cbti-modpct-'+mod.id+'" style="font-size:13px;font-weight:700;color:'+(isComplete?'#7ec8a4':(isPartial?'#C8A96E':'rgba(255,255,255,0.4)'))+'">'+modPct+'%</div>';
     html += '<div class="cbti-chev" style="color:rgba(255,255,255,0.5);transition:transform 0.2s;font-size:14px">›</div>';
     html += '</div>';
     // Items (collapsible)
@@ -13402,11 +13544,31 @@ async function toggleCbtiItem(itemId, checked){
   if(!drEmail||!patEmail) return;
   const modId = itemId.split('_')[0];
   const payload = { doctor_email:drEmail, patient_email:patEmail, module_id:modId, item_id:itemId, completed:checked, completed_at:checked?new Date().toISOString():null };
+  // Actualizar estado local primero (optimista)
+  CBTI_STATE.progress[itemId] = {...(CBTI_STATE.progress[itemId]||{}), completed:checked, completed_at:payload.completed_at};
+  // Actualizar SOLO la barra de progreso global y la del módulo, sin re-render total (no colapsa acordeones)
+  updateCbtiProgressBars();
   try{
     await fetch(SU+'/rest/v1/cbti_progress',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
-    CBTI_STATE.progress[itemId] = {...(CBTI_STATE.progress[itemId]||{}), completed:checked, completed_at:payload.completed_at};
-    renderCbtiProtocol();
   }catch(e){ console.error('toggleCbtiItem:', e); toast('⚠ Error al guardar'); }
+}
+
+// Actualiza barras de progreso y la fecha/strikethrough del item, SIN colapsar los acordeones
+function updateCbtiProgressBars(){
+  const doneCount = Object.values(CBTI_STATE.progress).filter(p=>p.completed).length;
+  const pct = Math.round(doneCount/CBTI_TOTAL_ITEMS*100);
+  const gp = document.getElementById('cbti-global-pct'); if(gp) gp.textContent = pct+'%';
+  const gb = document.getElementById('cbti-global-bar'); if(gb) gb.style.width = pct+'%';
+  const gc = document.getElementById('cbti-global-count'); if(gc) gc.textContent = doneCount+' de '+CBTI_TOTAL_ITEMS+' items completados';
+  // Por módulo
+  CBTI_PROTOCOL.modules.forEach(mod=>{
+    const modDone = mod.items.filter(it=>CBTI_STATE.progress[it.id]?.completed).length;
+    const modPct = Math.round(modDone/mod.items.length*100);
+    const mc = document.getElementById('cbti-modcount-'+mod.id);
+    if(mc) mc.textContent = modDone+'/'+mod.items.length+' items'+(modDone===mod.items.length?' · ✓ completo':'');
+    const mp = document.getElementById('cbti-modpct-'+mod.id);
+    if(mp) mp.textContent = modPct+'%';
+  });
 }
 
 async function saveCbtiNote(itemId, notes){
