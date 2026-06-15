@@ -2726,7 +2726,6 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   <div class="tab-bar">
     <button class="tab active" onclick="showDiaryTab('list',this)">Registros</button>
     <button class="tab" onclick="showDiaryTab('graficos',this)">Gráficos</button>
-    <button class="tab" onclick="showDiaryTab('wearable',this)">⌚ Wearable</button>
   </div>
   <div class="scroll"><div id="diary-content" style="padding:0 16px"></div></div>
 </div>
@@ -3725,6 +3724,28 @@ const SCALES=[
   {t:'Me preocupan las consecuencias de no dormir',opts:['No, en absoluto','A veces','Mucho'],sc:[0,1,2]}
  ],
  interp:s=>s<=2?{l:'Sin esfuerzo de sueño',c:'#14532d',bg:'#dcfce7'}:s<=6?{l:'Esfuerzo moderado',c:'#92400e',bg:'#fef3c7'}:{l:'Esfuerzo elevado — candidato a CBT-I',c:'#991b1b',bg:'#fee2e2'}},
+{id:'ais',ref:'Soldatos CR, Dikeos DG, Paparrigopoulos TJ. (2000). Athens Insomnia Scale: validation of an instrument based on ICD-10 criteria. Journal of Psychosomatic Research, 48(6), 555–560. Uso libre para fines clínicos y de investigación.',name:'Insomnio de Atenas (AIS)',cat:'sleep',max:24,desc:'Escala breve de 8 ítems basada en criterios CIE-10 — uso libre',
+ note:'Esta escala evalúa cualquier dificultad del sueño que hayas tenido al menos tres veces por semana durante el último mes. Para cada ítem, marcá la opción que mejor describa tu situación.',
+ qs:[
+  {t:'Inducción del sueño (tiempo que te lleva dormirte una vez acostado/a)',opts:['Sin problema','Levemente retrasado','Notablemente retrasado','Muy retrasado o sin dormir'],sc:[0,1,2,3]},
+  {t:'Despertares durante la noche',opts:['Sin problema','Problema leve','Problema considerable','Problema serio o sin dormir'],sc:[0,1,2,3]},
+  {t:'Despertar final más temprano de lo deseado',opts:['No antes','Un poco antes','Bastante antes','Mucho antes o sin dormir'],sc:[0,1,2,3]},
+  {t:'Duración total del sueño',opts:['Suficiente','Levemente insuficiente','Notablemente insuficiente','Muy insuficiente o sin dormir'],sc:[0,1,2,3]},
+  {t:'Calidad general del sueño (más allá de cuánto dormiste)',opts:['Satisfactoria','Levemente insatisfactoria','Notablemente insatisfactoria','Muy insatisfactoria o sin dormir'],sc:[0,1,2,3]},
+  {t:'Sensación de bienestar durante el día',opts:['Normal','Levemente disminuida','Notablemente disminuida','Muy disminuida'],sc:[0,1,2,3]},
+  {t:'Funcionamiento (físico y mental) durante el día',opts:['Normal','Levemente disminuido','Notablemente disminuido','Muy disminuido'],sc:[0,1,2,3]},
+  {t:'Somnolencia durante el día',opts:['Ninguna','Leve','Considerable','Intensa'],sc:[0,1,2,3]}
+ ],
+ interp:s=>s<=5?{l:'Sin insomnio',c:'#14532d',bg:'#dcfce7'}:s<=9?{l:'Insomnio leve / sospecha',c:'#92400e',bg:'#fef3c7'}:{l:'Insomnio probable — evaluar',c:'#991b1b',bg:'#fee2e2'}},
+{id:'jss',ref:'Jenkins CD, Stanton BA, Niemcryk SJ, Rose RM. (1988). A scale for the estimation of sleep problems in clinical research. Journal of Clinical Epidemiology, 41(4), 313–321. Uso libre para investigación clínica.',name:'Problemas de sueño (Jenkins)',cat:'sleep',max:20,desc:'4 ítems sobre frecuencia de problemas de sueño en el último mes — uso libre',
+ note:'Durante el último mes, ¿con qué frecuencia tuviste cada uno de estos problemas? Elegí la opción que mejor refleje tu experiencia.',
+ qs:[
+  {t:'¿Con qué frecuencia tuviste dificultad para quedarte dormido/a?',opts:['Nunca','1-3 días','4-7 días','8-14 días','15-21 días','22-31 días'],sc:[0,1,2,3,4,5]},
+  {t:'¿Con qué frecuencia te despertaste varias veces durante la noche?',opts:['Nunca','1-3 días','4-7 días','8-14 días','15-21 días','22-31 días'],sc:[0,1,2,3,4,5]},
+  {t:'¿Con qué frecuencia tuviste dificultad para mantenerte dormido/a (incluyendo despertar demasiado temprano)?',opts:['Nunca','1-3 días','4-7 días','8-14 días','15-21 días','22-31 días'],sc:[0,1,2,3,4,5]},
+  {t:'¿Con qué frecuencia te despertaste sintiéndote cansado/a y agotado/a tras tu cantidad habitual de sueño?',opts:['Nunca','1-3 días','4-7 días','8-14 días','15-21 días','22-31 días'],sc:[0,1,2,3,4,5]}
+ ],
+ interp:s=>s<=4?{l:'Sin problemas de sueño relevantes',c:'#14532d',bg:'#dcfce7'}:s<=11?{l:'Problemas de sueño moderados',c:'#92400e',bg:'#fef3c7'}:{l:'Problemas de sueño significativos',c:'#991b1b',bg:'#fee2e2'}},
 {id:'psas',ref:'Nicassio PM et al. (1985). The phenomenology of the pre-sleep state. Behav Res Ther.',name:'Activación pre-sueño (PSAS)',cat:'insomnia',max:80,desc:'Nivel de activación cognitiva y somática antes de dormir',
  qs:[
   {note:'¿Qué tan frecuente experimentás esto cuando intentás dormir?',t:'Mi mente sigue activa, con pensamientos o imágenes',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
@@ -3999,39 +4020,6 @@ const SCALES=[
    {t:'Síntomas genitourinarios (frecuencia urinaria, frigidez, eyaculación precoz, amenorrea)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Síntomas autonómicos (boca seca, enrojecimiento, palidez, sudoración, mareos, cefalea tensional)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
    {t:'Comportamiento en la entrevista (inquieto, agitado, tembloroso, palidez, suspiros frecuentes)',opts:['Ausente','Leve','Moderado','Severo','Muy severo'],sc:[0,1,2,3,4]},
- ]
-},
-{id:'bdi2',ref:'Beck AT, Steer RA, Brown GK. (1996). BDI-II Manual. San Antonio, TX: The Psychological Corporation. Copyright © 1996 Aaron T. Beck. Propiedad de Pearson Assessments — requiere licencia para uso clínico.',
- name:'Beck — Depresión (BDI-II) ⚠️',cat:'mental',max:63,
- desc:'Inventario de 21 ítems para medir severidad de síntomas depresivos. Cortes: mínima 0–13, leve 14–19, moderada 20–28, severa 29–63. ⚠️ Escala con copyright de Pearson: requiere autorización para uso.',
- interp:s=>{
-   if(s<=13) return {l:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
-   if(s<=19) return {l:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
-   if(s<=28) return {l:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
-   return {l:'Depresión severa',c:'#991b1b',bg:'#fee2e2'};
- },
- qs:[
-   {t:' ',opts:['No me siento triste','Me siento triste gran parte del tiempo','Me siento triste continuamente','Me siento tan triste o desgraciado/a que no puedo soportarlo'],sc:[0,1,2,3]},
-   {t:' ',opts:['No estoy desanimado acerca del futuro','Me siento más desanimado que antes','No espero que las cosas mejoren','El futuro es desesperado, solo puede ir a peor'],sc:[0,1,2,3]},
-   {t:' ',opts:['No me siento como un fracasado','He fracasado más de lo que hubiera debido','Cuando miro atrás veo muchos fracasos','Soy un fracaso total como persona'],sc:[0,1,2,3]},
-   {t:' ',opts:['Obtengo tanta satisfacción como antes','No disfruto de las cosas como antes','Obtengo muy poca satisfacción de las cosas','No puedo obtener ninguna satisfacción de las cosas'],sc:[0,1,2,3]},
-   {t:' ',opts:['No me siento culpable','Me siento culpable de muchas cosas','Me siento bastante culpable la mayor parte del tiempo','Me siento culpable en todo momento'],sc:[0,1,2,3]},
-   {t:' ',opts:['No creo que esté siendo castigado','Siento que puedo ser castigado','Espero ser castigado','Siento que estoy siendo castigado'],sc:[0,1,2,3]},
-   {t:' ',opts:['Tengo la misma opinión que antes de mí mismo','He perdido confianza en mí mismo','Estoy decepcionado conmigo mismo','No me gusto'],sc:[0,1,2,3]},
-   {t:' ',opts:['No me critico más que antes','Me critico más que antes','Me critico por todas mis faltas','Me culpo por todo lo malo que sucede'],sc:[0,1,2,3]},
-   {t:' ',opts:['No tengo ningún pensamiento de matarme','He tenido pensamientos de matarme pero no lo llevaría a cabo','Querría matarme','Me mataría si tuviera la oportunidad'],sc:[0,1,2,3]},
-   {t:' ',opts:['No lloro más que antes','Lloro más que antes','Lloro por cualquier pequeñez','Tengo ganas de llorar pero no puedo'],sc:[0,1,2,3]},
-   {t:' ',opts:['No estoy más agitado que antes','Me siento más agitado que antes','Estoy tan agitado que me es difícil quedarme quieto','Estoy tan agitado que tengo que estar constantemente en movimiento'],sc:[0,1,2,3]},
-   {t:' ',opts:['No he perdido el interés en otras personas o actividades','Me intereso menos que antes por otras personas o cosas','He perdido la mayor parte de mi interés en los demás','Me es difícil interesarme en algo'],sc:[0,1,2,3]},
-   {t:' ',opts:['Tomo mis propias decisiones tan bien como siempre','Me resulta más difícil que antes tomar decisiones','Tengo mucha más dificultad en tomar decisiones','Tengo problemas para tomar cualquier decisión'],sc:[0,1,2,3]},
-   {t:' ',opts:['No me siento inútil','No me considero tan valioso como antes','Me siento más inútil que los demás','Me siento completamente inútil'],sc:[0,1,2,3]},
-   {t:' ',opts:['Tengo tanta energía como siempre','Tengo menos energía que antes','No tengo energía suficiente para hacer muchas cosas','Tengo tanta poca energía que no puedo hacer nada'],sc:[0,1,2,3]},
-   {t:' ',opts:['No he experimentado ningún cambio en mis patrones de sueño','Duermo un poco más/menos que antes','Duermo bastante más/menos que antes','Duermo la mayor parte del día / Me despierto 1–2 horas antes'],sc:[0,1,2,3]},
-   {t:' ',opts:['No estoy más irritable que antes','Estoy más irritable que antes','Estoy mucho más irritable que antes','Estoy irritable continuamente'],sc:[0,1,2,3]},
-   {t:' ',opts:['No he experimentado ningún cambio en mi apetito','Mi apetito es un poco mayor/menor que antes','Mi apetito es bastante mayor/menor que antes','No tengo nada de apetito / Quiero comer todo el día'],sc:[0,1,2,3]},
-   {t:' ',opts:['Puedo concentrarme tan bien como siempre','No puedo concentrarme tan bien como antes','Me es difícil mantener la mente en algo por mucho tiempo','No puedo concentrarme en nada'],sc:[0,1,2,3]},
-   {t:' ',opts:['No estoy más cansado que antes','Me canso más fácilmente que antes','Estoy demasiado cansado para hacer muchas cosas','Estoy demasiado cansado para hacer la mayoría de las cosas'],sc:[0,1,2,3]},
-   {t:' ',opts:['No he notado ningún cambio reciente en mi interés por el sexo','Estoy menos interesado en el sexo que antes','Estoy mucho menos interesado en el sexo ahora','He perdido completamente el interés en el sexo'],sc:[0,1,2,3]},
  ]
 },
 {id:'fsfi',ref:'Rosen R, Brown C, Heiman J, Leiblum S, Meston C, Shabsigh R, et al. (2000). The Female Sexual Function Index (FSFI): a multidimensional self-report instrument for the assessment of female sexual function. J Sex Marital Ther, 26(2), 191–208.',
@@ -4707,23 +4695,28 @@ async function loadAdminTab(tab){
   cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
     if(tab==='pending'){
-      const pending=await db.get("doctors?select=name,lname,email,specialty,mat,created_at&order=created_at.desc");
-      // Filter: doctors who filled their specialty (applied) but aren't approved yet
-      // Approved list stored in admin's localStorage
+      // Solo los que solicitaron entrar al directorio (listed='pending') o tienen CV subido
+      const pending=await db.get("doctors?select=name,lname,email,specialty,mat,city,country,bio,cv_url,listed,phone,email_public,created_at&order=created_at.desc");
       const _approvedList=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _rejectedList=JSON.parse(localStorage.getItem('dm_rejected_doctors')||'{}');
-      const pendingFiltered=(pending||[]).filter(d=>!_approvedList[d.email]&&!_rejectedList[d.email]);
-      // Also show from localStorage in case DB listed field is boolean
+      // Aplicaron: listed='pending' (string) o tienen cv_url; y no fueron ya aprobados/rechazados
+      const pendingFiltered=(pending||[]).filter(d=>{
+        const applied = d.listed==='pending' || d.listed===true || d.cv_url;
+        return applied && !_approvedList[d.email] && !_rejectedList[d.email];
+      });
       if(!pendingFiltered.length){
-        cont.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No hay solicitudes pendientes.<br><div style="font-size:11px;color:var(--label-3);margin-top:8px">Total médicos en DB: '+pending.length+'</div></div>';
+        cont.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No hay solicitudes pendientes de aprobación.<br><div style="font-size:11px;color:var(--label-3);margin-top:8px">Total médicos en DB: '+(pending||[]).length+'</div></div>';
         return;
       }
-      cont.innerHTML='<div class="sec-title" style="margin-top:10px">Pendientes de aprobación ('+pendingFiltered.length+' de '+pending.length+' médicos)</div>'+
+      const _spL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',physician:'Médico'};
+      cont.innerHTML='<div class="sec-title" style="margin-top:10px">Solicitudes al directorio ('+pendingFiltered.length+')</div>'+
         pendingFiltered.map(d=>`<div style="border:1px solid var(--sep-opaque);border-radius:12px;padding:14px;margin-bottom:10px">
           <div style="font-weight:700;font-size:15px">${d.name} ${d.lname||''}</div>
           <div style="font-size:12px;color:var(--label-2);margin:4px 0">${d.email}</div>
-          <div style="font-size:12px;color:var(--label-2)">${d.specialty||'Sin especialidad'} · ${d.mat||'Sin matrícula'}</div>
-          <div style="font-size:11px;color:var(--label-3);margin-top:2px">Registrado: ${d.created_at?new Date(d.created_at).toLocaleDateString('es-AR'):'-'}</div>
+          <div style="font-size:12px;color:var(--label-2)">${_spL[d.specialty]||d.specialty||'Sin especialidad'} · ${d.mat||'Sin matrícula'}${d.city?' · '+d.city:''}${d.country?' · '+d.country:''}</div>
+          ${d.bio?'<div style="font-size:12px;color:var(--label-3);margin-top:6px;line-height:1.4;font-style:italic">'+d.bio+'</div>':''}
+          ${d.cv_url?'<a href="'+d.cv_url+'" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:#1a4a3a;font-weight:600;padding:6px 12px;background:#dcfce7;border-radius:8px;text-decoration:none">📄 Ver CV (PDF)</a>':'<div style="font-size:11px;color:#c2410c;margin-top:8px">⚠ Sin CV adjunto</div>'}
+          <div style="font-size:11px;color:var(--label-3);margin-top:6px">Registrado: ${d.created_at?new Date(d.created_at).toLocaleDateString('es-AR'):'-'}</div>
           <div style="display:flex;gap:8px;margin-top:10px">
             <button onclick="adminApprove('${d.email}',this)" class="btn btn-g" style="flex:1;font-size:13px;padding:10px">✓ Aprobar</button>
             <button onclick="adminReject('${d.email}',this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:#fee2e2;color:#991b1b;font-size:13px;font-weight:600;cursor:pointer">✗ Rechazar</button>
@@ -4841,8 +4834,10 @@ async function adminApprove(email,btn){
   const approved=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
   approved[email]=true;
   localStorage.setItem('dm_approved_doctors',JSON.stringify(approved));
-  // Try to update DB (if listed column exists)
-  try{await db.patch('doctors?email=eq.'+encodeURIComponent(email),{listed:true});}catch(e){}
+  // Try to update DB (set both flags so the doctor appears in all directory queries)
+  try{await db.patch('doctors?email=eq.'+encodeURIComponent(email),{listed:true,public_profile:true});}catch(e){
+    try{await db.patch('doctors?email=eq.'+encodeURIComponent(email),{listed:true});}catch(e2){}
+  }
   const card=btn.closest('div');if(card)card.style.opacity='0.5';
   btn.textContent='✓ Aprobado'; btn.disabled=true;
   toast('✓ '+email+' aprobado — ya aparece en el directorio');
@@ -4866,8 +4861,10 @@ async function renderLinkedDoctors(){
   if(!containers.length) return;
   const email = S.user&&S.user.email;
   if(!email){ containers.forEach(el=>el.innerHTML=''); return; }
+  console.log('[renderLinkedDoctors] buscando vínculos para:', email);
   try{
-    const links = await db.get(`doctor_patients?patient_email=eq.${encodeURIComponent(email)}&select=doctor_email,rating,comment`).catch(()=>[]);
+    const links = await db.get(`doctor_patients?patient_email=ilike.${encodeURIComponent(email)}&select=doctor_email,rating,comment`).catch(()=>[]);
+    console.log('[renderLinkedDoctors] vínculos encontrados:', links);
     if(!links||!links.length){
       containers.forEach(el=>el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,0.4);padding:4px 0">No tenés profesionales vinculados</div>');
       return;
@@ -6028,7 +6025,6 @@ const PTITLES = {
   irls:'¿Sentís necesidad de mover las piernas al acostarte?',
   hamd:'¿Cómo estuvo tu ánimo últimamente?',
   hama:'¿Cuánta ansiedad venís sintiendo?',
-  bdi2:'¿Cómo venís sintiéndote últimamente?',
 };
 
 function renderScaleCard(sc, records, isGASQ){
@@ -6134,7 +6130,7 @@ async function showPatientCode(){
     }
   }
   try{
-    const children=await db.get('patients?parent_email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,code');
+    const children=await db.get('patients?parent_email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,code,email,sex');
     if(!children||!children.length){
       childList.innerHTML='<div style="font-size:12px;color:var(--label-3)">No tenés perfiles de niños vinculados.</div>';
       return;
@@ -6142,12 +6138,15 @@ async function showPatientCode(){
     childList.innerHTML=children.map(ch=>{
       const ageYrs=ch.dob?Math.floor((new Date()-new Date(ch.dob))/31557600000):null;
       const code=ch.code||'——';
-      return '<div onclick="copyChildCode(\''+code+'\',this)" style="cursor:pointer;background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:12px;padding:14px;margin-bottom:10px">'+
+      const chJson = encodeURIComponent(JSON.stringify({email:ch.email,name:ch.name,lname:ch.lname||'',dob:ch.dob||'',sex:ch.sex||''}));
+      return '<div style="background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:12px;padding:14px;margin-bottom:10px">'+
         '<div style="display:flex;justify-content:space-between;align-items:center">'+
-        '<div><div style="font-size:14px;font-weight:600;color:#fff">'+ch.name+' '+(ch.lname||'')+'</div>'+
-        '<div style="font-size:12px;color:rgba(255,255,255,0.5)">'+(ageYrs!==null?ageYrs+' años':'')+'</div></div>'+
-        '<div style="text-align:center"><div style="font-family:monospace;font-size:20px;font-weight:700;color:#7ec8a4;letter-spacing:.15em">'+code+'</div>'+
-        '<div class="child-copy-lbl" style="font-size:10px;color:rgba(126,200,164,0.8)">Tocá para copiar</div></div></div></div>';
+        '<div onclick="copyChildCode(\''+code+'\',this)" style="cursor:pointer;flex:1"><div style="font-size:14px;font-weight:600;color:#fff">'+ch.name+' '+(ch.lname||'')+'</div>'+
+        '<div style="font-size:12px;color:rgba(255,255,255,0.5)">'+(ageYrs!==null?ageYrs+' años':'Sin fecha de nac.')+'</div></div>'+
+        '<div onclick="copyChildCode(\''+code+'\',this)" style="cursor:pointer;text-align:center"><div style="font-family:monospace;font-size:20px;font-weight:700;color:#7ec8a4;letter-spacing:.15em">'+code+'</div>'+
+        '<div class="child-copy-lbl" style="font-size:10px;color:rgba(126,200,164,0.8)">Tocá para copiar</div></div></div>'+
+        '<button onclick="editChildProfile(\''+chJson+'\')" style="margin-top:10px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar datos de '+ch.name+'</button>'+
+        '</div>';
     }).join('');
   }catch(e){
     childList.innerHTML='<div style="font-size:12px;color:var(--label-3)">No se pudieron cargar los perfiles.</div>';
@@ -6162,7 +6161,11 @@ async function loadCodeConsultDirectory(){
   if(!list) return;
   list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,0.5)">Cargando profesionales…</div>';
   try{
-    const docs = await db.get('doctors?public_profile=eq.true&select=email,name,lname,specialty,gender,city,bio&order=name.asc');
+    // Traer profesionales aprobados (listed=true OR public_profile=true)
+    let docs = await db.get('doctors?listed=eq.true&select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=name.asc').catch(()=>[]);
+    if(!docs || !docs.length){
+      docs = await db.get('doctors?public_profile=eq.true&select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=name.asc').catch(()=>[]);
+    }
     window._codeConsultDocs = docs || [];
     renderCodeConsultList(window._codeConsultDocs);
   }catch(e){
@@ -6176,15 +6179,30 @@ function renderCodeConsultList(docs){
     list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px">No hay profesionales registrados públicamente todavía.</div>';
     return;
   }
-  const sL = {psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',endocrinology:'Endocrinología',internal:'Medicina interna',family:'Medicina familiar',general:'General',other:'Otro'};
+  const sL = {psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',endocrinology:'Endocrinología',internal:'Medicina interna',family:'Medicina familiar',general:'General',other:'Otro'};
+  const _FLAGS={'Argentina':'🇦🇷','Uruguay':'🇺🇾','Chile':'🇨🇱','España':'🇪🇸','México':'🇲🇽','Colombia':'🇨🇴','Brasil':'🇧🇷','Perú':'🇵🇪','Bolivia':'🇧🇴','Paraguay':'🇵🇾','Ecuador':'🇪🇨','Venezuela':'🇻🇪','Estados Unidos':'🇺🇸'};
   list.innerHTML = docs.map(d => {
     const sp = sL[d.specialty] || d.specialty || '';
     const initials = ((d.name||'?').charAt(0) + (d.lname||'').charAt(0)).toUpperCase();
-    return '<div style="display:flex;gap:10px;align-items:center;padding:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:6px">'+
-      '<div style="width:36px;height:36px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;color:#7ec8a4;font-weight:600;font-size:13px;flex-shrink:0">'+initials+'</div>'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dr/Dra. '+(d.name||'')+' '+(d.lname||'')+'</div>'+
-        '<div style="font-size:11px;color:rgba(255,255,255,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+sp+(d.city?' · '+d.city:'')+'</div>'+
+    const title = (d.gender==='Masculino'||d.sex==='Masculino')?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':'Dr/a.';
+    const flag = _FLAGS[d.country]||'';
+    const modes = [];
+    if(d.available_online) modes.push('💻 Online');
+    if(d.available_presencial) modes.push('🏢 Presencial');
+    return '<div style="padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;margin-bottom:8px">'+
+      '<div style="display:flex;gap:10px;align-items:flex-start">'+
+        '<div style="width:40px;height:40px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;color:#7ec8a4;font-weight:600;font-size:14px;flex-shrink:0">'+initials+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:14px;font-weight:700;color:#fff">'+(flag?flag+' ':'')+title+' '+(d.name||'')+' '+(d.lname||'')+'</div>'+
+          '<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:1px">'+sp+(d.city?' · '+d.city:'')+'</div>'+
+          (d.bio?'<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:6px;line-height:1.4">'+d.bio+'</div>':'')+
+          (modes.length?'<div style="font-size:11px;color:#7ec8a4;margin-top:6px">'+modes.join(' · ')+'</div>':'')+
+          '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+            (d.cv_url?'<a href="'+d.cv_url+'" target="_blank" style="font-size:11px;color:#7ec8a4;text-decoration:none;padding:5px 10px;background:rgba(126,200,164,0.12);border-radius:8px">📄 Ver CV</a>':'')+
+            (d.email_public?'<a href="mailto:'+d.email_public+'" style="font-size:11px;color:#7ec8a4;text-decoration:none;padding:5px 10px;background:rgba(126,200,164,0.12);border-radius:8px">✉️ Contactar</a>':'')+
+            (d.phone?'<a href="https://wa.me/'+(d.phone||'').replace(/[^0-9]/g,'')+'" target="_blank" style="font-size:11px;color:#25D366;text-decoration:none;padding:5px 10px;background:rgba(37,211,102,0.12);border-radius:8px">📱 WhatsApp</a>':'')+
+          '</div>'+
+        '</div>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -6193,9 +6211,9 @@ function filterCodeConsultDirs(){
   const q = (document.getElementById('code-consult-search')?.value || '').toLowerCase().trim();
   const docs = window._codeConsultDocs || [];
   if(!q){ renderCodeConsultList(docs); return; }
-  const sL = {psychiatry:'psiquiatría',neurology:'neurología',pneumology:'neumonología',ent:'orl',pediatrics:'pediatría',cardiology:'cardiología',endocrinology:'endocrinología',internal:'medicina interna',family:'medicina familiar',general:'general',other:'otro'};
+  const sL = {psychiatry:'psiquiatría',neurology:'neurología',pneumology:'neumonología',ent:'orl',pediatrics:'pediatría',cardiology:'cardiología',psychology:'psicología',endocrinology:'endocrinología',internal:'medicina interna',family:'medicina familiar',general:'general',other:'otro'};
   const filtered = docs.filter(d => {
-    const blob = ((d.name||'')+' '+(d.lname||'')+' '+(sL[d.specialty]||d.specialty||'')+' '+(d.city||'')).toLowerCase();
+    const blob = ((d.name||'')+' '+(d.lname||'')+' '+(sL[d.specialty]||d.specialty||'')+' '+(d.city||'')+' '+(d.country||'')+' '+(d.bio||'')).toLowerCase();
     return blob.includes(q);
   });
   renderCodeConsultList(filtered);
@@ -6263,7 +6281,6 @@ const ALERT_THR = {
   rbdq:  {score:5,  label:'RBD probable (RBDQ ≥5)'},
   hamd:  {score:14, label:'Depresión moderada (HAM-D ≥14)'},
   hama:  {score:18, label:'Ansiedad moderada (HAM-A ≥18)'},
-  bdi2:  {score:20, label:'Depresión moderada (BDI-II ≥20)'},
   sassv: {score:20, label:'Alto riesgo apnea (SASS ≥20)'},
   pdss:  {score:100,label:'Sueño alterado en Parkinson (PDSS ≥100)'},
   flep:  {score:4,  label:'NFLE probable (FLEP ≥4)'},
@@ -9144,6 +9161,7 @@ async function sendScaleSuggestion(){
   
   setBtn('suggest-btn', true);
   let sent = 0;
+  const patEmailNorm = patEmail.trim().toLowerCase();
   for(const cb of checkboxes){
     const scaleId = cb.value;
     const sc = SCALES.find(s=>s.id===scaleId);
@@ -9152,9 +9170,9 @@ async function sendScaleSuggestion(){
         method:'POST',
         headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},
         body: JSON.stringify({
-          doctor_email: S.user.email,
+          doctor_email: S.user.email.trim().toLowerCase(),
           doctor_name: ((S.user.gender==='Masculino')?'Dr. ':(S.user.gender==='Femenino')?'Dra. ':'Dr/a. ')+S.user.name+' '+(S.user.lname||''),
-          patient_email: patEmail,
+          patient_email: patEmailNorm,
           scale_id: scaleId,
           scale_name: sc?.name||scaleId,
           message: msg||null,
@@ -9201,7 +9219,12 @@ async function sendScaleSuggestion(){
 async function loadDoctorSuggestions(){
   const banner = document.getElementById('home-doctor-suggestions');
   const patEmail = S.user?.email;
-  console.log('[loadDoctorSuggestions] starting · patient_email=', patEmail, '· banner exists?', !!banner);
+  console.log('[loadDoctorSuggestions] S.user.email=', patEmail);
+  // Diagnóstico: obtener el email REAL del JWT de Supabase
+  try{
+    const { data } = await supa.auth.getUser();
+    console.log('[loadDoctorSuggestions] JWT email=', data?.user?.email, '· coincide con S.user.email?', data?.user?.email===patEmail);
+  }catch(e){ console.warn('[loadDoctorSuggestions] getUser error', e); }
   if(!patEmail || !banner){
     console.warn('[loadDoctorSuggestions] abort: no email or no banner element');
     return;
@@ -9209,11 +9232,14 @@ async function loadDoctorSuggestions(){
   let suggestions = null;
   let errMsg = null;
   try{
+    // Consulta SIN filtro de email primero (diagnóstico): ¿la RLS deja leer algo?
+    const allReadable = await db.get('doctor_suggestions?select=patient_email,completed&limit=5').catch(e=>{console.warn('[loadDoctorSuggestions] diagnostic read error:',e.message);return null;});
+    console.log('[loadDoctorSuggestions] filas legibles por RLS (muestra):', allReadable);
     suggestions = await db.get(
-      'doctor_suggestions?patient_email=eq.'+encodeURIComponent(patEmail)+
+      'doctor_suggestions?patient_email=ilike.'+encodeURIComponent(patEmail)+
       '&completed=eq.false&order=created_at.desc&select=*'
     );
-    console.log('[loadDoctorSuggestions] response:', suggestions);
+    console.log('[loadDoctorSuggestions] sugerencias para este paciente:', suggestions);
   }catch(err){
     errMsg = err.message || String(err);
     console.error('[loadDoctorSuggestions] DB ERROR:', err);
@@ -9949,6 +9975,15 @@ async function registerChildProfile(){
         <input class="form-input" type="date" id="child-reg-dob">
       </div>
     </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Sexo *</label>
+      <select class="form-input" id="child-reg-sex">
+        <option value="">Seleccioná...</option>
+        <option value="F">Femenino</option>
+        <option value="M">Masculino</option>
+        <option value="X">Prefiero no especificar</option>
+      </select>
+    </div>
     <div class="form-group" style="margin-bottom:16px">
       <label class="form-label">Tu relación con el/la niño/a</label>
       <select class="form-input" id="child-reg-rel">
@@ -9969,10 +10004,74 @@ async function registerChildProfile(){
   modal.onclick = e => { if(e.target===modal){ modal.remove(); _activeReminderModal=null; } };
 }
 
+// Editar datos de un perfil infantil ya creado
+function editChildProfile(chJsonEnc){
+  let ch;
+  try{ ch = JSON.parse(decodeURIComponent(chJsonEnc)); }catch(e){ toast('Error al abrir el perfil'); return; }
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML=`<div style="background:var(--bg);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px">Editar perfil de ${ch.name}</div>
+    <div style="font-size:13px;color:var(--label-2);margin-bottom:16px">Modificá los datos del perfil infantil</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Nombre *</label>
+      <input class="form-input" id="child-edit-name" value="${(ch.name||'').replace(/"/g,'&quot;')}">
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div class="form-group" style="flex:1;margin:0">
+        <label class="form-label">Apellido *</label>
+        <input class="form-input" id="child-edit-lname" value="${(ch.lname||'').replace(/"/g,'&quot;')}">
+      </div>
+      <div class="form-group" style="flex:1;margin:0">
+        <label class="form-label">Fecha de nacimiento *</label>
+        <input class="form-input" type="date" id="child-edit-dob" value="${ch.dob||''}">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Sexo</label>
+      <select class="form-input" id="child-edit-sex">
+        <option value="" ${!ch.sex?'selected':''}>Seleccioná...</option>
+        <option value="F" ${ch.sex==='F'?'selected':''}>Femenino</option>
+        <option value="M" ${ch.sex==='M'?'selected':''}>Masculino</option>
+        <option value="X" ${ch.sex==='X'?'selected':''}>Prefiero no especificar</option>
+      </select>
+    </div>
+    <div id="child-edit-error" class="form-error"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-s" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancelar</button>
+      <button class="btn btn-g" style="flex:1" id="child-edit-btn" onclick="saveEditedChildProfile('${ch.email}')">Guardar cambios</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+}
+
+async function saveEditedChildProfile(childEmail){
+  const name = document.getElementById('child-edit-name')?.value.trim();
+  const lname = document.getElementById('child-edit-lname')?.value.trim();
+  const dob = document.getElementById('child-edit-dob')?.value;
+  const sex = document.getElementById('child-edit-sex')?.value;
+  const err = document.getElementById('child-edit-error');
+  if(!name||!lname||!dob){ if(err){err.textContent='Completá nombre, apellido y fecha de nacimiento.';err.classList.add('show');} return; }
+  const btn = document.getElementById('child-edit-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+  try{
+    await db.patch('patients?email=eq.'+encodeURIComponent(childEmail), { name, lname, dob, sex:sex||null });
+    toast('✓ Perfil actualizado');
+    document.querySelector('#child-edit-btn')?.closest('[style*=fixed]')?.remove();
+    // Refrescar la lista de códigos infantiles
+    if(typeof showPatientCode==='function') showPatientCode();
+  }catch(e){
+    if(err){ err.textContent='Error: '+e.message; err.classList.add('show'); }
+    if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
+  }
+}
+
 async function saveChildProfile(){
   const name = document.getElementById('child-reg-name')?.value.trim();
   const lname = document.getElementById('child-reg-lname')?.value.trim();
   const dob = document.getElementById('child-reg-dob')?.value;
+  const sex = document.getElementById('child-reg-sex')?.value;
   const rel = document.getElementById('child-reg-rel')?.value;
   const err = document.getElementById('child-reg-error');
   if(!name||!lname||!dob){ if(err){err.textContent='Completá todos los campos.';err.classList.add('show');} return; }
@@ -9986,7 +10085,7 @@ async function saveChildProfile(){
     let parentAuthId = S.user.auth_id;
     if(!parentAuthId && typeof supa!=='undefined' && supa){ try{ const {data:_u}=await supa.auth.getUser(); parentAuthId=_u&&_u.user?_u.user.id:null; }catch(_e){} }
     const body = {
-      name, lname, dob,
+      name, lname, dob, sex:sex||null,
       email: childEmail,
       parent_email: S.user.email,
       caregiver_relation: rel,
@@ -10964,7 +11063,10 @@ async function renderChildDiaryList(){
     const chartData = chrono.map(e=>({
       date: e.diary_date,
       hrs: e.sleep_minutes ? Math.round(e.sleep_minutes/60*10)/10 : null,
-      bedMin: e.bedtime ? timeToMin(e.bedtime) : null
+      bedMin: e.bedtime ? timeToMin(e.bedtime) : null,
+      bedtime: e.bedtime,
+      wake: e.wake_time,
+      naps: (()=>{ try{ const m=(e.notes||'').match(/Siestas: (\[.*?\])/); return m?JSON.parse(m[1]):[]; }catch(_){ return []; } })()
     })).filter(d=>d.hrs!=null);
     // Calcular regularidad de hora de acostarse (desvío estándar de bedtime)
     let regNote = '';
@@ -10981,11 +11083,60 @@ async function renderChildDiaryList(){
         '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;color:'+regColor+';font-weight:600">'+regLabel+'</span><span style="font-size:12px;color:var(--label-3)">±'+sdMin+' min de variación</span></div>'+
         '<div style="font-size:11px;color:var(--label-3);margin-top:4px;line-height:1.4">En niños, acostarse a un horario constante (variación menor a 30 min) favorece la consolidación del sueño.</div></div>';
     }
+    // ACTOGRAMA: visualización de períodos de sueño (noche + siestas) por día
+    let actogramHtml = '';
+    const actoData = chartData.slice(-14); // últimos 14 días
+    if(actoData.length>=2){
+      // Cada fila = 1 día, escala 0-24h (eje: mediodía a mediodía para centrar la noche)
+      // Usamos 12:00 de un día a 12:00 del siguiente (0=12pm ... 1440=12pm día sig)
+      const minToX = m => { // m en minutos absolutos desde medianoche; reposicionamos con noon-to-noon
+        let x = m - 720; // 12:00 = 0
+        if(x<0) x+=1440;
+        return (x/1440)*100;
+      };
+      const rows = actoData.map(d=>{
+        const segs = [];
+        // Sueño nocturno
+        if(d.bedtime && d.wake){
+          let b = timeToMinRaw(d.bedtime), w = timeToMinRaw(d.wake);
+          // bedtime suele ser de noche, wake de mañana siguiente
+          let xb = minToX(b), xw = minToX(w);
+          if(xw<=xb){ // cruza el final
+            segs.push({x:xb, w:100-xb, c:'#1a4a3a'});
+            segs.push({x:0, w:xw, c:'#1a4a3a'});
+          } else {
+            segs.push({x:xb, w:xw-xb, c:'#1a4a3a'});
+          }
+        }
+        // Siestas (verde menta)
+        (d.naps||[]).forEach(n=>{
+          if(n.start && n.end){
+            let s=timeToMinRaw(n.start), e2=timeToMinRaw(n.end);
+            let xs=minToX(s), xe=minToX(e2);
+            if(xe>xs) segs.push({x:xs, w:xe-xs, c:'#7ec8a4'});
+          }
+        });
+        const dlabel = new Date(d.date+'T12:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+        return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'+
+          '<div style="font-size:9px;color:var(--label-3);width:34px;flex-shrink:0;text-align:right">'+dlabel+'</div>'+
+          '<div style="flex:1;position:relative;height:14px;background:rgba(0,0,0,0.04);border-radius:3px;overflow:hidden">'+
+          segs.map(s=>'<div style="position:absolute;left:'+s.x+'%;width:'+s.w+'%;top:0;bottom:0;background:'+s.c+';border-radius:2px"></div>').join('')+
+          '</div></div>';
+      }).join('');
+      // Eje de horas (12pm, 6pm, 12am, 6am, 12pm)
+      actogramHtml = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:14px">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Actograma (últimos '+actoData.length+' días)</div>'+
+        '<div style="font-size:10px;color:var(--label-3);margin-bottom:10px;line-height:1.4">Cada fila es un día. <span style="color:#1a4a3a;font-weight:600">■</span> sueño nocturno · <span style="color:#7ec8a4;font-weight:600">■</span> siestas</div>'+
+        rows+
+        '<div style="display:flex;gap:6px;margin-top:4px"><div style="width:34px;flex-shrink:0"></div><div style="flex:1;display:flex;justify-content:space-between;font-size:8px;color:var(--label-3)"><span>12h</span><span>18h</span><span>0h</span><span>6h</span><span>12h</span></div></div>'+
+        '</div>';
+    }
     // Chart container
     let chartHtml = '';
     if(chartData.length>=2){
       chartHtml = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:14px">'+
-        '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Horas de sueño (últimos '+chartData.length+' registros)</div>'+
+        '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Horas de sueño nocturno (últimos '+chartData.length+' registros)</div>'+
+        '<div style="font-size:10px;color:var(--label-3);margin-bottom:10px">No incluye siestas. La línea punteada es la referencia para la edad.</div>'+
         '<div style="position:relative;height:180px"><canvas id="ch-diary-chart"></canvas></div></div>';
     }
     // Lista
@@ -11005,7 +11156,7 @@ async function renderChildDiaryList(){
         </div>
       </div>`;
     }).join('');
-    el.innerHTML = chartHtml + regNote + '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Registros</div>' + listHtml;
+    el.innerHTML = chartHtml + actogramHtml + regNote + '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Registros</div>' + listHtml;
     // Dibujar gráfico
     if(chartData.length>=2){
       setTimeout(()=>{
@@ -11030,6 +11181,13 @@ function timeToMin(t){
   let total=h*60+min;
   if(h<12) total+=24*60; // madrugada cuenta como continuación de la noche
   return total;
+}
+// Versión cruda (sin ajuste): minutos absolutos desde medianoche 0-1439
+function timeToMinRaw(t){
+  if(!t)return null;
+  const m=t.match(/(\d{1,2}):(\d{2})/);
+  if(!m)return null;
+  return parseInt(m[1])*60+parseInt(m[2]);
 }
 
 
@@ -13447,14 +13605,15 @@ async function openCbtiModule(){
 }
 
 async function toggleCbtiPatient(patientEmail, patientName, activate){
-  const drEmail = S.user?.email; if(!drEmail) return;
+  const drEmail = (S.user?.email||'').trim().toLowerCase(); if(!drEmail) return;
+  const patNorm = (patientEmail||'').trim().toLowerCase();
   try{
     if(activate){
       // Insert or update
-      await fetch(SU+'/rest/v1/cbti_patients',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({doctor_email:drEmail,patient_email:patientEmail,active:true})});
+      await fetch(SU+'/rest/v1/cbti_patients',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({doctor_email:drEmail,patient_email:patNorm,active:true})});
       toast('✓ '+patientName+' activado en CBT-I');
     } else {
-      await db.patch('cbti_patients?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patientEmail),{active:false});
+      await db.patch('cbti_patients?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patNorm),{active:false});
       toast('Desactivado de CBT-I');
     }
     openCbtiModule(); // refrescar lista
@@ -13863,14 +14022,14 @@ async function openPatientCbtiView(){
     const patEmail = S.user?.email;
     if(!patEmail){ cont.innerHTML='<div style="padding:20px">Sesión no iniciada.</div>'; return; }
     // Buscar todos los médicos que activaron CBT-I para este paciente
-    const active = await db.get('cbti_patients?patient_email=eq.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email').catch(()=>[]);
+    const active = await db.get('cbti_patients?patient_email=ilike.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email').catch(()=>[]);
     if(!active || !active.length){
       cont.innerHTML = '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,0.6)"><div style="font-size:36px;margin-bottom:10px">🌿</div>Tu profesional aún no activó un protocolo TCC-I para vos.<br><br><span style="font-size:12px">Cuando lo haga, vas a poder ver el contenido del tratamiento acá.</span></div>';
       return;
     }
     const drEmail = active[0].doctor_email; // si hay varios, mostramos el primero
     // Cargar progreso
-    const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patEmail)+'&select=item_id,completed,completed_at,notes').catch(()=>[]);
+    const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=ilike.'+encodeURIComponent(patEmail)+'&select=item_id,completed,completed_at,notes').catch(()=>[]);
     const progressMap = {};
     (prog||[]).forEach(r=>{ progressMap[r.item_id] = {completed:!!r.completed, completed_at:r.completed_at, notes:r.notes||''}; });
     // Render
@@ -13934,7 +14093,7 @@ async function checkPatientTcciCard(){
     if(!card || !patEmail) return;
     let active = null;
     try{
-      active = await db.get('cbti_patients?patient_email=eq.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email');
+      active = await db.get('cbti_patients?patient_email=ilike.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email');
       console.log('[checkPatientTcciCard] cbti_patients response:', active);
     }catch(err){
       console.error('[checkPatientTcciCard] DB ERROR:', err);
@@ -13946,7 +14105,7 @@ async function checkPatientTcciCard(){
     if(active && active.length){
       card.style.display='block';
       const drEmail = active[0].doctor_email;
-      const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=eq.'+encodeURIComponent(patEmail)+'&completed=eq.true&select=item_id').catch(()=>[]);
+      const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=ilike.'+encodeURIComponent(patEmail)+'&completed=eq.true&select=item_id').catch(()=>[]);
       const done = (prog||[]).length;
       const pctEl = document.getElementById('patient-tcci-progress');
       if(pctEl) pctEl.textContent = done+' de '+CBTI_TOTAL_ITEMS+' temas desbloqueados';
