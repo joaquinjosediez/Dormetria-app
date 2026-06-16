@@ -3223,7 +3223,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     </div>
   </div>
   <div id="ch-panel-diary" style="display:none;flex:1;overflow-y:auto;padding:16px 16px 80px">
-    <button class="btn btn-g" onclick="showChildDiaryNew()" style="margin-bottom:16px">+ Nuevo registro</button>
+    <button class="btn btn-g" onclick="S._editingDiaryId=null;showChildDiaryNew()" style="margin-bottom:16px">+ Nuevo registro</button>
     <div id="ch-diary-list"></div>
   </div>
   <div id="ch-panel-scales" style="display:none;flex:1;overflow-y:auto;padding:16px 16px 80px">
@@ -5190,24 +5190,81 @@ function updatePillarBars(entries){
 }
 
 
+// Calcula todas las métricas clínicas del diario (usado en panel paciente y médico)
+function computeDiaryMetrics(entries){
+  const valid = (entries||[]).filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
+  if(valid.length<3) return null;
+  // Promedios de horarios — usamos minutos con ajuste de cruce de medianoche para bedtime
+  const bedMins=[], wakeMins=[], totalMins=[], wdTotal=[], weTotal=[], wdMid=[], weMid=[];
+  let under7=0;
+  valid.forEach(e=>{
+    const [bh,bm]=e.bedtime.split(':').map(Number);
+    let bedM=bh*60+bm; if(bedM<12*60) bedM+=24*60; // madrugada como continuación
+    const [wh,wm]=e.wake_time.split(':').map(Number);
+    let wakeM=wh*60+wm; // wake normal de mañana
+    bedMins.push(bedM); wakeMins.push(wakeM);
+    totalMins.push(e.sleep_minutes);
+    if(e.sleep_minutes < 420) under7++;
+    const mid=(bedM + e.sleep_minutes/2)%(24*60);
+    // Día laborable vs no laborable: usar day_type si existe, sino día de semana
+    let isFree;
+    if(e.day_type) isFree = (e.day_type==='free');
+    else { const d=new Date(e.diary_date+'T12:00').getDay(); isFree = (d===0||d===6); }
+    if(isFree){ weTotal.push(e.sleep_minutes); weMid.push(mid); }
+    else { wdTotal.push(e.sleep_minutes); wdMid.push(mid); }
+  });
+  const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+  const fmtClock=m=>{ if(m==null)return '—'; let mm=Math.round(m)%(24*60); if(mm<0)mm+=24*60; const h=Math.floor(mm/60), q=mm%60; return String(h).padStart(2,'0')+':'+String(q).padStart(2,'0'); };
+  const fmtDur=m=>{ if(m==null)return '—'; const h=Math.floor(m/60), q=Math.round(m%60); return h+'h '+String(q).padStart(2,'0')+'m'; };
+  const avgBed=avg(bedMins), avgWake=avg(wakeMins), avgTotal=avg(totalMins);
+  const avgWd=avg(wdTotal), avgWe=avg(weTotal);
+  // Síndrome de insuficiencia de sueño: dormir significativamente más los días libres
+  const sleepDebt = (avgWd!=null && avgWe!=null) ? (avgWe - avgWd) : null;
+  // Jet lag social = |midpoint libre − midpoint laborable|
+  let socialJetLag=null;
+  const avgWdMid=avg(wdMid), avgWeMid=avg(weMid);
+  if(avgWdMid!=null && avgWeMid!=null){
+    let diff=Math.abs(avgWeMid-avgWdMid);
+    if(diff>12*60) diff=24*60-diff;
+    socialJetLag=Math.round(diff);
+  }
+  return {
+    n: valid.length,
+    avgBed, avgWake, avgTotal, avgWd, avgWe, sleepDebt, socialJetLag,
+    under7Pct: Math.round(under7/valid.length*100),
+    nWd: wdTotal.length, nWe: weTotal.length,
+    fmtClock, fmtDur
+  };
+}
+
 function updateClinicalMetrics(entries){
   const el = document.getElementById('diary-clinical-metrics');
   if(!el) return;
-  const sc = calcSleepScore(entries);
-  if(!sc){ el.innerHTML=''; return; }
-  const sjlStr = sc.socialJetLag !== null
-    ? (sc.socialJetLag < 30 ? 'Mínimo (<30 min)' : sc.socialJetLag < 60 ? 'Leve ('+sc.socialJetLag+' min)' : sc.socialJetLag < 90 ? 'Moderado ('+sc.socialJetLag+' min)' : 'Alto ('+sc.socialJetLag+' min)')
-    : 'Sin datos';
-  const sjlColor = sc.socialJetLag === null ? 'var(--label-2)' : sc.socialJetLag < 30 ? '#14532d' : sc.socialJetLag < 60 ? '#d97706' : '#dc2626';
-  const insufColor = sc.insufficiencyPct > 30 ? '#dc2626' : sc.insufficiencyPct > 15 ? '#d97706' : '#14532d';
-  el.innerHTML = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:10px">Métricas clínicas</div>' +
-    '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--sep)">' +
-    '<span style="font-size:14px;color:var(--label-2)">Jet lag social</span>' +
-    '<span style="font-size:14px;font-weight:500;color:'+sjlColor+'">'+sjlStr+'</span></div>' +
-    '<div style="display:flex;justify-content:space-between;padding:7px 0">' +
-    '<span style="font-size:14px;color:var(--label-2)">Noches con menos de 7 horas</span>' +
-    '<span style="font-size:14px;font-weight:500;color:'+insufColor+'">'+sc.insufficiencyPct+'% de las noches</span></div>' +
+  el.innerHTML = renderClinicalMetricsHtml(entries);
+}
+
+// HTML reutilizable de métricas (paciente y médico)
+function renderClinicalMetricsHtml(entries){
+  const m = computeDiaryMetrics(entries);
+  if(!m) return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--label-2)">Necesitás al menos 3 registros con horarios completos para ver las métricas clínicas.</div>';
+  const sjlStr = m.socialJetLag!=null ? (m.socialJetLag<30?'Mínimo':m.socialJetLag<60?'Leve':m.socialJetLag<90?'Moderado':'Alto')+' ('+m.socialJetLag+' min)' : 'Sin datos';
+  const sjlColor = m.socialJetLag==null?'var(--label-2)':m.socialJetLag<30?'#14532d':m.socialJetLag<60?'#d97706':'#dc2626';
+  const insufColor = m.under7Pct>30?'#dc2626':m.under7Pct>15?'#d97706':'#14532d';
+  const debtStr = m.sleepDebt!=null ? (m.sleepDebt>0?'+':'')+Math.round(m.sleepDebt)+' min' : '—';
+  const debtColor = m.sleepDebt==null?'var(--label-2)':Math.abs(m.sleepDebt)<60?'#14532d':Math.abs(m.sleepDebt)<120?'#d97706':'#dc2626';
+  const row=(label,val,color,sub)=>'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:0.5px solid var(--sep)">'+
+    '<span style="font-size:13.5px;color:var(--label-2)">'+label+(sub?'<br><span style="font-size:11px;color:var(--label-3)">'+sub+'</span>':'')+'</span>'+
+    '<span style="font-size:14px;font-weight:600;color:'+(color||'var(--label)')+';text-align:right;white-space:nowrap">'+val+'</span></div>';
+  return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:6px">Métricas clínicas <span style="font-weight:400;color:var(--label-3);font-size:11px">· '+m.n+' noches</span></div>'+
+    row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
+    row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
+    row('Sueño total promedio', m.fmtDur(m.avgTotal))+
+    row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
+    row('Promedio días no laborables', m.fmtDur(m.avgWe), null, m.nWe+' noches')+
+    row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Más sueño los días libres sugiere insuficiencia entre semana')+
+    row('Jet lag social', sjlStr, sjlColor, 'Desfase del punto medio del sueño entre semana y fin de semana')+
+    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor)+
     '</div>';
 }
 
@@ -7331,7 +7388,47 @@ async function deleteDiaryEntry(id){
     toast('Error al borrar el registro');
   }
 }
+async function editChildDiaryEntry(id){
+  try{
+    const rows = await db.get('sleep_diary?id=eq.'+id+'&select=*');
+    if(!rows||!rows.length){ toast('No se encontró el registro'); return; }
+    const e = rows[0];
+    S._editingDiaryId = id;
+    showChildDiaryNew();
+    setTimeout(()=>{
+      const dateEl=document.getElementById('d-date'); if(dateEl) dateEl.value=e.diary_date;
+      const bedEl=document.getElementById('d-bed'); if(bedEl&&e.bedtime) bedEl.value=e.bedtime.slice(0,5);
+      const wakeEl=document.getElementById('d-wake'); if(wakeEl&&e.wake_time) wakeEl.value=e.wake_time.slice(0,5);
+      const latEl=document.getElementById('d-latency'); if(latEl&&e.sleep_latency_mins){
+        const opts=[2,10,22,45,90];
+        const closest=opts.reduce((a,b)=>Math.abs(b-e.sleep_latency_mins)<Math.abs(a-e.sleep_latency_mins)?b:a);
+        latEl.value=closest;
+      }
+      // Contexto al dormirse (guardado en notes como "Contexto: x,y,z")
+      try{
+        const ctxM=(e.notes||'').match(/Contexto: ([^|]+)/);
+        if(ctxM){
+          const ctxs=ctxM[1].trim().split(',').map(s=>s.trim());
+          const hid=document.getElementById('d-sleep-ctx'); if(hid) hid.value=ctxs.join(',');
+          ctxs.forEach(c=>{ const b=document.querySelector('[data-ctx="'+c+'"]'); if(b){ b.style.borderColor='#1a4a3a'; b.style.background='rgba(26,74,58,0.08)'; } });
+        }
+      }catch(_){}
+      // Despertares nocturnos
+      try{
+        if(e.awakening_detail){
+          const aws=JSON.parse(e.awakening_detail);
+          if(Array.isArray(aws)){ _childAwakenings = aws; if(typeof renderChildAwakenings==='function') renderChildAwakenings(); }
+        }
+      }catch(_){}
+      const saveBtn=document.getElementById('save-diary-btn');
+      if(saveBtn) saveBtn.textContent='Actualizar registro';
+    }, 200);
+  }catch(err){ toast('Error: '+err.message); }
+}
+
 async function editDiaryEntry(id){
+  // En modo niño, usar el formulario infantil
+  if(S.childMode){ editChildDiaryEntry(id); return; }
   try{
     const rows = await db.get('sleep_diary?id=eq.'+id+'&select=*');
     if(!rows||!rows.length){toast('No se encontró el registro');return;}
@@ -8507,8 +8604,13 @@ async function showDrPTab_(tab){
         <div class="sec-title" style="margin-top:4px">PILARES DEL SUEÑO</div>
         <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
         <div style="background:#fff;border-radius:12px;padding:10px;margin-top:8px"><div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div></div>
+        <div class="sec-title" style="margin-top:14px">MÉTRICAS CLÍNICAS</div>
+        <div id="dr-clinical-metrics" style="margin-bottom:8px"></div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
+        // Métricas clínicas del médico (mismas que ve el paciente)
+        const dme=document.getElementById('dr-clinical-metrics');
+        if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj);
         killChart('dr-acto');killChart('dp-dr');
         const sorted=[...subj].sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
@@ -8713,7 +8815,10 @@ async function showDrPTab_(tab){
       var _customBundleHtml = '';
       if(_customBundleIds && _customBundleIds.length){
         var idsLit2 = '['+_customBundleIds.map(function(x){return "'"+x+"'";}).join(',')+']';
-        _customBundleHtml = '<button type="button" onclick="_applySuggestBundle('+idsLit2+')" style="background:linear-gradient(135deg,#C8A96E22,#C8A96E11);border:1.5px solid #C8A96E;border-radius:14px;padding:7px 12px;font-size:13px;color:#0F2820;font-weight:700;cursor:pointer;font-family:inherit">⭐ Mis sugerencias ('+_customBundleIds.length+')</button>';
+        _customBundleHtml = '<button type="button" onclick="_applySuggestBundle('+idsLit2+')" style="background:linear-gradient(135deg,#C8A96E33,#C8A96E15);border:1.5px solid #C8A96E;border-radius:14px;padding:7px 12px;font-size:13px;color:#8B6F3D;font-weight:700;cursor:pointer;font-family:inherit">⭐ Mis sugerencias ('+_customBundleIds.length+')</button>';
+      } else {
+        // Sin bundle configurado: botón que lleva a configurarlo
+        _customBundleHtml = '<button type="button" onclick="showCustomBundleConfig()" style="background:rgba(200,169,110,0.12);border:1.5px dashed #C8A96E;border-radius:14px;padding:7px 12px;font-size:13px;color:#8B6F3D;font-weight:600;cursor:pointer;font-family:inherit">⭐ Configurar mis sugerencias</button>';
       }
       // Paquetes preseteados (clic para preseleccionar varias escalas)
       var _suggestBundlesHtml=[
@@ -9251,7 +9356,21 @@ async function loadDoctorSuggestions(){
     return;
   }
   if(!suggestions || !suggestions.length){
-    console.log('[loadDoctorSuggestions] sin sugerencias pendientes — banner oculto');
+    console.log('[loadDoctorSuggestions] sin sugerencias pendientes para', patEmail);
+    // Auto-diagnóstico: ¿hay sugerencias guardadas para OTRO email parecido?
+    try{
+      const others = await db.get('doctor_suggestions?completed=eq.false&select=patient_email&limit=10').catch(()=>null);
+      if(others && others.length){
+        const emails = [...new Set(others.map(o=>o.patient_email))];
+        const mismatch = emails.filter(e=>e && e.toLowerCase()!==patEmail.toLowerCase());
+        if(mismatch.length){
+          console.warn('[loadDoctorSuggestions] HAY sugerencias para otros emails:', mismatch, '· tu email:', patEmail);
+          banner.innerHTML = '<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:12px;font-size:12px;color:#92400e"><strong>⚠ Hay sugerencias guardadas, pero con otro email.</strong><br>Tu sesión: <code>'+patEmail+'</code><br>Guardadas para: <code>'+mismatch.join(', ')+'</code><br><br>El médico te vinculó con un email distinto al de tu cuenta. Pedile que te re-sugiera las escalas, o corregí el email en Supabase.</div>';
+          banner.style.display='block';
+          return;
+        }
+      }
+    }catch(_){}
     banner.style.display='none';
     banner.innerHTML='';
     return;
@@ -10898,6 +11017,15 @@ const SLEEP_NORMS = {
   teen:     {hours:'8–10 hs por noche', note:'Rango normal: 6.5 a 11 hs. El retraso de fase es biológico, no pereza.', label:'Adolescente (13–17 años)'}
 };
 
+// Rangos recomendados National Sleep Foundation (horas de sueño TOTAL en 24h, incluyendo siestas)
+// rec = recomendado; may = puede ser apropiado (rango ampliado)
+const NSF_RANGES = {
+  infant:    { recMin:12, recMax:16, mayMin:10, mayMax:18, label:'0–2 años' },   // newborn+infant+toddler combinados
+  preschool: { recMin:10, recMax:13, mayMin:8,  mayMax:14, label:'3–5 años' },
+  school:    { recMin:9,  recMax:11, mayMin:7,  mayMax:12, label:'6–13 años' },
+  teen:      { recMin:8,  recMax:10, mayMin:7,  mayMax:11, label:'14–17 años' }
+};
+
 
 function showChildMenu(){
   const modal = document.createElement('div');
@@ -10999,7 +11127,7 @@ function renderChildQuickActions(){
   const el = document.getElementById('ch-quick-actions');
   if(!el) return;
   const actions = [
-    {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>', label:'Registrar noche', sub:'Anotar el sueño de anoche', fn:"showChildDiaryNew()"},
+    {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>', label:'Registrar noche', sub:'Anotar el sueño de anoche', fn:"S._editingDiaryId=null;showChildDiaryNew()"},
     {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>', label:'Evaluar sueño', sub:'Cuestionarios validados', fn:"showChildTab('scales',document.getElementById('ch-tab-scales'))"},
     {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>', label:'Ver historial', sub:'Gráficos y tendencias', fn:"showChildTab('diary',document.getElementById('ch-tab-diary'))"},
     {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>', label:'Info para padres', sub:'Guía de sueño saludable', fn:"showChildTab('info',document.getElementById('ch-tab-info'))"}
@@ -11060,14 +11188,30 @@ async function renderChildDiaryList(){
     const norm = SLEEP_NORMS[S.ageGroup];
     // Datos para gráfico (cronológico ascendente)
     const chrono = entries.slice().reverse();
-    const chartData = chrono.map(e=>({
-      date: e.diary_date,
-      hrs: e.sleep_minutes ? Math.round(e.sleep_minutes/60*10)/10 : null,
-      bedMin: e.bedtime ? timeToMin(e.bedtime) : null,
-      bedtime: e.bedtime,
-      wake: e.wake_time,
-      naps: (()=>{ try{ const m=(e.notes||'').match(/Siestas: (\[.*?\])/); return m?JSON.parse(m[1]):[]; }catch(_){ return []; } })()
-    })).filter(d=>d.hrs!=null);
+    const chartData = chrono.map(e=>{
+      const naps = (()=>{ try{ const m=(e.notes||'').match(/Siestas: (\[.*?\])/); return m?JSON.parse(m[1]):[]; }catch(_){ return []; } })();
+      // Minutos de siesta sumados
+      let napMin = 0;
+      naps.forEach(n=>{
+        if(n.start && n.end){
+          let s=timeToMinRaw(n.start), en=timeToMinRaw(n.end);
+          let dur=en-s; if(dur<0) dur+=1440;
+          if(dur>0 && dur<600) napMin+=dur;
+        }
+      });
+      const nightMin = e.sleep_minutes||0;
+      const totalMin = nightMin + napMin;
+      return {
+        date: e.diary_date,
+        hrs: nightMin ? Math.round(nightMin/60*10)/10 : null,         // solo nocturno
+        totalHrs: totalMin ? Math.round(totalMin/60*10)/10 : null,    // noche + siestas
+        napMin,
+        bedMin: e.bedtime ? timeToMin(e.bedtime) : null,
+        bedtime: e.bedtime,
+        wake: e.wake_time,
+        naps
+      };
+    }).filter(d=>d.hrs!=null);
     // Calcular regularidad de hora de acostarse (desvío estándar de bedtime)
     let regNote = '';
     const beds = chartData.map(d=>d.bedMin).filter(v=>v!=null);
@@ -11134,10 +11278,16 @@ async function renderChildDiaryList(){
     // Chart container
     let chartHtml = '';
     if(chartData.length>=2){
+      const nsf = NSF_RANGES[S.ageGroup];
+      const nsfNote = nsf ? 'La banda verde es el rango recomendado por la National Sleep Foundation para '+nsf.label+' ('+nsf.recMin+'–'+nsf.recMax+' h). Incluye siestas.' : 'Incluye siestas.';
       chartHtml = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:14px">'+
-        '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Horas de sueño nocturno (últimos '+chartData.length+' registros)</div>'+
-        '<div style="font-size:10px;color:var(--label-3);margin-bottom:10px">No incluye siestas. La línea punteada es la referencia para la edad.</div>'+
-        '<div style="position:relative;height:180px"><canvas id="ch-diary-chart"></canvas></div></div>';
+        '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Sueño total diario vs. recomendado</div>'+
+        '<div style="font-size:10px;color:var(--label-3);margin-bottom:10px;line-height:1.4">'+nsfNote+'</div>'+
+        '<div style="position:relative;height:200px"><canvas id="ch-diary-chart"></canvas></div>'+
+        '<div style="display:flex;gap:14px;font-size:10px;color:var(--label-3);margin-top:8px;flex-wrap:wrap">'+
+          '<span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:50%;margin-right:3px;vertical-align:middle"></span>Sueño total (noche + siestas)</span>'+
+          '<span><span style="display:inline-block;width:14px;height:9px;background:rgba(126,200,164,0.35);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Rango recomendado NSF</span>'+
+        '</div></div>';
     }
     // Lista
     const listHtml = entries.map(e => {
@@ -11145,28 +11295,64 @@ async function renderChildDiaryList(){
       const dateStr = new Date(e.diary_date+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'short'});
       const hrsColor = !hrs?'var(--label-2)':S.ageGroup==='infant'?(hrs>=12&&hrs<=16?'#14532d':hrs>=10?'#92400e':'#991b1b'):(hrs>=9?'#14532d':hrs>=7?'#92400e':'#991b1b');
       return `<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
-        <div>
+        <div style="flex:1">
           <div style="font-size:14px;font-weight:600">${dateStr}</div>
           ${e.bedtime&&e.wake_time?'<div style="font-size:12px;color:var(--label-2);margin-top:2px">'+e.bedtime+' → '+e.wake_time+'</div>':''}
           ${e.notes?'<div style="font-size:11px;color:var(--label-3);margin-top:2px">'+e.notes.slice(0,40)+'</div>':''}
         </div>
-        <div style="text-align:right">
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           ${hrs?'<div style="font-size:18px;font-weight:700;color:'+hrsColor+'">'+hrs+'h</div>':'<div style="font-size:12px;color:var(--label-3)">—</div>'}
-          <button onclick="deleteDiaryEntry('`+`'+e.id+'`+`',this)" style="font-size:11px;color:var(--label-3);background:none;border:none;cursor:pointer;padding:2px 0;margin-top:2px">🗑</button>
+          <div style="display:flex;gap:6px">
+            <button onclick="editDiaryEntry('${e.id}')" style="font-size:11px;color:#1a4a3a;background:rgba(26,74,58,0.1);border:none;border-radius:6px;padding:4px 10px;font-weight:600;cursor:pointer">✏️ Editar</button>
+            <button onclick="deleteDiaryEntry('${e.id}')" style="font-size:11px;color:#dc2626;background:rgba(220,38,38,0.1);border:none;border-radius:6px;padding:4px 8px;cursor:pointer">🗑</button>
+          </div>
         </div>
       </div>`;
     }).join('');
     el.innerHTML = chartHtml + actogramHtml + regNote + '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Registros</div>' + listHtml;
-    // Dibujar gráfico
+    // Dibujar gráfico de sueño total con banda NSF
     if(chartData.length>=2){
       setTimeout(()=>{
         const ctx=document.getElementById('ch-diary-chart');
         if(!ctx||typeof Chart==='undefined')return;
         killChart('chDiary');
         const labels=chartData.map(d=>new Date(d.date+'T12:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}));
-        const vals=chartData.map(d=>d.hrs);
-        const idealMin = S.ageGroup==='infant'?12:S.ageGroup==='school'?9:8;
-        S.charts.chDiary=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Horas de sueño',data:vals,borderColor:'#7ec8a4',backgroundColor:'rgba(126,200,164,0.15)',tension:0.35,pointRadius:4,pointBackgroundColor:'#1a4a3a',borderWidth:2,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:0},grid:{display:false}},y:{beginAtZero:false,suggestedMin:Math.max(0,Math.min(...vals)-1),suggestedMax:Math.max(...vals)+1,ticks:{font:{size:10},callback:v=>v+'h'},grid:{color:'rgba(0,0,0,0.04)'}}}},plugins:[{afterDraw:function(ch){const c=ch.ctx;c.save();c.strokeStyle='rgba(26,74,58,0.35)';c.lineWidth=1;c.setLineDash([4,4]);const y=ch.scales.y.getPixelForValue(idealMin);if(y>ch.chartArea.top&&y<ch.chartArea.bottom){c.beginPath();c.moveTo(ch.chartArea.left,y);c.lineTo(ch.chartArea.right,y);c.stroke();}c.restore();}}]});
+        const totals=chartData.map(d=>d.totalHrs!=null?d.totalHrs:d.hrs);
+        const nsf = NSF_RANGES[S.ageGroup] || {recMin:9,recMax:11,mayMin:7,mayMax:12};
+        const dataMax = Math.max(...totals, nsf.recMax);
+        const dataMin = Math.min(...totals, nsf.recMin);
+        S.charts.chDiary=new Chart(ctx,{
+          type:'line',
+          data:{labels,datasets:[{
+            label:'Sueño total',
+            data:totals,
+            borderColor:'#1a4a3a',
+            backgroundColor:'rgba(126,200,164,0.1)',
+            tension:0.35,pointRadius:4,
+            pointBackgroundColor:totals.map(v=>v>=nsf.recMin&&v<=nsf.recMax?'#14532d':(v>=nsf.mayMin&&v<=nsf.mayMax?'#d97706':'#dc2626')),
+            pointBorderColor:'#fff',pointBorderWidth:1.5,
+            borderWidth:2.5,fill:false
+          }]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+            tooltip:{callbacks:{label:c=>{const v=c.raw;const estado=v>=nsf.recMin&&v<=nsf.recMax?'✓ En rango':(v>=nsf.mayMin&&v<=nsf.mayMax?'~ Aceptable':(v<nsf.mayMin?'⚠ Por debajo':'⚠ Por encima'));return v+' h · '+estado;}}}},
+            scales:{x:{ticks:{font:{size:9},maxRotation:0},grid:{display:false}},
+              y:{beginAtZero:false,suggestedMin:Math.max(0,Math.floor(dataMin-1)),suggestedMax:Math.ceil(dataMax+1),ticks:{font:{size:10},callback:v=>v+'h'},grid:{color:'rgba(0,0,0,0.04)'}}}},
+          plugins:[{
+            id:'nsfBand',
+            beforeDraw:function(ch){
+              const yS=ch.scales.y, area=ch.chartArea, c=ch.ctx;
+              // Banda recomendada (verde claro)
+              const yTop=yS.getPixelForValue(nsf.recMax), yBot=yS.getPixelForValue(nsf.recMin);
+              c.save();
+              c.fillStyle='rgba(126,200,164,0.30)';
+              c.fillRect(area.left, Math.max(yTop,area.top), area.right-area.left, Math.min(yBot,area.bottom)-Math.max(yTop,area.top));
+              // Líneas límite
+              c.strokeStyle='rgba(26,74,58,0.25)'; c.lineWidth=1; c.setLineDash([3,3]);
+              [yTop,yBot].forEach(y=>{ if(y>area.top&&y<area.bottom){ c.beginPath(); c.moveTo(area.left,y); c.lineTo(area.right,y); c.stroke(); } });
+              c.restore();
+            }
+          }]
+        });
       },150);
     }
   }catch(err){ el.innerHTML='<div style="padding:16px;color:var(--danger)">Error: '+err.message+'</div>'; }
@@ -11399,8 +11585,14 @@ async function saveChildDiary(){
       screen_minutes:screen,
       day_type:(window._diaryDayType||'work')
     };
-    await db.post('sleep_diary',body);
-    toast('Registro guardado ✓');
+    if(S._editingDiaryId){
+      await db.patch('sleep_diary?id=eq.'+S._editingDiaryId, body);
+      toast('Registro actualizado ✓');
+      S._editingDiaryId=null;
+    } else {
+      await db.post('sleep_diary',body);
+      toast('Registro guardado ✓');
+    }
     setTimeout(()=>{
       if(S.childMode){ showChildHome(); showChildTab('diary',document.getElementById('ch-tab-diary')); }
       else navTo('diary');
@@ -14094,25 +14286,33 @@ async function checkPatientTcciCard(){
     let active = null;
     try{
       active = await db.get('cbti_patients?patient_email=ilike.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email');
-      console.log('[checkPatientTcciCard] cbti_patients response:', active);
+      console.log('[checkPatientTcciCard] cbti_patients (active=true) response:', active);
+      // Si vino vacío, reintentar sin el filtro active (por si la columna no existe o es null)
+      if(!active || !active.length){
+        const any = await db.get('cbti_patients?patient_email=ilike.'+encodeURIComponent(patEmail)+'&select=doctor_email,active').catch(()=>null);
+        console.log('[checkPatientTcciCard] cbti_patients (sin filtro) response:', any);
+        if(any && any.length){
+          // Hay fila pero active no es true → la tomamos igual (el médico la creó)
+          active = any.filter(r=>r.active!==false);
+        }
+      }
     }catch(err){
       console.error('[checkPatientTcciCard] DB ERROR:', err);
-      // Mostrar error en card para diagnosticar
-      card.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;font-size:11px;color:#991b1b"><strong>⚠ Error al leer cbti_patients</strong><br>'+(err.message||'')+'<br>Probable RLS faltante.</div>';
+      card.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;font-size:11px;color:#991b1b"><strong>⚠ No se pudo leer tu protocolo TCC-I.</strong><br>'+(err.message||'')+'<br>Probable política RLS faltante en cbti_patients.</div>';
       card.style.display='block';
       return;
     }
     if(active && active.length){
       card.style.display='block';
       const drEmail = active[0].doctor_email;
-      const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=ilike.'+encodeURIComponent(patEmail)+'&completed=eq.true&select=item_id').catch(()=>[]);
+      const prog = await db.get('cbti_progress?doctor_email=ilike.'+encodeURIComponent(drEmail)+'&patient_email=ilike.'+encodeURIComponent(patEmail)+'&completed=eq.true&select=item_id').catch(()=>[]);
       const done = (prog||[]).length;
       const pctEl = document.getElementById('patient-tcci-progress');
       if(pctEl) pctEl.textContent = done+' de '+CBTI_TOTAL_ITEMS+' temas desbloqueados';
       console.log('[checkPatientTcciCard] ✓ card visible · doctor:', drEmail, '· items desbloqueados:', done);
     } else {
       card.style.display='none';
-      console.log('[checkPatientTcciCard] sin TCC-I activo · card oculta');
+      console.log('[checkPatientTcciCard] sin TCC-I activo para', patEmail, '— card oculta');
     }
   }catch(e){ console.warn('[checkPatientTcciCard] error:', e); }
 }
