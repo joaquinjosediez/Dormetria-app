@@ -2677,6 +2677,8 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     </div>
 
     <!-- Todo sobre el sueño -->
+    <!-- Diagnóstico temporal (se oculta solo si todo está OK) -->
+    <div id="home-diag" style="display:none;margin-bottom:14px"></div>
     <!-- Banner sugerencias del profesional (al tope, visible) -->
     <div id="home-doctor-suggestions" style="display:none;margin-bottom:14px"></div>
 
@@ -5558,9 +5560,34 @@ async function showHome(){
   if(metaEl) metaEl.textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
 
   showScreen('home');
-  // Cargar sugerencias del médico y verificar TCC-I activo
+  // Cargar sugerencias del médico y verificar TCC-I activo (robusto, siempre corre)
   setTimeout(()=>{
     if(typeof loadDoctorSuggestions==='function') loadDoctorSuggestions();
+    if(typeof checkPatientTcciCard==='function') checkPatientTcciCard();
+    // Diagnóstico inline en el home
+    (async()=>{
+      const dg=document.getElementById('home-diag'); if(!dg) return;
+      const e=(S.user?.email||'').trim();
+      let jwt=null; try{ const {data}=await supa.auth.getUser(); jwt=data?.user?.email; }catch(_){}
+      let sg=null,lk=null,cb=null;
+      try{ sg=await db.get('doctor_suggestions?patient_email=ilike.'+encodeURIComponent(e)+'&completed=eq.false&select=scale_id').catch(()=>null);}catch(_){}
+      try{ lk=await db.get('doctor_patients?patient_email=ilike.'+encodeURIComponent(e)+'&select=doctor_email').catch(()=>null);}catch(_){}
+      try{ cb=await db.get('cbti_patients?patient_email=ilike.'+encodeURIComponent(e)+'&select=doctor_email').catch(()=>null);}catch(_){}
+      const sgN=sg?sg.length:'ERR', lkN=lk?lk.length:'ERR', cbN=cb?cb.length:'ERR';
+      // Si todo OK (hay datos), no mostramos el diagnóstico
+      const allEmpty=(sgN===0&&lkN===0&&cbN===0);
+      const mismatch=jwt&&jwt.toLowerCase()!==e.toLowerCase();
+      if(!allEmpty && !mismatch){ dg.style.display='none'; return; }
+      dg.style.display='block';
+      dg.innerHTML='<div style="background:rgba(200,169,110,0.12);border:1px solid #C8A96E;border-radius:12px;padding:12px;font-size:11px;color:#e8d9b8;line-height:1.6">'+
+        '<strong style="color:#C8A96E">🔍 Estado de tu cuenta</strong><br>'+
+        'Tu email: <code style="color:#fff">'+e+'</code>'+(mismatch?'<br><span style="color:#fca5a5">⚠ El email de login es '+jwt+' — NO coincide</span>':'')+'<br>'+
+        'Sugerencias para vos: <strong style="color:#fff">'+sgN+'</strong> · '+
+        'Médicos vinculados: <strong style="color:#fff">'+lkN+'</strong> · '+
+        'TCC-I activos: <strong style="color:#fff">'+cbN+'</strong>'+
+        (allEmpty?'<br><span style="color:rgba(255,255,255,0.6)">No hay datos para esta cuenta. El médico debe sugerir/vincular usando exactamente este email.</span>':'')+
+        '</div>';
+    })();
   }, 300);
   // CONFIRM HOME IS SHOWING
   const _hmeta = document.getElementById('home-meta');
@@ -9351,58 +9378,43 @@ async function sendScaleSuggestion(){
 
 async function loadDoctorSuggestions(){
   const banner = document.getElementById('home-doctor-suggestions');
-  const patEmail = S.user?.email;
-  console.log('[loadDoctorSuggestions] S.user.email=', patEmail);
-  // Diagnóstico: obtener el email REAL del JWT de Supabase
+  const patEmail = (S.user?.email||'').trim();
+  if(!patEmail || !banner) return;
+  let suggestions = null, errMsg = null;
   try{
-    const { data } = await supa.auth.getUser();
-    console.log('[loadDoctorSuggestions] JWT email=', data?.user?.email, '· coincide con S.user.email?', data?.user?.email===patEmail);
-  }catch(e){ console.warn('[loadDoctorSuggestions] getUser error', e); }
-  if(!patEmail || !banner){
-    console.warn('[loadDoctorSuggestions] abort: no email or no banner element');
-    return;
-  }
-  let suggestions = null;
-  let errMsg = null;
-  try{
-    // Consulta SIN filtro de email primero (diagnóstico): ¿la RLS deja leer algo?
-    const allReadable = await db.get('doctor_suggestions?select=patient_email,completed&limit=5').catch(e=>{console.warn('[loadDoctorSuggestions] diagnostic read error:',e.message);return null;});
-    console.log('[loadDoctorSuggestions] filas legibles por RLS (muestra):', allReadable);
+    // Query SIN order by created_at (por si la columna no existe) — ordenamos en JS
     suggestions = await db.get(
       'doctor_suggestions?patient_email=ilike.'+encodeURIComponent(patEmail)+
-      '&completed=eq.false&order=created_at.desc&select=*'
+      '&completed=eq.false&select=*'
     );
-    console.log('[loadDoctorSuggestions] sugerencias para este paciente:', suggestions);
   }catch(err){
     errMsg = err.message || String(err);
     console.error('[loadDoctorSuggestions] DB ERROR:', err);
   }
   if(errMsg){
-    // Mostrar el error en el banner para diagnosticar
-    banner.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;font-size:12px;color:#991b1b"><strong>⚠ No se pudieron cargar las sugerencias.</strong><br>Error: '+errMsg+'<br><br>Probable causa: RLS de Supabase no permite leer doctor_suggestions. Ver SQL en la consulta del médico.</div>';
+    banner.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;font-size:12px;color:#991b1b"><strong>⚠ No se pudieron cargar las sugerencias.</strong><br>'+errMsg+'</div>';
     banner.style.display='block';
     return;
   }
   if(!suggestions || !suggestions.length){
-    console.log('[loadDoctorSuggestions] sin sugerencias pendientes para', patEmail);
-    // Auto-diagnóstico: ¿hay sugerencias guardadas para OTRO email parecido?
+    // ¿Hay sugerencias para otro email? (diagnóstico inline)
     try{
-      const others = await db.get('doctor_suggestions?completed=eq.false&select=patient_email&limit=10').catch(()=>null);
+      const others = await db.get('doctor_suggestions?completed=eq.false&select=patient_email').catch(()=>null);
       if(others && others.length){
-        const emails = [...new Set(others.map(o=>o.patient_email))];
-        const mismatch = emails.filter(e=>e && e.toLowerCase()!==patEmail.toLowerCase());
+        const emails=[...new Set(others.map(o=>o.patient_email))];
+        const mismatch=emails.filter(e=>e && e.toLowerCase()!==patEmail.toLowerCase());
         if(mismatch.length){
-          console.warn('[loadDoctorSuggestions] HAY sugerencias para otros emails:', mismatch, '· tu email:', patEmail);
-          banner.innerHTML = '<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:12px;font-size:12px;color:#92400e"><strong>⚠ Hay sugerencias guardadas, pero con otro email.</strong><br>Tu sesión: <code>'+patEmail+'</code><br>Guardadas para: <code>'+mismatch.join(', ')+'</code><br><br>El médico te vinculó con un email distinto al de tu cuenta. Pedile que te re-sugiera las escalas, o corregí el email en Supabase.</div>';
+          banner.innerHTML='<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:12px;font-size:12px;color:#92400e"><strong>⚠ Hay sugerencias, pero para otro email.</strong><br>Tu cuenta: <code>'+patEmail+'</code><br>Guardadas para: <code>'+mismatch.join(', ')+'</code><br>El médico las mandó a una cuenta distinta.</div>';
           banner.style.display='block';
           return;
         }
       }
     }catch(_){}
-    banner.style.display='none';
-    banner.innerHTML='';
+    banner.style.display='none'; banner.innerHTML='';
     return;
   }
+  // Ordenar por created_at en JS si existe, sino dejar como vino
+  suggestions.sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
   S._docSuggIds = suggestions.map(s=>s.scale_id);
   const cardsHtml = suggestions.map(s=>{
     const sc = SCALES.find(sc=>sc.id===s.scale_id);
@@ -9422,7 +9434,6 @@ async function loadDoctorSuggestions(){
     cardsHtml+
     '</div>';
   banner.style.display='block';
-  console.log('[loadDoctorSuggestions] ✓ banner renderizado con', suggestions.length, 'sugerencias');
 }
 
 async function dismissSuggestion(id){
