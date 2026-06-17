@@ -6873,6 +6873,7 @@ function renderMiPerfilView(card){
    +_mpRow('Actividad física',u.physical_activity)
    +_mpRow('Actividad principal',_mpAct(u.activity_type))
    +_mpRow('Horario laboral',_mpWork(u.work_schedule))
+   +((u.sex==='F'||u.sex==='Femenino')?_mpRow('Seguimiento menstrual',u.track_menstrual?'Activado':'Desactivado'):'')
    +'<button onclick="renderMiPerfilEdit(this.closest(\'[data-mp]\'))" style="width:100%;margin-top:18px;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Editar mis datos</button>';
 }
 
@@ -6894,7 +6895,13 @@ function renderMiPerfilEdit(card){
    +sel('mp-activity','Actividad física',u.physical_activity,[['','—'],['sedentario','Sedentario'],['leve','Leve'],['moderada','Moderada'],['intensa','Intensa']])
    +sel('mp-acttype','Actividad principal',Array.isArray(u.activity_type)?u.activity_type[0]:u.activity_type,[['','—'],['student','Estudiante'],['athlete','Deportista / Atleta'],['shift','Trabajador en turnos'],['night','Trabajador nocturno'],['healthcare','Profesional de salud'],['office','Trabajo de oficina'],['remote','Trabajo remoto'],['retired','Jubilado/a'],['other','Otro']])
    +sel('mp-worksched','Horario laboral',Array.isArray(u.work_schedule)?u.work_schedule[0]:u.work_schedule,[['','—'],['diurno','Diurno'],['nocturno','Nocturno'],['guardias','Guardias'],['rotativo','Turnos rotativos'],['fijo','Horario fijo']])
+   +'<div id="mp-menstrual-wrap" style="margin-bottom:12px;'+((u.sex==='F'||u.sex==='Femenino')?'':'display:none')+'"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:11px 13px"><input id="mp-menstrual" type="checkbox"'+(u.track_menstrual?' checked':'')+' style="width:18px;height:18px;accent-color:#e11d48"><span style="font-size:13px;color:#374151;line-height:1.4">Registrar período menstrual en el diario de sueño<br><span style="font-size:11px;color:#9ca3af">El ciclo influye en el sueño. Si lo activás, vas a poder marcar de forma discreta las noches en que estás menstruando.</span></span></label></div>'
    +'<div style="display:flex;gap:10px;margin-top:16px"><button onclick="renderMiPerfilView(this.closest(\'[data-mp]\'))" style="flex:1;padding:13px;border:1px solid #d1d5db;border-radius:12px;background:transparent;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button><button onclick="saveMiPerfil(this)" style="flex:1;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Guardar</button></div>';
+  // Mostrar/ocultar el toggle menstrual según el sexo elegido
+  setTimeout(function(){
+    var sx=document.getElementById('mp-sex'); var wrap=document.getElementById('mp-menstrual-wrap');
+    if(sx&&wrap){ sx.addEventListener('change',function(){ wrap.style.display=(sx.value==='F'||sx.value==='Femenino')?'block':'none'; }); }
+  },50);
 }
 
 async function saveMiPerfil(btn){
@@ -6914,7 +6921,8 @@ async function saveMiPerfil(btn){
     tobacco:(g('mp-tobacco')&&g('mp-tobacco').value)||null,
     physical_activity:(g('mp-activity')&&g('mp-activity').value)||null,
     activity_type:(g('mp-acttype')&&g('mp-acttype').value)||null,
-    work_schedule:(g('mp-worksched')&&g('mp-worksched').value)||null
+    work_schedule:(g('mp-worksched')&&g('mp-worksched').value)||null,
+    track_menstrual:(g('mp-menstrual')&&g('mp-menstrual').checked)||false
   };
   try{
     await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),upd);
@@ -7127,10 +7135,11 @@ async function showDiaryTab_(tab){
         <div style="background:#fff;border-radius:14px;padding:12px 10px;overflow-x:auto;padding-bottom:8px">
           <canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas>
         </div>
-        <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0 14px">
+        <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0 14px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
+          <span id="acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
         </div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
@@ -7146,6 +7155,12 @@ async function showDiaryTab_(tab){
         const sorted=[...entries].filter(e=>!(e.notes&&e.notes.startsWith('Importado'))).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const weekendRows=sorted.map((e,i)=>{const d=new Date(e.diary_date+'T12:00:00');const isFreeDay=e.day_type==='free';const isWeekend=d.getDay()===0||d.getDay()===6;return(isFreeDay||isWeekend)?i:null;}).filter(i=>i!==null);
+        // Noches con período menstrual (marcador en notes)
+        const periodNights=sorted.map((e,i)=>/🩸Período/.test(e.notes||'')?i:null).filter(i=>i!==null);
+        const hasPeriodData=periodNights.length>0;
+        // Color por noche: rosa sutil si hay período, verde noche normal si no
+        const sleepBarColors=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc');
+        const sleepBarBorders=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a');
         
         const sleepBarData=sorted.map((e,i)=>{
           if(!e.bedtime||!e.wake_time)return[0,0];
@@ -7171,6 +7186,8 @@ async function showDiaryTab_(tab){
         if(ctxA){
           // Store stats for afterDraw
           ctxA._bedStats=bedStats; ctxA._wakeStats=wakeStats; ctxA._weekendRows=weekendRows;
+          // Mostrar leyenda de menstruación si hay noches marcadas
+          if(hasPeriodData){ const pl=document.getElementById('acto-period-legend'); if(pl) pl.style.display='inline'; }
           const chartH=Math.max(220,sorted.length*28+100);
           ctxA.style.height=chartH+'px';ctxA.height=chartH;
           S.charts.acto=new Chart(ctxA,{
@@ -7178,7 +7195,7 @@ async function showDiaryTab_(tab){
             data:{
               labels:actoLabels,
               datasets:[
-                {label:'Sueño nocturno',data:sleepBarData,backgroundColor:'#1a4a3acc',borderColor:'#1a4a3a',borderWidth:1,borderRadius:3,borderSkipped:false},
+                {label:'Sueño nocturno',data:sleepBarData,backgroundColor:sleepBarColors,borderColor:sleepBarBorders,borderWidth:1,borderRadius:3,borderSkipped:false},
                 {label:'Siesta',data:napBarData,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
               ]
             },
@@ -7507,7 +7524,14 @@ async function editDiaryEntry(id){
       if(e.sleep_quality){const q=document.querySelector('#d-qual'); if(q){q.value=e.sleep_quality;const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-qual"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.sleep_quality)b.classList.add('sel');});}}
       if(e.mood){const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-mood"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.mood)b.classList.add('sel');});const hid=document.getElementById('d-mood');if(hid)hid.value=e.mood;}
       if(e.energy){const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-energy"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.energy)b.classList.add('sel');});const hid=document.getElementById('d-energy');if(hid)hid.value=e.energy;}
-      const notesEl=document.getElementById('d-notes'); if(notesEl&&e.notes) notesEl.value=e.notes;
+      // Período menstrual: detectar marcador y precargar el toggle
+      let cleanNotes = e.notes||'';
+      if(/🩸Período/.test(cleanNotes)){
+        _periodActive = true;
+        cleanNotes = cleanNotes.replace(/\s*\|\s*🩸Período/,'').replace(/🩸Período\s*\|?\s*/,'').trim();
+        setTimeout(()=>{ if(_periodActive){ const pb=document.getElementById('period-btn'),pl=document.getElementById('period-btn-label'),pc=document.getElementById('period-check'); if(pb){pb.style.borderColor='#e11d48';pb.style.background='#fff1f2';} if(pl){pl.style.color='#e11d48';pl.textContent='Período menstrual';} if(pc)pc.textContent='🔴'; } },120);
+      }
+      const notesEl=document.getElementById('d-notes'); if(notesEl) notesEl.value=cleanNotes;
       // Update save button text
       const saveBtn=document.getElementById('save-diary-btn');
       if(saveBtn) saveBtn.textContent='Actualizar registro';
@@ -7668,11 +7692,10 @@ function showDiaryNew(){
     <input type="hidden" id="d-alc" value="0">
 
     <div id="period-section" style="display:none;margin-bottom:14px">
-      <div class="sec-title">Ciclo menstrual</div>
-      <button type="button" id="period-btn" onclick="togglePeriod()" style="display:flex;align-items:center;gap:10px;background:var(--bg-secondary);border:1.5px solid var(--sep-opaque);border-radius:12px;padding:12px 16px;width:100%;cursor:pointer;font-family:var(--font)">
-        <span style="font-size:20px">🩸</span>
-        <span id="period-btn-label" style="font-size:14px;color:var(--label);font-weight:500">Estoy en mi período menstrual</span>
-        <span id="period-check" style="margin-left:auto;font-size:18px">⬜</span>
+      <button type="button" id="period-btn" onclick="togglePeriod()" style="display:inline-flex;align-items:center;gap:8px;background:var(--bg-secondary);border:1.5px solid var(--sep-opaque);border-radius:20px;padding:8px 14px;cursor:pointer;font-family:var(--font)">
+        <span style="font-size:17px">🩸</span>
+        <span id="period-btn-label" style="font-size:13px;color:var(--label-2);font-weight:500">Marcar período menstrual</span>
+        <span id="period-check" style="font-size:14px">⬜</span>
       </button>
     </div>
     <div class="sec-title">Notas (opcional)</div>
@@ -7747,7 +7770,7 @@ async function saveDiary(){
     coffee_cups:caffTotal,
     alcohol_drinks:alcTotal,
     medications:meds,
-    notes:notes,
+    notes:(_periodActive ? (notes? notes+' | 🩸Período' : '🩸Período') : notes),
   };
   const btn=document.getElementById('save-diary-btn');
   if(btn) btn.disabled=true;
@@ -8658,8 +8681,9 @@ async function showDrPTab_(tab){
         <div style="background:#fff;border-radius:12px;padding:10px;overflow-x:auto;padding-bottom:8px">
           <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
         </div>
-        <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 14px">
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 14px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
+          <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
         </div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
@@ -8671,6 +8695,9 @@ async function showDrPTab_(tab){
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,Math.min(w>s?w:w+24,24)];});
+        const drPeriodNights=sorted.filter(e=>/🩸Período/.test(e.notes||'')).length;
+        const drSleepColors=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc');
+        const drSleepBorders=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a');
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
           const H=Math.max(180,sorted.length*28+60);ctxA.style.height=H+'px';ctxA.height=H;
@@ -8682,7 +8709,8 @@ async function showDrPTab_(tab){
           if(bS){annots.bM={type:'line',xMin:bS.m,xMax:bS.m,borderColor:'rgba(217,119,6,0.9)',borderWidth:2,borderDash:[5,3]};annots.bLo={type:'box',xMin:bS.m-bS.s,xMax:bS.m+bS.s,backgroundColor:'rgba(217,119,6,0.08)',borderColor:'transparent'};}
           if(wS){annots.wM={type:'line',xMin:wS.m,xMax:wS.m,borderColor:'rgba(45,90,158,0.9)',borderWidth:2,borderDash:[5,3]};annots.wLo={type:'box',xMin:wS.m-wS.s,xMax:wS.m+wS.s,backgroundColor:'rgba(45,90,158,0.08)',borderColor:'transparent'};}
           ctxA._bedStats=bS;ctxA._wakeStats=wS;
-          S.charts['dr-acto']=new Chart(ctxA,{type:'bar',data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:'#1a4a3acc',borderColor:'#1a4a3a',borderWidth:1,borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},plugins:{legend:{display:false},afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');},annotation:{annotations:annots}},scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+          if(drPeriodNights>0){ const dpl=document.getElementById('dr-acto-period-legend'); if(dpl) dpl.style.display='inline'; }
+          S.charts['dr-acto']=new Chart(ctxA,{type:'bar',data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},plugins:{legend:{display:false},afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');},annotation:{annotations:annots}},scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
         }
         // Pillars
         const bedOffs=sorted.map(e=>e.bedtime?toOff(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
@@ -13016,22 +13044,22 @@ function togglePeriod(){
   if(_periodActive){
     btn.style.borderColor = '#e11d48';
     btn.style.background = '#fff1f2';
-    if(lbl) lbl.style.color = '#e11d48';
-    if(chk) chk.textContent = '✅';
+    if(lbl){ lbl.style.color = '#e11d48'; lbl.textContent='Período menstrual'; }
+    if(chk) chk.textContent = '🔴';
   } else {
     btn.style.borderColor = 'var(--sep-opaque)';
     btn.style.background = 'var(--bg-secondary)';
-    if(lbl) lbl.style.color = 'var(--label)';
+    if(lbl){ lbl.style.color = 'var(--label-2)'; lbl.textContent='Marcar período menstrual'; }
     if(chk) chk.textContent = '⬜';
   }
 }
 
 function showPeriodSectionIfFemale(){
-  const p = S.profile;
+  const u = S.user || {};
   const el = document.getElementById('period-section');
   if(!el) return;
-  // Show only if: female, has had menarche, has NOT had menopause
-  const show = p && p.sex === 'Femenino' && p.has_menarche === true && p.has_menopause !== true;
+  // Mostrar solo si la usuaria activó el seguimiento menstrual en su perfil
+  const show = (u.sex === 'Femenino' || u.sex === 'F') && u.track_menstrual === true;
   el.style.display = show ? 'block' : 'none';
 }
 
