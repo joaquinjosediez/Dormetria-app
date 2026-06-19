@@ -5511,17 +5511,18 @@ async function doLogout(){
 
 async function loadLinkedChildProfiles(){
   if(!S.user) return;
+  // En modo niño, S.user es el niño: usar el email del adulto para buscar hermanos
+  const lookupEmail = (S.childMode && S._parentEmail) ? S._parentEmail
+                      : (S.user.parent_email || S.user.email);
   try{
-    const children = await db.get('patients?parent_email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,email');
+    const children = await db.get('patients?parent_email=ilike.'+encodeURIComponent(lookupEmail)+'&select=name,lname,dob,email');
     S._linkedChildren = children || [];
-    // Children are now accessed via the dedicated tab, not shown on home
     const container = document.getElementById('home-children');
     if(container) container.style.display='none';
     const pillsWrap = document.getElementById('home-profile-pills');
     if(pillsWrap) pillsWrap.style.display='none';
     const childPill = document.getElementById('home-child-pill');
     if(childPill) childPill.style.display='none';
-    // Now that children are loaded, refresh nav labels (child name)
     try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
     return;
   }catch(e){ S._linkedChildren=S._linkedChildren||[]; }
@@ -5554,13 +5555,19 @@ async function openChildProfile(){
   }
 }
 async function switchToChild(childEmail){
+  console.log('[switchToChild] →', childEmail);
   try{
     const d = await db.get('patients?email=eq.'+encodeURIComponent(childEmail)+'&select=*');
     if(d&&d.length){
+      if(d[0].parent_email) S._parentEmail = d[0].parent_email;
       S.user = d[0];
+      S._activeChildEmail = d[0].email;
+      console.log('[switchToChild] S.user ahora es:', d[0].name, d[0].email);
       setPatientMode(d[0].dob);
       showHome();
       try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(_){}
+    } else {
+      console.warn('[switchToChild] no se encontró', childEmail);
     }
   }catch(e){ toast('Error: '+e.message); }
 }
@@ -11282,9 +11289,9 @@ function showChildHome(){
   // Selector de hijos: mostrar flecha solo si hay 2 o más
   (async()=>{
     try{
-      const parentEmail = (S.user && S.user.parent_email) || null;
+      const parentEmail = S._parentEmail || (S.user && S.user.parent_email) || null;
       let kids = S._linkedChildren;
-      if((!kids || !kids.length) && parentEmail){
+      if((!kids || kids.length<2) && parentEmail){
         kids = await db.get('patients?parent_email=ilike.'+encodeURIComponent(parentEmail)+'&select=name,lname,dob,email,sex').catch(()=>[]);
         S._linkedChildren = kids || [];
       }
