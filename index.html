@@ -3209,7 +3209,10 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     <button class="topbar-btn" onclick="switchToParentProfile()" style="font-size:13px;color:#7ec8a4">← Mi perfil</button>
     <div style="text-align:center">
       <div style="font-size:11px;opacity:0.7;color:#e8f5f0;letter-spacing:.08em;text-transform:uppercase">Dormetria</div>
-      <div id="ch-name" style="font-size:15px;font-weight:600;color:#e8f5f0">Sueño infantil</div>
+      <div id="ch-name-wrap" onclick="openChildSwitcher()" style="display:inline-flex;align-items:center;gap:5px;cursor:default">
+        <span id="ch-name" style="font-size:15px;font-weight:600;color:#e8f5f0">Sueño infantil</span>
+        <span id="ch-name-caret" style="font-size:12px;color:#7ec8a4;display:none">▾</span>
+      </div>
     </div>
     <button class="topbar-btn" onclick="showChildMenu()" style="font-size:18px">⋯</button>
   </div>
@@ -5542,6 +5545,44 @@ async function switchToChild(childEmail){
       showHome();
     }
   }catch(e){ toast('Error: '+e.message); }
+}
+async function openChildSwitcher(){
+  // Solo abrir si hay 2+ hijos
+  const kids = S._linkedChildren || [];
+  if(kids.length < 2) return;
+  // Evitar duplicar el panel
+  const existing = document.getElementById('child-switcher-pop');
+  if(existing){ existing.remove(); return; }
+  const currentEmail = S.user && S.user.email;
+  const overlay = document.createElement('div');
+  overlay.id = 'child-switcher-pop';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.35)';
+  overlay.onclick = ()=>overlay.remove();
+  const pop = document.createElement('div');
+  pop.style.cssText = 'position:fixed;top:58px;left:50%;transform:translateX(-50%);width:80%;max-width:320px;background:#1d3a2b;border:1px solid #7ec8a4;border-radius:14px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,0.45);z-index:9999';
+  pop.onclick = (e)=>e.stopPropagation();
+  const palette = ['#7ec8a4','#c8a96e','#9dc8b0','#e8a0a0','#a0c0e8'];
+  let html = '';
+  kids.forEach((c,i)=>{
+    const initial = (c.name||'?').trim().charAt(0).toUpperCase();
+    const isCurrent = c.email === currentEmail;
+    const bg = palette[i % palette.length];
+    html += '<div onclick="_pickChild(\''+encodeURIComponent(c.email)+'\')" style="display:flex;align-items:center;gap:11px;padding:10px;border-radius:9px;cursor:pointer;'+(isCurrent?'background:rgba(126,200,164,0.15)':'')+'">'+
+      '<div style="width:30px;height:30px;border-radius:50%;background:'+bg+';color:#13261d;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0">'+initial+'</div>'+
+      '<span style="color:#fff;font-size:14px;flex:1">'+(c.name||'')+(c.lname?' '+c.lname:'')+'</span>'+
+      (isCurrent?'<span style="color:#7ec8a4;font-size:16px">✓</span>':'')+
+      '</div>';
+  });
+  html += '<div onclick="document.getElementById(\'child-switcher-pop\').remove();registerChildProfile()" style="display:flex;align-items:center;gap:9px;padding:11px 10px;border-top:0.5px solid rgba(255,255,255,0.12);margin-top:2px;color:#7ec8a4;font-size:13.5px;font-weight:600;cursor:pointer"><span style="font-size:16px">＋</span> Agregar otro hijo/a</div>';
+  pop.innerHTML = html;
+  overlay.appendChild(pop);
+  document.body.appendChild(overlay);
+}
+function _pickChild(encEmail){
+  const email = decodeURIComponent(encEmail);
+  const pop = document.getElementById('child-switcher-pop');
+  if(pop) pop.remove();
+  if(email !== (S.user && S.user.email)) switchToChild(email);
 }
 async function showHome(){
   const _navEl=document.getElementById('main-nav');if(_navEl){_navEl.style.setProperty('display','flex','important');}
@@ -11170,6 +11211,26 @@ function showChildHome(){
     const ageLabel = computePatientAgeLabel(u.dob);
     nameEl.textContent = u.name + (u.lname?' '+u.lname:'') + (ageLabel?' · '+ageLabel:'');
   }
+  // Selector de hijos: mostrar flecha solo si hay 2 o más
+  (async()=>{
+    try{
+      const parentEmail = (S.user && S.user.parent_email) || null;
+      let kids = S._linkedChildren;
+      if((!kids || !kids.length) && parentEmail){
+        kids = await db.get('patients?parent_email=ilike.'+encodeURIComponent(parentEmail)+'&select=name,lname,dob,email,sex').catch(()=>[]);
+        S._linkedChildren = kids || [];
+      }
+      const caret = document.getElementById('ch-name-caret');
+      const wrap = document.getElementById('ch-name-wrap');
+      if(kids && kids.length >= 2){
+        if(caret) caret.style.display='inline';
+        if(wrap) wrap.style.cursor='pointer';
+      } else {
+        if(caret) caret.style.display='none';
+        if(wrap) wrap.style.cursor='default';
+      }
+    }catch(_){}
+  })();
   // Age banner
   const lbl = document.getElementById('ch-age-label');
   const sn = document.getElementById('ch-sleep-norm');
