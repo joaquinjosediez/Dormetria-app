@@ -3437,6 +3437,9 @@ const db={
   async upsert(table,data,onConflict='email'){
     return this.q(table,{method:'POST',body:JSON.stringify(data),
       headers:{'Prefer':'return=minimal,resolution=merge-duplicates','x-upsert':'true'}});
+  },
+  async del(path){
+    return this.q(path,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
   }
 };
 
@@ -6282,7 +6285,7 @@ async function showPatientCode(){
     }
   }
   try{
-    const children=await db.get('patients?parent_email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,code,email,sex');
+    const children=await db.get('patients?parent_email=ilike.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,code,email,sex');
     const addChildBtn='<button onclick="registerChildProfile()" style="width:100%;margin-top:6px;padding:13px;background:rgba(126,200,164,0.12);border:1.5px dashed #7ec8a4;border-radius:12px;color:#7ec8a4;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Agregar perfil de un hijo/a</button>';
     if(!children||!children.length){
       childList.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px">Todavía no agregaste perfiles de niños.</div>'+addChildBtn;
@@ -6293,13 +6296,17 @@ async function showPatientCode(){
       const ageYrs=ch.dob?Math.floor((new Date()-new Date(ch.dob))/31557600000):null;
       const code=ch.code||'——';
       const chJson = encodeURIComponent(JSON.stringify({email:ch.email,name:ch.name,lname:ch.lname||'',dob:ch.dob||'',sex:ch.sex||''}));
+      const nmEnc = encodeURIComponent((ch.name||'')+(ch.lname?' '+ch.lname:''));
       return '<div style="background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:12px;padding:14px;margin-bottom:10px">'+
         '<div style="display:flex;justify-content:space-between;align-items:center">'+
         '<div onclick="copyChildCode(\''+code+'\',this)" style="cursor:pointer;flex:1"><div style="font-size:14px;font-weight:600;color:#fff">'+ch.name+' '+(ch.lname||'')+'</div>'+
         '<div style="font-size:12px;color:rgba(255,255,255,0.5)">'+(ageYrs!==null?ageYrs+' años':'Sin fecha de nac.')+'</div></div>'+
         '<div onclick="copyChildCode(\''+code+'\',this)" style="cursor:pointer;text-align:center"><div style="font-family:monospace;font-size:20px;font-weight:700;color:#7ec8a4;letter-spacing:.15em">'+code+'</div>'+
         '<div class="child-copy-lbl" style="font-size:10px;color:rgba(126,200,164,0.8)">Tocá para copiar</div></div></div>'+
-        '<button onclick="editChildProfile(\''+chJson+'\')" style="margin-top:10px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar datos de '+ch.name+'</button>'+
+        '<div style="display:flex;gap:8px;margin-top:10px">'+
+        '<button onclick="editChildProfile(\''+chJson+'\')" style="flex:1;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar</button>'+
+        '<button onclick="deleteChildProfile(\''+encodeURIComponent(ch.email)+'\',\''+nmEnc+'\')" style="padding:8px 12px;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🗑 Eliminar</button>'+
+        '</div>'+
         '</div>';
     }).join('') + addChildBtn;
   }catch(e){
@@ -6307,6 +6314,31 @@ async function showPatientCode(){
   }
   // Cargar directorio de profesionales en la misma pantalla
   loadCodeConsultDirectory();
+}
+
+// Eliminar perfil de un hijo (con confirmación y borrado de sus datos)
+async function deleteChildProfile(encEmail, encName){
+  const email = decodeURIComponent(encEmail);
+  const name = decodeURIComponent(encName||'este perfil');
+  const ok = confirm('¿Eliminar el perfil de '+name+'?\n\nSe borrarán también todos sus registros de sueño y evaluaciones. Esta acción no se puede deshacer.');
+  if(!ok) return;
+  try{
+    // Soltar referencias primero (evita errores de foreign key)
+    const enc = encodeURIComponent(email);
+    await db.del('doctor_patients?patient_email=eq.'+enc).catch(()=>{});
+    await db.del('doctor_suggestions?patient_email=eq.'+enc).catch(()=>{});
+    await db.del('sleep_diary?patient_email=eq.'+enc).catch(()=>{});
+    await db.del('evaluations?patient_email=eq.'+enc).catch(()=>{});
+    await db.del('cbti_patients?patient_email=eq.'+enc).catch(()=>{});
+    await db.del('cbti_progress?patient_email=eq.'+enc).catch(()=>{});
+    await db.del('patients?email=eq.'+enc);
+    toast('Perfil de '+name+' eliminado');
+    // Refrescar la lista y el cache de hijos
+    if(S._linkedChildren) S._linkedChildren = S._linkedChildren.filter(c=>c.email!==email);
+    if(typeof showPatientCode==='function') showPatientCode();
+  }catch(e){
+    toast('No se pudo eliminar: '+(e.message||''));
+  }
 }
 
 // Directorio de profesionales dentro de la pantalla "Mi especialista"
@@ -10310,8 +10342,23 @@ async function saveChildProfile(){
   const btn = document.getElementById('child-reg-btn');
   if(btn) btn.disabled = true;
   try{
+    // Normalizar el nombre (sin tildes, sin espacios, minúsculas) para el identificador
+    const normName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    // Bloquear si ya existe un hijo con el mismo nombre normalizado
+    try{
+      const existing = await db.get('patients?parent_email=ilike.'+encodeURIComponent(S.user.email)+'&select=name,email').catch(()=>[]);
+      const dup = (existing||[]).some(c=>{
+        const en = (c.name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+        return en === normName;
+      });
+      if(dup){
+        if(err){ err.textContent='Ya tenés un perfil con el nombre "'+name+'". Usá un nombre distinto o editá el existente.'; err.classList.add('show'); }
+        if(btn) btn.disabled=false;
+        return;
+      }
+    }catch(_){}
     // Store child with parent_email reference and unique identifier email = parent+child_name
-    const childEmail = S.user.email + '+' + name.toLowerCase().replace(/\s+/g,'') + '@child';
+    const childEmail = S.user.email + '+' + normName + '@child';
     // El niño no tiene cuenta propia: la fila queda a nombre del auth_id del adulto,
     // así RLS (auth_id = auth.uid()) permite crearla/leerla/editarla bajo la sesión del padre/madre.
     let parentAuthId = S.user.auth_id;
