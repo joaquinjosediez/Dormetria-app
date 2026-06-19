@@ -9446,19 +9446,22 @@ async function loadDoctorSuggestions(){
   S._docSuggIds = suggestions.map(s=>s.scale_id);
   const cardsHtml = suggestions.map(s=>{
     const sc = SCALES.find(sc=>sc.id===s.scale_id);
-    return '<div style="background:#FFFFFF;border:1.5px solid #C8A96E;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(200,169,110,0.25)">'+
+    const scaleName = (sc && sc.name) ? sc.name : (s.scale_name || s.scale_id || 'Escala sugerida');
+    const scaleDesc = (sc && sc.desc) ? sc.desc : '';
+    return '<div style="background:#FFFFFF !important;border:1.5px solid #C8A96E;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(200,169,110,0.25)">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
-      '<div style="font-size:11px;font-weight:700;color:#8B6F3D;text-transform:uppercase;letter-spacing:0.06em">📋 Sugerida por tu profesional</div>'+
-      '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:#999;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>'+
+      '<div style="font-size:11px;font-weight:700;color:#8B6F3D !important;text-transform:uppercase;letter-spacing:0.06em">SUGERIDA POR TU PROFESIONAL</div>'+
+      '<button data-sid="'+s.id+'" onclick="dismissSuggestion(this.dataset.sid)" style="border:none;background:none;color:#999 !important;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>'+
       '</div>'+
-      '<div style="font-size:15px;font-weight:600;color:#0F2820;margin-bottom:2px">'+(sc?.name||s.scale_name)+'</div>'+
-      (s.message?'<div style="font-size:13px;color:#5C6B61;margin-bottom:10px;font-style:italic">"'+s.message+'"</div>':'<div style="margin-bottom:10px"></div>')+
-      '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" style="background:#1F4738;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;font-family:var(--font)">Completar ahora</button>'+
+      '<div style="font-size:16px;font-weight:700;color:#0F2820 !important;margin-bottom:3px;line-height:1.25">'+scaleName+'</div>'+
+      (scaleDesc?'<div style="font-size:12px;color:#5C6B61 !important;margin-bottom:10px;line-height:1.35">'+scaleDesc+'</div>':'')+
+      (s.message?'<div style="font-size:13px;color:#5C6B61 !important;margin-bottom:10px;font-style:italic">"'+s.message+'"</div>':'<div style="margin-bottom:8px"></div>')+
+      '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" style="background:#1F4738 !important;color:#fff !important;border:none;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;font-family:var(--font)">Completar ahora →</button>'+
       '</div>';
   }).join('');
   banner.innerHTML = '<div style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:2px solid #C8A96E;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(200,169,110,0.2)">'+
-    '<div style="font-size:13px;font-weight:700;color:#0F2820;margin-bottom:4px;letter-spacing:0.01em">⭐ Estas escalas te recomienda tu profesional</div>'+
-    '<div style="font-size:12px;color:#5C6B61;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
+    '<div style="font-size:14px;font-weight:700;color:#0F2820 !important;margin-bottom:4px;letter-spacing:0.01em">⭐ Escalas que te recomienda tu profesional</div>'+
+    '<div style="font-size:12px;color:#5C6B61 !important;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
     cardsHtml+
     '</div>';
   banner.style.display='block';
