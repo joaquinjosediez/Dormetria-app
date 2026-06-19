@@ -5527,16 +5527,30 @@ async function loadLinkedChildProfiles(){
   }catch(e){ S._linkedChildren=S._linkedChildren||[]; }
 }
 async function openChildProfile(){
-  // Navigate to the (first) child's profile/home
+  // Cargar hijos si no están en cache
   if(!S._linkedChildren||!S._linkedChildren.length){
-    // No child yet — try loading, else prompt to register
     try{ await loadLinkedChildProfiles(); }catch(e){}
   }
-  if(S._linkedChildren&&S._linkedChildren.length){
-    switchToChild(S._linkedChildren[0].email);
-  }else{
+  const kids = S._linkedChildren || [];
+  if(!kids.length){
     if(typeof registerChildProfile==='function') registerChildProfile();
     else toast('Agregá un perfil de niño primero');
+    return;
+  }
+  // Si ya estás viendo a un hijo y hay 2+, abrir el selector
+  const viewingChild = S.childMode && S.user && kids.some(c=>c.email===S.user.email);
+  if(kids.length>=2 && viewingChild){
+    if(typeof openChildSwitcher==='function') openChildSwitcher();
+    return;
+  }
+  // Si ya estás viendo a un hijo (y es el único), no hacer nada
+  if(viewingChild) return;
+  // Entrar al hijo: si hay uno solo, a ese; si hay varios, abrir selector para elegir
+  if(kids.length>=2){
+    // Entrar al primero pero dejando disponible el selector desde el header
+    switchToChild(kids[0].email);
+  }else{
+    switchToChild(kids[0].email);
   }
 }
 async function switchToChild(childEmail){
@@ -5546,6 +5560,7 @@ async function switchToChild(childEmail){
       S.user = d[0];
       setPatientMode(d[0].dob);
       showHome();
+      try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(_){}
     }
   }catch(e){ toast('Error: '+e.message); }
 }
@@ -6046,6 +6061,12 @@ function getOnboardingFor(){
   return 'self';
 }
 function getFirstChildName(){
+  // Si estás viendo a un hijo, mostrar SU nombre (no siempre el primero)
+  if(S.childMode && S.user && S.user.name){
+    const kids = S._linkedChildren || [];
+    const isChild = kids.some(c=>c.email===S.user.email) || (S.user.parent_email);
+    if(isChild) return (S.user.name||'').trim().split(' ')[0]||'Hijo/a';
+  }
   // Best-effort: from cached linked children
   if(S._linkedChildren&&S._linkedChildren.length){
     const c=S._linkedChildren[0];
