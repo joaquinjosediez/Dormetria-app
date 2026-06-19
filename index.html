@@ -6242,8 +6242,10 @@ async function showPatientCode(){
   }
   try{
     const children=await db.get('patients?parent_email=eq.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,code,email,sex');
+    const addChildBtn='<button onclick="registerChildProfile()" style="width:100%;margin-top:6px;padding:13px;background:rgba(126,200,164,0.12);border:1.5px dashed #7ec8a4;border-radius:12px;color:#7ec8a4;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Agregar perfil de un hijo/a</button>';
     if(!children||!children.length){
-      childList.innerHTML='<div style="font-size:12px;color:var(--label-3)">No tenés perfiles de niños vinculados.</div>';
+      childList.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px">Todavía no agregaste perfiles de niños.</div>'+addChildBtn;
+      loadCodeConsultDirectory();
       return;
     }
     childList.innerHTML=children.map(ch=>{
@@ -6258,7 +6260,7 @@ async function showPatientCode(){
         '<div class="child-copy-lbl" style="font-size:10px;color:rgba(126,200,164,0.8)">Tocá para copiar</div></div></div>'+
         '<button onclick="editChildProfile(\''+chJson+'\')" style="margin-top:10px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar datos de '+ch.name+'</button>'+
         '</div>';
-    }).join('');
+    }).join('') + addChildBtn;
   }catch(e){
     childList.innerHTML='<div style="font-size:12px;color:var(--label-3)">No se pudieron cargar los perfiles.</div>';
   }
