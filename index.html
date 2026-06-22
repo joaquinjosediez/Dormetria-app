@@ -3327,6 +3327,10 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
     </div>
 
+    <div id="app-version-footer" style="margin-top:24px;padding:14px;text-align:center;font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.04em">
+      Dormetria · versión <span id="app-version-tag" style="font-weight:600;color:rgba(255,255,255,0.6)"></span>
+    </div>
+
 </div>
 </div>
 
@@ -3363,6 +3367,14 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
+const APP_VERSION='hoy37';  // versión visible en pantalla "Más" — actualizar en cada release
+// Mostrar versión en el footer de "Más" apenas exista el DOM
+if(typeof document!=='undefined'){
+  document.addEventListener('DOMContentLoaded',function(){
+    const t=document.getElementById('app-version-tag');
+    if(t) t.textContent=APP_VERSION;
+  });
+}
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvanZzYndwcWR3anV2ZXpkaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzA2MjcsImV4cCI6MjA5MzEwNjYyN30.WiERGJ6PYcKGxQ5jgVGJ2U_t0cvviam2dYvqt9_GoA8';
 
 // ─── Cliente Supabase (Auth + REST autenticada con RLS) ──────────────────
@@ -5207,6 +5219,9 @@ function computeDiaryMetrics(entries){
   if(valid.length<3) return null;
   // Promedios de horarios — usamos minutos con ajuste de cruce de medianoche para bedtime
   const bedMins=[], wakeMins=[], totalMins=[], wdTotal=[], weTotal=[], wdMid=[], weMid=[];
+  const latencies=[];                          // latencia en min (todas las noches con dato)
+  const awakDurPerNight=[];                    // duración promedio de despertares POR NOCHE (solo noches con despertares)
+  let nightsWithAwak=0;
   let under7=0;
   valid.forEach(e=>{
     const [bh,bm]=e.bedtime.split(':').map(Number);
@@ -5216,6 +5231,18 @@ function computeDiaryMetrics(entries){
     bedMins.push(bedM); wakeMins.push(wakeM);
     totalMins.push(e.sleep_minutes);
     if(e.sleep_minutes < 420) under7++;
+    // Latencia: registrar si hay dato (cero también es válido)
+    if(e.sleep_latency_mins!=null && e.sleep_latency_mins!==''){
+      const lat=parseInt(e.sleep_latency_mins);
+      if(!isNaN(lat)) latencies.push(lat);
+    }
+    // Despertares: usar wake_in_bed_mins (suma total) dividido por cantidad
+    const awakCount=parseInt(e.awakenings)||0;
+    const wasoTot=parseInt(e.wake_in_bed_mins)||0;
+    if(awakCount>0 && wasoTot>0){
+      awakDurPerNight.push(wasoTot/awakCount);
+      nightsWithAwak++;
+    }
     const mid=(bedM + e.sleep_minutes/2)%(24*60);
     // Día laborable vs no laborable: usar day_type si existe, sino día de semana
     let isFree;
@@ -5227,8 +5254,11 @@ function computeDiaryMetrics(entries){
   const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
   const fmtClock=m=>{ if(m==null)return '—'; let mm=Math.round(m)%(24*60); if(mm<0)mm+=24*60; const h=Math.floor(mm/60), q=mm%60; return String(h).padStart(2,'0')+':'+String(q).padStart(2,'0'); };
   const fmtDur=m=>{ if(m==null)return '—'; const h=Math.floor(m/60), q=Math.round(m%60); return h+'h '+String(q).padStart(2,'0')+'m'; };
+  const fmtMin=m=>{ if(m==null)return '—'; return Math.round(m)+' min'; };
   const avgBed=avg(bedMins), avgWake=avg(wakeMins), avgTotal=avg(totalMins);
   const avgWd=avg(wdTotal), avgWe=avg(weTotal);
+  const avgLatency=avg(latencies);
+  const avgAwakDur=avg(awakDurPerNight);
   // Síndrome de insuficiencia de sueño: dormir significativamente más los días libres
   const sleepDebt = (avgWd!=null && avgWe!=null) ? (avgWe - avgWd) : null;
   // Jet lag social = |midpoint libre − midpoint laborable|
@@ -5242,9 +5272,11 @@ function computeDiaryMetrics(entries){
   return {
     n: valid.length,
     avgBed, avgWake, avgTotal, avgWd, avgWe, sleepDebt, socialJetLag,
+    avgLatency, nLatency: latencies.length,
+    avgAwakDur, nightsWithAwak,
     under7Pct: Math.round(under7/valid.length*100),
     nWd: wdTotal.length, nWe: weTotal.length,
-    fmtClock, fmtDur
+    fmtClock, fmtDur, fmtMin
   };
 }
 
@@ -5263,6 +5295,12 @@ function renderClinicalMetricsHtml(entries){
   const insufColor = m.under7Pct>30?'#dc2626':m.under7Pct>15?'#d97706':'#14532d';
   const debtStr = m.sleepDebt!=null ? (m.sleepDebt>0?'+':'')+Math.round(m.sleepDebt)+' min' : '—';
   const debtColor = m.sleepDebt==null?'var(--label-2)':Math.abs(m.sleepDebt)<60?'#14532d':Math.abs(m.sleepDebt)<120?'#d97706':'#dc2626';
+  // Latencia: >30 min sugiere insomnio de inicio
+  const latColor = m.avgLatency==null?'var(--label-2)':m.avgLatency<=20?'#14532d':m.avgLatency<=30?'#d97706':'#dc2626';
+  const latSub = m.nLatency>0 ? m.nLatency+' noches con dato' : null;
+  // Duración promedio de despertares (solo se calcula en noches CON despertares)
+  const awakColor = m.avgAwakDur==null?'var(--label-2)':m.avgAwakDur<=10?'#14532d':m.avgAwakDur<=20?'#d97706':'#dc2626';
+  const awakSub = m.nightsWithAwak>0 ? m.nightsWithAwak+' noches con despertares' : 'Sin despertares registrados';
   const row=(label,val,color,sub)=>'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:0.5px solid var(--sep)">'+
     '<span style="font-size:13.5px;color:var(--label-2)">'+label+(sub?'<br><span style="font-size:11px;color:var(--label-3)">'+sub+'</span>':'')+'</span>'+
     '<span style="font-size:14px;font-weight:600;color:'+(color||'var(--label)')+';text-align:right;white-space:nowrap">'+val+'</span></div>';
@@ -5271,6 +5309,8 @@ function renderClinicalMetricsHtml(entries){
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
     row('Sueño total promedio', m.fmtDur(m.avgTotal))+
+    row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub)+
+    row('Duración promedio de despertares', m.fmtMin(m.avgAwakDur), awakColor, awakSub)+
     row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
     row('Promedio días no laborables', m.fmtDur(m.avgWe), null, m.nWe+' noches')+
     row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Más sueño los días libres sugiere insuficiencia entre semana')+
@@ -7289,6 +7329,7 @@ async function showDiaryTab_(tab){
         <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0 14px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#fff;border-top:2px solid #ea580c;border-bottom:2px solid #ea580c;margin-right:3px;vertical-align:middle"></span>Despertar</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
           <span id="acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
         </div>
@@ -7337,6 +7378,18 @@ async function showDiaryTab_(tab){
         if(ctxA){
           // Store stats for afterDraw
           ctxA._bedStats=bedStats; ctxA._wakeStats=wakeStats; ctxA._weekendRows=weekendRows;
+          // Despertares por fila (parsed JSON desde awakening_detail) — para barras interrumpidas
+          ctxA._awakeningsByRow=sorted.map(e=>{
+            if(!e.awakening_detail) return [];
+            try{
+              const arr=typeof e.awakening_detail==='string'?JSON.parse(e.awakening_detail):e.awakening_detail;
+              if(!Array.isArray(arr)) return [];
+              return arr.map(a=>({
+                offset: a.time? timeToOffset(a.time.slice(0,5)) : null,
+                dur: parseFloat(a.duration)||0   // en minutos
+              })).filter(a=>a.offset!=null && a.dur>0);
+            }catch(_e){ return []; }
+          });
           // Mostrar leyenda de menstruación si hay noches marcadas
           if(hasPeriodData){ const pl=document.getElementById('acto-period-legend'); if(pl) pl.style.display='inline'; }
           const chartH=Math.max(220,sorted.length*28+100);
@@ -7391,6 +7444,39 @@ async function showDiaryTab_(tab){
                     cx2.restore();
                   }
                 }catch(_e0){}
+                },
+            afterDatasetsDraw:(chart)=>{try{
+                  // ── Despertares: cortar la barra de sueño con un rectángulo color fondo ──
+                  const cv=chart.canvas;
+                  const awakByRow=cv?._awakeningsByRow||[];
+                  if(!awakByRow.length) return;
+                  const yS=chart.scales.y, xS=chart.scales.x, ca=chart.chartArea;
+                  const barH=Math.abs(yS.getPixelForValue(1)-yS.getPixelForValue(0));
+                  const cx=chart.ctx;
+                  cx.save();
+                  awakByRow.forEach((arr,i)=>{
+                    if(!arr.length) return;
+                    const yMid=yS.getPixelForValue(i);
+                    const yTop=yMid-barH*0.40;     // dentro de la barra (no toca el borde)
+                    const innerH=barH*0.80;
+                    arr.forEach(a=>{
+                      // a.offset = x en horas desde mediodía (mismo sistema que sleepBarData)
+                      // a.dur en minutos
+                      const xStart=xS.getPixelForValue(a.offset);
+                      const xEnd  =xS.getPixelForValue(a.offset + a.dur/60);
+                      const w=Math.max(2, xEnd-xStart);
+                      if(xStart<ca.left||xStart>ca.right) return;
+                      // 1) Pintar el corte (color del fondo de la card, blanco)
+                      cx.fillStyle='#ffffff';
+                      cx.fillRect(xStart, yTop, w, innerH);
+                      // 2) Borde naranja sutil arriba y abajo del corte para que se note
+                      cx.fillStyle='#ea580c';
+                      cx.fillRect(xStart, yTop, w, 1.5);
+                      cx.fillRect(xStart, yTop+innerH-1.5, w, 1.5);
+                    });
+                  });
+                  cx.restore();
+                }catch(_eaw){}
                 },
             afterDraw:(chart)=>{try{
                   const cv=chart.canvas;
@@ -7911,6 +7997,7 @@ async function saveDiary(){
     sleep_latency_mins:latency,
     day_type:dayType,
     awakenings:awakList.length||0,
+    awakening_detail:awakList.length?JSON.stringify(awakList):null,
     wake_in_bed_mins:wasoMins,
     sleep_quality:quality,
     mood:mood,
@@ -8766,7 +8853,7 @@ async function showDrPTab_(tab){
       // Pathological scales
       Object.values(last).forEach(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);if(!sc)return;const i=sc.interp(r.score);if(i&&(i.bg==='#fee2e2'||i.bg==='#fef2f2'))kf.push('<div style="background:#fee2e2;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+r.score+'/'+r.max_score+')</div>');});
       // Diary score
-      const diaryForSummary=await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=sleep_minutes,sleep_latency_mins,awakenings,medications,waso_mins&order=diary_date.desc&limit=14`).catch(()=>[]);
+      const diaryForSummary=await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=sleep_minutes,sleep_latency_mins,awakenings,medications,wake_in_bed_mins&order=diary_date.desc&limit=14`).catch(()=>[]);
       if(diaryForSummary&&diaryForSummary.length>=3){const sc2=calcSleepScore(diaryForSummary);if(sc2)kf.unshift('<div style="background:linear-gradient(135deg,'+sc2.color+'18,'+sc2.color+'08);border-radius:10px;padding:9px 13px;margin-bottom:6px;border-left:4px solid '+sc2.color+'"><strong style="color:'+sc2.color+'">Sueño: '+sc2.total+'/100</strong> — '+sc2.label+' <span style="font-size:11px;color:var(--label-2)">('+sc2.nNights+' noches)</span></div>');const avgLat=diaryForSummary.filter(e=>e.sleep_latency_mins>0).reduce((a,b,i,arr)=>a+b.sleep_latency_mins/arr.length,0);if(avgLat>20)kf.push('<div style="background:#fef3c7;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#92400e">⏱ <strong>Latencia de inicio prolongada</strong>: ~'+Math.round(avgLat)+' min</div>');const hasMeds=diaryForSummary.some(e=>e.medications&&e.medications!=='[]'&&e.medications!=='');if(hasMeds)kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir registrada</strong></div>');}
       const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div>'+kf.join(''):'';
       const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div>'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'</div>';}).join(''):'');
