@@ -2671,6 +2671,18 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       </div>
     </div>
 
+    <!-- Descubrir más cuestionarios — visible para todos los pacientes -->
+    <div onclick="showScalesScreen()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:20px;line-height:1">🔍</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#fff;line-height:1.3">Explorá otras escalas</div>
+          <div style="font-size:11.5px;color:rgba(255,255,255,0.55);margin-top:2px;line-height:1.4">No tenés que esperar que te las pidan. Hay cuestionarios validados sobre insomnio, somnolencia, ánimo, ritmo circadiano y más.</div>
+        </div>
+        <div style="color:rgba(255,255,255,0.4);font-size:18px;flex-shrink:0">›</div>
+      </div>
+    </div>
+
     <!-- Diario de hoy — destacado: es la acción principal recurrente -->
     <div style="background:linear-gradient(135deg,#C8A96E 0%,#a8893f 100%);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:16px 18px;cursor:pointer;box-shadow:0 6px 20px rgba(200,169,110,0.18)" onclick="showDiaryNew()">
       <div style="font-size:10px;font-weight:700;color:rgba(15,40,32,0.7);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">📔 Diario de sueño · acción del día</div>
@@ -3397,7 +3409,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy39';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy40';  // versión visible en pantalla "Más" — actualizar en cada release
 // Mostrar versión en el footer de "Más" apenas exista el DOM
 if(typeof document!=='undefined'){
   document.addEventListener('DOMContentLoaded',function(){
@@ -9176,32 +9188,82 @@ async function showDrTab_(tab){
         const nb=(b.name+' '+(b.lname||'')).trim().toLowerCase();
         return na.localeCompare(nb,'es');
       });
+      // ── Archivados: guardados en localStorage por médico ──
+      const archKey = 'dm_dr_archived_pts_' + (S.user&&S.user.email||'').toLowerCase();
+      const getArchived = ()=>{ try{ return new Set(JSON.parse(localStorage.getItem(archKey)||'[]').map(e=>String(e).toLowerCase())); }catch(_){ return new Set(); } };
+      const setArchived = (set)=>{ try{ localStorage.setItem(archKey, JSON.stringify([...set])); }catch(_){} };
+      const toggleArchive = (email)=>{
+        const s=getArchived(); const k=email.toLowerCase();
+        if(s.has(k)) s.delete(k); else s.add(k);
+        setArchived(s);
+        const f = (document.getElementById('dr-patient-search')||{}).value || '';
+        renderPatientList(f);
+      };
+      // Expongo en window solo para los botones inline de archivar
+      window._drToggleArchive = toggleArchive;
+      let currentView = 'active'; // 'active' | 'archived'
       async function renderPatientList(filter){
         const f=(filter||'').toLowerCase();
+        const archived = getArchived();
         const filtered=validPts.filter(u=>{
+          if(!u||!u.email) return false;
+          const isArch = archived.has(u.email.toLowerCase());
+          if(currentView==='active' && isArch) return false;
+          if(currentView==='archived' && !isArch) return false;
+          if(!f) return true;
           const name=(u.name+' '+(u.lname||'')).trim().toLowerCase();
-          return !f||name.includes(f)||u.email.toLowerCase().includes(f);
+          return name.includes(f)||u.email.toLowerCase().includes(f);
         });
         const rows=filtered.map(u=>{
           if(!u)return'';
           const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
           const nameDisplay=u._placeholder?u.email:(u.name+' '+(u.lname||'')).trim();
-          return`<div class="pat-row" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${u.email}</div></div><div class="chev">›</div></div>`;
+          const isArch = archived.has(u.email.toLowerCase());
+          const archBtnLabel = isArch ? '↻ Reactivar' : '🗂 Archivar';
+          const archBtnColor = isArch ? '#15803d' : 'rgba(255,255,255,0.4)';
+          return`<div class="pat-row" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><button onclick="event.stopPropagation();window._drToggleArchive('${u.email}')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:${archBtnColor};font-size:11px;padding:5px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;font-family:var(--font)">${archBtnLabel}</button><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
-        document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">Sin resultados</div>';
-        document.getElementById('dr-patient-count').textContent='Pacientes vinculados ('+filtered.length+')';
+        document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
+        const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
+        const totalArchived = validPts.length - totalActive;
+        document.getElementById('dr-patient-count').textContent =
+          currentView==='active'
+            ? 'Activos ('+filtered.length+(f?' de '+totalActive:'')+')'
+            : 'Archivados ('+filtered.length+(f?' de '+totalArchived:'')+')';
+        // Actualizar contadores de los tabs
+        const tA=document.getElementById('dr-pt-tab-active-count');
+        const tR=document.getElementById('dr-pt-tab-arch-count');
+        if(tA) tA.textContent=totalActive;
+        if(tR) tR.textContent=totalArchived;
       }
       cont.innerHTML=`<div style="position:sticky;top:0;z-index:10;padding:10px 0 8px;background:linear-gradient(180deg,var(--g900,#0f2820) 0%,var(--g900,#0f2820) 80%,transparent 100%)">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="position:relative;flex:1">
             <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--label-3)">🔍</span>
-            <input type="text" placeholder="Buscar paciente..." oninput="renderPatientList(this.value)" style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--sep-opaque);border-radius:12px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label);box-sizing:border-box">
+            <input type="text" id="dr-patient-search" placeholder="Buscar paciente..." style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--sep-opaque);border-radius:12px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label);box-sizing:border-box">
           </div>
           <button onclick="showDrTab('link',document.getElementById('drnav-link'))" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">+ Vincular</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button id="dr-pt-tab-active" style="flex:1;background:#1a4a3a;color:#fff;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Activos <span id="dr-pt-tab-active-count" style="opacity:0.85;font-weight:400;margin-left:4px">0</span></button>
+          <button id="dr-pt-tab-arch" style="flex:1;background:none;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Archivados <span id="dr-pt-tab-arch-count" style="opacity:0.85;font-weight:400;margin-left:4px">0</span></button>
         </div>
         <div id="dr-patient-count" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.55)">Pacientes vinculados (${validPts.length})</div>
       </div>
       <div id="dr-patient-list"></div>`;
+      // Wiring después del innerHTML — captura el closure correcto
+      const _searchEl = document.getElementById('dr-patient-search');
+      if(_searchEl) _searchEl.addEventListener('input', e=> renderPatientList(e.target.value));
+      const _tA = document.getElementById('dr-pt-tab-active');
+      const _tR = document.getElementById('dr-pt-tab-arch');
+      const _swapTab = (which)=>{
+        currentView = which;
+        if(_tA){ _tA.style.background = which==='active'?'#1a4a3a':'none'; _tA.style.color = which==='active'?'#fff':'rgba(255,255,255,0.6)'; _tA.style.border = which==='active'?'none':'1px solid rgba(255,255,255,0.15)'; }
+        if(_tR){ _tR.style.background = which==='archived'?'#1a4a3a':'none'; _tR.style.color = which==='archived'?'#fff':'rgba(255,255,255,0.6)'; _tR.style.border = which==='archived'?'none':'1px solid rgba(255,255,255,0.15)'; }
+        renderPatientList(_searchEl?_searchEl.value:'');
+      };
+      if(_tA) _tA.addEventListener('click', ()=>_swapTab('active'));
+      if(_tR) _tR.addEventListener('click', ()=>_swapTab('archived'));
       renderPatientList('');}catch(e){cont.innerHTML='<div class="empty-state">Error al cargar pacientes</div>';}
   }else if(tab==='consult_req'){
     loadConsultRequests();
@@ -15441,8 +15503,8 @@ async function viewPatientScale(patEmail, scaleId){
         <div style="display:flex;align-items:flex-start;gap:12px">
           <div style="background:#C8A96E;color:#0F2820;font-weight:800;font-size:13px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
           <div style="flex:1">
-            <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">📋 Completá las escalas que te sugieran</div>
-            <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.55">Tu profesional puede indicarte cuestionarios específicos. Aparecen destacados en la pantalla de inicio. Si querés explorar otros, andá a <strong style="color:#C8A96E">Más → Cuestionarios y escalas</strong>.</div>
+            <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">📋 Completá las escalas que te sugieran <em style="font-weight:400;color:rgba(255,255,255,0.6)">y explorá más</em></div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.55">Tu profesional puede indicarte cuestionarios específicos — aparecen destacados en la pantalla de inicio. <strong style="color:#C8A96E">No tenés que esperar que te las pidan:</strong> hay muchas escalas validadas que podés completar por tu cuenta (insomnio, somnolencia, ánimo, ritmo circadiano). Andá a <strong style="color:#C8A96E">Más → Cuestionarios y escalas</strong> o tocá "Explorá otras escalas" en el inicio.</div>
           </div>
         </div>
       </div>
