@@ -2656,6 +2656,9 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       <div id="home-fact-text" style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6"></div>
     </div>
 
+    <!-- Material educativo asignado por el profesional -->
+    <div id="home-edu-card" style="display:none"></div>
+
     <!-- Escala del día -->
     <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
       <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Escala del día</div>
@@ -3198,6 +3201,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
     <button class="tab" onclick="showDrPTab('docs',this)">Estudios</button>
     <button class="tab" onclick="showDrPTab('suggest',this)">Sugerir escalas</button>
+    <button class="tab" onclick="showDrPTab('edumat',this)">📚 Material</button>
     <button class="tab" onclick="showDrPTab('history',this)">Historial</button>
   </div>
   <div class="scroll"><div id="drp-content" style="padding:0 16px"></div></div>
@@ -3393,7 +3397,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy38';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy39';  // versión visible en pantalla "Más" — actualizar en cada release
 // Mostrar versión en el footer de "Más" apenas exista el DOM
 if(typeof document!=='undefined'){
   document.addEventListener('DOMContentLoaded',function(){
@@ -4809,54 +4813,127 @@ async function loadAdminTab(tab){
     } else if(tab==='patients'){
       const pts=await db.get("patients?select=name,lname,email,dob,created_at&order=created_at.desc&limit=100");
       if(!pts||!pts.length){cont.innerHTML='<div class="empty-state">Sin pacientes registrados.</div>';return;}
+      // Activity per patient: count distinct active days from diary + evals, and last activity timestamp
+      const activityByEmail = {};
+      try{
+        const [diaryRows, evalRows] = await Promise.all([
+          db.get("sleep_diary?select=patient_email,created_at,diary_date&limit=10000").catch(()=>[]),
+          db.get("evaluations?select=patient_email,created_at&limit=10000").catch(()=>[])
+        ]);
+        const upsertActivity = (email, ts, dayKey)=>{
+          if(!email) return;
+          const e=email.toLowerCase();
+          if(!activityByEmail[e]) activityByEmail[e]={days:new Set(), last:null};
+          if(dayKey) activityByEmail[e].days.add(dayKey);
+          if(ts){
+            const t=new Date(ts).getTime();
+            if(!activityByEmail[e].last || t>activityByEmail[e].last) activityByEmail[e].last=t;
+          }
+        };
+        (diaryRows||[]).forEach(r=>{
+          // El día de actividad real es created_at (cuándo cargó el registro), no diary_date
+          const ts=r.created_at||r.diary_date;
+          const day = ts ? new Date(ts).toISOString().slice(0,10) : null;
+          upsertActivity(r.patient_email, ts, day);
+        });
+        (evalRows||[]).forEach(r=>{
+          const day = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : null;
+          upsertActivity(r.patient_email, r.created_at, day);
+        });
+      }catch(e){ console.warn('[admin-patients] activity fetch failed', e); }
       cont.innerHTML='<div class="sec-title" style="margin-top:10px">Pacientes ('+pts.length+')</div>'+
         '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:var(--bg-secondary)">'+
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Nombre</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Edad</th>'+
-        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Ingresos</th>'+
-        '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Último ingreso</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Días activos</th>'+
+        '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Última actividad</th>'+
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Registrado</th>'+
         '</tr></thead><tbody>'+
         pts.map(p=>{
           const age=p.dob?Math.floor((new Date()-new Date(p.dob))/31557600000):null;
-          const lastLogin='—';
+          const act = activityByEmail[(p.email||'').toLowerCase()] || {days:new Set(),last:null};
+          const nDays = act.days.size;
+          const lastTs = act.last;
+          let lastStr='—', lastColor='var(--label-3)';
+          if(lastTs){
+            const daysSince = Math.floor((Date.now()-lastTs)/86400000);
+            if(daysSince===0) lastStr='Hoy';
+            else if(daysSince===1) lastStr='Ayer';
+            else if(daysSince<=7) lastStr='hace '+daysSince+' días';
+            else if(daysSince<=30) lastStr='hace '+daysSince+' días';
+            else lastStr=new Date(lastTs).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+            lastColor = daysSince<=7?'#15803d':(daysSince<=30?'#a16207':'var(--label-3)');
+          }
           const regDate=p.created_at?new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'—';
-          const daysAgo=null;
           return `<tr style="border-bottom:1px solid var(--sep-opaque)">
             <td style="padding:8px"><div style="font-weight:600">${p.name} ${p.lname||''}</div><div style="color:var(--label-3);font-size:11px">${p.email}</div></td>
             <td style="padding:8px;text-align:center">${age!==null?age+' a':'—'}</td>
-            <td style="padding:8px;text-align:center;color:var(--label-3)">—</td>
-            <td style="padding:8px;color:var(--label-3)">${lastLogin}</td>
+            <td style="padding:8px;text-align:center;color:${nDays>0?'var(--label)':'var(--label-3)'};font-weight:${nDays>0?'600':'400'}">${nDays||'—'}</td>
+            <td style="padding:8px;color:${lastColor};font-weight:${lastTs?'600':'400'}">${lastStr}</td>
             <td style="padding:8px;color:var(--label-3)">${regDate}</td>
           </tr>`;
         }).join('')+'</tbody></table></div>';
     } else if(tab==='stats'){
-      const [allPts, allDrs] = await Promise.all([
+      const NOW = Date.now();
+      const D7 = NOW - 7*86400000;
+      const D30 = NOW - 30*86400000;
+      const [allPts, allDrs, diaryRows, evalRows, suggRows] = await Promise.all([
         db.get("patients?select=created_at,email&limit=500").catch(()=>[]),
-        db.get("doctors?select=created_at,email&limit=200").catch(()=>[])
+        db.get("doctors?select=created_at,email&limit=200").catch(()=>[]),
+        db.get("sleep_diary?select=patient_email,created_at&limit=10000").catch(()=>[]),
+        db.get("evaluations?select=patient_email,created_at&limit=10000").catch(()=>[]),
+        db.get("doctor_suggestions?select=doctor_email,created_at&limit=5000").catch(()=>[])
       ]);
       const totalPts=(allPts||[]).length, totalDrs=(allDrs||[]).length;
-      const activePts7=0; // login tracking not yet in DB
-      const activePts30=0; // login tracking not yet in DB
-      const activeDrs30=0; // login tracking not yet in DB
+      // Pacientes activos: emails distintos con actividad (diary o eval) en la ventana
+      const activeIn = (ms)=>{
+        const set = new Set();
+        (diaryRows||[]).forEach(r=>{ if(r.created_at && new Date(r.created_at).getTime()>=ms) set.add((r.patient_email||'').toLowerCase()); });
+        (evalRows||[]).forEach(r=>{ if(r.created_at && new Date(r.created_at).getTime()>=ms) set.add((r.patient_email||'').toLowerCase()); });
+        set.delete('');
+        return set.size;
+      };
+      const activePts7 = activeIn(D7);
+      const activePts30 = activeIn(D30);
+      // Médicos activos: emails de doctores que hicieron sugerencias en 30d
+      const drActiveSet=new Set();
+      (suggRows||[]).forEach(r=>{ if(r.created_at && new Date(r.created_at).getTime()>=D30) drActiveSet.add((r.doctor_email||'').toLowerCase()); });
+      drActiveSet.delete('');
+      const activeDrs30 = drActiveSet.size;
+      // Ingresos por semana (actividad pacientes últimos 7d)
+      const ingresos7d = (diaryRows||[]).filter(r=>r.created_at && new Date(r.created_at).getTime()>=D7).length
+                       + (evalRows||[]).filter(r=>r.created_at && new Date(r.created_at).getTime()>=D7).length;
+      // Tiempo promedio de permanencia (días desde el registro hasta la última actividad)
+      const lastByEmail={};
+      (diaryRows||[]).forEach(r=>{ if(r.created_at){ const e=(r.patient_email||'').toLowerCase(); const t=new Date(r.created_at).getTime(); if(!lastByEmail[e]||t>lastByEmail[e]) lastByEmail[e]=t; } });
+      (evalRows||[]).forEach(r=>{ if(r.created_at){ const e=(r.patient_email||'').toLowerCase(); const t=new Date(r.created_at).getTime(); if(!lastByEmail[e]||t>lastByEmail[e]) lastByEmail[e]=t; } });
+      const stays = (allPts||[]).map(p=>{
+        const e=(p.email||'').toLowerCase();
+        const last=lastByEmail[e];
+        if(!last||!p.created_at) return null;
+        const days = Math.floor((last - new Date(p.created_at).getTime())/86400000);
+        return days>=0?days:null;
+      }).filter(v=>v!==null && v>0);
+      const avgStay = stays.length ? Math.round(stays.reduce((a,b)=>a+b,0)/stays.length) : 0;
       const _appList2=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const listedDrs=Object.values(_appList2).filter(Boolean).length;
       const _rejList=JSON.parse(localStorage.getItem('dm_rejected_doctors')||'{}');
       const pendingDrs=(allDrs||[]).filter(d=>!_appList2[d.email]&&!_rejList[d.email]).length;
-      const totalLogins=(allPts||[]).length+(allDrs||[]).length; // total registrations
       cont.innerHTML=`<div class="sec-title" style="margin-top:10px">Estadísticas de uso</div>
+        <div style="font-size:11px;color:var(--label-3);margin:2px 0 10px">Computado en vivo desde diario y evaluaciones</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
           ${[
             {icon:'👥',label:'Pacientes',val:totalPts,sub:'registrados'},
             {icon:'🩺',label:'Médicos',val:totalDrs,sub:'registrados'},
-            {icon:'📊',label:'Ingresos totales',val:totalLogins,sub:'acumulados'},
+            {icon:'🟢',label:'Activos (7d)',val:activePts7,sub:'pacientes con actividad',hi:activePts7>0},
+            {icon:'🟡',label:'Activos (30d)',val:activePts30,sub:'pacientes con actividad',hi:activePts30>0},
+            {icon:'📥',label:'Ingresos 7d',val:ingresos7d,sub:'registros + evaluaciones'},
+            {icon:'⏱',label:'Permanencia',val:avgStay+' d',sub:'promedio de uso'},
             {icon:'✅',label:'En directorio',val:listedDrs,sub:'profesionales'},
-            {icon:'🟢',label:'Activos (7d)',val:activePts7,sub:'pacientes'},
-            {icon:'🟡',label:'Activos (30d)',val:activePts30,sub:'pacientes'},
             {icon:'⏳',label:'Pendientes',val:pendingDrs,sub:'profesionales'},
-            {icon:'📅',label:'Activos (30d)',val:activeDrs30,sub:'médicos'},
-          ].map(s=>`<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;text-align:center">
+            {icon:'📅',label:'Médicos activos (30d)',val:activeDrs30,sub:'sugerencias enviadas'},
+          ].map(s=>`<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;text-align:center;${s.hi?'border:1px solid #86efac':''}">
             <div style="font-size:22px">${s.icon}</div>
             <div style="font-size:24px;font-weight:700;color:var(--label)">${s.val}</div>
             <div style="font-size:11px;font-weight:600;color:var(--label)">${s.label}</div>
@@ -5371,7 +5448,7 @@ function switchScorePeriod(days){
   updateClinicalMetrics(useEntries);
 }
 
-function setDayType(t){
+function setDayType(t,btn,manual){
   window._diaryDayType=t;
   const _dti=document.getElementById('d-daytype');if(_dti)_dti.value=t;
   const wk=document.getElementById('d-daytype-work');
@@ -5387,6 +5464,33 @@ function setDayType(t){
     fr.style.color=t==='free'?'#fff':'var(--ink)';
     fr.style.borderColor=t==='free'?'#e67e22':'var(--border)';
     fr.style.fontWeight=t==='free'?'600':'500';
+  }
+  // Si el usuario tocó un botón, oculto el badge "detectado automáticamente"
+  if(manual){
+    const badge=document.getElementById('d-daytype-auto-badge');
+    if(badge){
+      badge.textContent='Modificado';
+      badge.style.background='#fef3c7';
+      badge.style.color='#92400e';
+    }
+  }
+}
+// Auto-detect day type basado en la fecha del registro (sábado/domingo = libre, resto = laboral).
+// Se llama al abrir el diario y cuando cambia la fecha.
+function autoDetectDayType(){
+  const dEl=document.getElementById('d-date');
+  if(!dEl||!dEl.value) return;
+  // Si el usuario ya tocó manualmente, no sobreescribir
+  const badge=document.getElementById('d-daytype-auto-badge');
+  if(badge && badge.textContent==='Modificado') return;
+  const d=new Date(dEl.value+'T12:00');
+  const dow=d.getDay(); // 0=domingo, 6=sábado
+  const auto = (dow===0||dow===6) ? 'free' : 'work';
+  setDayType(auto, null, false);
+  if(badge){
+    badge.textContent='Detectado automáticamente';
+    badge.style.background='#dcfce7';
+    badge.style.color='#1a4a3a';
   }
 }
 function saveDrAnnotation(email){
@@ -5581,6 +5685,115 @@ const PATIENT_EDU_TOPICS=[
       <li>Cambios hormonales (perimenopausia).</li>
     </ul>
     <p style="margin-top:12px"><strong>Conducta recomendada al paciente:</strong> si se despierta y no concilia en 15–20 min, levantarse, hacer algo tranquilo con luz tenue, y volver a acostarse cuando aparezca sueño. Quedarse en la cama mirando el reloj refuerza el insomnio.</p>
+  `},
+  {id:'embarazo',icon:'🤰',pop:'Embarazo',title:'Sueño durante el embarazo',body:`
+    <p>Los trastornos del sueño afectan a más del <strong>75% de las embarazadas</strong>. Cada trimestre tiene desafíos distintos y la mayoría son tratables.</p>
+    <p style="margin-top:12px"><strong>Primer trimestre:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Somnolencia diurna intensa (progesterona elevada).</li>
+      <li>Despertares por necesidad de orinar.</li>
+      <li>Náuseas que interfieren con el inicio del sueño.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Segundo trimestre:</strong> suele ser el de mejor descanso, aunque pueden aparecer reflujo, calambres en las piernas y síndrome de piernas inquietas.</p>
+    <p style="margin-top:12px"><strong>Tercer trimestre:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Dificultad para encontrar una posición cómoda.</li>
+      <li>Despertares frecuentes por presión sobre la vejiga.</li>
+      <li>Insomnio anticipatorio.</li>
+      <li>Mayor riesgo de apnea del sueño — atención a ronquidos nuevos o pausas observadas por la pareja.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Recomendaciones:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Dormir <strong>de costado izquierdo</strong> a partir del 2.º trimestre — mejora el retorno venoso y la oxigenación fetal.</li>
+      <li>Almohada entre las rodillas y bajo el abdomen.</li>
+      <li>Hidratarse durante el día, reducir líquidos 2–3 h antes de acostarse.</li>
+      <li>Siestas cortas, no muy tarde, para no afectar la noche.</li>
+      <li><strong>Evitar hipnóticos.</strong> En insomnio severo, priorizar TCC-I. Consultar siempre antes de tomar cualquier medicación.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Señales de alerta:</strong> ronquidos nuevos y fuertes, somnolencia diurna extrema, sensación de ahogo nocturno, movimientos involuntarios intensos en piernas. Pueden indicar apnea o piernas inquietas que requieren tratamiento específico.</p>
+  `},
+  {id:'mayores',icon:'👴',pop:'Adultos mayores',title:'Sueño en adultos mayores',body:`
+    <p>El sueño cambia con la edad. <strong>No es que necesitemos menos sueño</strong>, sino que mantenerlo en un solo bloque se vuelve más difícil. Muchas quejas en mayores de 65 son tratables y no deben tomarse como "es la edad".</p>
+    <p style="margin-top:12px"><strong>Cambios fisiológicos normales:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Adelanto de fase: tendencia a acostarse y levantarse más temprano.</li>
+      <li>Menos sueño profundo (N3), más sueño superficial.</li>
+      <li>Más despertares nocturnos breves (3–4 vs 1–2 en jóvenes).</li>
+      <li>Mayor sensibilidad al ruido y a la luz.</li>
+      <li>Siestas diurnas más frecuentes.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Lo que NO es normal y debe estudiarse:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Insomnio que afecta el funcionamiento diurno.</li>
+      <li>Somnolencia diurna excesiva.</li>
+      <li>Ronquidos fuertes o pausas respiratorias — descartar apnea (muy frecuente en esta edad).</li>
+      <li>"Actuar" los sueños (gritos, movimientos bruscos): puede ser <strong>trastorno conductual del sueño REM</strong>, marcador temprano de Parkinson o demencia.</li>
+      <li>Confusión nocturna marcada.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Recomendaciones específicas:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Horarios regulares y exposición a luz natural diurna.</li>
+      <li>Siestas de 20–30 min antes de las 15 h.</li>
+      <li>Actividad física diurna (caminar es ideal).</li>
+      <li>Evitar pasar tiempo en cama despierto/a.</li>
+      <li><strong>Precaución con hipnóticos:</strong> en adultos mayores aumentan riesgo de caídas, deterioro cognitivo y dependencia. La TCC-I es primera línea también acá.</li>
+      <li>Revisar medicación habitual (diuréticos, corticoides, betabloqueantes, broncodilatadores pueden alterar el sueño).</li>
+    </ul>
+  `},
+  {id:'turnos',icon:'🌗',pop:'Trabajo por turnos',title:'Trabajo por turnos: cómo proteger tu sueño',body:`
+    <p>El trabajo por turnos —especialmente nocturno o rotativo— va a contramano del ritmo circadiano natural. Aumenta el riesgo de insomnio, somnolencia, accidentes, problemas cardiovasculares y metabólicos. Aunque no se puede evitar el desfase, hay estrategias que reducen su impacto.</p>
+    <p style="margin-top:12px"><strong>Para el turno nocturno:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li><strong>Dormir apenas llegás:</strong> idealmente acostarse dentro de las 2 horas posteriores al fin del turno, antes de que el cuerpo se despabile.</li>
+      <li>Cuarto totalmente <strong>oscuro</strong> (cortinas blackout) y silencioso (tapones, ruido blanco).</li>
+      <li>Anteojos oscuros al volver: minimiza la señal de "es de día" al cerebro.</li>
+      <li>Apuntar a 7–8 h en un solo bloque, no dividido.</li>
+      <li>Cafeína al inicio del turno; evitarla en las últimas 4–5 h.</li>
+      <li>Siesta estratégica de 20–30 min antes del turno si es posible.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Para turnos rotativos:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Rotación <strong>en sentido horario</strong> (mañana → tarde → noche) es más tolerable que la antihoraria.</li>
+      <li>Rotaciones rápidas (cada 2–3 días) o muy lentas (cada 3–4 semanas) son mejores que cambios semanales.</li>
+      <li>En los días libres, mantener un horario "transitorio" que no se desvíe más de 4 h del biológico.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Señales de alerta — consultar:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Somnolencia que interfiere con el trabajo o el manejo.</li>
+      <li>Insomnio que persiste en los días libres.</li>
+      <li>Episodios de microsueño (perder consciencia unos segundos).</li>
+      <li>Síntomas de depresión o irritabilidad marcada.</li>
+    </ul>
+  `},
+  {id:'guardias',icon:'🩺',pop:'Guardias médicas',title:'Sobrevivir las guardias: estrategias para profesionales de la salud',body:`
+    <p>Las guardias de 24 h o más combinan privación de sueño aguda con alta demanda cognitiva. La performance al final de una guardia equivale a la de una alcoholemia ≥0,5 g/L. Estas estrategias no eliminan el efecto, pero ayudan a sostener el rendimiento y minimizar el daño.</p>
+    <p style="margin-top:12px"><strong>Antes de la guardia:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Llegar bien dormido/a — evitar deudas de sueño los días previos.</li>
+      <li><strong>Siesta profiláctica</strong> de 1–2 h durante la tarde previa si la guardia empieza de noche.</li>
+      <li>Comida liviana antes de empezar; hidratación.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Durante la guardia:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li><strong>Power naps</strong> de 20–30 min cuando se pueda — recuperan alerta sin generar inercia profunda. Evitar siestas de 45–90 min (peor inercia al despertar).</li>
+      <li>Cafeína estratégica: 100–200 mg cada 4 h, no en las últimas 4 h antes de irte a dormir.</li>
+      <li>Mantenerse hidratado/a, comer cada 4–5 h aunque no haya hambre.</li>
+      <li>Luz brillante en momentos críticos para sostener alerta.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Después de la guardia:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li><strong>NO manejar largas distancias</strong> al salir. Si es posible, siesta corta antes de conducir, o usar transporte.</li>
+      <li>Llegar a casa, comer algo liviano, y dormir lo antes posible.</li>
+      <li>Cortina blackout, tapones, anteojos oscuros en el trayecto.</li>
+      <li>Dormir un bloque largo (no múltiples siestas cortas).</li>
+      <li>Al despertar, exposición a luz natural — ayuda a resincronizar.</li>
+    </ul>
+    <p style="margin-top:12px"><strong>Recuperación a mediano plazo:</strong></p>
+    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
+      <li>Se necesitan <strong>2–3 noches normales</strong> para recuperar tras una guardia de 24 h.</li>
+      <li>Limitar otros estresores cognitivos en el día post-guardia.</li>
+      <li>Si las guardias son frecuentes: trabajar la TCC-I para que el sueño en los días entre guardias sea de la mejor calidad posible.</li>
+    </ul>
   `}
 ];
 
@@ -5615,6 +5828,133 @@ function closeEduLibrary(){
   // Volver a la pantalla anterior — desde el médico, vuelve al doctor home
   if(S.role==='doctor'){ showDoctorHome(); return; }
   showMas();
+}
+
+// ─── Asignación de material educativo (médico → paciente) ─────────────
+// Requiere tabla `patient_education` en Supabase (ver SQL en doc de traspaso).
+async function toggleEduAssignment(topicId, encEmail, btn){
+  const email = decodeURIComponent(encEmail);
+  const topic = PATIENT_EDU_TOPICS.find(t=>t.id===topicId);
+  if(!topic){ toast('Tema no encontrado'); return; }
+  if(btn) btn.disabled = true;
+  try{
+    // ¿Ya está asignado?
+    const existing = await db.get('patient_education?patient_email=eq.'+encodeURIComponent(email)+'&topic_id=eq.'+encodeURIComponent(topicId)+'&select=id').catch(()=>[]);
+    if(existing && existing.length){
+      // Quitar
+      await db.del('patient_education?patient_email=eq.'+encodeURIComponent(email)+'&topic_id=eq.'+encodeURIComponent(topicId));
+      toast('✓ "'+topic.title+'" quitado');
+    }else{
+      // Asignar
+      await db.post('patient_education', {
+        patient_email: email,
+        doctor_email: S.user.email,
+        topic_id: topicId,
+        topic_title: topic.title
+      });
+      toast('✓ "'+topic.title+'" asignado');
+    }
+    // Refrescar
+    if(typeof showDrPTab_==='function') showDrPTab_('edumat');
+    else if(typeof showDrPTab==='function') showDrPTab('edumat', null);
+  }catch(e){
+    if(btn) btn.disabled = false;
+    if(String(e&&e.message||'').includes('patient_education')){
+      toast('Tabla patient_education no creada en Supabase. Ver SQL de traspaso.');
+    }else{
+      toast('Error: '+(e&&e.message||e));
+    }
+  }
+}
+function previewEduTopic(id){
+  // Preview rápido sin salir del tab — abre un overlay simple
+  const t = PATIENT_EDU_TOPICS.find(x=>x.id===id);
+  if(!t) return;
+  const wrap = document.createElement('div');
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  wrap.onclick = (e)=>{ if(e.target===wrap) wrap.remove(); };
+  wrap.innerHTML = '<div style="background:#1a2e23;border-radius:14px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;color:#fff">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px"><div style="font-size:18px;font-weight:700">'+t.icon+' '+t.title+'</div>'+
+    '<button onclick="this.closest(\'div[style*=position\\\\:fixed\\\\,]\').parentElement.parentElement.remove()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:0 8px">×</button></div>'+
+    '<div style="font-size:13.5px;line-height:1.6;color:rgba(255,255,255,0.85)">'+t.body+'</div></div>';
+  // Close button simpler: rebind
+  document.body.appendChild(wrap);
+  const closeBtn = wrap.querySelector('button');
+  if(closeBtn) closeBtn.onclick = ()=> wrap.remove();
+}
+
+// ─── Render del lado paciente: "Tu profesional te acerca este material" ─
+async function loadPatientEducation(){
+  const wrap = document.getElementById('home-edu-card');
+  if(!wrap) return;
+  if(!S.user || !S.user.email){ wrap.style.display='none'; return; }
+  try{
+    const assigned = await db.get('patient_education?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=assigned_at.desc&select=topic_id,assigned_at,read_at').catch(()=>[]);
+    if(!assigned || !assigned.length){ wrap.style.display='none'; return; }
+    const unread = assigned.filter(a=>!a.read_at).length;
+    const total = assigned.length;
+    wrap.style.display='block';
+    wrap.innerHTML =
+      '<div onclick="openPatientEduList()" style="background:linear-gradient(135deg,rgba(200,169,110,0.15),rgba(126,200,164,0.08));border:1px solid rgba(200,169,110,0.35);border-radius:14px;padding:14px 16px;cursor:pointer">'+
+        '<div style="font-size:10px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">📚 Tu profesional te acerca</div>'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
+          '<div style="flex:1">'+
+            '<div style="font-size:14.5px;font-weight:700;color:#fff;line-height:1.3">Material educativo recomendado para vos</div>'+
+            '<div style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:3px">'+total+(total===1?' tema':' temas')+(unread>0?' · <span style="color:#C8A96E;font-weight:700">'+unread+' sin leer</span>':' · todos leídos ✓')+'</div>'+
+          '</div>'+
+          '<div style="color:#C8A96E;font-size:20px;flex-shrink:0">›</div>'+
+        '</div>'+
+      '</div>';
+    // Guardar lista en estado para abrir
+    S._patientEduAssigned = assigned;
+  }catch(e){
+    console.warn('[loadPatientEducation] error', e);
+    wrap.style.display='none';
+  }
+}
+async function openPatientEduList(){
+  const list = S._patientEduAssigned || [];
+  if(!list.length){ toast('Sin material asignado'); return; }
+  const body = document.getElementById('edu-screen-body');
+  const title = document.getElementById('edu-screen-title');
+  if(title) title.textContent='Material recomendado';
+  if(!body) return;
+  body.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.55;margin-bottom:14px">Tu profesional eligió estos temas pensando en tu situación. Tocá cada uno para leerlo.</div>'+
+    list.map(a=>{
+      const t = PATIENT_EDU_TOPICS.find(x=>x.id===a.topic_id);
+      if(!t) return '';
+      const read = !!a.read_at;
+      return '<div onclick="openPatientEduTopic(\''+t.id+'\')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px">'+
+        '<div style="font-size:22px;width:36px;text-align:center">'+t.icon+'</div>'+
+        '<div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#fff;line-height:1.35">'+t.title+'</div>'+
+        (read?'<div style="font-size:11px;color:#7ec8a4;margin-top:3px">✓ Leído</div>':'<div style="font-size:11px;color:#C8A96E;margin-top:3px">● Sin leer</div>')+'</div>'+
+        '<div style="color:#7ec8a4;font-size:18px">›</div>'+
+      '</div>';
+    }).join('');
+  showScreen('edu');
+}
+async function openPatientEduTopic(topicId){
+  const t = PATIENT_EDU_TOPICS.find(x=>x.id===topicId);
+  if(!t) return;
+  const body = document.getElementById('edu-screen-body');
+  const title = document.getElementById('edu-screen-title');
+  if(title) title.textContent = t.title;
+  if(!body) return;
+  body.innerHTML = '<button onclick="openPatientEduList()" style="background:none;border:none;color:#7ec8a4;font-size:13px;padding:0 0 12px;cursor:pointer;font-family:inherit">← Volver al material</button>'+
+    '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px 16px;font-size:13.5px;color:rgba(255,255,255,0.85);line-height:1.6">'+
+    '<div style="font-size:32px;text-align:center;margin-bottom:8px">'+t.icon+'</div>'+
+    '<div style="font-size:18px;font-weight:700;color:#fff;text-align:center;margin-bottom:14px">'+t.title+'</div>'+
+    t.body+'</div>';
+  // Marcar como leído si no lo estaba
+  try{
+    const now = new Date().toISOString();
+    await db.patch('patient_education?patient_email=eq.'+encodeURIComponent(S.user.email)+'&topic_id=eq.'+encodeURIComponent(topicId), {read_at: now});
+    // Refrescar cache local
+    if(S._patientEduAssigned){
+      const a = S._patientEduAssigned.find(x=>x.topic_id===topicId);
+      if(a && !a.read_at) a.read_at = now;
+    }
+  }catch(_){}
 }
 
 function showSleepInfo(){
@@ -5846,6 +6186,7 @@ async function showHome(){
   const u=S.user;
   if(!u){ showScreen('landing'); return; }
   try{ updateHowToHomeCard(); }catch(_){}
+  try{ loadPatientEducation(); }catch(_){}
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
 
   const hr=new Date().getHours();
@@ -7984,7 +8325,7 @@ async function editDiaryEntry(id){
         const closest=opts.reduce((a,b)=>Math.abs(b-e.sleep_latency_mins)<Math.abs(a-e.sleep_latency_mins)?b:a);
         latEl.value=closest;
       }
-      setDayType(e.day_type||'work');
+      if(e.day_type){ setDayType(e.day_type, null, false); } else { autoDetectDayType(); }
       if(e.awakenings>0){setYesAwakenings();}else{setNoAwakenings();}
       if(e.sleep_quality){const q=document.querySelector('#d-qual'); if(q){q.value=e.sleep_quality;const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-qual"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.sleep_quality)b.classList.add('sel');});}}
       if(e.mood){const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-mood"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.mood)b.classList.add('sel');});const hid=document.getElementById('d-mood');if(hid)hid.value=e.mood;}
@@ -8006,6 +8347,15 @@ async function editDiaryEntry(id){
 
 function showDiaryNew(){
   resetDiaryHelpers();showScreen('diary-new');setTimeout(showPeriodSectionIfFemale,100);
+  // Auto-detect día laboral/libre desde la fecha y re-detectar si cambia
+  setTimeout(()=>{
+    try{ autoDetectDayType(); }catch(_){}
+    const dEl=document.getElementById('d-date');
+    if(dEl && !dEl._daytypeWired){
+      dEl.addEventListener('change', ()=>{ try{ autoDetectDayType(); }catch(_){} });
+      dEl._daytypeWired=true;
+    }
+  },180);
   // Check if yesterday had medications and offer to copy
   setTimeout(()=>{
     const recs=S.records||[];
@@ -8033,11 +8383,19 @@ function showDiaryNew(){
     <div class="form-group"><label class="form-label">Fecha de despertar <span style="color:#dc2626">*</span></label>
       <div style="background:#eef8f5;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:13px;color:#2d6b56;line-height:1.5">💡 Ponés la fecha en que te <strong>despertaste</strong>. Dormiste martes 23:00 → despertaste miércoles 7:00 → ponés <strong>miércoles</strong>.</div>
       <input class="form-input" type="date" id="d-date" value="${today}"></div>
-    <div style="display:flex;gap:10px;margin-bottom:12px">
-      <button id="d-daytype-work" onclick="setDayType('work',this)" style="flex:1;padding:11px;border:2px solid #1a4a3a;border-radius:10px;background:#1a4a3a;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">🏢 Día laboral</button>
-      <button id="d-daytype-free" onclick="setDayType('free',this)" style="flex:1;padding:11px;border:2px solid var(--border);border-radius:10px;background:none;color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font)">🏖 Día libre</button>
+    <!-- Tipo de día: autodetectado por día de la semana, editable -->
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <label class="form-label" style="margin:0">Tipo de día</label>
+        <span id="d-daytype-auto-badge" style="font-size:10.5px;color:#1a4a3a;background:#dcfce7;padding:2px 8px;border-radius:10px;font-weight:600">Detectado automáticamente</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button id="d-daytype-work" onclick="setDayType('work',this,true)" style="flex:1;padding:11px;border:2px solid var(--border);border-radius:10px;background:none;color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font)">🏢 Día laboral</button>
+        <button id="d-daytype-free" onclick="setDayType('free',this,true)" style="flex:1;padding:11px;border:2px solid var(--border);border-radius:10px;background:none;color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font)">🏖 Día libre</button>
+      </div>
+      <div style="font-size:11px;color:var(--label-3);margin-top:6px;line-height:1.4">Si tu día no fue lo esperado para esta fecha, tocá el otro botón. Mejora el cálculo de jet lag social y deuda de sueño.</div>
     </div>
-    <input type="hidden" id="d-daytype" value="work">
+    <input type="hidden" id="d-daytype" value="">
     <div class="sec-title" style="margin-top:4px">Sueño nocturno <span style="color:#dc2626">*</span></div>
     <div class="form-row" style="margin-bottom:14px">
       <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
@@ -9432,6 +9790,43 @@ async function showDrPTab_(tab){
       btn.className='btn btn-g'; btn.id='suggest-btn'; btn.textContent='Enviar sugerencias seleccionadas';
       btn.onclick=sendScaleSuggestion;
       cont.appendChild(btn);
+      return;
+    }else if(tab==='edumat'){
+      // Material educativo asignable al paciente
+      cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando…</div>';
+      let assigned=[];
+      try{
+        assigned = await db.get('patient_education?patient_email=eq.'+encodeURIComponent(email)+'&select=topic_id,assigned_at,read_at').catch(()=>[]);
+      }catch(_){ assigned=[]; }
+      const assignedIds = new Set((assigned||[]).map(a=>a.topic_id));
+      const readMap = {};
+      (assigned||[]).forEach(a=>{ readMap[a.topic_id]=a.read_at; });
+      // Agrupar por población
+      const popOrder = ['General','Embarazo','Adultos mayores','Trabajo por turnos','Guardias médicas'];
+      const grouped = {};
+      PATIENT_EDU_TOPICS.forEach(t=>{
+        const pop = t.pop || 'General';
+        if(!grouped[pop]) grouped[pop]=[];
+        grouped[pop].push(t);
+      });
+      let body = '<div class="sec-title" style="margin-top:14px">Material educativo para el paciente</div>'+
+        '<div style="font-size:13px;color:var(--label-2);margin-bottom:14px;line-height:1.5">Activá los temas que querés acercarle al paciente según su situación. Le van a aparecer en la pantalla principal como "Tu profesional te acerca este material educativo".</div>';
+      popOrder.forEach(pop=>{
+        if(!grouped[pop]) return;
+        body += '<div style="font-size:13px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin:14px 0 8px">'+pop+'</div>';
+        grouped[pop].forEach(t=>{
+          const isAssigned = assignedIds.has(t.id);
+          const wasRead = !!readMap[t.id];
+          body += '<div style="display:flex;align-items:center;gap:10px;background:var(--bg-secondary);border-radius:10px;padding:11px 14px;margin-bottom:6px;border:1.5px solid '+(isAssigned?'#1a4a3a':'transparent')+'">'+
+            '<span style="font-size:22px;flex-shrink:0">'+t.icon+'</span>'+
+            '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--label)">'+t.title+'</div>'+
+            (wasRead?'<div style="font-size:11px;color:#15803d;margin-top:2px">✓ Leído por el paciente</div>':isAssigned?'<div style="font-size:11px;color:var(--label-3);margin-top:2px">Pendiente de lectura</div>':'')+'</div>'+
+            '<button onclick="previewEduTopic(\''+t.id+'\')" style="background:none;border:1px solid var(--sep-opaque);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--label-2)">Ver</button>'+
+            '<button onclick="toggleEduAssignment(\''+t.id+'\',\''+encodeURIComponent(email)+'\',this)" style="background:'+(isAssigned?'#dc2626':'#1a4a3a')+';color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">'+(isAssigned?'Quitar':'Asignar')+'</button>'+
+            '</div>';
+        });
+      });
+      cont.innerHTML = body;
       return;
     }else{
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);S.viewRecs=recs||[];
@@ -13841,12 +14236,12 @@ function renderDrScalesPicker(selected){
   
   let html = '';
   Object.entries(cats).forEach(([cat, scales])=>{
-    html += `<div style="font-size:10px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin:10px 0 4px">\${CAT_LABELS[cat]||cat}</div>`;
+    html += `<div style="font-size:10px;font-weight:700;color:var(--label-3);text-transform:uppercase;letter-spacing:0.06em;margin:10px 0 4px">${CAT_LABELS[cat]||cat}</div>`;
     scales.forEach(sc=>{
       const sel = selected.includes(sc.id);
-      html += `<label id="drsp-\${sc.id}" onclick="toggleDrScale('\${sc.id}',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid \${sel?'#1a4a3a':'var(--sep-opaque)'};border-radius:10px;cursor:pointer;background:\${sel?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}">
-        <span style="font-size:16px;flex-shrink:0">\${sel?'✅':'⬜'}</span>
-        <div><div style="font-size:13px;font-weight:500;color:var(--label)">\${sc.name}</div><div style="font-size:11px;color:var(--label-3)">\${sc.desc?sc.desc.slice(0,60)+'...':''}</div></div>
+      html += `<label id="drsp-${sc.id}" onclick="toggleDrScale('${sc.id}',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid ${sel?'#1a4a3a':'var(--sep-opaque)'};border-radius:10px;cursor:pointer;background:${sel?'rgba(110,231,183,0.15)':'rgba(255,255,255,0.08)'}">
+        <span style="font-size:16px;flex-shrink:0">${sel?'✅':'⬜'}</span>
+        <div><div style="font-size:13px;font-weight:500;color:var(--label)">${sc.name}</div><div style="font-size:11px;color:var(--label-3)">${sc.desc?sc.desc.slice(0,60)+'...':''}</div></div>
       </label>`;
     });
   });
