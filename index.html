@@ -3107,7 +3107,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 <div id="screen-doctor-home" class="screen">
   <div class="topbar">
     <div style="width:60px"></div>
-    <div style="text-align:center;flex:1"><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em">🌙 Dormetria</div><div style="font-size:10px;color:rgba(255,255,255,0.5)" id="dr-topbar-sub">Medicina del Sueño</div></div>
+    <div style="text-align:center;flex:1"><div data-dm-logo data-dm-h="22" data-dm-fill="#fff" style="display:inline-block;line-height:0"></div><div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px" id="dr-topbar-sub">Medicina del Sueño</div></div>
     <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
   </div>
   <div class="hero">
@@ -3409,12 +3409,36 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy40';  // versión visible en pantalla "Más" — actualizar en cada release
-// Mostrar versión en el footer de "Más" apenas exista el DOM
+const APP_VERSION='hoy42';  // versión visible en pantalla "Más" — actualizar en cada release
+
+// ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
+const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
+  '<path d="M104 34 L 94 36 L 84 40 L 85 42 L 88 42 L 92 47 L 92 83 L 90 84 L 87 80 L 79 75 L 76 75 L 75 74 L 63 74 L 62 75 L 59 75 L 50 80 L 45 85 L 39 95 L 37 101 L 37 105 L 36 106 L 36 124 L 37 125 L 38 133 L 43 143 L 51 151 L 58 155 L 61 155 L 62 156 L 73 156 L 74 155 L 77 155 L 83 152 L 88 147 L 91 142 L 93 143 L 94 155 L 95 156 L 102 153 L 112 151 L 111 148 L 109 148 L 106 146 L 104 140 Z M70 79 L 74 79 L 82 82 L 89 90 L 92 100 L 92 129 L 91 130 L 91 133 L 88 140 L 81 147 L 76 149 L 68 149 L 61 146 L 54 139 L 51 133 L 50 125 L 49 124 L 49 104 L 50 103 L 51 96 L 56 87 L 60 83 L 65 80 L 69 80 Z" fill-rule="evenodd"/>'+
+  '<path d="M248 74 L 238 75 L 232 79 L 226 89 L 224 88 L 224 75 L 223 74 L 205 80 L 205 82 L 208 82 L 212 86 L 212 147 L 210 150 L 204 152 L 205 154 L 234 154 L 234 152 L 229 151 L 226 149 L 224 143 L 224 108 L 225 107 L 225 102 L 229 91 L 234 86 L 236 85 L 244 85 L 250 88 L 251 83 L 254 77 Z" fill-rule="evenodd"/>'+
+  '<path d="M260 79 L 260 82 L 263 82 L 267 86 L 267 90 L 268 91 L 268 142 L 267 143 L 267 148 L 264 151 L 260 152 L 260 154 L 288 154 L 288 152 L 284 151 L 280 147 L 280 101 L 286 88 L 290 84 L 294 82 L 305 82 L 307 83 L 312 88 L 315 97 L 315 146 L 311 151 L 307 153 L 308 154 L 335 154 L 335 152 L 331 151 L 329 149 L 327 142 L 327 104 L 328 103 L 328 99 L 330 93 L 333 88 L 336 85 L 342 82 L 352 82 L 357 85 L 361 91 L 362 99 L 363 100 L 363 143 L 361 149 L 359 151 L 355 152 L 355 154 L 383 154 L 383 152 L 379 151 L 375 146 L 375 100 L 374 99 L 374 93 L 371 84 L 369 81 L 364 77 L 357 74 L 346 74 L 340 76 L 331 84 L 327 91 L 325 90 L 325 88 L 322 82 L 318 78 L 313 75 L 310 75 L 309 74 L 298 74 L 288 79 L 281 88 L 279 87 L 279 74 L 267 78 Z" fill-rule="evenodd"/>'+
+  '<path d="M418 74 L 406 79 L 396 90 L 391 102 L 391 106 L 390 107 L 390 124 L 391 125 L 391 129 L 393 135 L 399 145 L 409 153 L 411 153 L 414 155 L 417 155 L 418 156 L 431 156 L 432 155 L 435 155 L 444 150 L 451 142 L 454 137 L 455 132 L 452 131 L 449 137 L 439 145 L 432 147 L 426 147 L 419 145 L 413 141 L 408 135 L 403 123 L 402 111 L 403 110 L 455 110 L 455 101 L 454 100 L 453 93 L 450 87 L 444 80 L 435 75 L 432 75 L 431 74 Z M403 98 L 407 88 L 411 83 L 417 79 L 426 78 L 432 80 L 438 86 L 441 92 L 443 104 L 442 105 L 404 105 L 403 104 Z" fill-rule="evenodd"/>'+
+  '<path d="M481 53 L 479 55 L 479 59 L 475 68 L 470 73 L 464 76 L 461 76 L 461 80 L 470 80 L 472 82 L 472 144 L 476 152 L 484 156 L 493 156 L 499 153 L 505 147 L 505 145 L 504 144 L 499 148 L 496 149 L 490 149 L 488 148 L 484 143 L 484 140 L 483 139 L 483 81 L 484 80 L 504 80 L 504 76 L 485 76 L 483 74 L 483 53 Z" fill-rule="evenodd"/>'+
+  '<path d="M554 74 L 546 78 L 539 88 L 537 87 L 536 84 L 536 74 L 517 80 L 517 82 L 522 83 L 525 87 L 525 147 L 523 150 L 518 152 L 518 154 L 546 154 L 546 152 L 543 152 L 538 148 L 538 140 L 537 139 L 537 110 L 538 109 L 539 98 L 542 91 L 546 87 L 554 84 Z" fill-rule="evenodd"/>'+
+  '<path d="M582 74 L 562 80 L 562 82 L 567 83 L 570 88 L 570 144 L 569 145 L 569 148 L 566 151 L 562 152 L 562 154 L 590 154 L 590 152 L 584 150 L 582 147 Z M580 43 L 575 46 L 573 50 L 573 54 L 574 57 L 577 60 L 584 61 L 588 59 L 590 56 L 590 49 L 586 44 Z" fill-rule="evenodd"/>'+
+  '<path d="M613 79 L 610 81 L 606 86 L 603 93 L 603 96 L 614 99 L 615 91 L 619 83 L 624 79 L 633 78 L 640 81 L 644 86 L 646 92 L 646 101 L 643 105 L 637 108 L 617 114 L 609 118 L 602 125 L 599 135 L 600 136 L 600 142 L 603 148 L 610 154 L 616 156 L 628 156 L 636 153 L 641 149 L 644 144 L 646 143 L 647 144 L 647 148 L 651 154 L 655 156 L 662 156 L 666 154 L 670 149 L 669 148 L 662 149 L 659 146 L 659 140 L 658 139 L 658 112 L 659 111 L 658 110 L 658 93 L 655 85 L 652 81 L 647 77 L 637 74 L 626 74 Z M645 109 L 647 115 L 646 118 L 646 134 L 642 142 L 638 146 L 632 149 L 622 149 L 618 147 L 614 143 L 612 138 L 612 130 L 614 125 L 622 118 L 628 115 L 638 112 L 643 109 Z" fill-rule="evenodd"/>';
+function dormetriaLogo(opts){
+  opts = opts || {};
+  const fill = opts.fill || '#fff';
+  const height = opts.height || 24;
+  // viewBox 36 33 635 126 → ratio 635/126 ≈ 5.04
+  const width = Math.round(height * 635 / 126);
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="36 33 635 126" width="'+width+'" height="'+height+'" fill="'+fill+'" style="display:inline-block;vertical-align:middle">'+_DM_LOGO_PATHS+'</svg>';
+}
+// Inyectar el logo en placeholders del topbar (rellenado al cargar)
 if(typeof document!=='undefined'){
   document.addEventListener('DOMContentLoaded',function(){
     const t=document.getElementById('app-version-tag');
     if(t) t.textContent=APP_VERSION;
+    document.querySelectorAll('[data-dm-logo]').forEach(el=>{
+      const h = parseInt(el.getAttribute('data-dm-h')) || 22;
+      const f = el.getAttribute('data-dm-fill') || '#fff';
+      el.innerHTML = dormetriaLogo({height:h, fill:f});
+    });
   });
 }
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvanZzYndwcWR3anV2ZXpkaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzA2MjcsImV4cCI6MjA5MzEwNjYyN30.WiERGJ6PYcKGxQ5jgVGJ2U_t0cvviam2dYvqt9_GoA8';
@@ -9160,6 +9184,25 @@ function showDrTab(tab,el){
   // Translate 'profile' → 'drprofile' so the handler in showDrTab_ matches
   showDrTab_(tab==='profile' ? 'drprofile' : tab);
 }
+
+// ─── Gestión de alertas: marcar visto / restablecer ────────────────────
+function markAlertReviewed(evalId){
+  if(!S.user||!S.user.email||!evalId) return;
+  const key = 'dm_dr_reviewed_evals_' + S.user.email.toLowerCase();
+  let arr=[]; try{ arr=JSON.parse(localStorage.getItem(key)||'[]'); }catch(_){ arr=[]; }
+  const id=String(evalId);
+  if(!arr.includes(id)){ arr.push(id); }
+  try{ localStorage.setItem(key, JSON.stringify(arr)); }catch(_){}
+  toast('✓ Alerta marcada como vista');
+  if(typeof showDrTab_==='function') showDrTab_('alerts');
+}
+function resetReviewedAlerts(){
+  if(!S.user||!S.user.email) return;
+  if(!confirm('¿Mostrar de nuevo todas las alertas que marcaste como vistas?')) return;
+  const key = 'dm_dr_reviewed_evals_' + S.user.email.toLowerCase();
+  try{ localStorage.removeItem(key); }catch(_){}
+  if(typeof showDrTab_==='function') showDrTab_('alerts');
+}
 async function showDrTab_(tab){
   const cont=document.getElementById('dr-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   if(tab==='patients'){
@@ -9360,12 +9403,18 @@ async function showDrTab_(tab){
       const cacheKey='dm_dr_pts_'+S.user.email;
       const cachedPts=JSON.parse(localStorage.getItem(cacheKey)||'[]');
       let pathResults=[];
-      // Fetch patient names in batch
-      let patientNames={};
+      // ── Alertas marcadas como vistas (localStorage por médico) ──
+      const reviewedKey = 'dm_dr_reviewed_evals_' + (S.user.email||'').toLowerCase();
+      const reviewedSet = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem(reviewedKey)||'[]')); }catch(_){ return new Set(); } })();
+      // Fetch patient names + phones in batch
+      let patientNames={}, patientPhones={};
       if(cachedPts.length){
         try{
-          const ptInfo = await db.get('patients?email=in.('+cachedPts.map(e=>encodeURIComponent(e)).join(',')+')&select=email,name,lname').catch(()=>[]);
-          (ptInfo||[]).forEach(p=>{ patientNames[p.email] = (p.name||'') + ' ' + (p.lname||''); });
+          const ptInfo = await db.get('patients?email=in.('+cachedPts.map(e=>encodeURIComponent(e)).join(',')+')&select=email,name,lname,phone').catch(()=>[]);
+          (ptInfo||[]).forEach(p=>{
+            patientNames[p.email] = ((p.name||'') + ' ' + (p.lname||'')).trim();
+            patientPhones[p.email] = p.phone || '';
+          });
         }catch(_){}
       }
       if(cachedPts.length){
@@ -9382,29 +9431,57 @@ async function showDrTab_(tab){
             // MEQ: solo extremos y moderados disparan alerta (intermedio NO)
             if(sc.id==='meq'){
               if(i.l !== 'Intermedio'){
-                pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_interp:i,_scName:sc.name});
+                if(reviewedSet.has(String(r.id))) return;
+                pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_patientPhone:patientPhones[pEmail]||'',_interp:i,_scName:sc.name});
               }
               return;
             }
             // Resto: filtro por color de fondo
             if(i.bg==='#fee2e2'||i.bg==='#fef2f2'||i.bg==='#fef3c7'||i.bg==='#ffedd5'){
-              pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_interp:i,_scName:sc.name});
+              if(reviewedSet.has(String(r.id))) return;
+              pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_patientPhone:patientPhones[pEmail]||'',_interp:i,_scName:sc.name});
             }
           });
         }
       }
       if((!alerts||!alerts.length)&&!pathResults.length){
-        cont.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div>Sin alertas pendientes.<br><span style="font-size:13px;color:var(--label-2)">Aparecerán aquí cuando un paciente obtenga un resultado clínicamente relevante.</span></div>';
+        const hadReviewed = reviewedSet.size>0;
+        cont.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div>Sin alertas pendientes.'+
+          (hadReviewed?'<br><span style="font-size:13px;color:var(--label-2)">Tenés '+reviewedSet.size+' alerta(s) marcada(s) como vistas. <a href="javascript:void(0)" onclick="resetReviewedAlerts()" style="color:#1a4a3a;font-weight:600;text-decoration:underline">Mostrar de nuevo</a></span>':'<br><span style="font-size:13px;color:var(--label-2)">Aparecerán aquí cuando un paciente obtenga un resultado clínicamente relevante.</span>')+
+          '</div>';
         return;
       }
       let alertHtml='<div class="sec-title" style="margin-top:14px">Resultados que requieren atención</div>';
+      if(reviewedSet.size>0){
+        alertHtml+='<div style="font-size:12px;color:var(--label-2);margin-bottom:10px">'+reviewedSet.size+' alerta(s) marcada(s) como vistas — <a href="javascript:void(0)" onclick="resetReviewedAlerts()" style="color:#1a4a3a;font-weight:600;text-decoration:underline">mostrar todas</a></div>';
+      }
       if(pathResults.length){
-        alertHtml+=pathResults.map(r=>`<div onclick="viewPatientScale('${r._patientEmail}','${r.scale_id}')" style="background:${r._interp.bg||'#fee2e2'};border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
-          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:${r._interp.c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r._patientName.trim()||r._patientEmail.split('@')[0]}</div>
-          <div style="font-size:12px;font-weight:600;color:${r._interp.c};margin-top:2px">${r._scName} · ${r._interp.l}</div>
-          <div style="font-size:11px;color:var(--label-2)">${new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'})}</div></div>
-          <div style="text-align:right;flex-shrink:0;margin-left:10px"><div style="font-size:22px;font-weight:700;color:${r._interp.c};line-height:1">${r.score}</div></div>
-        </div>`).join('');
+        alertHtml+=pathResults.map(r=>{
+          const dateStr = new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+          const firstName = (r._patientName||'').split(' ')[0] || 'estimado/a';
+          const drFirst = (S.user.name||'tu profesional').split(' ')[0];
+          const msgBody = '¡Hola '+firstName+'! Soy '+drFirst+'. Recibí tu última evaluación de '+r._scName+' en Dormetria — quedó registrada y vamos a conversarla tranquilo/a en nuestra próxima consulta. Si veo que vale la pena adelantar la cita o pedir algún estudio complementario, te aviso por este mismo medio. Cualquier cosa que te preocupe mientras tanto, escribime. Saludos.';
+          const waPhone = (r._patientPhone||'').replace(/[^0-9]/g,'');
+          const waLink = waPhone ? 'https://wa.me/'+waPhone+'?text='+encodeURIComponent(msgBody) : null;
+          const subject = 'Sobre tu evaluación reciente en Dormetria';
+          const mailLink = 'mailto:'+encodeURIComponent(r._patientEmail)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(msgBody);
+          const darkBorder = (r._interp.c||'#991b1b');
+          return '<div style="background:'+(r._interp.bg||'#fee2e2')+';border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:4px solid '+darkBorder+'">'+
+            '<div onclick="viewPatientScale(\''+r._patientEmail+'\',\''+r.scale_id+'\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
+              '<div style="flex:1;min-width:0">'+
+                '<div style="font-size:14px;font-weight:700;color:#0F2820;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(r._patientName.trim()||r._patientEmail.split('@')[0])+'</div>'+
+                '<div style="font-size:12px;font-weight:600;color:'+r._interp.c+';margin-top:3px">'+r._scName+' · '+r._interp.l+'</div>'+
+                '<div style="font-size:11px;color:#0F2820;opacity:0.7;margin-top:3px;font-weight:500">'+dateStr+'</div>'+
+              '</div>'+
+              '<div style="text-align:right;flex-shrink:0"><div style="font-size:22px;font-weight:700;color:'+r._interp.c+';line-height:1">'+r.score+'</div></div>'+
+            '</div>'+
+            '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
+              (waLink?'<a href="'+waLink+'" target="_blank" rel="noopener" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:12px;font-weight:600">💬 WhatsApp</a>':'<span style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;background:rgba(0,0,0,0.05);color:#0F2820;opacity:0.4;font-size:11px;font-weight:500">💬 Sin tel.</span>')+
+              '<a href="'+mailLink+'" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:#0F2820;color:#fff;text-decoration:none;font-size:12px;font-weight:600">📧 Email</a>'+
+              '<button onclick="event.stopPropagation();markAlertReviewed(\''+r.id+'\')" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.85);color:#0F2820;border:1px solid '+darkBorder+';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✓ Visto</button>'+
+            '</div>'+
+          '</div>';
+        }).join('');
       }
       cont.innerHTML=alertHtml+'<div id="alerts-card-container"></div>';
       if(alerts&&alerts.length) buildAlertCards(alerts, document.getElementById('alerts-card-container'));
@@ -15089,8 +15166,8 @@ function showDrQrPrint(){
       💡 <strong>Para imprimir:</strong> tocá el botón Imprimir arriba a la derecha. Te recomiendo imprimir en color y plastificar para colgar en tu consultorio.
     </div>
     <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:24px;font-weight:700;color:#0F2820;letter-spacing:0.02em">🌙 Dormetria</div>
-      <div style="font-size:13px;color:#5C6B61;margin-top:4px">Medicina del sueño · Plataforma clínica</div>
+      <div style="line-height:0">${dormetriaLogo({height:44, fill:'#0F2820'})}</div>
+      <div style="font-size:13px;color:#5C6B61;margin-top:8px">Medicina del sueño · Plataforma clínica</div>
     </div>
     <div style="text-align:center;margin-bottom:18px">
       <div style="font-size:18px;font-weight:700;color:#0F2820">${drFullName}</div>
