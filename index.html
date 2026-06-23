@@ -2638,7 +2638,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     <!-- Fecha -->
     <div id="home-meta" style="font-size:12px;color:rgba(255,255,255,0.35);text-transform:capitalize;margin-bottom:-4px"></div>
 
-    <!-- ¿Cómo usar Dormetria? — aparece solo si el paciente no la cerró aún -->
+    <!-- 1) ¿Cómo usar Dormetria? — aparece solo si el paciente no la cerró aún -->
     <div id="home-howto-card" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:16px;cursor:pointer" onclick="openHowToUse(true)">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="font-size:28px;line-height:1">📖</div>
@@ -2650,40 +2650,13 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       </div>
     </div>
 
-    <!-- Dato curioso del sueño -->
+    <!-- 2) Dato curioso del sueño -->
     <div id="home-fact-card" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px">
       <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Dato del día</div>
       <div id="home-fact-text" style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6"></div>
     </div>
 
-    <!-- Material educativo asignado por el profesional -->
-    <div id="home-edu-card" style="display:none"></div>
-
-    <!-- Escala del día -->
-    <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
-      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Escala del día</div>
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div id="home-scale-name" style="font-size:14px;font-weight:600;color:#fff"></div>
-          <div id="home-scale-sub" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px"></div>
-        </div>
-        <div style="background:rgba(126,200,164,0.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:#7ec8a4">Completar →</div>
-      </div>
-    </div>
-
-    <!-- Descubrir más cuestionarios — visible para todos los pacientes -->
-    <div onclick="showScalesScreen()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;cursor:pointer">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:20px;line-height:1">🔍</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:#fff;line-height:1.3">Explorá otras escalas</div>
-          <div style="font-size:11.5px;color:rgba(255,255,255,0.55);margin-top:2px;line-height:1.4">No tenés que esperar que te las pidan. Hay cuestionarios validados sobre insomnio, somnolencia, ánimo, ritmo circadiano y más.</div>
-        </div>
-        <div style="color:rgba(255,255,255,0.4);font-size:18px;flex-shrink:0">›</div>
-      </div>
-    </div>
-
-    <!-- Diario de hoy — destacado: es la acción principal recurrente -->
+    <!-- 3) Diario de hoy — destacado: es la acción principal recurrente -->
     <div style="background:linear-gradient(135deg,#C8A96E 0%,#a8893f 100%);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:16px 18px;cursor:pointer;box-shadow:0 6px 20px rgba(200,169,110,0.18)" onclick="showDiaryNew()">
       <div style="font-size:10px;font-weight:700;color:rgba(15,40,32,0.7);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">📔 Diario de sueño · acción del día</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -2695,6 +2668,39 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
       </div>
     </div>
 
+    <!-- 4) Escala del día -->
+    <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
+      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Escala del día</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="home-scale-name" style="font-size:14px;font-weight:600;color:#fff"></div>
+          <div id="home-scale-sub" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px"></div>
+        </div>
+        <div style="background:rgba(126,200,164,0.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:#7ec8a4">Completar →</div>
+      </div>
+    </div>
+
+    <!-- 5) Material educativo asignado por el profesional -->
+    <div id="home-edu-card" style="display:none"></div>
+
+    <!-- Diagnóstico temporal (se oculta solo si todo está OK) -->
+    <div id="home-diag" style="display:none"></div>
+
+    <!-- 6) Escalas que te recomienda el profesional (sugerencias) -->
+    <div id="home-doctor-suggestions" style="display:none"></div>
+
+    <!-- 7) Descubrir más cuestionarios — visible para todos los pacientes -->
+    <div onclick="showScalesScreen()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:20px;line-height:1">🔍</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#fff;line-height:1.3">Explorá otras escalas</div>
+          <div style="font-size:11.5px;color:rgba(255,255,255,0.55);margin-top:2px;line-height:1.4">No tenés que esperar que te las pidan. Hay cuestionarios validados sobre insomnio, somnolencia, ánimo, ritmo circadiano y más.</div>
+        </div>
+        <div style="color:rgba(255,255,255,0.4);font-size:18px;flex-shrink:0">›</div>
+      </div>
+    </div>
+
     <!-- Perfil hijo (si corresponde) -->
     <div id="home-child-pill" style="display:none">
       <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="showChildFromHome()">
@@ -2703,23 +2709,6 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
           <div id="home-child-name" style="font-size:14px;color:rgba(255,255,255,0.8)">Ver perfil vinculado</div>
           <div style="color:rgba(255,255,255,0.25);font-size:20px">›</div>
         </div>
-      </div>
-    </div>
-
-    <!-- Todo sobre el sueño -->
-    <!-- Diagnóstico temporal (se oculta solo si todo está OK) -->
-    <div id="home-diag" style="display:none;margin-bottom:14px"></div>
-    <!-- Banner sugerencias del profesional (al tope, visible) -->
-    <div id="home-doctor-suggestions" style="display:none;margin-bottom:14px"></div>
-
-    <div onclick="showSleepInfo()" style="background:linear-gradient(135deg,rgba(126,200,164,0.18),rgba(45,107,74,0.15));border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:14px 16px;cursor:pointer">
-      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">💡 Información</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:700;color:#fff;line-height:1.3">Todo lo que siempre quisiste saber del sueño</div>
-          <div style="font-size:12px;color:rgba(126,200,164,0.9);margin-top:3px">Respuestas a las dudas más comunes</div>
-        </div>
-        <div style="color:#7ec8a4;font-size:20px;flex-shrink:0">›</div>
       </div>
     </div>
 
@@ -3360,6 +3349,13 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-top:6px;margin-bottom:2px">Información</div>
 
+    <!-- Todo lo que siempre quisiste saber (movido desde el home) -->
+    <div onclick="showSleepInfo()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">💡</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Todo lo que siempre quisiste saber del sueño</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Respuestas a las dudas más comunes</div></div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+    </div>
+
     <!-- Cuándo consultar -->
     <div onclick="showConsultGuide()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
       <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -3409,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy42';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy43';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
