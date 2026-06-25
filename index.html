@@ -3405,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy43';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy44';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -3435,6 +3435,15 @@ if(typeof document!=='undefined'){
       const f = el.getAttribute('data-dm-fill') || '#fff';
       el.innerHTML = dormetriaLogo({height:h, fill:f});
     });
+    // Capturar ?dr= del QR del consultorio: lo guardamos para luego
+    // ofrecer al paciente vincularse cuando esté logueado (ver maybePromptDoctorLink).
+    try{
+      const qs = new URLSearchParams(window.location.search);
+      const drFromQR = qs.get('dr');
+      if(drFromQR && /@/.test(drFromQR)){
+        localStorage.setItem('dm_pending_dr_link', drFromQR.toLowerCase());
+      }
+    }catch(_){}
   });
 }
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvanZzYndwcWR3anV2ZXpkaGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzA2MjcsImV4cCI6MjA5MzEwNjYyN30.WiERGJ6PYcKGxQ5jgVGJ2U_t0cvviam2dYvqt9_GoA8';
@@ -3914,7 +3923,7 @@ const SCALES=[
  interp:s=>s>=22?{l:'Sin disfunción',c:'#15803d',bg:'#dcfce7'}:s>=17?{l:'Leve',c:'#92400e',bg:'#fef3c7'}:s>=12?{l:'Leve-moderada',c:'#d97706',bg:'#fef3c7'}:s>=8?{l:'Moderada',c:'#c2410c',bg:'#ffedd5'}:{l:'Severa',c:'#991b1b',bg:'#fee2e2'}},
 
 
-{id:'mctq',ref:'Roenneberg T et al. (2003). Life between Clocks: Daily Temporal Patterns of Human Chronotypes. J Biol Rhythms.',name:'Cronótipo (MCTq)',cat:'circadian',max:4,desc:'Punto medio del sueño en días libres como medida objetiva del cronótipo',
+{id:'mctq',ref:'Roenneberg T et al. (2003). Life between Clocks: Daily Temporal Patterns of Human Chronotypes. J Biol Rhythms.',name:'Cronótipo (MCTq)',cat:'circadian',max:48,desc:'Punto medio del sueño en días libres como medida objetiva del cronótipo',
  qs:[
   {t:'¿A qué hora se acuesta normalmente los días de trabajo (laborables)?',opts:['Antes de las 21:00','21:00-22:00','22:00-23:00','23:00-00:00','00:00-01:00','01:00-02:00','Después de las 02:00'],sc:[0,1,2,3,4,5,6]},
   {t:'¿Cuánto tarda en dormirse los días de trabajo?',opts:['Menos de 15 min','15-30 min','30-60 min','Más de 60 min'],sc:[0,1,2,3]},
@@ -3928,7 +3937,7 @@ const SCALES=[
   {t:'¿Cuántas horas duerme en días libres?',opts:['Menos de 6h','6-7h','7-8h','8-9h','9-10h','Más de 10h'],sc:[3,1,0,0,1,2]},
   {t:'¿Qué tan diferente es su hora de dormir entre días laborables y libres?',opts:['Igual (0h)','Hasta 1h','1-2 horas','2-3 horas','Más de 3 horas'],sc:[0,1,2,3,4]}
  ],
- interp:s=>s<=8?{l:'Matutino extremo',c:'#1d4ed8',bg:'#dbeafe'}:s<=12?{l:'Matutino',c:'#2563eb',bg:'#eff6ff'}:s<=18?{l:'Intermedio',c:'#15803d',bg:'#dcfce7'}:s<=24?{l:'Vespertino',c:'#92400e',bg:'#fef3c7'}:{l:'Vespertino extremo',c:'#991b1b',bg:'#fee2e2'}},
+ interp:s=>s<=9?{l:'Matutino extremo',c:'#1d4ed8',bg:'#dbeafe'}:s<=19?{l:'Matutino',c:'#2563eb',bg:'#eff6ff'}:s<=30?{l:'Intermedio',c:'#15803d',bg:'#dcfce7'}:s<=39?{l:'Vespertino',c:'#92400e',bg:'#fef3c7'}:{l:'Vespertino extremo',c:'#991b1b',bg:'#fee2e2'}},
 {id:'sassv_screen',ref:'Kwon M et al. (2013). Development and Validation of a Smartphone Addiction Scale (SAS). PLoS ONE.',
  name:'Adicción al Smartphone (SAS-SV)',cat:'qol',max:24,
  desc:'Escala breve de adicción al smartphone. Punto de corte: ≥31 hombres, ≥33 mujeres (versión completa). Versión breve (SAS-SV): ≥22.',
@@ -5915,6 +5924,113 @@ function previewEduTopic(id){
   if(closeBtn) closeBtn.onclick = ()=> wrap.remove();
 }
 
+// ─── Prompt para vincularse con un profesional desde QR (?dr=...) ──
+async function maybePromptDoctorLink(){
+  if(!S.user || !S.user.email) return;
+  if(S.role === 'doctor') return; // doctores no se autovinculan
+  let pending = null;
+  try{ pending = localStorage.getItem('dm_pending_dr_link'); }catch(_){}
+  if(!pending || !/@/.test(pending)) return;
+  // Chequear que el profesional exista
+  let dr=null;
+  try{
+    const list = await db.get('doctors?email=eq.'+encodeURIComponent(pending)+'&select=email,name,lname,specialty,mat').catch(()=>[]);
+    dr = (list && list[0]) || null;
+  }catch(_){}
+  if(!dr){ try{ localStorage.removeItem('dm_pending_dr_link'); }catch(_){}; return; }
+  // Chequear que NO esté ya vinculado
+  try{
+    const existing = await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+'&doctor_email=eq.'+encodeURIComponent(pending)+'&select=doctor_email').catch(()=>[]);
+    if(existing && existing.length){ try{ localStorage.removeItem('dm_pending_dr_link'); }catch(_){}; return; }
+  }catch(_){}
+  // Mostrar diálogo
+  const specLbl = ({psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General'})[dr.specialty]||dr.specialty||'Profesional de salud';
+  const drName = (dr.name||'')+(dr.lname?' '+dr.lname:'');
+  const wrap = document.createElement('div');
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(15,40,32,0.78);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  wrap.id='dr-link-prompt';
+  wrap.innerHTML = '<div style="background:#1a2e23;border:1px solid rgba(126,200,164,0.3);border-radius:16px;max-width:420px;width:100%;padding:24px;color:#fff">'+
+    '<div style="font-size:24px;text-align:center;margin-bottom:8px">🔗</div>'+
+    '<div style="font-size:17px;font-weight:700;text-align:center;line-height:1.3">¿Querés vincularte con '+drName.trim()+'?</div>'+
+    '<div style="font-size:13px;color:rgba(255,255,255,0.7);text-align:center;margin-top:6px;line-height:1.5">'+specLbl+(dr.mat?' · '+dr.mat:'')+'</div>'+
+    '<div style="font-size:12.5px;color:rgba(255,255,255,0.65);text-align:center;margin-top:14px;line-height:1.55">Vinculándote, '+drName.split(' ')[0]+' va a poder ver tus registros de sueño y tus evaluaciones para acompañar mejor tu seguimiento. Podés desvincularte cuando quieras.</div>'+
+    '<div style="display:flex;gap:10px;margin-top:18px">'+
+      '<button id="drlink-no" style="flex:1;background:none;border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Ahora no</button>'+
+      '<button id="drlink-yes" style="flex:1;background:#1a4a3a;border:none;color:#fff;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Vincularme</button>'+
+    '</div></div>';
+  document.body.appendChild(wrap);
+  document.getElementById('drlink-no').onclick = ()=>{
+    try{ localStorage.removeItem('dm_pending_dr_link'); }catch(_){}
+    wrap.remove();
+  };
+  document.getElementById('drlink-yes').onclick = async ()=>{
+    document.getElementById('drlink-yes').disabled = true;
+    document.getElementById('drlink-yes').textContent = 'Vinculando…';
+    try{
+      await db.post('doctor_patients',{doctor_email:pending,patient_email:S.user.email},'');
+      try{ localStorage.removeItem('dm_pending_dr_link'); }catch(_){}
+      toast('✓ Vinculado/a con '+drName.split(' ')[0]);
+      wrap.remove();
+    }catch(e){
+      console.error('[link] error', e);
+      toast('No se pudo vincular: '+(e&&e.message||'intentá de nuevo'));
+      document.getElementById('drlink-yes').disabled = false;
+      document.getElementById('drlink-yes').textContent = 'Vincularme';
+    }
+  };
+}
+
+// ─── Recordatorio de perfil incompleto en el home del paciente ─────────
+function maybePromptProfileCompletion(){
+  if(!S.user || !S.user.email) return;
+  if(S.role === 'doctor') return;
+  // Si el usuario ya lo descartó hoy, no mostrar
+  const dismissKey = 'dm_profile_reminder_dismiss_'+(S.user.email||'').toLowerCase();
+  try{
+    const dismissAt = parseInt(localStorage.getItem(dismissKey)||'0');
+    if(dismissAt && (Date.now()-dismissAt) < 7*86400000) return; // re-mostrar a la semana
+  }catch(_){}
+  // Detectar campos vacíos importantes
+  const u = S.user;
+  const missing = [];
+  if(!u.dob) missing.push('fecha de nacimiento');
+  if(!u.gender) missing.push('género');
+  if(!u.phone) missing.push('teléfono / WhatsApp');
+  if(!u.lname) missing.push('apellido');
+  if(!missing.length) return;
+  // Insertar banner al tope del home (antes del primer hijo del scroll)
+  const homeScroll = document.querySelector('#screen-home .scroll');
+  if(!homeScroll) return;
+  // Evitar duplicado
+  if(document.getElementById('profile-reminder-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'profile-reminder-banner';
+  banner.style.cssText='background:linear-gradient(135deg,rgba(200,169,110,0.18),rgba(200,169,110,0.08));border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer';
+  banner.innerHTML = '<div style="font-size:22px;flex-shrink:0">📝</div>'+
+    '<div style="flex:1;min-width:0">'+
+      '<div style="font-size:13.5px;font-weight:700;color:#fff;line-height:1.3">Aún faltan datos de tu perfil</div>'+
+      '<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:3px;line-height:1.4">Completarlo nos ayuda a personalizar el contenido. Falta: '+missing.slice(0,3).join(', ')+(missing.length>3?'…':'')+'.</div>'+
+    '</div>'+
+    '<button id="profile-reminder-dismiss" style="background:none;border:none;color:rgba(255,255,255,0.45);font-size:20px;cursor:pointer;padding:0 4px;line-height:1">×</button>'+
+    '<div style="color:#C8A96E;font-size:18px;flex-shrink:0">›</div>';
+  banner.onclick = (e)=>{
+    if(e.target.id === 'profile-reminder-dismiss') return;
+    try{ navTo('profile'); }catch(_){}
+  };
+  banner.querySelector('#profile-reminder-dismiss').onclick = (e)=>{
+    e.stopPropagation();
+    try{ localStorage.setItem(dismissKey, String(Date.now())); }catch(_){}
+    banner.remove();
+  };
+  // Insertar después del home-meta (fecha) si existe
+  const metaEl = document.getElementById('home-meta');
+  if(metaEl && metaEl.parentNode === homeScroll){
+    metaEl.insertAdjacentElement('afterend', banner);
+  } else {
+    homeScroll.insertBefore(banner, homeScroll.firstChild);
+  }
+}
+
 // ─── Render del lado paciente: "Tu profesional te acerca este material" ─
 async function loadPatientEducation(){
   const wrap = document.getElementById('home-edu-card');
@@ -6219,6 +6335,8 @@ async function showHome(){
   if(!u){ showScreen('landing'); return; }
   try{ updateHowToHomeCard(); }catch(_){}
   try{ loadPatientEducation(); }catch(_){}
+  try{ maybePromptDoctorLink(); }catch(_){}
+  try{ maybePromptProfileCompletion(); }catch(_){}
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
 
   const hr=new Date().getHours();
@@ -7658,6 +7776,7 @@ function renderMiPerfilView(card){
    +_mpRow('Altura',u.height_cm?u.height_cm+' cm':'')
    +_mpRow('Peso',u.weight_kg?u.weight_kg+' kg':'')
    +_mpRow('IMC',_mpImc(u.height_cm,u.weight_kg))
+   +_mpRow('WhatsApp / Teléfono',u.phone||'')
    +_mpRow('Patologías',_mpPaths(u.pathologies))
    +_mpRow('Medicación',u.medications)
    +_mpRow('Alcohol',u.alcohol)
@@ -7680,6 +7799,23 @@ function renderMiPerfilEdit(card){
    +sel('mp-sex','Sexo biológico',u.sex,[['','—'],['M','Masculino'],['F','Femenino']])
    +inp('mp-height','Altura (cm)',u.height_cm,'number')
    +inp('mp-weight','Peso (kg)',u.weight_kg,'number')
+   +(function(){
+     // Separar phone existente en código país + número
+     var pRaw=(u.phone||'').trim();
+     var ccDetected='+54', numDetected=pRaw;
+     var m=pRaw.match(/^(\+\d{1,4})\s*(.*)$/);
+     if(m){ ccDetected=m[1]; numDetected=m[2]; }
+     var ccOpts=[['+54','🇦🇷 +54 Argentina'],['+598','🇺🇾 +598 Uruguay'],['+595','🇵🇾 +595 Paraguay'],['+56','🇨🇱 +56 Chile'],['+591','🇧🇴 +591 Bolivia'],['+51','🇵🇪 +51 Perú'],['+593','🇪🇨 +593 Ecuador'],['+57','🇨🇴 +57 Colombia'],['+58','🇻🇪 +58 Venezuela'],['+55','🇧🇷 +55 Brasil'],['+507','🇵🇦 +507 Panamá'],['+506','🇨🇷 +506 Costa Rica'],['+52','🇲🇽 +52 México'],['+34','🇪🇸 +34 España'],['+1','🇺🇸 +1 EE.UU./Canadá'],['+other','Otro país']];
+     return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6b7280;margin-bottom:5px">📱 WhatsApp / Teléfono</label>'+
+       '<div style="display:flex;gap:6px">'+
+         '<select id="mp-cc" style="flex:0 0 150px;padding:11px 6px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:13px">'+
+           ccOpts.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===ccDetected?' selected':'')+'>'+o[1]+'</option>';}).join('')+
+         '</select>'+
+         '<input id="mp-phone-number" type="tel" placeholder="11 1234 5678" value="'+_mpEsc(numDetected)+'" style="flex:1;min-width:0;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px;box-sizing:border-box">'+
+       '</div>'+
+       '<div style="font-size:11px;color:#9ca3af;margin-top:4px;line-height:1.4">Sin código de país. Si usás WhatsApp con este número, tu profesional podrá contactarte por ahí.</div>'+
+     '</div>';
+   })()
    +inp('mp-paths','Patologías (separadas por coma)',Array.isArray(u.pathologies)?u.pathologies.join(', '):(u.pathologies||''))
    +inp('mp-meds','Medicación',u.medications)
    +sel('mp-alcohol','Alcohol',u.alcohol,[['','—'],['nunca','Nunca'],['ocasional','Ocasional'],['frecuente','Frecuente'],['diario','Diario']])
@@ -7700,6 +7836,13 @@ async function saveMiPerfil(btn){
   if(!S.user)return; if(btn)btn.disabled=true;
   var g=function(id){return document.getElementById(id);};
   var pathsRaw=(g('mp-paths')&&g('mp-paths').value||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
+  // Concatenar teléfono = código país + número (sin código si solo deja vacío el número)
+  var ccVal=(g('mp-cc')&&g('mp-cc').value)||'';
+  var phoneNum=(g('mp-phone-number')&&g('mp-phone-number').value.trim())||'';
+  var phoneFinal=null;
+  if(phoneNum){
+    phoneFinal = (ccVal && ccVal!=='+other' ? ccVal+' ' : '') + phoneNum;
+  }
   var upd={
     name:(g('mp-name')&&g('mp-name').value.trim())||S.user.name,
     lname:(g('mp-lname')&&g('mp-lname').value.trim())||S.user.lname,
@@ -7707,6 +7850,7 @@ async function saveMiPerfil(btn){
     sex:(g('mp-sex')&&g('mp-sex').value)||null,
     height_cm:parseFloat(g('mp-height')&&g('mp-height').value)||null,
     weight_kg:parseFloat(g('mp-weight')&&g('mp-weight').value)||null,
+    phone:phoneFinal,
     pathologies:pathsRaw.length?pathsRaw:null,
     medications:(g('mp-meds')&&g('mp-meds').value.trim())||null,
     alcohol:(g('mp-alcohol')&&g('mp-alcohol').value)||null,
@@ -8710,11 +8854,15 @@ function pvtKeyHandler(e){const tag=(document.activeElement||{}).tagName||'';if(
 function pvtTap(){pvtReact();}
 function pvtReact(){
   if(S.pvtState==='waiting'){const m=document.getElementById('pvt-msg');if(m){m.style.color='#dc2626';m.textContent='¡Demasiado pronto!';}pvtSetSub('Esperá el círculo rojo');clearTimeout(pvtTimeout);pvtTimeout=null;setTimeout(()=>{if(S.pvtState==='waiting'){pvtSetMsg('','');pvtScheduleStim();}},900);return;}
-  if(S.pvtState==='stimulus'){const rt=Math.round(performance.now()-S.pvtStart);S.pvtRTs.push(rt);clearTimeout(pvtTimeout);pvtTimeout=null;const dot=document.getElementById('pvt-dot');if(dot)dot.classList.remove('show');const m=document.getElementById('pvt-msg');if(m){m.style.color=rt<300?'#14532d':rt<500?'#92400e':'#dc2626';m.innerHTML='<span style="font-size:44px;font-weight:500">'+rt+' ms</span>';}pvtSetSub(S.pvtRTs.length+' reacciones registradas');S.pvtState='waiting';setTimeout(()=>{const mm=document.getElementById('pvt-msg');if(mm&&S.pvtState==='waiting'){mm.textContent='';pvtSetSub('');}},2000);if(performance.now()>=pvtEndTime){if(S.pvtState!=='done'){S.pvtState='done';pvtFinish();}return;}pvtScheduleStim();}
+  if(S.pvtState==='stimulus'){const rt=Math.round(performance.now()-S.pvtStart);S.pvtRTs.push(rt);clearTimeout(pvtTimeout);pvtTimeout=null;const dot=document.getElementById('pvt-dot');if(dot)dot.classList.remove('show');const m=document.getElementById('pvt-msg');if(m){m.style.color=rt<300?'#14532d':rt<500?'#92400e':'#dc2626';m.innerHTML='<span style="font-size:44px;font-weight:500">'+rt+' ms</span>';}pvtSetSub(S.pvtRTs.length+' reacciones registradas');S.pvtState='waiting';setTimeout(()=>{const mm=document.getElementById('pvt-msg');if(mm&&S.pvtState==='waiting'){mm.textContent='';pvtSetSub('');}},2000);if(performance.now()>=pvtEndTime){S.pvtState='done';pvtFinish();return;}pvtScheduleStim();}
 }
 function pvtSetSub(txt){const s=document.getElementById('pvt-sub');if(s)s.textContent=txt;}
-function pvtStartCountdown(){if(S.pvtCountdownTimer)clearInterval(S.pvtCountdownTimer);S.pvtCountdownTimer=setInterval(()=>{const rem=Math.max(0,Math.round((pvtEndTime-performance.now())/1000));const el=document.getElementById('pvt-countdown');if(el)el.textContent=Math.floor(rem/60)+':'+(rem%60<10?'0':'')+(rem%60);if(rem<=0){clearInterval(S.pvtCountdownTimer);S.pvtCountdownTimer=null;}},500);}
-function pvtScheduleStim(){if(S.pvtState==='done')return;const remaining=pvtEndTime-performance.now();if(remaining<1200){if(S.pvtState!=='done'){S.pvtState='done';pvtFinish();}return;}const maxDelay=Math.min(10000,remaining-1200);const delay=Math.min(maxDelay,3000+Math.random()*7000);pvtTimeout=setTimeout(()=>{if(S.pvtState!=='waiting')return;S.pvtState='stimulus';S.pvtStart=performance.now();const dot=document.getElementById('pvt-dot');if(dot)dot.classList.add('show');pvtSetMsg('','');pvtTimeout=setTimeout(()=>{if(S.pvtState==='done')return;if(S.pvtState!=='stimulus')return;if(dot)dot.classList.remove('show');S.pvtRTs.push(1001);S.pvtState='waiting';const m=document.getElementById('pvt-msg');if(m){m.style.color='#92400e';m.textContent='Lapso registrado';}if(performance.now()>=pvtEndTime){pvtFinish();return;}setTimeout(()=>{if(S.pvtState==='waiting'){pvtSetMsg('','');pvtScheduleStim();}},700);},1000);},delay);}
+function pvtStartCountdown(){if(S.pvtCountdownTimer)clearInterval(S.pvtCountdownTimer);S.pvtCountdownTimer=setInterval(()=>{const rem=Math.max(0,Math.round((pvtEndTime-performance.now())/1000));const el=document.getElementById('pvt-countdown');if(el)el.textContent=Math.floor(rem/60)+':'+(rem%60<10?'0':'')+(rem%60);if(rem<=0){clearInterval(S.pvtCountdownTimer);S.pvtCountdownTimer=null;
+    // Safety net: si pasaron 1.5s desde rem=0 y todavía no terminó por la otra vía,
+    // forzar finish. Esto cubre el caso del último estímulo congelado.
+    setTimeout(()=>{ if(S.pvtState!=='done' && !S.pvtFinishing){ console.warn('[PVT] forced finish from countdown safety net'); S.pvtState='done'; pvtFinish(); } }, 1500);
+  }},500);}
+function pvtScheduleStim(){if(S.pvtState==='done')return;const remaining=pvtEndTime-performance.now();if(remaining<1200){S.pvtState='done';pvtFinish();return;}const maxDelay=Math.min(10000,remaining-1200);const delay=Math.min(maxDelay,3000+Math.random()*7000);pvtTimeout=setTimeout(()=>{if(S.pvtState!=='waiting')return;S.pvtState='stimulus';S.pvtStart=performance.now();const dot=document.getElementById('pvt-dot');if(dot)dot.classList.add('show');pvtSetMsg('','');pvtTimeout=setTimeout(()=>{if(S.pvtState==='done')return;if(S.pvtState!=='stimulus')return;if(dot)dot.classList.remove('show');S.pvtRTs.push(1001);S.pvtState='waiting';const m=document.getElementById('pvt-msg');if(m){m.style.color='#92400e';m.textContent='Lapso registrado';}if(performance.now()>=pvtEndTime){S.pvtState='done';pvtFinish();return;}setTimeout(()=>{if(S.pvtState==='waiting'){pvtSetMsg('','');pvtScheduleStim();}},700);},1000);},delay);}
 // ── PVT INTRO DEVICE NOTE ──
 
 async function loadPVTHistoryInline(){
@@ -9094,7 +9242,10 @@ function showPVTReminderBanner(targetMins){
 
 async function pvtFinish(){
   if(S.pvtFinishing){return;} S.pvtFinishing=true;
-  pvtStop();pvtRemoveListeners();if(!S.pvtRTs.length){S.pvtFinishing=false;pvtSetMsg('Sin reacciones','');return;}
+  S.pvtState='done';
+  pvtStop();pvtRemoveListeners();
+  if(!S.pvtRTs.length){S.pvtFinishing=false;pvtSetMsg('Sin reacciones','');return;}
+  try{
   const now=new Date();const testHour=now.getHours();const dur=S.pvtDuration||5;const priorSleep=S.pvtPriorSleep||null;
   const valid=S.pvtRTs.filter(r=>r<=1000);const lapses=S.pvtRTs.filter(r=>r>500).length;
   // ── Device calibration ──
@@ -9133,6 +9284,14 @@ async function pvtFinish(){
   };
   showScreen('pvt-result');
   setTimeout(()=>{killChart('pvth');const ctx=document.getElementById('pvt-hist');if(!ctx)return;const buckets=new Array(10).fill(0);valid.forEach(r=>{buckets[Math.min(9,Math.floor(r/100))]++;});S.charts.pvth=new Chart(ctx,{type:'bar',data:{labels:['<100','100','200','300','400','500','600','700','800','900+'],datasets:[{data:buckets,backgroundColor:buckets.map((_,i)=>i<5?'#1a4a3a99':'#9b1c1c99'),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},stepSize:1},grid:{color:'rgba(0,0,0,0.04)'}}}}});},150);
+  }catch(err){
+    // Si algo en el procesamiento/render falla, no dejamos la pantalla congelada
+    console.error('[PVT] pvtFinish error:', err);
+    try{ toast('Hubo un problema al procesar el test: '+(err&&err.message||err)); }catch(_){}
+    try{ showScreen('home'); }catch(_){}
+  }finally{
+    S.pvtFinishing=false;
+  }
 }
 
 // DOCTOR
@@ -9602,7 +9761,7 @@ async function showDrPTab_(tab){
         '<textarea id="dr-annot" rows="3" placeholder="Notas del profesional..." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sep-opaque);border-radius:10px;font-size:13px;font-family:var(--font);resize:none;line-height:1.5;background:var(--bg-secondary)">'+savedNote+'</textarea>'+
         '<button class="save-annot-btn" style="margin-top:6px;padding:7px 16px;border:none;border-radius:8px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Guardar nota</button>';
 
-      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>');
+      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>');
     }else if(tab==='profile'){
       const u=S.viewData;const dob=u.dob?new Date(u.dob):null;const age=dob?Math.floor((new Date()-dob)/31557600000):null;const imc=(u.weight_kg&&u.height_cm)?((u.weight_kg/((u.height_cm/100)**2)).toFixed(1)):null;const paths=(u.pathologies||[]).map(p=>`<span class="tag">${p}</span>`).join('');
       const photoHtml=u.photo_url?
@@ -9648,6 +9807,7 @@ async function showDrPTab_(tab){
         </div>
         <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 14px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
+          <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
           <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
         </div>
         <div style="height:16px"></div>`;
@@ -9674,8 +9834,36 @@ async function showDrPTab_(tab){
           if(bS){annots.bM={type:'line',xMin:bS.m,xMax:bS.m,borderColor:'rgba(217,119,6,0.9)',borderWidth:2,borderDash:[5,3]};annots.bLo={type:'box',xMin:bS.m-bS.s,xMax:bS.m+bS.s,backgroundColor:'rgba(217,119,6,0.08)',borderColor:'transparent'};}
           if(wS){annots.wM={type:'line',xMin:wS.m,xMax:wS.m,borderColor:'rgba(45,90,158,0.9)',borderWidth:2,borderDash:[5,3]};annots.wLo={type:'box',xMin:wS.m-wS.s,xMax:wS.m+wS.s,backgroundColor:'rgba(45,90,158,0.08)',borderColor:'transparent'};}
           ctxA._bedStats=bS;ctxA._wakeStats=wS;
+          // Discriminar días libres: igual lógica que el paciente. day_type==='free' OR sáb/dom.
+          const drWeekendRows=sorted.map((e,i)=>{
+            const d=new Date(e.diary_date+'T12:00:00');
+            const isFreeDay=e.day_type==='free';
+            const isWeekend=d.getDay()===0||d.getDay()===6;
+            return (isFreeDay||isWeekend)?i:null;
+          }).filter(i=>i!==null);
+          ctxA._weekendRows=drWeekendRows;
           if(drPeriodNights>0){ const dpl=document.getElementById('dr-acto-period-legend'); if(dpl) dpl.style.display='inline'; }
-          S.charts['dr-acto']=new Chart(ctxA,{type:'bar',data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},plugins:{legend:{display:false},afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');},annotation:{annotations:annots}},scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+          // Mostrar leyenda "Día libre" solo si hay datos
+          const dfl=document.getElementById('dr-acto-freeday-legend'); if(dfl) dfl.style.display = drWeekendRows.length>0?'inline':'none';
+          S.charts['dr-acto']=new Chart(ctxA,{type:'bar',data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},plugins:{legend:{display:false},beforeDatasetsDraw:(chart)=>{try{
+                  const cv2=chart.canvas;
+                  const freeRows2=cv2?._weekendRows||[];
+                  if(!freeRows2.length) return;
+                  const yS2=chart.scales.y;
+                  const ca2=chart.chartArea;
+                  const barH2=Math.abs(yS2.getPixelForValue(1)-yS2.getPixelForValue(0));
+                  const cx2=chart.ctx;
+                  cx2.save();
+                  cx2.fillStyle='rgba(100,120,200,0.10)';
+                  freeRows2.forEach(i=>{
+                    try{
+                      const yMid2=yS2.getPixelForValue(i);
+                      cx2.fillRect(ca2.left,yMid2-barH2/2,ca2.right-ca2.left,barH2);
+                    }catch(_){}
+                  });
+                  cx2.restore();
+                }catch(_){}},
+                afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');},annotation:{annotations:annots}},scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
         }
         // Pillars
         const bedOffs=sorted.map(e=>e.bedtime?toOff(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
@@ -15140,8 +15328,9 @@ function showDrQrPrint(){
   const specLabels = {psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General'};
   const drSpec = specLabels[u.specialty] || u.specialty || '';
   const drMat = u.mat || '';
-  const loginUrl = 'https://dormetria.com';
-  const drLinkUrl = 'https://dormetria.com/?dr=' + encodeURIComponent(u.email||'');
+  const appBase = 'https://joaquinjosediez.github.io/Dormetria-app/';
+  const loginUrl = appBase + '?v=' + APP_VERSION;
+  const drLinkUrl = appBase + '?v=' + APP_VERSION + '&dr=' + encodeURIComponent(u.email||'');
   const qrLogin = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(loginUrl);
   const qrDoctor = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(drLinkUrl);
 
@@ -15174,7 +15363,7 @@ function showDrQrPrint(){
         <div style="font-size:13px;font-weight:700;color:#0F2820;text-transform:uppercase;letter-spacing:0.06em">PASO 1</div>
         <div style="font-size:14px;font-weight:600;color:#0F2820;margin-top:4px">Descargá la app</div>
         <img src="${qrLogin}" alt="QR de descarga">
-        <div style="font-size:11px;color:#5C6B61;line-height:1.4">Escaneá este QR con la cámara del celular. Te lleva a dormetria.com para crear tu cuenta de paciente.</div>
+        <div style="font-size:11px;color:#5C6B61;line-height:1.4">Escaneá este QR con la cámara del celular. Abre la app, registrate como paciente y listo.</div>
       </div>
       <div class="qr-card">
         <div style="font-size:13px;font-weight:700;color:#0F2820;text-transform:uppercase;letter-spacing:0.06em">PASO 2</div>
@@ -15187,7 +15376,7 @@ function showDrQrPrint(){
       <strong>¿Para qué sirve Dormetria?</strong><br>
       Es una plataforma donde podés registrar tu sueño día por día, completar escalas clínicas validadas que yo te indique, y compartir todo conmigo en tiempo real. Si seguís estas indicaciones, vamos a poder hacer un seguimiento mucho más preciso de tu evolución.
     </div>
-    <div style="text-align:center;margin-top:18px;font-size:10px;color:#5C6B61">dormetria.com · ${(u.email_public||u.email||'')}${u.phone?' · '+u.phone:''}</div>
+    <div style="text-align:center;margin-top:18px;font-size:10px;color:#5C6B61">joaquinjosediez.github.io/Dormetria-app · ${(u.email_public||u.email||'')}${u.phone?' · '+u.phone:''}</div>
   `;
   showScreen('dr-qr-print');
 }
@@ -15429,29 +15618,62 @@ async function checkPatientTcciCard(){
 async function viewPatientScale(patEmail, scaleId){
   await viewPatient(patEmail);
   // Esperar a que cargue la vista del paciente
-  setTimeout(()=>{
-    // Filtrar evaluaciones del paciente por esa escala y mostrarlas
+  setTimeout(async ()=>{
     const sc = SCALES.find(s=>s.id===scaleId);
     if(!sc){ return; }
-    const records = (S.patientRecords||[]).filter(r=>r.scale_id===scaleId).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-    if(!records.length){ toast('Sin registros de '+sc.name); return; }
-    // Construir un modal con la lista de resultados de esa escala
+    // Traer los registros con TODAS las columnas (incluido answers)
+    let records=[];
+    try{
+      records = await db.get('evaluations?patient_email=eq.'+encodeURIComponent(patEmail)+'&scale_id=eq.'+encodeURIComponent(scaleId)+'&order=created_at.desc&select=*').catch(()=>[]);
+    }catch(_){ records=(S.patientRecords||[]).filter(r=>r.scale_id===scaleId).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)); }
+    if(!records || !records.length){ toast('Sin registros de '+sc.name); return; }
+    const renderAnswerValue = (q, ans)=>{
+      // ans puede ser índice (number), un objeto, o un string crudo
+      if(ans===null||ans===undefined||ans==='') return '<em style="color:#999">— sin respuesta —</em>';
+      if(q && Array.isArray(q.opts)){
+        if(typeof ans === 'number' && q.opts[ans]!==undefined) return q.opts[ans];
+        if(typeof ans === 'string' && /^[0-9]+$/.test(ans) && q.opts[parseInt(ans)]!==undefined) return q.opts[parseInt(ans)];
+      }
+      // Si es objeto (preguntas multi-input como MCTQ), mostrarlo formateado
+      if(typeof ans === 'object'){
+        try{ return Object.entries(ans).map(([k,v])=>'<strong>'+k+':</strong> '+v).join(' · '); }catch(_){ return JSON.stringify(ans); }
+      }
+      return String(ans);
+    };
     const m = document.createElement('div');
     m.style.cssText='position:fixed;inset:0;background:rgba(15,40,32,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
-    let body = '<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:17px;font-weight:700;color:#0F2820">'+sc.name+'</div><div style="font-size:12px;color:#5C6B61;margin-top:2px">'+records.length+' '+(records.length===1?'registro':'registros')+'</div></div><button onclick="this.closest(\'#vps-modal\').remove()" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;padding:0;line-height:1">×</button></div>';
-    records.forEach(r=>{
+    m.id='vps-modal';
+    let body = '<div style="background:#fff;border-radius:16px;max-width:540px;width:100%;max-height:88vh;overflow-y:auto;padding:20px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:12px"><div><div style="font-size:17px;font-weight:700;color:#0F2820">'+sc.name+'</div><div style="font-size:12px;color:#5C6B61;margin-top:2px">'+records.length+' '+(records.length===1?'registro':'registros')+'</div></div><button id="vps-close" style="background:none;border:none;font-size:22px;color:#999;cursor:pointer;padding:0;line-height:1;flex-shrink:0">×</button></div>';
+    records.forEach((r,idx)=>{
       const interp = sc.interp(r.score);
       const d = new Date(r.created_at);
-      body += '<div style="background:'+interp.bg+';border:1px solid '+interp.c+'33;border-radius:10px;padding:12px 14px;margin-bottom:8px">';
-      body += '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:13px;color:'+interp.c+';font-weight:700">'+d.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'})+'</div><div style="font-size:12px;color:#5C6B61;margin-top:2px">'+interp.l+'</div></div>';
-      body += '<div style="font-size:22px;font-weight:700;color:'+interp.c+'">'+r.score+'</div></div>';
+      const dateLabel = d.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+      body += '<div style="background:'+interp.bg+';border:1px solid '+interp.c+'33;border-radius:10px;padding:12px 14px;margin-bottom:10px">';
+      body += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:13px;color:'+interp.c+';font-weight:700">'+dateLabel+'</div><div style="font-size:12px;color:#5C6B61;margin-top:2px">'+interp.l+'</div></div><div style="font-size:22px;font-weight:700;color:'+interp.c+';flex-shrink:0">'+r.score+'</div></div>';
+      // Parsear las respuestas
+      let answers = null;
+      try{ answers = typeof r.answers === 'string' ? JSON.parse(r.answers) : r.answers; }catch(_){ answers = null; }
+      const hasAnswers = answers && (Array.isArray(answers) ? answers.length : Object.keys(answers||{}).length);
+      if(hasAnswers && sc.qs && Array.isArray(sc.qs)){
+        const ansId = 'vps-ans-'+idx;
+        body += '<button onclick="var e=document.getElementById(\''+ansId+'\');e.style.display=e.style.display===\'none\'?\'block\':\'none\';this.textContent=e.style.display===\'none\'?\'▸ Ver respuestas del paciente\':\'▾ Ocultar respuestas\'" style="background:none;border:1px solid '+interp.c+'44;color:'+interp.c+';border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;margin-top:8px;font-family:inherit">▸ Ver respuestas del paciente</button>';
+        body += '<div id="'+ansId+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed '+interp.c+'33">';
+        sc.qs.forEach((q,qi)=>{
+          const ans = Array.isArray(answers) ? answers[qi] : (answers[qi]!==undefined?answers[qi]:null);
+          body += '<div style="margin-bottom:10px"><div style="font-size:11.5px;color:#5C6B61;line-height:1.4;margin-bottom:3px"><strong style="color:#0F2820">'+(qi+1)+'.</strong> '+(q.t||q.q||'Pregunta '+(qi+1))+'</div><div style="font-size:13px;color:#0F2820;font-weight:600;padding-left:14px;line-height:1.4">'+renderAnswerValue(q,ans)+'</div></div>';
+        });
+        body += '</div>';
+      } else if(answers===null || !hasAnswers){
+        body += '<div style="margin-top:8px;font-size:11px;color:#9a3412;font-style:italic">⚠ Sin detalle de respuestas guardado para este registro</div>';
+      }
       body += '</div>';
     });
     if(sc.ref) body += '<div style="margin-top:12px;font-size:10.5px;color:#5C6B61;font-style:italic;padding:8px;background:#f7f7f7;border-radius:8px;line-height:1.5">'+sc.ref+'</div>';
     body += '</div>';
     m.innerHTML = body;
-    m.id = 'vps-modal';
     document.body.appendChild(m);
+    const closeBtn = m.querySelector('#vps-close');
+    if(closeBtn) closeBtn.onclick = ()=>m.remove();
     m.onclick = e=>{ if(e.target===m) m.remove(); };
   }, 400);
 }
