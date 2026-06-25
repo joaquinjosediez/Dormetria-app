@@ -3405,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy44';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy45';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -4180,6 +4180,177 @@ function computePillarScore(e){
 }
 function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
 function pillarBar(v,color){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+color+';width:'+v+'%;transition:width .6s ease"></div></div>';}
+
+// ───────────────────────────────────────────────────────────────────────
+// REGULARIDAD DEL SUEÑO — Función UNIFICADA (paciente + médico)
+// ───────────────────────────────────────────────────────────────────────
+// Implementa DOS métricas, ambas computadas sobre el período completo:
+//
+//   1) Score clínico 0-100 basado en SD del punto medio del sueño
+//      Cortes derivados de NHANES 2011-2014 (n=9.981, acelerómetro):
+//      - 80% de la población general tiene SD midpoint <60 min
+//      - Mediana poblacional ~30-40 min
+//      Ref: Liang et al. Sci Rep 2023 (PMC10719297)
+//
+//   2) SRI (Sleep Regularity Index) — fórmula original de Phillips et al. 2017
+//      SRI = -100 + 200/(M(N-1)) * Σ δ(s[i,j], s[i+1,j])
+//      Calculado sobre signal binario sleep/wake con épocas de 1 min.
+//      Ref: Phillips AJK et al. Sci Rep 2017;7:3216 (DOI: 10.1038/s41598-017-03171-4)
+//      UK Biobank (n=60.977): mediana SRI = 81, IQR [73.8–86.3]
+//
+// La regularidad es propiedad DEL PERÍODO, no de cada noche individual.
+// Por eso todas las noches del agregado reciben el MISMO puntaje clínico.
+//
+// IMPORTANTE: en versiones previas el código decía "SRI (Phillips 2017)"
+// en un comentario pero NO era SRI — era una variante mal calibrada de
+// StDev del bedtime. Esto está corregido acá.
+// ───────────────────────────────────────────────────────────────────────
+function computeSleepRegularity(entries){
+  const safeEntries = (entries||[]).filter(e=>e && e.bedtime && e.wake_time && e.diary_date);
+  if(safeEntries.length < 2){
+    return { score:null, label:'Insuficiente', n_nights:safeEntries.length,
+             sd_midpoint_min:null, sd_bedtime_min:null, sd_waketime_min:null,
+             sri:null, method:'Necesitás al menos 2 noches con bedtime y wake_time' };
+  }
+  // Helper: convertir "HH:MM" a "horas desde el mediodía" (igual a timeToOffset)
+  // 00:00 → 12, 06:00 → 18, 12:00 → 0, 22:00 → 10. La sleep window típica queda
+  // bien lejos del punto de wrap-around (mediodía), así que SD lineal es válido.
+  function toOff(t){ const p=t.slice(0,5).split(':').map(Number); const h=p[0],m=p[1]||0; return (h>=12?h-12:h+12)+m/60; }
+  // Helper: SD muestral (ddof=0, como Phillips/NHANES, no ddof=1)
+  function sd(arr){
+    if(!arr.length) return 0;
+    const m = arr.reduce((a,b)=>a+b,0)/arr.length;
+    return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);
+  }
+  // 1) SDs en horas → minutos
+  const bedOffs = safeEntries.map(e=>toOff(e.bedtime));
+  const wakeOffs = safeEntries.map(e=>toOff(e.wake_time));
+  // Midpoint = promedio de bedtime y waketime offsets. Como ambos están en la
+  // misma escala "horas desde mediodía" y la sleep window no cruza la discontinuidad,
+  // el promedio simple es válido.
+  const midOffs = bedOffs.map((b,i)=>{
+    const w = wakeOffs[i];
+    // wake_time típicamente es DESPUÉS de bedtime en términos de la escala (más horas desde mediodía)
+    // Si w < b, significa que el paciente durmió poco/cruzó hacia siguiente "noche" (raro). Ajustamos.
+    const wAdj = w < b ? w + 24 : w;
+    return (b + wAdj) / 2;
+  });
+  const sdMidpointMin = sd(midOffs) * 60;
+  const sdBedtimeMin  = sd(bedOffs) * 60;
+  const sdWaketimeMin = sd(wakeOffs) * 60;
+
+  // 2) SRI — Sleep Regularity Index (Phillips et al. 2017)
+  // Construyo signal binario sleep(1)/wake(0) por minuto para cada día calendario.
+  // Para días consecutivos en el calendario, comparo época por época.
+  let sri = null;
+  try {
+    const M = 1440; // épocas de 1 min por día
+    // Indexar por fecha calendario
+    const byDate = new Map();
+    safeEntries.forEach(e=>{
+      // Construir signal para este día. Asumo que bedtime puede ser del día anterior
+      // si es >12pm (es decir, antes de medianoche del día calendario en e.diary_date).
+      // Convención Dormetria: diary_date es la fecha de la MAÑANA siguiente a dormir.
+      // Entonces si bedtime = 23:00, ocurrió en diary_date - 1.
+      // wake_time pertenece a diary_date.
+      const sig = new Uint8Array(M);
+      const [bh, bm] = e.bedtime.slice(0,5).split(':').map(Number);
+      const [wh, wm] = e.wake_time.slice(0,5).split(':').map(Number);
+      const btMin = bh*60 + bm;
+      const wtMin = wh*60 + wm;
+      // bedtime ocurrió en el día previo si bedtime > wake_time (típico: 23:00 → 07:00)
+      const bedtimeIsPrevDay = btMin > wtMin;
+      // Sleep span en minutos
+      let spanStart, spanEnd;
+      if(bedtimeIsPrevDay){
+        // De btMin (del día previo) cruzando medianoche hasta wtMin
+        spanStart = btMin;        // minuto del día previo
+        spanEnd = M + wtMin;      // minuto en escala continua (M + wtMin = mediodía siguiente day's wtMin)
+      } else {
+        // No cruza medianoche (siesta nocturna corta o sueño diurno raro)
+        spanStart = btMin;
+        spanEnd = wtMin;
+      }
+      // Marcar como sleep
+      for(let i=spanStart; i<spanEnd; i++){
+        sig[i % M] = 1;
+      }
+      // WASO: si hay tiempo despierto en cama, distribuirlo uniformemente en la franja media
+      const waso = e.wake_in_bed_mins || 0;
+      const span = spanEnd - spanStart;
+      if(waso > 0 && waso < span){
+        const startWaso = spanStart + Math.floor((span - waso) / 2);
+        for(let i=startWaso; i<startWaso+waso; i++){
+          sig[i % M] = 0;
+        }
+      }
+      byDate.set(e.diary_date, sig);
+    });
+    // Encontrar pares de días consecutivos
+    const dates = Array.from(byDate.keys()).sort();
+    let matches = 0, pairs = 0;
+    for(let k=0; k<dates.length-1; k++){
+      const d1 = new Date(dates[k]+'T12:00:00');
+      const d2 = new Date(dates[k+1]+'T12:00:00');
+      const diffDays = Math.round((d2-d1)/(86400000));
+      if(diffDays !== 1) continue; // skip días no consecutivos
+      const s1 = byDate.get(dates[k]);
+      const s2 = byDate.get(dates[k+1]);
+      for(let j=0; j<M; j++){
+        if(s1[j] === s2[j]) matches++;
+      }
+      pairs++;
+    }
+    if(pairs >= 1){
+      // Fórmula Phillips: SRI = -100 + 200 * matches / (M * pairs)
+      sri = -100 + (200 * matches) / (M * pairs);
+      // Acotar al rango práctico [0, 100]; teóricamente puede ser negativo pero raro
+      sri = Math.max(-100, Math.min(100, sri));
+    }
+  } catch(err) {
+    console.warn('[regularity] SRI computation failed:', err);
+    sri = null;
+  }
+
+  // 3) Score clínico unificado 0-100, basado en SD midpoint (NHANES)
+  // Mapeo continuo dentro de cada rango para evitar saltos abruptos
+  let score, label;
+  const sdM = sdMidpointMin;
+  if(sdM < 20){
+    score = 95 + (20 - sdM) * 0.25;   // 95–100
+    label = 'Excelente';
+  } else if(sdM < 30){
+    score = 80 + (30 - sdM) * 1.5;    // 80–95
+    label = 'Muy buena';
+  } else if(sdM < 45){
+    score = 65 + (45 - sdM) * 1.0;    // 65–80
+    label = 'Buena';
+  } else if(sdM < 60){
+    score = 50 + (60 - sdM) * 1.0;    // 50–65
+    label = 'Regular';
+  } else if(sdM < 90){
+    score = 30 + (90 - sdM) * (20/30); // 30–50
+    label = 'Baja';
+  } else if(sdM < 120){
+    score = 10 + (120 - sdM) * (20/30); // 10–30
+    label = 'Muy baja';
+  } else {
+    score = Math.max(0, 10 - (sdM - 120) / 10);
+    label = 'Muy baja';
+  }
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  return {
+    score: score,
+    label: label,
+    n_nights: safeEntries.length,
+    sd_midpoint_min: Math.round(sdMidpointMin),
+    sd_bedtime_min: Math.round(sdBedtimeMin),
+    sd_waketime_min: Math.round(sdWaketimeMin),
+    sri: sri !== null ? Math.round(sri * 10) / 10 : null,
+    method: 'SD del punto medio · ref: NHANES 2011-2014 (n=9981). SRI: Phillips 2017.'
+  };
+}
 
 // AUTH
 function setMode(m,el){S.role=m;document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');document.getElementById('reg-toggle').innerHTML=m==='doctor'?'¿Profesional nuevo? <span onclick="showRegister()">Crear cuenta profesional</span>':'¿Primera vez? <span onclick="showRegister()">Crear cuenta</span>';showLogin();}
@@ -5304,6 +5475,8 @@ function updatePillarBars(entries){
   const bedStats=meanStd(bedOffsets);
   const wakeOffsets=sorted.map(e=>e.wake_time?timeToOffset(e.wake_time.slice(0,5)):null).filter(v=>v!==null);
   const wakeStats=meanStd(wakeOffsets);
+  // Computar regularidad UNA SOLA VEZ para todo el período (función unificada).
+  const _localRegResult = computeSleepRegularity(sorted);
   function computePillarScore(e){
     const mins=e.sleep_minutes||0;
     let qty=0;
@@ -5318,15 +5491,9 @@ function updatePillarBars(entries){
   }
   const pillarData=sorted.map(e=>{
     const p=computePillarScore(e);
-    let regPct=0;
-    if(e.bedtime&&bedStats){
-      const sdMin=bedStats.s*60;
-      const devMin=Math.abs(timeToOffset(e.bedtime.slice(0,5))-bedStats.m)*60;
-      const groupScore=Math.max(0,100-(sdMin/60)*40);
-      const nightScore=Math.max(0,100-(devMin/45)*30);
-      regPct=Math.round(groupScore*0.6+nightScore*0.4);
-    }
-    return{qty:p.qty_pct,frag:p.frag_pct,reg:regPct};
+    // Usar función unificada (misma para paciente y médico).
+    // Score basado en SD del punto medio (NHANES). Período-level.
+    return{qty:p.qty_pct,frag:p.frag_pct,reg: _localRegResult.score !== null ? _localRegResult.score : 0};
   });
   const lastN=Math.min(pillarData.length,7);
   const recent=pillarData.slice(-lastN);
@@ -5342,7 +5509,7 @@ function updatePillarBars(entries){
   pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
     [{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:'7–9h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
-     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub:'SRI — variabilidad'}
+     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('SD pto medio: '+_localRegResult.sd_midpoint_min+' min'+(_localRegResult.sri!==null?' · SRI: '+_localRegResult.sri:'')) : 'Variabilidad del horario'}
     ].map(p=>{
       const c=pillarColor(p.val);
       const status=p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención';
@@ -8312,17 +8479,14 @@ async function showDiaryTab_(tab){
         }
 
         // ── PILLAR TRACKING CHART ──
-        
-        // Regularidad: per-entry % of 30 pts based on deviation from mean bedtime
+
+        // REGULARIDAD: usar función unificada (misma para paciente y médico).
+        // Score basado en SD del punto medio del sueño (NHANES 2011-2014).
+        // La regularidad es propiedad del PERÍODO: todas las noches reciben el mismo score.
+        const regResult = computeSleepRegularity(sorted);
         const pillarData=sorted.map((e,i)=>{
           const p=computePillarScore(e);
-          let regPct=0;
-          if(e.bedtime&&bedStats){
-            const off=timeToOffset(e.bedtime.slice(0,5));
-            const dev=Math.abs(off-bedStats.m);
-            regPct=Math.round(Math.max(0,100-dev*80));
-          }
-          return{qty:p.qty_pct,frag:p.frag_pct,reg:regPct};
+          return{qty:p.qty_pct, frag:p.frag_pct, reg: regResult.score !== null ? regResult.score : 0};
         });
         // ── PILLAR SUMMARY CARDS ──
         const lastN = Math.min(pillarData.length, 7);
@@ -8338,7 +8502,7 @@ async function showDiaryTab_(tab){
             ${[
               {label:'Cantidad',val:avgQtyP,icon:'',color:'#2d9e6b',sub:'Duración'},
               {label:'Fragmentación',val:avgFragP,icon:'',color:'#0e7490',sub:'Despertares'},
-              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub:'Horario'},
+              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min') : 'Horario'},
             ].map(p=>{
               const c=pillarColor(p.val);
               const pillarC = p.color || '#1a4a3a';
@@ -9869,19 +10033,18 @@ async function showDrPTab_(tab){
         const bedOffs=sorted.map(e=>e.bedtime?toOff(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
         function mStd2(arr){if(!arr.length)return null;const m=arr.reduce((a,b)=>a+b,0)/arr.length;return{m,s:Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length)};}
         const bStats=mStd2(bedOffs);
-        const pillarData=sorted.map(e=>{const hrs=(e.sleep_minutes||0)/60;let qty=hrs>=7&&hrs<=9?50:hrs>=6?30:hrs>=5?15:0;const frag=Math.max(0,20-(e.awakenings||0)*5);// Regularidad basada en SRI (Sleep Regularity Index, Phillips et al. 2017)
-        // SD del horario de acostarse: <30min=excelente, 30-60=buena, 60-90=regular, >90=baja
-        let reg=0;if(e.bedtime&&bStats){
-          // bStats.s = SD in hours; convert to minutes for SRI scoring
-          const sdMin=bStats.s*60;
-          // Each night gets same group score (regularity is a group property)
-          // Per-night component: how far this night is from the mean
-          const devMin=Math.abs(toOff(e.bedtime.slice(0,5))-bStats.m)*60;
-          // Combined: group regularity (60%) + night consistency (40%)
-          const groupScore=Math.max(0,100-(sdMin/60)*40);
-          const nightScore=Math.max(0,100-(devMin/45)*30);
-          reg=Math.round(groupScore*0.6+nightScore*0.4);
-        }return{qty:Math.round(qty/50*100),frag:Math.round(frag/20*100),reg};});
+        // REGULARIDAD UNIFICADA con la vista del paciente.
+        // Score basado en SD del punto medio del sueño (cortes NHANES 2011-2014, n=9981).
+        // SRI (Phillips 2017) se calcula también, disponible en regResult.sri.
+        // La regularidad es propiedad del PERÍODO — mismo score para todas las noches.
+        const regResult = computeSleepRegularity(sorted);
+        const pillarData=sorted.map(e=>{
+          const hrs=(e.sleep_minutes||0)/60;
+          let qty=hrs>=7&&hrs<=9?50:hrs>=6?30:hrs>=5?15:0;
+          const frag=Math.max(0,20-(e.awakenings||0)*5);
+          const reg = regResult.score !== null ? regResult.score : 0;
+          return{qty:Math.round(qty/50*100),frag:Math.round(frag/20*100),reg};
+        });
         const lastN=Math.min(pillarData.length,7);const rec=pillarData.slice(-lastN);
         const avgQtyP=Math.round(rec.reduce((a,p)=>a+p.qty,0)/lastN);
         const avgFragP=Math.round(rec.reduce((a,p)=>a+p.frag,0)/lastN);
@@ -9892,7 +10055,7 @@ async function showDrPTab_(tab){
         if(pEl) pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
           [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22'}].map(p=>{const c=pColor(p.v);const st=p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención';return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
             '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+
-            ({Cantidad:'7–9h de sueño (recomendado)',Fragmentación:'Número de despertares',Regularidad:'SRI — variabilidad del horario'}[p.l]||'')+
+            ({Cantidad:'7–9h de sueño (recomendado)',Fragmentación:'Número de despertares',Regularidad: (regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')) : 'Variabilidad del horario')}[p.l]||'')+
             '</div></div>';}).join('')+'</div>';
         const ctxP=document.getElementById('dr-pillar-chart');
         if(ctxP){killChart('dp-dr');S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad',data:pillarData.map(p=>p.reg),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8,padding:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});}
