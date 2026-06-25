@@ -3405,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy45';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy46';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -4312,30 +4312,53 @@ function computeSleepRegularity(entries){
     sri = null;
   }
 
-  // 3) Score clínico unificado 0-100, basado en SD midpoint (NHANES)
-  // Mapeo continuo dentro de cada rango para evitar saltos abruptos
+  // CPD — Composite Phase Deviation (Fischer et al. 2016)
+  // Captura desviación por noche en dos componentes:
+  //   ΔCT = MS_i − cronotipo (cronotipo = midpoint promedio en días libres, fallback al promedio)
+  //   ΔDD = MS_i − MS_{i-1}  (desvío respecto a la noche previa)
+  //   CPD_i = sqrt(ΔCT² + ΔDD²)
+  // Útil para graficar la dinámica noche-a-noche (la línea "Regularidad" del gráfico).
+  let cpdAvg = null, cpdPerNightScore = null;
+  try {
+    const freeMids = midOffs.filter((_,i)=>safeEntries[i].day_type==='free');
+    const chronotype = freeMids.length>=2
+      ? freeMids.reduce((a,b)=>a+b,0)/freeMids.length
+      : midOffs.reduce((a,b)=>a+b,0)/midOffs.length; // fallback: media general
+    const cpdVals = midOffs.map((ms, i) => {
+      const dCT = ms - chronotype;
+      const dDD = i > 0 ? (ms - midOffs[i-1]) : 0; // primera noche no tiene "anterior"
+      return Math.sqrt(dCT*dCT + dDD*dDD); // en horas
+    });
+    cpdAvg = cpdVals.reduce((a,b)=>a+b,0)/cpdVals.length;
+    // Score 0-100 por noche: 0h → 100, 4h → 0 (linear)
+    cpdPerNightScore = cpdVals.map(c => Math.max(0, Math.min(100, Math.round(100 - c*25))));
+  } catch(err) {
+    console.warn('[regularity] CPD computation failed:', err);
+  }
+
+  // 3) Score clínico unificado 0-100, basado en SD midpoint
+  // Cortes recalibrados para POBLACIÓN CLÍNICA (gente que consulta por sueño, no
+  // muestra sana). Corrido +10–15 min respecto a los percentiles NHANES puros.
+  // Mantenemos las etiquetas originales (Excelente/Muy buena/Buena/Regular/Baja/Muy baja).
   let score, label;
   const sdM = sdMidpointMin;
-  if(sdM < 20){
-    score = 95 + (20 - sdM) * 0.25;   // 95–100
+  if(sdM < 30){
+    score = 90 + (30 - sdM) * (10/30);    // 90–100
     label = 'Excelente';
-  } else if(sdM < 30){
-    score = 80 + (30 - sdM) * 1.5;    // 80–95
-    label = 'Muy buena';
   } else if(sdM < 45){
-    score = 65 + (45 - sdM) * 1.0;    // 65–80
-    label = 'Buena';
+    score = 75 + (45 - sdM) * 1.0;        // 75–90
+    label = 'Muy buena';
   } else if(sdM < 60){
-    score = 50 + (60 - sdM) * 1.0;    // 50–65
-    label = 'Regular';
+    score = 60 + (60 - sdM) * 1.0;        // 60–75
+    label = 'Buena';
   } else if(sdM < 90){
-    score = 30 + (90 - sdM) * (20/30); // 30–50
-    label = 'Baja';
+    score = 40 + (90 - sdM) * (20/30);    // 40–60
+    label = 'Regular';
   } else if(sdM < 120){
-    score = 10 + (120 - sdM) * (20/30); // 10–30
-    label = 'Muy baja';
+    score = 20 + (120 - sdM) * (20/30);   // 20–40
+    label = 'Baja';
   } else {
-    score = Math.max(0, 10 - (sdM - 120) / 10);
+    score = Math.max(0, 20 - (sdM - 120) / 6);  // 0-20
     label = 'Muy baja';
   }
   score = Math.max(0, Math.min(100, Math.round(score)));
@@ -4348,7 +4371,9 @@ function computeSleepRegularity(entries){
     sd_bedtime_min: Math.round(sdBedtimeMin),
     sd_waketime_min: Math.round(sdWaketimeMin),
     sri: sri !== null ? Math.round(sri * 10) / 10 : null,
-    method: 'SD del punto medio · ref: NHANES 2011-2014 (n=9981). SRI: Phillips 2017.'
+    cpd_avg_h: cpdAvg !== null ? Math.round(cpdAvg * 100) / 100 : null,
+    cpd_per_night: cpdPerNightScore, // array alineado con safeEntries, score 0-100
+    method: 'SD del punto medio del sueño (cortes recalibrados para población clínica). SRI: Phillips 2017. CPD: Fischer 2016.'
   };
 }
 
@@ -5509,10 +5534,10 @@ function updatePillarBars(entries){
   pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
     [{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:'7–9h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
-     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('SD pto medio: '+_localRegResult.sd_midpoint_min+' min'+(_localRegResult.sri!==null?' · SRI: '+_localRegResult.sri:'')) : 'Variabilidad del horario'}
+     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('Variación: ±'+_localRegResult.sd_midpoint_min+' min') : 'Variabilidad del horario', statusOverride: _localRegResult.label}
     ].map(p=>{
       const c=pillarColor(p.val);
-      const status=p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención';
+      const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
       return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.color+'">'+
         '<div style="font-size:10px;font-weight:700;color:'+p.color+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.label+'</div>'+
         '<div style="font-size:22px;font-weight:700;color:'+c+';margin:2px 0">'+p.val+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div>'+
@@ -5597,10 +5622,14 @@ function updateClinicalMetrics(entries){
   el.innerHTML = renderClinicalMetricsHtml(entries);
 }
 
-// HTML reutilizable de métricas (paciente y médico)
-function renderClinicalMetricsHtml(entries){
+// HTML reutilizable de métricas (paciente y médico).
+// audience: 'patient' (default) muestra métricas clínicas básicas + variación amigable.
+//           'doctor' agrega bloque técnico con SD, SRI y CPD.
+function renderClinicalMetricsHtml(entries, audience){
+  audience = audience || 'patient';
   const m = computeDiaryMetrics(entries);
   if(!m) return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--label-2)">Necesitás al menos 3 registros con horarios completos para ver las métricas clínicas.</div>';
+  const reg = computeSleepRegularity(entries);
   const sjlStr = m.socialJetLag!=null ? (m.socialJetLag<30?'Mínimo':m.socialJetLag<60?'Leve':m.socialJetLag<90?'Moderado':'Alto')+' ('+m.socialJetLag+' min)' : 'Sin datos';
   const sjlColor = m.socialJetLag==null?'var(--label-2)':m.socialJetLag<30?'#14532d':m.socialJetLag<60?'#d97706':'#dc2626';
   const insufColor = m.under7Pct>30?'#dc2626':m.under7Pct>15?'#d97706':'#14532d';
@@ -5615,19 +5644,57 @@ function renderClinicalMetricsHtml(entries){
   const row=(label,val,color,sub)=>'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:0.5px solid var(--sep)">'+
     '<span style="font-size:13.5px;color:var(--label-2)">'+label+(sub?'<br><span style="font-size:11px;color:var(--label-3)">'+sub+'</span>':'')+'</span>'+
     '<span style="font-size:14px;font-weight:600;color:'+(color||'var(--label)')+';text-align:right;white-space:nowrap">'+val+'</span></div>';
-  return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
+
+  // Color del SD midpoint según los mismos cortes del score
+  const sdMidColor = reg.sd_midpoint_min==null?'var(--label-2)':
+    reg.sd_midpoint_min<30?'#14532d':
+    reg.sd_midpoint_min<45?'#1a4a3a':
+    reg.sd_midpoint_min<60?'#2d9e6b':
+    reg.sd_midpoint_min<90?'#d97706':
+    reg.sd_midpoint_min<120?'#dc2626':'#991b1b';
+
+  // Sección común a ambas audiencias
+  let html = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
     '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:6px">Métricas clínicas <span style="font-weight:400;color:var(--label-3);font-size:11px">· '+m.n+' noches</span></div>'+
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
     row('Sueño total promedio', m.fmtDur(m.avgTotal))+
-    row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub)+
-    row('Duración promedio de despertares', m.fmtMin(m.avgAwakDur), awakColor, awakSub)+
-    row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
+    row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub);
+
+  // "Duración promedio de despertares" → solo para médico (concepto técnico para paciente)
+  if(audience === 'doctor'){
+    html += row('Duración promedio de despertares', m.fmtMin(m.avgAwakDur), awakColor, awakSub);
+  }
+
+  html += row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
     row('Promedio días no laborables', m.fmtDur(m.avgWe), null, m.nWe+' noches')+
     row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Más sueño los días libres sugiere insuficiencia entre semana')+
     row('Jet lag social', sjlStr, sjlColor, 'Desfase del punto medio del sueño entre semana y fin de semana')+
-    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor)+
-    '</div>';
+    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor);
+
+  // Bloque adicional para el paciente: versión amigable de la variación
+  if(audience === 'patient' && reg.sd_midpoint_min !== null){
+    const variation = reg.sd_midpoint_min;
+    html += row('Variación del horario noche a noche', '±'+variation+' min', sdMidColor,
+                'Cuánto suele variar el centro de tu sueño respecto a tu horario habitual');
+  }
+
+  // Bloque técnico solo para el médico
+  if(audience === 'doctor' && reg.sd_midpoint_min !== null){
+    html += '</div>'+
+      '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-top:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:2px">Regularidad — métricas técnicas <span style="font-weight:400;color:var(--label-3);font-size:11px">· uso profesional</span></div>'+
+      '<div style="font-size:11px;color:var(--label-3);margin-bottom:6px;line-height:1.4">Ref: NHANES 2011-2014 (n=9981) · cortes recalibrados para población clínica.</div>'+
+      row('Score de regularidad', reg.score+'% — '+reg.label, sdMidColor)+
+      row('SD del punto medio del sueño', reg.sd_midpoint_min+' min', sdMidColor, 'Dispersión del midsleep — métrica principal')+
+      row('SD de la hora de acostarse', reg.sd_bedtime_min+' min')+
+      row('SD de la hora de levantarse', reg.sd_waketime_min+' min')+
+      row('SRI (Sleep Regularity Index)', reg.sri!==null?reg.sri:'—', null, 'Phillips et al. 2017 · UK Biobank mediana=81')+
+      row('CPD (Composite Phase Deviation)', reg.cpd_avg_h!==null?(reg.cpd_avg_h+' h'):'—', null, 'Fischer et al. 2016 · desvío respecto al cronotipo y noche previa');
+  }
+
+  html += '</div>';
+  return html;
 }
 
 function switchScorePeriod(days){
@@ -8482,11 +8549,15 @@ async function showDiaryTab_(tab){
 
         // REGULARIDAD: usar función unificada (misma para paciente y médico).
         // Score basado en SD del punto medio del sueño (NHANES 2011-2014).
-        // La regularidad es propiedad del PERÍODO: todas las noches reciben el mismo score.
+        // La regularidad GRUPAL es propiedad del período (constante en todas las noches).
+        // La variación NOCHE-A-NOCHE se grafica con CPD (Composite Phase Deviation, Fischer 2016).
         const regResult = computeSleepRegularity(sorted);
         const pillarData=sorted.map((e,i)=>{
           const p=computePillarScore(e);
-          return{qty:p.qty_pct, frag:p.frag_pct, reg: regResult.score !== null ? regResult.score : 0};
+          const groupReg = regResult.score !== null ? regResult.score : 0;
+          const nightReg = (regResult.cpd_per_night && regResult.cpd_per_night[i] !== undefined)
+                           ? regResult.cpd_per_night[i] : groupReg;
+          return{qty:p.qty_pct, frag:p.frag_pct, reg: groupReg, regNight: nightReg};
         });
         // ── PILLAR SUMMARY CARDS ──
         const lastN = Math.min(pillarData.length, 7);
@@ -8502,11 +8573,11 @@ async function showDiaryTab_(tab){
             ${[
               {label:'Cantidad',val:avgQtyP,icon:'',color:'#2d9e6b',sub:'Duración'},
               {label:'Fragmentación',val:avgFragP,icon:'',color:'#0e7490',sub:'Despertares'},
-              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min') : 'Horario'},
+              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: regResult.label},
             ].map(p=>{
               const c=pillarColor(p.val);
               const pillarC = p.color || '#1a4a3a';
-              const status=p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención';
+              const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
               return `<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid ${pillarC}">
                 <div style="font-size:10px;font-weight:700;color:${pillarC};text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${p.label}</div>
                 <div style="font-size:22px;font-weight:700;color:${c};margin:2px 0">${p.val}<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div>
@@ -8526,7 +8597,7 @@ async function showDiaryTab_(tab){
               datasets:[
                 {label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:false},
                 {label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:false},
-                {label:'Regularidad',data:pillarData.map(p=>p.reg),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:false}
+                {label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:false}
               ]
             },
             options:{
@@ -9976,9 +10047,9 @@ async function showDrPTab_(tab){
         </div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
-        // Métricas clínicas del médico (mismas que ve el paciente)
+        // Métricas clínicas del médico — incluye bloque técnico de regularidad
         const dme=document.getElementById('dr-clinical-metrics');
-        if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj);
+        if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
         killChart('dr-acto');killChart('dp-dr');
         const sorted=[...subj].sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
@@ -10034,16 +10105,18 @@ async function showDrPTab_(tab){
         function mStd2(arr){if(!arr.length)return null;const m=arr.reduce((a,b)=>a+b,0)/arr.length;return{m,s:Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length)};}
         const bStats=mStd2(bedOffs);
         // REGULARIDAD UNIFICADA con la vista del paciente.
-        // Score basado en SD del punto medio del sueño (cortes NHANES 2011-2014, n=9981).
-        // SRI (Phillips 2017) se calcula también, disponible en regResult.sri.
-        // La regularidad es propiedad del PERÍODO — mismo score para todas las noches.
+        // Score grupal: SD del punto medio (cortes recalibrados para pob. clínica).
+        // Gráfico noche-a-noche: CPD (Composite Phase Deviation, Fischer 2016).
+        // SRI (Phillips 2017) disponible en regResult.sri para el panel técnico.
         const regResult = computeSleepRegularity(sorted);
-        const pillarData=sorted.map(e=>{
+        const pillarData=sorted.map((e,i)=>{
           const hrs=(e.sleep_minutes||0)/60;
           let qty=hrs>=7&&hrs<=9?50:hrs>=6?30:hrs>=5?15:0;
           const frag=Math.max(0,20-(e.awakenings||0)*5);
-          const reg = regResult.score !== null ? regResult.score : 0;
-          return{qty:Math.round(qty/50*100),frag:Math.round(frag/20*100),reg};
+          const groupReg = regResult.score !== null ? regResult.score : 0;
+          const nightReg = (regResult.cpd_per_night && regResult.cpd_per_night[i] !== undefined)
+                           ? regResult.cpd_per_night[i] : groupReg;
+          return{qty:Math.round(qty/50*100),frag:Math.round(frag/20*100),reg: groupReg, regNight: nightReg};
         });
         const lastN=Math.min(pillarData.length,7);const rec=pillarData.slice(-lastN);
         const avgQtyP=Math.round(rec.reduce((a,p)=>a+p.qty,0)/lastN);
@@ -10053,12 +10126,12 @@ async function showDrPTab_(tab){
         function pBar(v,c){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+c+';width:'+v+'%;transition:width .6s ease"></div></div>';}
         const pEl=document.getElementById('dr-pillar-bars');
         if(pEl) pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
-          [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22'}].map(p=>{const c=pColor(p.v);const st=p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención';return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
+          [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22',statusOverride: regResult.label}].map(p=>{const c=pColor(p.v);const st = p.statusOverride || (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
             '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+
             ({Cantidad:'7–9h de sueño (recomendado)',Fragmentación:'Número de despertares',Regularidad: (regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')) : 'Variabilidad del horario')}[p.l]||'')+
             '</div></div>';}).join('')+'</div>';
         const ctxP=document.getElementById('dr-pillar-chart');
-        if(ctxP){killChart('dp-dr');S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad',data:pillarData.map(p=>p.reg),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8,padding:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});}
+        if(ctxP){killChart('dp-dr');S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8,padding:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});}
       },150);
     }else if(tab==='pvt'){
       // Show circadian alert PATTERN for doctor view
