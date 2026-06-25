@@ -3405,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy46';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy47';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -5690,7 +5690,15 @@ function renderClinicalMetricsHtml(entries, audience){
       row('SD de la hora de acostarse', reg.sd_bedtime_min+' min')+
       row('SD de la hora de levantarse', reg.sd_waketime_min+' min')+
       row('SRI (Sleep Regularity Index)', reg.sri!==null?reg.sri:'—', null, 'Phillips et al. 2017 · UK Biobank mediana=81')+
-      row('CPD (Composite Phase Deviation)', reg.cpd_avg_h!==null?(reg.cpd_avg_h+' h'):'—', null, 'Fischer et al. 2016 · desvío respecto al cronotipo y noche previa');
+      row('CPD (Composite Phase Deviation)', reg.cpd_avg_h!==null?(reg.cpd_avg_h+' h'):'—', null, 'Fischer et al. 2016 · desvío respecto al cronotipo y noche previa')+
+      // Panel desplegable con explicación didáctica
+      '<div style="margin-top:8px"><button onclick="var e=this.nextElementSibling;e.style.display=e.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'span\').textContent=e.style.display===\'none\'?\'▸\':\'▾\'" style="background:none;border:none;color:var(--label-2);font-size:12px;font-weight:600;cursor:pointer;padding:0;font-family:inherit;display:flex;align-items:center;gap:4px"><span>▸</span> ¿Qué significa cada métrica?</button>'+
+      '<div style="display:none;margin-top:8px;font-size:11.5px;color:var(--label-2);line-height:1.55;padding:10px 12px;background:rgba(126,200,164,0.06);border-radius:8px;border-left:3px solid rgba(126,200,164,0.4)">'+
+        '<p style="margin:0 0 8px"><strong style="color:var(--label)">SD del punto medio del sueño</strong> — Dispersión (en minutos) del centro de la noche del paciente. Métrica más interpretable y la que determina el score clínico. <em>Valor de referencia: en NHANES (n=9981 adultos sanos), el 80% tiene SD &lt;60 min, mediana ~30-40 min.</em></p>'+
+        '<p style="margin:0 0 8px"><strong style="color:var(--label)">SRI — Sleep Regularity Index</strong> (Phillips et al. 2017) — Probabilidad de que el paciente esté en el mismo estado (dormido/despierto) en un mismo minuto del día, en días consecutivos. Rango práctico 0-100: cuanto más alto, más regular. Captura siestas y despertares. <em>Referencia poblacional: UK Biobank (n=60.977 adultos): mediana 81, IQR [73.8–86.3]. Adultos mayores con SRI más bajo tienen mayor riesgo cardiometabólico y mayor mortalidad (Windred 2024).</em></p>'+
+        '<p style="margin:0 0 8px"><strong style="color:var(--label)">CPD — Composite Phase Deviation</strong> (Fischer et al. 2016) — Métrica día a día. Combina dos componentes: (a) cuánto difiere el midsleep de hoy del cronotipo (midsleep promedio en días libres), y (b) cuánto difiere de la noche previa. Se expresa en horas. Mide desalineación con el reloj circadiano. <em>Por noche, valores &lt;1 h sugieren buena alineación; &gt;2 h sugieren desalineación marcada. La línea naranja del gráfico de pilares grafica el CPD por noche.</em></p>'+
+        '<p style="margin:0;font-size:10.5px;color:var(--label-3)"><strong>Caveat clínico:</strong> No hay umbrales clínicos consensuados internacionalmente. Los cortes acá son derivados de distribuciones poblacionales. La revisión sistemática de Chaput et al. (2020) advierte que "no es posible identificar umbrales para gran variabilidad del sueño". Usar el conjunto de métricas como gradiente, no como diagnóstico binario.</p>'+
+      '</div></div>';
   }
 
   html += '</div>';
@@ -6228,8 +6236,12 @@ function maybePromptProfileCompletion(){
   const u = S.user;
   const missing = [];
   if(!u.dob) missing.push('fecha de nacimiento');
-  if(!u.gender) missing.push('género');
-  if(!u.phone) missing.push('teléfono / WhatsApp');
+  if(!u.sex) missing.push('género');
+  // phone: chequear contra la columna real. Si no existe en el schema, no la pedimos.
+  if(u.phone === '' || u.phone === null) {
+    // Solo flaggear si la columna existe (undefined significa "no vino en el select")
+    if(u.phone === null || u.phone === '') missing.push('teléfono / WhatsApp');
+  }
   if(!u.lname) missing.push('apellido');
   if(!missing.length) return;
   // Insertar banner al tope del home (antes del primer hijo del scroll)
@@ -6531,12 +6543,32 @@ async function openChildSwitcher(){
   const existing = document.getElementById('child-switcher-pop');
   if(existing){ existing.remove(); return; }
   const currentEmail = S.user && S.user.email;
+  // Buscar el botón "Hijos" para anclar el popup encima
+  let anchorBtn = null;
+  document.querySelectorAll('#main-nav button, #main-nav a, #main-nav [onclick]').forEach(b=>{
+    const txt=(b.textContent||'').trim();
+    if(/^Hijos?$/i.test(txt) || txt.toLowerCase().includes('hijo')) anchorBtn = b;
+  });
   const overlay = document.createElement('div');
   overlay.id = 'child-switcher-pop';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.35)';
   overlay.onclick = ()=>overlay.remove();
   const pop = document.createElement('div');
-  pop.style.cssText = 'position:fixed;top:58px;left:50%;transform:translateX(-50%);width:80%;max-width:320px;background:#1d3a2b;border:1px solid #7ec8a4;border-radius:14px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,0.45);z-index:9999';
+  // Posicionar el popup encima del botón "Hijos"
+  let popStyle;
+  if(anchorBtn){
+    const r = anchorBtn.getBoundingClientRect();
+    const popWidth = Math.min(320, window.innerWidth - 24);
+    const centerX = r.left + r.width/2;
+    // Mantener el popup dentro del viewport
+    let leftX = Math.max(12, Math.min(window.innerWidth - popWidth - 12, centerX - popWidth/2));
+    const bottomY = window.innerHeight - r.top + 8;
+    popStyle = 'position:fixed;left:'+leftX+'px;bottom:'+bottomY+'px;width:'+popWidth+'px;background:#1d3a2b;border:1px solid #7ec8a4;border-radius:14px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,0.45);z-index:9999';
+  } else {
+    // Fallback: anclado abajo al centro
+    popStyle = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:80%;max-width:320px;background:#1d3a2b;border:1px solid #7ec8a4;border-radius:14px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,0.45);z-index:9999';
+  }
+  pop.style.cssText = popStyle;
   pop.onclick = (e)=>e.stopPropagation();
   const palette = ['#7ec8a4','#c8a96e','#9dc8b0','#e8a0a0','#a0c0e8'];
   let html = '';
@@ -8095,9 +8127,29 @@ async function saveMiPerfil(btn){
     track_menstrual:(g('mp-menstrual')&&g('mp-menstrual').checked)||false
   };
   try{
-    await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),upd);
+    try{
+      await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),upd);
+    }catch(e1){
+      // Caso especial: la columna 'phone' puede no existir en la tabla patients.
+      // Si el error es por schema cache de Supabase, reintentamos sin phone y avisamos.
+      var msg=(e1&&e1.message)||'';
+      if(/phone/i.test(msg) && /column|schema/i.test(msg)){
+        var updNoPhone={};
+        Object.keys(upd).forEach(function(k){ if(k!=='phone') updNoPhone[k]=upd[k]; });
+        await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),updNoPhone);
+        // localStorage como fallback hasta que se agregue la columna
+        try{ if(phoneFinal) localStorage.setItem('dm_phone_'+(S.user.email||''),phoneFinal); }catch(_){}
+        toast('Perfil guardado · El teléfono se guardó localmente (falta columna phone en BD)');
+      } else {
+        throw e1;
+      }
+    }
     var d=await db.get('patients?email=eq.'+encodeURIComponent(S.user.email)+'&select=*');
-    if(d&&d[0]) S.user=d[0];
+    if(d&&d[0]) {
+      S.user=d[0];
+      // Si guardamos phone localmente, refletarlo en S.user para el banner
+      try{ var lp=localStorage.getItem('dm_phone_'+(S.user.email||'')); if(lp&&!S.user.phone) S.user.phone=lp; }catch(_){}
+    }
     toast('Perfil actualizado ✓');
     var m=document.getElementById('mp-modal'); if(m) renderMiPerfilView(m.querySelector('[data-mp]'));
     if(typeof renderProfileView==='function') renderProfileView();
@@ -9615,7 +9667,15 @@ async function showDrTab_(tab){
       const pts=await Promise.all(cachedEmails.map(async pEmail=>{
         let u=await db.get(`patients?email=eq.${encodeURIComponent(pEmail)}&select=*`).then(d=>d&&d[0]||null).catch(()=>null);
         if(!u) u=await db.get(`doctors?email=eq.${encodeURIComponent(pEmail)}&select=*`).then(d=>d&&d[0]||null).catch(()=>null);
-        return u||{name:pEmail.split('@')[0],lname:'',email:pEmail,_placeholder:true};
+        if(!u) {
+          // Para perfiles infantiles (sufijo +name@child), extraer nombre amigable
+          const cm = pEmail.match(/\+([^@]+)@child$/i);
+          const placeholderName = cm 
+            ? cm[1].replace(/[-_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase())
+            : pEmail.split('@')[0];
+          u = {name:placeholderName, lname:'', email:pEmail, _placeholder:true};
+        }
+        return u;
       }));const validPts=pts.filter(Boolean).sort((a,b)=>{
         const na=(a.name+' '+(a.lname||'')).trim().toLowerCase();
         const nb=(b.name+' '+(b.lname||'')).trim().toLowerCase();
@@ -9635,7 +9695,26 @@ async function showDrTab_(tab){
       // Expongo en window solo para los botones inline de archivar
       window._drToggleArchive = toggleArchive;
       let currentView = 'active'; // 'active' | 'archived'
-      async function renderPatientList(filter){
+function formatPatientName(u){
+  if(!u) return '';
+  // Detectar perfil infantil por sufijo +<nombre>@child (creado en registerChildProfile)
+  const email = u.email || '';
+  const childMatch = email.match(/\+([^@]+)@child$/i);
+  if(childMatch){
+    // Si tenemos el name guardado en la BD, usarlo. Sino extraerlo del email.
+    if(u.name && !u._placeholder) return u.name + (u.lname?' '+u.lname:'') + ' · perfil infantil';
+    const childName = childMatch[1].replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return childName + ' · perfil infantil';
+  }
+  // Perfil regular
+  if(u.name || u.lname){
+    const full = ((u.name||'')+' '+(u.lname||'')).trim();
+    if(full) return full;
+  }
+  return email;
+}
+
+async function renderPatientList(filter){
         const f=(filter||'').toLowerCase();
         const archived = getArchived();
         const filtered=validPts.filter(u=>{
@@ -9650,7 +9729,7 @@ async function showDrTab_(tab){
         const rows=filtered.map(u=>{
           if(!u)return'';
           const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
-          const nameDisplay=u._placeholder?u.email:(u.name+' '+(u.lname||'')).trim();
+          const nameDisplay = formatPatientName(u);
           const isArch = archived.has(u.email.toLowerCase());
           const archBtnLabel = isArch ? '↻ Reactivar' : '🗂 Archivar';
           const archBtnColor = isArch ? '#15803d' : 'rgba(255,255,255,0.4)';
@@ -10080,7 +10159,20 @@ async function showDrPTab_(tab){
           if(drPeriodNights>0){ const dpl=document.getElementById('dr-acto-period-legend'); if(dpl) dpl.style.display='inline'; }
           // Mostrar leyenda "Día libre" solo si hay datos
           const dfl=document.getElementById('dr-acto-freeday-legend'); if(dfl) dfl.style.display = drWeekendRows.length>0?'inline':'none';
-          S.charts['dr-acto']=new Chart(ctxA,{type:'bar',data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},plugins:{legend:{display:false},beforeDatasetsDraw:(chart)=>{try{
+          S.charts['dr-acto']=new Chart(ctxA,{
+            type:'bar',
+            data:{labels:actoLabels,datasets:[{label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false}]},
+            options:{
+              indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},
+              plugins:{
+                legend:{display:false},
+                annotation:{annotations:annots}
+              },
+              scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}
+            },
+            plugins:[{
+              id:'drActoOverlay',
+              beforeDatasetsDraw:(chart)=>{try{
                   const cv2=chart.canvas;
                   const freeRows2=cv2?._weekendRows||[];
                   if(!freeRows2.length) return;
@@ -10098,7 +10190,9 @@ async function showDrPTab_(tab){
                   });
                   cx2.restore();
                 }catch(_){}},
-                afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');},annotation:{annotations:annots}},scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+              afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');}
+            }]
+          });
         }
         // Pillars
         const bedOffs=sorted.map(e=>e.bedtime?toOff(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
@@ -10227,7 +10321,7 @@ async function showDrPTab_(tab){
     }else if(tab==='history'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);S.viewRecs=recs||[];
       if(!recs||!recs.length){cont.innerHTML='<div class="empty-state">Sin evaluaciones</div>';return;}
-      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500">${r.scale_name}</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:500">${r.score}/${r.max_score}</div><span class="badge" style="background:${i.c}33;color:#fff;border:1px solid ${i.c}">${i.l}</span></div><span style="color:var(--label-3);font-size:16px">›</span></div></div>`;}).join('');
+      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500">${r.scale_name}</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:500">${r.score}/${r.max_score}</div><span class="badge" style="background:${i.c};color:#fff;border:none;font-weight:600">${i.l}</span></div><span style="color:var(--label-3);font-size:16px">›</span></div></div>`;}).join('');
     }else if(tab==='notes'){
       renderConsultNotes();
       return;
