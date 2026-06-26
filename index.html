@@ -3405,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy47';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy48';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -6464,21 +6464,10 @@ async function loadLinkedChildProfiles(){
     if(container) container.style.display='none';
     const pillsWrap = document.getElementById('home-profile-pills');
     if(pillsWrap) pillsWrap.style.display='none';
-    // La tarjeta "Perfil infantil" del home del adulto es ahora la entrada al hijo
-    // (reemplaza la pestaña inferior). Se muestra si hay hijos y NO estás en modo niño.
+    // La pestaña "Hijos" en la barra inferior es el punto de acceso único.
+    // Ocultamos la tarjeta del home para no duplicar.
     const childPill = document.getElementById('home-child-pill');
-    const kids = S._linkedChildren || [];
-    if(childPill){
-      if(!S.childMode && kids.length>0){
-        childPill.style.display='';
-        const nameEl=document.getElementById('home-child-name');
-        if(nameEl) nameEl.textContent = kids.length===1
-          ? 'Ver perfil de '+((kids[0].name||'').trim().split(' ')[0]||'tu hijo/a')
-          : 'Ver perfiles ('+kids.length+')';
-      }else{
-        childPill.style.display='none';
-      }
-    }
+    if(childPill) childPill.style.display='none';
     try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
     return;
   }catch(e){ S._linkedChildren=S._linkedChildren||[]; }
@@ -6699,6 +6688,53 @@ async function showHome(){
     '🦓 Las cebras y otros animales de manada duermen por turnos: siempre hay alguno despierto vigilando leones. El sistema de guardia más antiguo del mundo.',
     '💡 Tu cama debería asociarse solo con dormir (y con el sexo). Si trabajás, comés y mirás series en la cama, tu cerebro deja de entender que ese lugar es para descansar.',
     '🐊 Los cocodrilos duermen con un ojo abierto, literalmente: la mitad del cerebro vigila mientras la otra descansa, sobre todo si hay intrusos cerca. El portero más temible.',
+    '🌡️ La temperatura ideal del cuarto para dormir ronda los 18-20°C. Más calor y tu cuerpo no logra bajar su temperatura interna, que es justo lo que necesita para entrar en sueño profundo.',
+    '🐅 Los tigres y leones duermen entre 18 y 20 horas por día. Cazar es agotador y comer carne da mucha energía concentrada: el resto del tiempo, a descansar como reyes.',
+    '📚 La palabra \'pesadilla\' (nightmare) viene de un demonio del folclore, la \'mare\', que se sentaba sobre el pecho de los que dormían. Por eso la sensación de peso al despertar de un mal sueño.',
+    '🐮 Las vacas duermen apenas unas 4 horas, y solo entran en sueño profundo si se sienten seguras y cómodas. Una vaca relajada es una vaca que confía en vos.',
+    '🌀 Soñar con que se te caen los dientes es uno de los sueños más comunes en todo el mundo, en todas las culturas. Nadie sabe bien por qué. El misterio dental colectivo.',
+    '🦔 Los erizos hibernan, pero se despiertan cada tanto durante el invierno para \'chequear\' que todo esté bien y volver a dormirse. Hasta hibernando hay que poner el despertador.',
+    '☕ La cafeína tiene una vida media de 5-6 horas: ese café de las 4 de la tarde todavía tiene la mitad de su efecto a las 10 de la noche. El insomnio se planifica con anticipación.',
+    '🐙 Los pulpos cambian de color mientras duermen, y los científicos creen que podrían estar… soñando. ¿Con qué sueña un pulpo? Nadie lo sabe, pero la imagen es hermosa.',
+    '🧠 Dormir poco te hace ver las caras de otros como más hostiles y amenazantes. La falta de sueño literalmente te vuelve más desconfiado. Dormí antes de tomar decisiones importantes.',
+    '🦩 Los flamencos duermen parados en una sola pata, y todavía se discute por qué. Una teoría: ahorran calor metiendo la otra pata entre las plumas. Equilibristas dormidos.',
+    '🌙 Los sueños lúcidos —saber que estás soñando y poder controlarlo— existen y se pueden entrenar. Algunas personas vuelan, otras resuelven problemas. Tu cerebro como sala de realidad virtual gratis.',
+    '🐑 Contar ovejas para dormir tiene siglos, pero los estudios dicen que imaginar una escena relajante y detallada funciona mejor. Las pobres ovejas estaban sobrevaloradas.',
+    '💤 Algunas personas hablan dormidas y hasta mantienen conversaciones. La mayoría de lo que dicen es incoherente, pero a veces sueltan secretos. Cuidado con quién dormís.',
+    '🐆 Los guepardos, los animales más rápidos de la tierra, duermen hasta 12 horas. Toda esa velocidad explosiva necesita un montón de descanso para recargarse.',
+    '🌅 Existen \'alondras\' (madrugadores) y \'búhos\' (nocturnos), y es en gran parte genético. Si sos búho, no es vagancia: tu reloj interno está corrido. La sociedad está hecha para alondras, lamentablemente.',
+    '🧴 Un baño o ducha caliente 1-2 horas antes de dormir ayuda: al salir, tu cuerpo se enfría rápido y esa bajada de temperatura es la señal perfecta para dormir.',
+    '🦫 Los castores pasan el invierno semi-dormidos dentro de sus represas, viviendo de la comida que almacenaron. Arquitectos, ingenieros y dormilones de temporada.',
+    '🌜 El sueño profundo (de ondas lentas) es cuando tu cuerpo se repara: libera hormona del crecimiento, arregla músculos y refuerza el sistema inmune. Por eso dormir te cura el resfrío.',
+    '🐓 El gallo no canta porque sale el sol: canta porque su reloj interno le avisa que va a amanecer, incluso antes de que haya luz. Tiene la alarma puesta de fábrica.',
+    '😴 La siesta tiene avales científicos: 10-20 minutos mejoran la alerta sin dejarte \'embotado\'. Más de 30 y entrás en sueño profundo, despertás peor. La siesta perfecta es corta.',
+    '🐧 Los pingüinos emperador, en pleno invierno antártico, duermen de pie haciendo un \'huddle\' (amontonados) para no congelarse, rotando quién queda en el borde frío. Solidaridad dormida a -40°C.',
+    '💭 Las personas ciegas de nacimiento también sueñan, pero con sonidos, olores, tacto y emociones en lugar de imágenes. El sueño se adapta a cómo cada uno percibe el mundo.',
+    '🦛 Los hipopótamos pueden dormir bajo el agua y suben a respirar de forma automática, sin despertarse. Un reflejo perfecto: respiran dormidos sin enterarse.',
+    '🐺 Los lobos duermen acurrucados en grupo y se mueven en sueños igual que los perros. Si tu perro \'corre\' dormido, está soñando con perseguir algo. Herencia de manada.',
+    '🧠 Una sola noche de mal sueño ya reduce tu capacidad de respuesta al nivel de alguien con alcohol en sangre. Manejar cansado es tan peligroso como manejar tomado.',
+    '🐹 Los hámsters hibernan si baja mucho la temperatura, entrando en un letargo donde casi no respiran. Los dueños primerizos a veces se asustan pensando lo peor. Solo está durmiendo en serio.',
+    '🌙 La fase lunar afecta levemente el sueño humano: en luna llena, en promedio, dormimos unos minutos menos y nos cuesta un poco más. La ciencia todavía discute por qué.',
+    '🐈\u200d⬛ Los gatos tienen un \'sueño polifásico\': duermen en muchos tramos cortos en lugar de una vez larga. Por eso pueden estar listos para cazar (o para tirar algo de la mesa) en cualquier momento.',
+    '📱 Mirar la hora a las 3 de la mañana cuando no podés dormir empeora todo: te genera ansiedad por el tiempo que perdés. Dá vuelta el reloj y no lo mires. En serio.',
+    '🦣 Los elefantes marinos pueden dormir mientras bucean en espiral hacia el fondo del océano, a cientos de metros. Una siesta de caída libre submarina. Inimaginable para nosotros.',
+    '🌡️ Tus pies fríos pueden mantenerte despierto: si la sangre no circula bien en las extremidades, cuesta más dormir. Unas medias finas a veces resuelven el insomnio. Verdad incómoda pero útil.',
+    '🐻\u200d❄️ Las osas polares dan a luz durante la hibernación y amamantan a sus crías medio dormidas, sin comer durante meses. La maternidad más extrema del reino animal, en piloto automático.',
+    '💤 Existe gente que se duerme de golpe al reírse o emocionarse: se llama cataplejía y se asocia a la narcolepsia. El cuerpo confunde la emoción con la señal de soñar.',
+    '🐬 Las crías de delfín y de orca pueden pasar el primer mes de vida casi sin dormir, nadando sin parar junto a su madre. Y ella tampoco duerme. La crianza más agotadora del océano.',
+    '🌜 Soñar es más probable y más vívido en la segunda mitad de la noche, cuando los ciclos REM se hacen más largos. Por eso los sueños más locos suelen ser los de la madrugada.',
+    '🐦 Los colibríes entran cada noche en \'torpor\': bajan su temperatura y su metabolismo casi al mínimo para sobrevivir. Por la mañana \'reviven\' lentamente. Una mini-hibernación diaria.',
+    '☕ La \'siesta de café\' o Napucchino consiste en tomar un café e inmediatamente dormir 20 minutos. Al despertar, la cafeína recién hace efecto y te levantás doblemente alerta. Truco con base científica real.',
+    '🦨 Los zorrillos hibernan en grupos durante el invierno, a veces hembras juntas en una madriguera. Imaginate el ambiente ahí adentro. Pero calentito, eso sí.',
+    '🧠 Durante el sueño, tu cerebro repasa y \'reproduce\' lo aprendido durante el día, a veces más rápido. Es como si estudiaras de nuevo mientras dormís, sin esfuerzo. Dormir es la mejor técnica de estudio que existe.',
+    '🐔 Las gallinas sueñan en REM igual que nosotros, y duermen mejor en perchas altas porque se sienten a salvo de depredadores. Hasta una gallina elige bien dónde dormir.',
+    '🌙 Dormir abrazado a alguien sincroniza levemente los ritmos cardíacos y mejora el sueño profundo de ambos. La ciencia le dio la razón a los abrazos nocturnos.',
+    '🐭 Los ratones sueñan con los laberintos que recorrieron de día: los científicos vieron sus neuronas \'reproduciendo\' el recorrido mientras dormían. Sueñan con el trabajo, igual que nosotros.',
+    '💡 Si no podés dormir después de 20 minutos, lo mejor es levantarse, hacer algo aburrido con luz tenue y volver cuando tengas sueño. Quedarte en la cama \'esforzándote\' solo lo empeora.',
+    '🦉 Los búhos, símbolo de la vigilia nocturna, sí duermen: lo hacen de día. Las crías de búho duermen boca abajo porque su cabeza pesa demasiado para sostenerla dormidas. Imagen adorable garantizada.',
+    '🌀 Tu primer sueño de la noche suele estar relacionado con algo que te pasó ese día. El cerebro empieza procesando lo reciente antes de irse a lugares más raros.',
+    '🐳 Los cachalotes duermen flotando en vertical, de cabeza, en grupos, totalmente quietos cerca de la superficie. Marineros que se cruzaron con uno pensaron que estaban muertos. Solo estaban echando una siesta parados.',
+    '🧬 Dormir bien la noche antes de vacunarte mejora la respuesta inmune. Tu descanso decide qué tan bien funciona tu defensa. Otra razón más para no trasnochar.',
   ];
   const factEl=document.getElementById('home-fact-text');
   if(factEl){const _now=new Date();const _doy=Math.floor((_now-new Date(_now.getFullYear(),0,0))/86400000);factEl.textContent=FACTS[_doy%FACTS.length];}
@@ -8127,31 +8163,48 @@ async function saveMiPerfil(btn){
     track_menstrual:(g('mp-menstrual')&&g('mp-menstrual').checked)||false
   };
   try{
-    try{
-      await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),upd);
-    }catch(e1){
-      // Caso especial: la columna 'phone' puede no existir en la tabla patients.
-      // Si el error es por schema cache de Supabase, reintentamos sin phone y avisamos.
-      var msg=(e1&&e1.message)||'';
-      if(/phone/i.test(msg) && /column|schema/i.test(msg)){
-        var updNoPhone={};
-        Object.keys(upd).forEach(function(k){ if(k!=='phone') updNoPhone[k]=upd[k]; });
-        await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),updNoPhone);
-        // localStorage como fallback hasta que se agregue la columna
-        try{ if(phoneFinal) localStorage.setItem('dm_phone_'+(S.user.email||''),phoneFinal); }catch(_){}
-        toast('Perfil guardado · El teléfono se guardó localmente (falta columna phone en BD)');
-      } else {
-        throw e1;
+    // Save resiliente: si Supabase reporta una columna inexistente en el schema cache,
+    // la quitamos del payload y reintentamos. Hasta 5 columnas fallantes.
+    var droppedCols = [];
+    var maxRetries = 5;
+    var attempt = 0;
+    var lastErr = null;
+    while(attempt <= maxRetries){
+      try{
+        await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email),upd);
+        lastErr = null;
+        break;
+      }catch(eN){
+        lastErr = eN;
+        var msgN = (eN && eN.message) || '';
+        // Patrón típico: "Could not find the 'XXX' column of 'patients' in the schema cache"
+        var m = msgN.match(/Could not find the '([^']+)' column/i);
+        if(m && m[1] && upd.hasOwnProperty(m[1])){
+          // Si la columna problemática es 'phone' y hay valor, guardarlo en localStorage
+          if(m[1]==='phone' && upd.phone){
+            try{ localStorage.setItem('dm_phone_'+(S.user.email||''),upd.phone); }catch(_){}
+          }
+          delete upd[m[1]];
+          droppedCols.push(m[1]);
+          attempt++;
+          continue;
+        }
+        // Otro tipo de error: salimos
+        break;
       }
+    }
+    if(lastErr) throw lastErr;
+    if(droppedCols.length){
+      toast('Perfil guardado · Faltan columnas en BD: '+droppedCols.join(', '));
     }
     var d=await db.get('patients?email=eq.'+encodeURIComponent(S.user.email)+'&select=*');
     if(d&&d[0]) {
       S.user=d[0];
-      // Si guardamos phone localmente, refletarlo en S.user para el banner
+      // Si guardamos phone localmente, reflejarlo en S.user para el banner
       try{ var lp=localStorage.getItem('dm_phone_'+(S.user.email||'')); if(lp&&!S.user.phone) S.user.phone=lp; }catch(_){}
     }
-    toast('Perfil actualizado ✓');
-    var m=document.getElementById('mp-modal'); if(m) renderMiPerfilView(m.querySelector('[data-mp]'));
+    if(!droppedCols.length) toast('Perfil actualizado ✓');
+    var m2=document.getElementById('mp-modal'); if(m2) renderMiPerfilView(m2.querySelector('[data-mp]'));
     if(typeof renderProfileView==='function') renderProfileView();
   }catch(e){ toast('Error al guardar: '+e.message); }
   finally{ if(btn)btn.disabled=false; }
@@ -10053,8 +10106,8 @@ async function showDrPTab_(tab){
       // Pathological scales
       Object.values(last).forEach(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);if(!sc)return;const i=sc.interp(r.score);if(i&&(i.bg==='#fee2e2'||i.bg==='#fef2f2'))kf.push('<div style="background:#fee2e2;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+r.score+'/'+r.max_score+')</div>');});
       // Diary score
-      const diaryForSummary=await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=sleep_minutes,sleep_latency_mins,awakenings,medications,wake_in_bed_mins&order=diary_date.desc&limit=14`).catch(()=>[]);
-      if(diaryForSummary&&diaryForSummary.length>=3){const sc2=calcSleepScore(diaryForSummary);if(sc2)kf.unshift('<div style="background:linear-gradient(135deg,'+sc2.color+'18,'+sc2.color+'08);border-radius:10px;padding:9px 13px;margin-bottom:6px;border-left:4px solid '+sc2.color+'"><strong style="color:'+sc2.color+'">Sueño: '+sc2.total+'/100</strong> — '+sc2.label+' <span style="font-size:11px;color:var(--label-2)">('+sc2.nNights+' noches)</span></div>');const avgLat=diaryForSummary.filter(e=>e.sleep_latency_mins>0).reduce((a,b,i,arr)=>a+b.sleep_latency_mins/arr.length,0);if(avgLat>20)kf.push('<div style="background:#fef3c7;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#92400e">⏱ <strong>Latencia de inicio prolongada</strong>: ~'+Math.round(avgLat)+' min</div>');const hasMeds=diaryForSummary.some(e=>e.medications&&e.medications!=='[]'&&e.medications!=='');if(hasMeds)kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir registrada</strong></div>');}
+      const diaryForSummary=await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=*&order=diary_date.desc&limit=14`).catch(()=>[]);
+      if(diaryForSummary&&diaryForSummary.length>=3){const sc2=calcSleepScore(diaryForSummary);if(sc2)kf.unshift('<div style="background:linear-gradient(135deg,'+sc2.color+'18,'+sc2.color+'08);border-radius:10px;padding:9px 13px;margin-bottom:6px;border-left:4px solid '+sc2.color+'"><strong style="color:'+sc2.color+'">Sueño: '+sc2.total+'/100</strong> <span style="color:'+sc2.color+';font-weight:500">— '+sc2.label+'</span> <span style="font-size:11px;color:var(--label-2)">('+sc2.nNights+' noches)</span></div>');const avgLat=diaryForSummary.filter(e=>e.sleep_latency_mins>0).reduce((a,b,i,arr)=>a+b.sleep_latency_mins/arr.length,0);if(avgLat>20)kf.push('<div style="background:#fef3c7;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#92400e">⏱ <strong>Latencia de inicio prolongada</strong>: ~'+Math.round(avgLat)+' min</div>');const hasMeds=diaryForSummary.some(e=>e.medications&&e.medications!=='[]'&&e.medications!=='');if(hasMeds)kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir registrada</strong></div>');}
       const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div>'+kf.join(''):'';
       const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div>'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'</div>';}).join(''):'');
       const latest=SCALES.filter(sc=>isScaleVisibleForProfile(sc, S.viewData)).map(sc=>{const scR=(recs||[]).filter(r=>r.scale_id===sc.id);return scR.length?{sc,r:scR[scR.length-1]}:null;}).filter(Boolean);
@@ -10190,7 +10243,7 @@ async function showDrPTab_(tab){
                   });
                   cx2.restore();
                 }catch(_){}},
-              afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-15,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-9);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)');if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)');}
+              afterDraw:(chart)=>{const bs=chart.canvas._bedStats,ws=chart.canvas._wakeStats;if(!bs&&!ws)return;const ctx=chart.ctx,xS=chart.scales.x,top=chart.chartArea.top;function dL(off,txt,bg,yOff){if(off==null)return;const px=xS.getPixelForValue(off);let lx=px+4,lW=txt.length*5.5+14;if(lx+lW>chart.chartArea.right)lx=px-lW-4;ctx.save();ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(lx,top-yOff,lW,13,3);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 8px system-ui';ctx.textBaseline='middle';ctx.fillText(txt,lx+7,top-yOff+6);ctx.restore();}if(bs)dL(bs.m,'promedio acostarse','rgba(217,119,6,0.88)',30);if(ws)dL(ws.m,'promedio levantarse','rgba(45,90,158,0.85)',15);}
             }]
           });
         }
@@ -11897,30 +11950,19 @@ function calcSleepScore(entries){
   
   if(scores.length === 0) return null;
   
-  // ── REGULARITY (0-20 pts) ──
-  // Based on standard deviation of sleep midpoints
-  // Sleep midpoint = bedtime + sleep_minutes/2
-  const midpoints = [];
-  entries.forEach(e=>{
-    if(!e.bedtime || !e.sleep_minutes) return;
-    const [bh, bm] = e.bedtime.split(':').map(Number);
-    let bedMinutes = bh * 60 + bm;
-    if(bedMinutes < 12*60) bedMinutes += 24*60; // handle midnight crossover
-    const midMinutes = bedMinutes + e.sleep_minutes / 2;
-    midpoints.push(midMinutes % (24*60));
-  });
-  
-  let regularity = 30;
-  if(midpoints.length >= 3){
-    const mean = midpoints.reduce((a,b)=>a+b,0) / midpoints.length;
-    const variance = midpoints.reduce((a,b)=>a + Math.pow(b-mean,2),0) / midpoints.length;
-    const sd = Math.sqrt(variance); // in minutes
-    // SD < 20min = 30pts, 20-40min = 25, 40-60min = 18, 60-90min = 10, >90min = 4
-    if(sd < 20)      regularity = 30;
-    else if(sd < 40) regularity = 25;
-    else if(sd < 60) regularity = 18;
-    else if(sd < 90) regularity = 10;
-    else             regularity = 4;
+  // ── REGULARITY (0-30 pts) ──
+  // UNIFICADO con computeSleepRegularity (misma función que usan paciente y médico)
+  // Mapeo: score 0-100 → 0-30 pts. Si no hay datos suficientes, usar valor neutral.
+  let regularity;
+  try {
+    const regRes = computeSleepRegularity(entries);
+    if(regRes && regRes.score !== null){
+      regularity = Math.round(regRes.score * 30 / 100);
+    } else {
+      regularity = 15; // neutral cuando no hay datos suficientes
+    }
+  } catch(_) {
+    regularity = 15;
   }
   
   // Per-night scores
