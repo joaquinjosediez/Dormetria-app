@@ -3405,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy50';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy51';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -8541,11 +8541,23 @@ async function showDiaryTab_(tab){
           const start=timeToOffset(m[1]);const dur=m[2]?parseInt(m[2])/60:0.5;
           return[start,start+dur];
         });
-        const bedOffsets=sorted.map(e=>e.bedtime?timeToOffset(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
-        const wakeOffsets=sorted.map(e=>e.wake_time?timeToOffset(e.wake_time.slice(0,5)):null).filter(v=>v!==null);
-        
-        const _bedMS=meanStd(bedOffsets); const bedStats={m:_bedMS.mean,s:_bedMS.std};
-        const _wakeMS=meanStd(wakeOffsets); const wakeStats={m:_wakeMS.mean,s:_wakeMS.std};
+        // Unificado con computeDiaryMetrics: mismo set de noches y mismo método de promedio
+        const _validForAvgP = sorted.filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
+        const _s2mP = t => { const [h,m]=t.split(':').map(Number); return h*60+m; };
+        const _bedAdjP = _validForAvgP.map(e=>{ let bm=_s2mP(e.bedtime); if(bm<12*60) bm+=24*60; return bm; });
+        const _wakeRawP = _validForAvgP.map(e=>_s2mP(e.wake_time));
+        const _avgBedMP = _bedAdjP.length ? _bedAdjP.reduce((a,b)=>a+b,0)/_bedAdjP.length : null;
+        const _avgWakeMP = _wakeRawP.length ? _wakeRawP.reduce((a,b)=>a+b,0)/_wakeRawP.length : null;
+        const _m2oP = m => { if(m==null)return null; const h=(m%(24*60))/60; return h>=12?h-12:h+12; };
+        const _avgBedOffP = _m2oP(_avgBedMP);
+        const _avgWakeOffP = _m2oP(_avgWakeMP);
+        const _bedOffsP = _bedAdjP.map(m=>_m2oP(m));
+        const _wakeOffsP = _wakeRawP.map(m=>_m2oP(m));
+        const _sdP = (arr,mn) => arr.length>1 ? Math.sqrt(arr.reduce((a,v)=>a+(v-mn)**2,0)/arr.length) : 0;
+        const bedStats = _avgBedOffP!=null ? { m:_avgBedOffP, s:_sdP(_bedOffsP,_avgBedOffP) } : null;
+        const wakeStats = _avgWakeOffP!=null ? { m:_avgWakeOffP, s:_sdP(_wakeOffsP,_avgWakeOffP) } : null;
+        const bedOffsets=_bedOffsP;
+        const wakeOffsets=_wakeOffsP;
         try{
         let ctxA=document.getElementById('diary-chart-actogram');
         console.log('[GRAFICOS] ctxA=',!!ctxA,'sorted.length=',sorted.length);
@@ -8583,7 +8595,26 @@ async function showDiaryTab_(tab){
               layout:{padding:{top:68,bottom:4}},
               maintainAspectRatio:false,
               plugins:{
-                legend:{display:false}
+                legend:{display:false},
+                tooltip:{
+                  callbacks:{
+                    label:function(ctx){
+                      const v = ctx.raw;
+                      if(!Array.isArray(v) || v.length<2) return ctx.dataset.label;
+                      const [s,e] = v;
+                      const fmt = off => {
+                        const h = ((off + 12) % 24 + 24) % 24;
+                        const hh = Math.floor(h);
+                        const mm = Math.floor((h - hh) * 60);
+                        return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+                      };
+                      const durMin = Math.round((e - s) * 60);
+                      const dh = Math.floor(durMin/60), dm = durMin % 60;
+                      const durStr = (dh>0?dh+'h ':'') + String(dm).padStart(2,'0') + 'm';
+                      return ctx.dataset.label + ': ' + fmt(s) + ' → ' + fmt(e) + ' · ' + durStr;
+                    }
+                  }
+                }
               },
               scales:{
                 x:{
@@ -10386,13 +10417,18 @@ async function showDrPTab_(tab){
         '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:4px">Medicación habitual</div>'+
         '<div style="font-size:13px;color:'+(u.medications?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medications?'':'font-style:italic')+'">'+(u.medications||'Sin medicación registrada')+'</div>';
       const habitChip = (lbl,val) => '<div style="background:rgba(126,200,164,0.06);border-radius:8px;padding:8px 10px"><div style="font-size:10px;color:rgba(244,239,229,0.5);margin-bottom:2px">'+lbl+'</div><div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(val||'—')+'</div></div>';
+      // Traductores: codes EN → labels ES (igual que en _mpAct / _mpWork)
+      const ACT_LABELS = {child:'Niño/a',teen:'Adolescente',student:'Estudiante',athlete:'Deportista/Atleta',shift:'Trabajo en turnos',night:'Trabajo nocturno',healthcare:'Profesional de salud',office:'Trabajo de oficina',remote:'Trabajo remoto',retired:'Jubilado/a',other:'Otro'};
+      const WORK_LABELS = {diurno:'Diurno',nocturno:'Nocturno',guardias:'Guardias',rotativo:'Turnos rotativos',fijo:'Horario fijo'};
+      const trActivity = v => { if(!v) return null; const arr = Array.isArray(v)?v:[v]; return arr.map(x=>ACT_LABELS[x]||x).join(', '); };
+      const trWork     = v => { if(!v) return null; const arr = Array.isArray(v)?v:[v]; return arr.map(x=>WORK_LABELS[x]||x).join(', '); };
       const habitsBody = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
         habitChip('Alcohol', u.alcohol)+
         habitChip('Tabaco', u.tobacco)+
         habitChip('Actividad física', u.physical_activity)+
-        habitChip('Horario laboral', u.work_schedule)+
+        habitChip('Horario laboral', trWork(u.work_schedule))+
       '</div>';
-      const ocupacionBody = '<div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(u.activity_type||'No especificada')+'</div>';
+      const ocupacionBody = '<div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(trActivity(u.activity_type)||'No especificada')+'</div>';
       cont.innerHTML = heroHtml + chipsHtml +
         card('🆔','Datos personales', datosBody) +
         card('🩺','Antecedentes', pathsBody) +
@@ -10457,10 +10493,29 @@ async function showDrPTab_(tab){
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
           const H=Math.max(180,sorted.length*28+60);ctxA.style.height=H+'px';ctxA.height=H;
-          const bedOffsets=sorted.map(e=>e.bedtime?toOff(e.bedtime.slice(0,5)):null).filter(v=>v!==null);
-          const wakeOffsets=sorted.map(e=>e.wake_time?toOff(e.wake_time.slice(0,5)):null).filter(v=>v!==null);
-          function mStd(arr){if(!arr.length)return null;const m=arr.reduce((a,b)=>a+b,0)/arr.length;return{m,s:Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length)};}
-          const bS=mStd(bedOffsets),wS=mStd(wakeOffsets);
+          // Filtrar las noches válidas con el MISMO criterio que computeDiaryMetrics
+          // así el promedio que se muestra arriba coincide con la línea del actograma.
+          const _validForAvg = sorted.filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
+          // Calcular promedio en minutos del día (igual que computeDiaryMetrics),
+          // luego mapear al offset del actograma. De este modo NO hay discrepancia
+          // entre el "promedio levantarse" numérico y la línea azul del gráfico.
+          const _str2min = t => { const [h,m]=t.split(':').map(Number); return h*60+m; };
+          const _bedMinsAdj = _validForAvg.map(e=>{ let bm=_str2min(e.bedtime); if(bm<12*60) bm+=24*60; return bm; });
+          const _wakeMinsRaw = _validForAvg.map(e=>_str2min(e.wake_time));
+          const _avgBedM = _bedMinsAdj.length ? _bedMinsAdj.reduce((a,b)=>a+b,0)/_bedMinsAdj.length : null;
+          const _avgWakeM = _wakeMinsRaw.length ? _wakeMinsRaw.reduce((a,b)=>a+b,0)/_wakeMinsRaw.length : null;
+          const _minToOff = m => { if(m==null)return null; const h=(m%(24*60))/60; return h>=12?h-12:h+12; };
+          const _avgBedOff = _minToOff(_avgBedM);
+          const _avgWakeOff = _minToOff(_avgWakeM);
+          // SD en términos de offset para sombreado visual proporcional
+          const _bedOffsArr = _bedMinsAdj.map(m=>_minToOff(m));
+          const _wakeOffsArr = _wakeMinsRaw.map(m=>_minToOff(m));
+          const _sdOff = (arr,mn) => arr.length>1 ? Math.sqrt(arr.reduce((a,v)=>a+(v-mn)**2,0)/arr.length) : 0;
+          const bS = _avgBedOff!=null ? { m:_avgBedOff, s:_sdOff(_bedOffsArr,_avgBedOff) } : null;
+          const wS = _avgWakeOff!=null ? { m:_avgWakeOff, s:_sdOff(_wakeOffsArr,_avgWakeOff) } : null;
+          // (legacy: bedOffsets / wakeOffsets ya no se usan para promedio — quedan para compat de plugins si los lee algo)
+          const bedOffsets=_bedOffsArr;
+          const wakeOffsets=_wakeOffsArr;
           const annots={};
           if(bS){annots.bM={type:'line',xMin:bS.m,xMax:bS.m,borderColor:'rgba(217,119,6,0.9)',borderWidth:2,borderDash:[5,3]};annots.bLo={type:'box',xMin:bS.m-bS.s,xMax:bS.m+bS.s,backgroundColor:'rgba(217,119,6,0.08)',borderColor:'transparent'};}
           if(wS){annots.wM={type:'line',xMin:wS.m,xMax:wS.m,borderColor:'rgba(45,90,158,0.9)',borderWidth:2,borderDash:[5,3]};annots.wLo={type:'box',xMin:wS.m-wS.s,xMax:wS.m+wS.s,backgroundColor:'rgba(45,90,158,0.08)',borderColor:'transparent'};}
@@ -10508,7 +10563,26 @@ async function showDrPTab_(tab){
               indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},
               plugins:{
                 legend:{display:false},
-                annotation:{annotations:annots}
+                annotation:{annotations:annots},
+                tooltip:{
+                  callbacks:{
+                    label:function(ctx){
+                      const v = ctx.raw;
+                      if(!Array.isArray(v) || v.length<2) return ctx.dataset.label;
+                      const [s,e] = v;
+                      const fmt = off => {
+                        const h = ((off + 12) % 24 + 24) % 24;
+                        const hh = Math.floor(h);
+                        const mm = Math.floor((h - hh) * 60);
+                        return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+                      };
+                      const durMin = Math.round((e - s) * 60);
+                      const dh = Math.floor(durMin/60), dm = durMin % 60;
+                      const durStr = (dh>0?dh+'h ':'') + String(dm).padStart(2,'0') + 'm';
+                      return ctx.dataset.label + ': ' + fmt(s) + ' → ' + fmt(e) + ' · ' + durStr;
+                    }
+                  }
+                }
               },
               scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}
             },
@@ -10730,7 +10804,7 @@ async function showDrPTab_(tab){
     }else if(tab==='history'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);S.viewRecs=recs||[];
       if(!recs||!recs.length){cont.innerHTML='<div class="empty-state">Sin evaluaciones</div>';return;}
-      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500">${r.scale_name}</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:500">${r.score}/${r.max_score}</div><span class="badge" style="background:#F4EFE5;color:${i.c};border:none;font-weight:600;padding:3px 10px">${i.l}</span></div><span style="color:var(--label-3);font-size:16px">›</span></div></div>`;}).join('');
+      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${r.scale_name}','${d}','${r.answers||''}')"><div><div style="font-size:14px;font-weight:500;color:#F4EFE5">${r.scale_name}</div><div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:600;color:#F4EFE5">${r.score}/${r.max_score}</div><span class="badge" style="background:#F4EFE5;color:${i.c};border:none;font-weight:600;padding:3px 10px;margin-top:4px;display:inline-block">${i.l}</span></div><span style="color:rgba(244,239,229,0.5);font-size:16px">›</span></div></div>`;}).join('');
     }else if(tab==='notes'){
       renderConsultNotes();
       return;
@@ -10746,13 +10820,17 @@ async function showDrPTab_(tab){
           (cp.pressure?'Presión: '+cp.pressure+'cmH₂O · ':'')+(cp.hours?'Uso: '+cp.hours+'h · ':'')+(cp.ahi?'AHI: '+cp.ahi+' · ':'')+(cp.period||'')+'</div>';}catch(ex){}}
         return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
           '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-          '<div style="flex:1"><div style="font-size:15px;font-weight:500">'+d.title+'</div>'+
-          '<div style="font-size:12px;color:var(--label-2);margin-top:3px">'+cat+' · '+date+'</div>'+
-          (d.description?'<div style="font-size:12px;color:var(--label-2);margin-top:2px">'+d.description+'</div>':'')+
+          '<div style="flex:1"><div style="font-size:15px;font-weight:500;color:#F4EFE5">'+d.title+'</div>'+
+          '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:3px">'+cat+' · '+date+'</div>'+
+          (d.description?'<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:2px">'+d.description+'</div>':'')+
           cpapHtml+'</div>'+
           (d.file_type?'<div style="font-size:20px;margin-left:8px">'+(d.file_type.includes('pdf')?'📋':d.file_type.includes('image')?'🖼️':'📄')+'</div>':'')+
-          +(d.file_type&&d.file_type.includes('pdf')?'<div style="margin-top:10px"><button class="ai-analyze-btn" data-did="'+d.id+'" data-title="'+d.title+'" data-cat="'+d.category+'" data-isdoc="1" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:13px;font-weight:600;cursor:pointer">🤖 Analizar con IA</button></div>':'')
-          +'</div></div>';
+          '</div>'+
+          '<div style="display:flex;gap:8px;margin-top:10px">'+
+            (d.file_type?'<button onclick="viewDoc(\''+d.id+'\')" style="flex:1;padding:9px;border:none;border-radius:10px;background:#7EC8A4;color:#0F2820;font-size:13px;font-weight:600;cursor:pointer">👁 Ver</button>':'')+
+            (d.file_type&&d.file_type.includes('pdf')?'<button class="ai-analyze-btn" data-did="'+d.id+'" data-title="'+d.title+'" data-cat="'+d.category+'" data-isdoc="1" style="flex:1;padding:9px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:13px;font-weight:600;cursor:pointer">🤖 Analizar con IA</button>':'')+
+          '</div>'+
+          '</div>';
       }).join('');
       cont.querySelectorAll('.ai-analyze-btn').forEach(b=>b.addEventListener('click',()=>analyzeDocWithAI(b.dataset.did,b.dataset.title,b.dataset.cat,!!b.dataset.isdoc)));
     }else if(tab==='suggest'){
@@ -12372,17 +12450,11 @@ function renderSleepScorePanel(entries){
   if(!sc) return '<div class="empty-state" style="padding:16px 0">Necesitás al menos 3 registros en el diario para calcular tu score de sueño.</div>';
   
   return `
-    <div style="background:${sc.bg};border-radius:16px;padding:16px 20px 14px;margin-bottom:14px;text-align:center">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${sc.color};margin-bottom:4px">Score de sueño</div>
-      <div style="font-size:60px;font-weight:300;color:${sc.color};line-height:1;letter-spacing:-0.03em">${sc.total}</div>
-      <div style="font-size:14px;color:var(--label-2);margin-top:3px">/ 100 — <span style="color:${sc.color};font-weight:700">${sc.label}</span></div>
-      <div style="height:5px;background:rgba(0,0,0,0.08);border-radius:3px;margin:10px 0 8px"><div style="height:100%;border-radius:3px;background:${sc.color};width:${sc.total}%"></div></div>
-      <div style="display:flex;justify-content:center;gap:16px;font-size:12px;color:var(--label-2)">
-        <span>Cantidad: <strong style="color:${sc.avgQty>=35?'#14532d':sc.avgQty>=25?'#d97706':'#dc2626'}">${sc.avgQty}/50</strong></span>
-        <span>Fragmentación: <strong style="color:${sc.avgFrag>=14?'#14532d':sc.avgFrag>=10?'#d97706':'#dc2626'}">${sc.avgFrag}/20</strong></span>
-        <span>Regularidad: <strong style="color:${sc.regularity>=21?'#14532d':sc.regularity>=15?'#d97706':'#dc2626'}">${sc.regularity}/30</strong></span>
-      </div>
-      <div style="font-size:11px;color:var(--label-3);margin-top:6px">Basado en ${sc.nNights} noches de registro</div>
+    <div style="background:${sc.bg};border-radius:16px;padding:20px;margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${sc.color};margin-bottom:6px">Score de sueño</div>
+      <div style="font-size:64px;font-weight:300;color:${sc.color};line-height:1;letter-spacing:-0.03em">${sc.total}</div>
+      <div style="font-size:15px;color:${sc.color};font-weight:600;margin-top:6px">${sc.label}</div>
+      <div style="font-size:11px;color:var(--label-3);margin-top:8px">Basado en ${sc.nNights} noches de registro</div>
     </div>
 
     <details style="background:#eef8f5;border-radius:12px;margin-bottom:12px;overflow:hidden">
@@ -12391,10 +12463,10 @@ function renderSleepScorePanel(entries){
         <span style="font-size:11px;opacity:0.6">▼</span>
       </summary>
       <div style="padding:0 16px 14px;font-size:13px;color:#2d6b56;line-height:1.7">
-        El score combina los tres pilares del sueño saludable:<br>
-        <strong>Cantidad (50 pts):</strong> óptimo entre 7 y 9 horas. Por debajo de 7h baja gradualmente hasta 0; por encima de 9h también decrece (el exceso de sueño se asocia a peor calidad). A las 10h el puntaje cae a ~50%. A las 5h o menos el puntaje es 0.<br>
-        <strong>Fragmentación (20 pts):</strong> se restan 5 puntos por cada despertar nocturno reportado.<br>
-        <strong>Regularidad (30 pts):</strong> consistencia en el horario de acostarse (Sleep Regularity Index, Phillips et al. 2017).<br><br>
+        El score combina los tres pilares del sueño saludable que ves abajo:<br>
+        <strong>Cantidad:</strong> óptimo entre 7 y 9 horas. Por debajo de 7h baja gradualmente; por encima de 9h también decrece.<br>
+        <strong>Fragmentación:</strong> se reduce por cada despertar nocturno reportado.<br>
+        <strong>Regularidad:</strong> consistencia en el horario de acostarse y levantarse (Sleep Regularity Index, Phillips et al. 2017).<br><br>
         <em style="font-size:12px;color:#555">⚠️ El tiempo entre acostarse y levantarse sobrestima el sueño real — el registro incluye tiempo en cama pero no necesariamente dormido.</em>
       </div>
     </details>`;
