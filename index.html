@@ -3405,7 +3405,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy51';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy52';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -5550,6 +5550,78 @@ function updatePillarBars(entries){
 
 
 // Calcula todas las métricas clínicas del diario (usado en panel paciente y médico)
+// ─── Cronotipo biológico calculado desde el diario (MCTQ-style) ───
+// Referencia: Roenneberg et al., J Biol Rhythms 2003; Kantermann et al. 2015.
+// Fórmula:
+//   SD_free = duración media del sueño en días libres
+//   SD_work = duración media del sueño en días laborables
+//   MSF     = punto medio del sueño en días libres
+//   Si SD_free > SD_avg_weekly (indica deuda acumulada):
+//     MSFsc = MSF − (SD_free − SD_avg_weekly) / 2
+//   Sino MSFsc = MSF
+//
+// Requiere ≥2 días libres registrados con day_type='free' para dar un valor.
+// Los cortes de categorización siguen Roenneberg 2007 (aproximados).
+function computeMCTQFromDiary(entries){
+  if(!entries || !entries.length) return null;
+  const timeToMin = t => { if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; };
+  const validNight = e => e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes >= 60;
+  const freeEntries = entries.filter(e => e.day_type === 'free' && validNight(e));
+  const workEntries = entries.filter(e => (e.day_type === 'work' || !e.day_type) && validNight(e));
+  if(freeEntries.length < 2){
+    return { error:'insufficient_free_days', n_free: freeEntries.length, n_work: workEntries.length };
+  }
+  const avg = arr => arr.reduce((a,b)=>a+b,0) / arr.length;
+  const SD_free = avg(freeEntries.map(e => e.sleep_minutes));
+  const SD_work = workEntries.length ? avg(workEntries.map(e => e.sleep_minutes)) : SD_free;
+  // Midpoint del sueño por noche libre (minuto del día 0-1440)
+  const midpoints = freeEntries.map(e => {
+    const wm = timeToMin(e.wake_time);
+    let mid = wm - e.sleep_minutes/2;
+    if(mid < 0) mid += 1440;
+    return mid;
+  });
+  // Promedio circular simple (asume que todos los midpoints están cerca — típico)
+  // Detectar y advertir si hay valores muy dispersos (>6h de rango) — puede indicar shift work
+  const midRange = Math.max(...midpoints) - Math.min(...midpoints);
+  const MSF_min = avg(midpoints);
+  const n_free = freeEntries.length;
+  const n_work = workEntries.length;
+  const avg_SD_weekly = (SD_free * n_free + SD_work * n_work) / (n_free + n_work);
+  let MSFsc_min = MSF_min;
+  const sleep_debt_min = Math.max(0, SD_free - avg_SD_weekly);
+  if(sleep_debt_min > 0){
+    MSFsc_min = MSF_min - sleep_debt_min / 2;
+    if(MSFsc_min < 0) MSFsc_min += 1440;
+  }
+  const MSFsc_h = MSFsc_min / 60;
+  let category, tag;
+  if(MSFsc_h < 2.5)      { category = 'Muy matutino';       tag = 'M+'; }
+  else if(MSFsc_h < 3.5) { category = 'Matutino moderado';  tag = 'M';  }
+  else if(MSFsc_h < 4.5) { category = 'Matutino leve';      tag = 'M-'; }
+  else if(MSFsc_h < 5.5) { category = 'Intermedio';         tag = 'I';  }
+  else if(MSFsc_h < 6.5) { category = 'Vespertino leve';    tag = 'V-'; }
+  else if(MSFsc_h < 7.5) { category = 'Vespertino moderado';tag = 'V';  }
+  else                   { category = 'Muy vespertino';     tag = 'V+'; }
+  const fmtClock = m => {
+    const mm = ((Math.round(m) % 1440) + 1440) % 1440;
+    const h = Math.floor(mm/60), min = mm%60;
+    return String(h).padStart(2,'0') + ':' + String(min).padStart(2,'0');
+  };
+  return {
+    n_free, n_work,
+    SD_free_h: +(SD_free/60).toFixed(2),
+    SD_work_h: +(SD_work/60).toFixed(2),
+    MSF: fmtClock(MSF_min),
+    MSFsc: fmtClock(MSFsc_min),
+    MSFsc_min,
+    category, tag,
+    sleep_debt_h: +(sleep_debt_min/60).toFixed(2),
+    // warning si la varianza intra-libres es alta (posible shift-work o datos ruidosos)
+    high_variability: midRange > 360 // >6h
+  };
+}
+
 function computeDiaryMetrics(entries){
   const valid = (entries||[]).filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
   if(valid.length<3) return null;
@@ -6297,8 +6369,256 @@ function maybePromptProfileCompletion(){
 // ─── Recordatorio de re-evaluación de escalas patológicas ───
 // Si una escala dio resultado patológico hace ≥30 días y no se repitió, sugerir repetirla.
 // Las que dieron normal NO se vuelven a pedir (solo el profesional puede solicitarlas).
-async function maybePromptReevalScales(){
-  if(!S.user || !S.user.email || S.role !== 'patient') return;
+// ─── Filtros de elegibilidad de escalas (por sexo, edad, ciclo vital) ───
+// Solo listar escalas que NECESITAN filtro. Las no listadas son universales.
+// Regla especial: en `mrs`, si has_menopause=true la escala se desbloquea aunque
+// la paciente sea menor de 45. Esto cubre menopausia precoz y quirúrgica.
+const SCALE_FILTERS = {
+  mrs:         { sex:['F'], age_min:45, unlock_if:{ has_menopause:true } },
+  psst:        { sex:['F'], age_min:12, age_max:55, requires:{ has_menarche:true }, block_if:{ has_menopause:true } },
+  fsfi:        { sex:['F'], age_min:18 },
+  iief:        { sex:['M'], age_min:18 },
+  gds5:        { age_min:60 },
+  moca_sleep:  { age_min:60 },
+  bears:       { age_max:17 },
+  eedsi:       { age_max:17 },
+  // heteroaplicadas: solo el médico puede administrarlas, no aparecen en el catálogo del paciente
+  hamd:        { professional_only:true },
+  hama:        { professional_only:true }
+};
+
+// Cooldown por escala en días: cuánto esperar antes de volver a sugerirla al paciente.
+// Escalas que evalúan estado actual (síntomas mensuales): cooldown corto.
+// Escalas rasgo o cronotipo: cooldown largo.
+const SCALE_COOLDOWN_DAYS = {
+  psqi:30, isi:14, ess:30, gasq:60,
+  meq:180, mctq:180, stopbang:180,
+  phq9:14, gad7:14, gds5:14,
+  mrs:60, psst:30,
+  fss:30, dbas:60, gses:30, psas:30,
+  irls:60, rbdq:180, pdss:60,
+  fsfi:180, iief:180, sassv:60, sassv_screen:90,
+  ais:30, jss:30,
+  flep:180, hamd:14, hama:14, pcl5:60,
+  bears:180, eedsi:180
+};
+const SCALE_COOLDOWN_DEFAULT = 21;
+
+function _computeAgeYears(dob){
+  if(!dob) return null;
+  const d = new Date(dob);
+  if(isNaN(d)) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if(m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
+// Devuelve true si el paciente puede completar esta escala.
+// role: 'patient' o 'doctor'. Las professional_only quedan ocultas para paciente.
+function scaleIsEligible(scaleId, user, role){
+  role = role || 'patient';
+  const f = SCALE_FILTERS[scaleId];
+  if(!f) return true; // universal
+  if(f.professional_only && role !== 'doctor') return false;
+  // sexo (solo si el usuario lo tiene registrado)
+  if(f.sex && user.sex && !f.sex.includes(user.sex)) return false;
+  // edad
+  const age = _computeAgeYears(user.dob);
+  const meetsAge = (f.age_min == null || age == null || age >= f.age_min) &&
+                   (f.age_max == null || age == null || age <= f.age_max);
+  // requires — flags necesarios
+  const meetsRequires = !f.requires || Object.entries(f.requires).every(([k,v]) => user[k] === v);
+  // block_if — flags que bloquean
+  const blocked = f.block_if && Object.entries(f.block_if).every(([k,v]) => user[k] === v);
+  if(blocked) return false;
+  // Regla de desbloqueo: si NO cumple edad pero cumple unlock_if, se desbloquea igual
+  if(!meetsAge && f.unlock_if){
+    const unlocks = Object.entries(f.unlock_if).every(([k,v]) => user[k] === v);
+    if(unlocks) return meetsRequires;
+    return false;
+  }
+  return meetsAge && meetsRequires;
+}
+
+// Selección de la escala del día — prioridad clínica.
+function pickScaleOfDay(user, records){
+  const now = Date.now();
+  const daysSince = ts => (now - new Date(ts).getTime()) / 86400000;
+  // Última toma de cada escala
+  const latest = {};
+  (records || []).forEach(r => {
+    if(!latest[r.scale_id] || new Date(r.created_at) > new Date(latest[r.scale_id].created_at)){
+      latest[r.scale_id] = r;
+    }
+  });
+  // Escalas elegibles (patient role) + fuera de cooldown
+  const eligible = SCALES.filter(sc => {
+    if(!scaleIsEligible(sc.id, user, 'patient')) return false;
+    const last = latest[sc.id];
+    if(!last) return true; // nunca completada
+    const cooldown = SCALE_COOLDOWN_DAYS[sc.id] || SCALE_COOLDOWN_DEFAULT;
+    return daysSince(last.created_at) >= cooldown;
+  });
+  if(!eligible.length) return null;
+  // Prioridad de sugerencia
+  //   1. Si nunca completó GASQ (cribado inicial), esa siempre primero
+  const gasqNeverDone = eligible.find(s => s.id === 'gasq' && !latest['gasq']);
+  if(gasqNeverDone) return gasqNeverDone;
+  //   2. Escalas core (PSQI, ISI, ESS) nunca hechas
+  for(const id of ['psqi','isi','ess','stopbang','meq']){
+    const sc = eligible.find(s => s.id === id && !latest[id]);
+    if(sc) return sc;
+  }
+  //   3. Escalas patológicas que ya vencieron su cooldown (repetir para ver evolución)
+  //      Sólo la más antigua para no abrumar.
+  const pathologicalStale = eligible
+    .filter(sc => {
+      const last = latest[sc.id];
+      if(!last) return false;
+      const interp = sc.interp ? sc.interp(last.score) : null;
+      if(!interp) return false;
+      return interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg);
+    })
+    .sort((a,b) => new Date(latest[a.id].created_at) - new Date(latest[b.id].created_at));
+  if(pathologicalStale.length) return pathologicalStale[0];
+  //   4. Resto por rotación estable (día del año % elegibles) para que no cambie cada vez
+  const doy = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  return eligible[doy % eligible.length];
+}
+
+// ─── Copiar resumen del paciente al portapapeles (para HC del médico) ───
+// Compone un texto plano estilo evolución para pegar en cualquier EHR.
+async function copyPatientSummaryToClipboard(encodedEmail){
+  const btn = document.getElementById('dr-copy-summary-btn');
+  const btnOrig = btn ? btn.innerHTML : '';
+  try {
+    const email = decodeURIComponent(encodedEmail);
+    if(btn) btn.innerHTML = '<span>⏳</span> Componiendo resumen…';
+    const u = S.viewData;
+    if(!u){ throw new Error('No hay datos del paciente cargados'); }
+    const recs = S.viewRecs || [];
+    // Traer diario 30 días para métricas
+    const diaryAll = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+'&order=diary_date.desc&limit=60&select=*').catch(()=>[]);
+    const cutoff30 = new Date(); cutoff30.setDate(cutoff30.getDate()-30);
+    const diary30 = (diaryAll||[]).filter(e => new Date(e.diary_date) >= cutoff30);
+    const metrics = diary30.length >= 3 ? computeDiaryMetrics(diary30) : null;
+    const score = diary30.length >= 3 ? calcSleepScore(diary30) : null;
+    const mctq = computeMCTQFromDiary(diaryAll || []);
+    // Última evaluación de cada escala
+    const latestByScale = {};
+    recs.forEach(r => {
+      if(!latestByScale[r.scale_id] || new Date(r.created_at) > new Date(latestByScale[r.scale_id].created_at)){
+        latestByScale[r.scale_id] = r;
+      }
+    });
+    // Componer texto
+    const L = [];
+    const today = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' });
+    const fullName = ((u.name||'')+' '+(u.lname||'')).trim() || u.email;
+    L.push('Dormetria — '+fullName+' ('+u.email+')');
+    L.push('Evaluación: '+today);
+    L.push('');
+    // Datos
+    const dob = u.dob ? new Date(u.dob) : null;
+    const age = dob ? Math.floor((Date.now() - dob)/31557600000) : null;
+    const imc = (u.weight_kg && u.height_cm) ? (u.weight_kg/((u.height_cm/100)**2)).toFixed(1) : null;
+    const dataParts = [];
+    if(age != null) dataParts.push(age+'a');
+    if(u.sex) dataParts.push(u.sex);
+    if(imc) dataParts.push('IMC '+imc);
+    if(u.pathologies && u.pathologies.length) dataParts.push('Antecedentes: '+(Array.isArray(u.pathologies)?u.pathologies:[u.pathologies]).join(', '));
+    if(u.medications) dataParts.push('Medicación: '+u.medications);
+    if(dataParts.length) L.push('DATOS: '+dataParts.join(' · '));
+    // Cronotipo
+    const cronoParts = [];
+    const meqRec = latestByScale['meq'];
+    if(meqRec){
+      const s = meqRec.score;
+      const meqLabel = s>=70?'Matutino definido' : s>=59?'Matutino moderado' : s>=42?'Intermedio' : s>=31?'Vespertino moderado' : 'Vespertino definido';
+      cronoParts.push('MEQ '+meqLabel+' ('+s+'/86)');
+    }
+    if(mctq && !mctq.error){
+      cronoParts.push('MCTQ biológico '+mctq.category+' (MSFsc '+mctq.MSFsc+', '+mctq.n_free+' libres)');
+      if(mctq.sleep_debt_h > 0.5) cronoParts.push('deuda de sueño semanal ~'+mctq.sleep_debt_h.toFixed(1)+'h');
+    }
+    if(cronoParts.length){ L.push('CRONOTIPO: '+cronoParts.join(' · ')); }
+    // Escalas patológicas
+    const pathologicalRecs = Object.values(latestByScale).filter(r => {
+      const sc = SCALES.find(s => s.id === r.scale_id);
+      if(!sc) return false;
+      const i = sc.interp(r.score);
+      return i && i.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(i.bg);
+    });
+    if(pathologicalRecs.length){
+      L.push('');
+      L.push('ESCALAS CON RESULTADOS RELEVANTES:');
+      pathologicalRecs.forEach(r => {
+        const sc = SCALES.find(s => s.id === r.scale_id);
+        const i = sc.interp(r.score);
+        L.push('  - '+sc.name+' '+r.score+'/'+r.max_score+': '+i.l);
+      });
+    }
+    // Otras escalas (normales) — listadas breves
+    const otherRecs = Object.values(latestByScale).filter(r => !pathologicalRecs.includes(r) && r.scale_id !== 'meq');
+    if(otherRecs.length){
+      L.push('');
+      L.push('OTRAS ESCALAS:');
+      otherRecs.forEach(r => {
+        const sc = SCALES.find(s => s.id === r.scale_id);
+        if(!sc) return;
+        const i = sc.interp(r.score);
+        L.push('  - '+sc.name+' '+r.score+'/'+r.max_score+': '+(i?i.l:'—'));
+      });
+    }
+    // Diario y métricas
+    if(metrics && score){
+      L.push('');
+      L.push('DIARIO — últimas '+metrics.n+' noches (30 días):');
+      L.push('  - Score de sueño: '+score.total+'/100 ('+score.label+')');
+      if(metrics.avgTotal != null) L.push('  - TST promedio: '+metrics.fmtDur(metrics.avgTotal));
+      if(metrics.avgTIB != null) L.push('  - TIB promedio: '+metrics.fmtDur(metrics.avgTIB));
+      if(metrics.sleepEfficiency != null) L.push('  - Eficiencia de sueño: '+metrics.sleepEfficiency+'%');
+      if(metrics.avgLatency != null) L.push('  - Latencia de inicio promedio: '+metrics.fmtMin(metrics.avgLatency));
+      if(metrics.avgAwakDur != null) L.push('  - Duración media de despertares: '+metrics.fmtMin(metrics.avgAwakDur));
+      if(metrics.avgBed != null) L.push('  - Horario promedio de acostarse: '+metrics.fmtClock(metrics.avgBed));
+      if(metrics.avgWake != null) L.push('  - Horario promedio de levantarse: '+metrics.fmtClock(metrics.avgWake));
+      if(metrics.socialJetLag != null) L.push('  - Jet lag social: '+metrics.socialJetLag+' min');
+      if(metrics.sleepDebt != null && metrics.sleepDebt > 30){
+        L.push('  - Sugerencia: duerme '+Math.round(metrics.sleepDebt)+' min más los días libres — posible restricción crónica de sueño');
+      }
+      if(metrics.under7Pct > 30) L.push('  - '+metrics.under7Pct+'% de las noches con TST <7h');
+    }
+    // Nota clínica del médico si existe
+    const note = localStorage.getItem('dm_note_'+email) || localStorage.getItem('dm_dr_notes_'+email) || '';
+    if(note && note.trim()){
+      L.push('');
+      L.push('NOTAS CLÍNICAS:');
+      L.push('  '+note.trim().replace(/\n/g, '\n  '));
+    }
+    L.push('');
+    L.push('— Generado desde Dormetria');
+
+    const text = L.join('\n');
+    await navigator.clipboard.writeText(text);
+    if(btn){
+      btn.innerHTML = '<span>✅</span> Copiado — pegalo en tu HC';
+      btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+      setTimeout(()=>{
+        btn.innerHTML = btnOrig;
+        btn.style.background = 'linear-gradient(135deg,#1a4a3a,#2d6b56)';
+      }, 2500);
+    }
+    if(typeof toast === 'function') toast('Resumen copiado al portapapeles ('+text.length+' caracteres)');
+  } catch(e){
+    console.error('[copyPatientSummary] error:', e);
+    if(btn){ btn.innerHTML = btnOrig; }
+    if(typeof toast === 'function') toast('No se pudo copiar: '+(e.message||e));
+  }
+}
+
+async function maybePromptReevalScales(){  if(!S.user || !S.user.email || S.role !== 'patient') return;
   try{
     const recs = S.records && S.records.length 
       ? S.records 
@@ -6820,15 +7140,15 @@ async function showHome(){
   const factEl=document.getElementById('home-fact-text');
   if(factEl){const _now=new Date();const _doy=Math.floor((_now-new Date(_now.getFullYear(),0,0))/86400000);factEl.textContent=FACTS[_doy%FACTS.length];}
 
-  // Escala del día (rota por día de la semana)
-  const SCALE_ROTATION=['isi','ess','psqi','gasq','isi','ess','psqi'];
-  const todayScaleId=SCALE_ROTATION[new Date().getDay()];
-  const todayScale=SCALES.find(s=>s.id===todayScaleId);
+  // Escala del día — selección inteligente por elegibilidad + prioridad clínica
+  const todayScale = pickScaleOfDay(u, S.records || []);
   const scaleNameEl=document.getElementById('home-scale-name');
   const scaleSubEl=document.getElementById('home-scale-sub');
-  if(scaleNameEl&&todayScale) scaleNameEl.textContent=todayScale.name||todayScaleId.toUpperCase();
+  if(scaleNameEl&&todayScale) scaleNameEl.textContent=todayScale.name||todayScale.id.toUpperCase();
   if(scaleSubEl&&todayScale) scaleSubEl.textContent=todayScale.desc||'';
-  S._todayScaleId=todayScaleId;
+  const scaleCard=document.getElementById('home-scale-card');
+  if(scaleCard) scaleCard.style.display = todayScale ? '' : 'none';
+  S._todayScaleId=todayScale ? todayScale.id : null;
 
   loadLinkedChildProfiles();
   try{
@@ -8215,12 +8535,24 @@ function renderMiPerfilEdit(card){
    +sel('mp-activity','Actividad física',u.physical_activity,[['','—'],['sedentario','Sedentario'],['leve','Leve'],['moderada','Moderada'],['intensa','Intensa']])
    +sel('mp-acttype','Actividad principal',Array.isArray(u.activity_type)?u.activity_type[0]:u.activity_type,[['','—'],['student','Estudiante'],['athlete','Deportista / Atleta'],['shift','Trabajador en turnos'],['night','Trabajador nocturno'],['healthcare','Profesional de salud'],['office','Trabajo de oficina'],['remote','Trabajo remoto'],['retired','Jubilado/a'],['other','Otro']])
    +sel('mp-worksched','Horario laboral',Array.isArray(u.work_schedule)?u.work_schedule[0]:u.work_schedule,[['','—'],['diurno','Diurno'],['nocturno','Nocturno'],['guardias','Guardias'],['rotativo','Turnos rotativos'],['fijo','Horario fijo']])
+   +'<div id="mp-female-fields" style="'+((u.sex==='F'||u.sex==='Femenino')?'':'display:none')+'">'
+     +sel('mp-menarche','¿Ya tuviste tu primera menstruación?', u.has_menarche===true?'true':u.has_menarche===false?'false':'', [['','—'],['true','Sí'],['false','No']])
+     +sel('mp-menopause','¿Atravesaste la menopausia?', u.has_menopause===true?'true':u.has_menopause===false?'false':'', [['','—'],['true','Sí, ya llegué a la menopausia'],['false','No, aún menstruo']])
+   +'</div>'
    +'<div id="mp-menstrual-wrap" style="margin-bottom:12px;'+((u.sex==='F'||u.sex==='Femenino')?'':'display:none')+'"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:11px 13px"><input id="mp-menstrual" type="checkbox"'+(u.track_menstrual?' checked':'')+' style="width:18px;height:18px;accent-color:#e11d48"><span style="font-size:13px;color:#374151;line-height:1.4">Registrar período menstrual en el diario de sueño<br><span style="font-size:11px;color:#9ca3af">El ciclo influye en el sueño. Si lo activás, vas a poder marcar de forma discreta las noches en que estás menstruando.</span></span></label></div>'
    +'<div style="display:flex;gap:10px;margin-top:16px"><button onclick="renderMiPerfilView(this.closest(\'[data-mp]\'))" style="flex:1;padding:13px;border:1px solid #d1d5db;border-radius:12px;background:transparent;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button><button onclick="saveMiPerfil(this)" style="flex:1;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Guardar</button></div>';
-  // Mostrar/ocultar el toggle menstrual según el sexo elegido
+  // Mostrar/ocultar los campos femeninos según el sexo elegido
   setTimeout(function(){
-    var sx=document.getElementById('mp-sex'); var wrap=document.getElementById('mp-menstrual-wrap');
-    if(sx&&wrap){ sx.addEventListener('change',function(){ wrap.style.display=(sx.value==='F'||sx.value==='Femenino')?'block':'none'; }); }
+    var sx=document.getElementById('mp-sex');
+    var wrap=document.getElementById('mp-menstrual-wrap');
+    var ff=document.getElementById('mp-female-fields');
+    if(sx){
+      sx.addEventListener('change',function(){
+        var showFem = (sx.value==='F'||sx.value==='Femenino');
+        if(wrap) wrap.style.display=showFem?'block':'none';
+        if(ff) ff.style.display=showFem?'block':'none';
+      });
+    }
   },50);
 }
 
@@ -8250,6 +8582,8 @@ async function saveMiPerfil(btn){
     physical_activity:(g('mp-activity')&&g('mp-activity').value)||null,
     activity_type:(g('mp-acttype')&&g('mp-acttype').value)||null,
     work_schedule:(g('mp-worksched')&&g('mp-worksched').value)||null,
+    has_menarche:(function(){var v=g('mp-menarche')&&g('mp-menarche').value;return v===''||v===undefined?null:v==='true';})(),
+    has_menopause:(function(){var v=g('mp-menopause')&&g('mp-menopause').value;return v===''||v===undefined?null:v==='true';})(),
     track_menstrual:(g('mp-menstrual')&&g('mp-menstrual').checked)||false
   };
   try{
@@ -10355,7 +10689,15 @@ async function showDrPTab_(tab){
         '<textarea id="dr-annot" rows="3" placeholder="Notas del profesional..." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sep-opaque);border-radius:10px;font-size:13px;font-family:var(--font);resize:none;line-height:1.5;background:var(--bg-secondary)">'+savedNote+'</textarea>'+
         '<button class="save-annot-btn" style="margin-top:6px;padding:7px 16px;border:none;border-radius:8px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Guardar nota</button>';
 
-      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>');
+      // ─── Botón "Copiar todo" — resumen para pegar en HC del médico ───
+      const copyAllBtn = '<div style="margin:20px 0 8px">' +
+        '<button id="dr-copy-summary-btn" onclick="copyPatientSummaryToClipboard(\''+encodeURIComponent(email)+'\')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">' +
+          '<span>📋</span> Copiar resumen completo para HC' +
+        '</button>' +
+        '<div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:6px">Copia datos, escalas, diario y cronotipo en texto plano — pegalo en tu historia clínica</div>' +
+      '</div>';
+
+      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswers('${r.id}','${r.scale_id}',${r.score},'${sc?sc.name:r.scale_id}','${d}','${r.answers||''}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>')+copyAllBtn;
     }else if(tab==='profile'){
       const u=S.viewData;
       const dob=u.dob?new Date(u.dob):null;
@@ -10429,9 +10771,72 @@ async function showDrPTab_(tab){
         habitChip('Horario laboral', trWork(u.work_schedule))+
       '</div>';
       const ocupacionBody = '<div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(trActivity(u.activity_type)||'No especificada')+'</div>';
+      // ─── Card de Cronotipo: comparar MEQ (preferencial) vs MCTQ biológico ───
+      let cronotipoBody = '';
+      try {
+        // MEQ (preferencial)
+        const meqRec2 = (S.viewRecs||[]).filter(r=>r.scale_id==='meq').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+        let meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial (MEQ)</div>' +
+          '<div style="font-size:13px;font-weight:500;color:rgba(244,239,229,0.5);font-style:italic">Sin datos</div>';
+        let meqTag = null;
+        if(meqRec2){
+          const s = meqRec2.score;
+          let label;
+          if(s>=70){ label='Matutino definido'; meqTag='M+'; }
+          else if(s>=59){ label='Matutino moderado'; meqTag='M'; }
+          else if(s>=42){ label='Intermedio'; meqTag='I'; }
+          else if(s>=31){ label='Vespertino moderado'; meqTag='V'; }
+          else { label='Vespertino definido'; meqTag='V+'; }
+          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial (MEQ)</div>' +
+            '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+label+' <span style="color:rgba(244,239,229,0.55);font-size:12px">('+s+'/86)</span></div>';
+        }
+        // MCTQ biológico desde diario (necesita S.viewData._diaryAll o refetch)
+        // El diario ya fue cargado en la pestaña Diario sueño y guardado como S._drDiaryCache
+        // Si no está en caché, hacemos un fetch rápido (solo columnas necesarias).
+        let diaryForMCTQ = S._drDiaryCache && S._drDiaryCache.email === email ? S._drDiaryCache.data : null;
+        if(!diaryForMCTQ){
+          try {
+            diaryForMCTQ = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+'&select=bedtime,wake_time,sleep_minutes,day_type,diary_date&order=diary_date.desc&limit=60').catch(()=>null);
+            S._drDiaryCache = { email, data: diaryForMCTQ };
+          } catch(_ex) { diaryForMCTQ = null; }
+        }
+        const mctq = diaryForMCTQ ? computeMCTQFromDiary(diaryForMCTQ) : null;
+        let mctqBlock;
+        if(!mctq){
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+            '<div style="font-size:13px;color:rgba(244,239,229,0.5);font-style:italic">Sin datos de diario</div>';
+        } else if(mctq.error === 'insufficient_free_days'){
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+            '<div style="font-size:12px;color:rgba(244,239,229,0.6);font-style:italic">Necesita ≥2 noches marcadas como "día libre" (tiene '+mctq.n_free+')</div>';
+        } else {
+          const debtSuffix = mctq.sleep_debt_h > 0.5 ? ' <span style="color:#C8A96E">· deuda '+mctq.sleep_debt_h.toFixed(1)+'h</span>' : '';
+          const varWarn = mctq.high_variability ? '<div style="font-size:10px;color:#C8A96E;margin-top:2px">⚠ Alta variabilidad — revisar posible trabajo por turnos</div>' : '';
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+            '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+mctq.category+'</div>' +
+            '<div style="font-size:11px;color:rgba(244,239,229,0.65);margin-top:2px">MSFsc: '+mctq.MSFsc+' · '+mctq.n_free+' libres, '+mctq.n_work+' laborables'+debtSuffix+'</div>' +
+            varWarn;
+        }
+        // Comparación (si tenemos ambos)
+        let compareBlock = '';
+        if(meqTag && mctq && !mctq.error){
+          const tagOrder = { 'M+':1, 'M':2, 'M-':3, 'I':4, 'V-':5, 'V':6, 'V+':7 };
+          const diff = Math.abs((tagOrder[meqTag]||4) - (tagOrder[mctq.tag]||4));
+          if(diff >= 2){
+            compareBlock = '<div style="background:rgba(200,169,110,0.12);border-left:2px solid #C8A96E;padding:8px 10px;margin-top:10px;border-radius:4px">' +
+              '<div style="font-size:11px;color:#C8A96E;font-weight:600">⚠ Discrepancia relevante</div>' +
+              '<div style="font-size:11px;color:rgba(244,239,229,0.7);margin-top:2px">Preferencial y biológico difieren ≥2 categorías. Puede indicar misalineación circadiana (jet lag social, obligaciones vs. cronotipo natural).</div>' +
+              '</div>';
+          }
+        }
+        cronotipoBody = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
+          '<div>'+meqBlock+'</div>' +
+          '<div>'+mctqBlock+'</div>' +
+        '</div>' + compareBlock;
+      } catch(_cron){ cronotipoBody = '<div style="color:rgba(244,239,229,0.5);font-style:italic;font-size:12px">Sin datos</div>'; }
       cont.innerHTML = heroHtml + chipsHtml +
         card('🆔','Datos personales', datosBody) +
         card('🩺','Antecedentes', pathsBody) +
+        card('🌙','Cronotipo', cronotipoBody) +
         card('🌿','Hábitos', habitsBody) +
         card('💼','Ocupación', ocupacionBody);
     // Render the existing annotation section after innerHTML is set
@@ -15194,25 +15599,25 @@ function renderActivityTypeField(currentVal){
 
 
 
-function isScaleVisibleForProfile(sc, profile){
-  const p = profile || S.profile || S.user;
+function isScaleVisibleForProfile(sc, profile, role){
+  const p = profile || S.profile || S.user || {};
   if(!p) return true;
-  const rawSex = (p.sex || p.gender || '').toString();
-  const isFemale = /^f/i.test(rawSex) || /femenin/i.test(rawSex);
-  const isMale = (/^m/i.test(rawSex) || /masculin/i.test(rawSex)) && !isFemale;
-  const dob = p.dob || '';
-  const age = dob ? Math.floor((Date.now() - new Date(dob))/(365.25*24*3600*1000)) : null;
-  // Escalas pediátricas: ocultar a partir de los 18 (si se conoce la edad)
-  if(['bears','eedsi','cshq'].includes(sc.id) && age !== null && age >= 18) return false;
-  // Solo para mujeres (menopausia, premenstrual, sexualidad femenina)
-  if(['mrs','psst','fsfi'].includes(sc.id) && !isFemale) return false;
-  // Solo para hombres (función eréctil)
-  if(['iief'].includes(sc.id) && !isMale) return false;
-  // Geriátricas: solo edad >= 55 (o desconocida)
-  if(['gds5','moca_sleep'].includes(sc.id) && age !== null && age < 55) return false;
-  // Disabled scales
+  // Escalas explícitamente deshabilitadas
   if(sc.disabled) return false;
-  return true;
+  // Nueva lógica unificada: sexo/edad/menopausia/menarca/profesional
+  // Determinar sexo normalizado (M/F) desde el perfil
+  const rawSex = (p.sex || p.gender || '').toString();
+  const sexNorm = /^f/i.test(rawSex) || /femenin/i.test(rawSex) ? 'F'
+                : /^m/i.test(rawSex) || /masculin/i.test(rawSex) ? 'M'
+                : null;
+  const user = {
+    sex: sexNorm,
+    dob: p.dob,
+    has_menopause: p.has_menopause,
+    has_menarche: p.has_menarche
+  };
+  // Rol: paciente por defecto. En vista del médico pasamos 'doctor' explícito.
+  return scaleIsEligible(sc.id, user, role || 'patient');
 }
 
 function toggleDrInstructivo(){
