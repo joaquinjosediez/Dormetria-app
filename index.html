@@ -2408,6 +2408,24 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   </div>
   <div class="scroll" style="padding:20px 16px 40px;background:#1a2e23;">
     <p style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.75;margin-bottom:24px">Dormetria te ayuda a hacer un seguimiento de tu sueño con herramientas clínicas reales — las mismas que usan los médicos — y a compartir esa información con tu especialista.</p>
+
+    <!-- Recorridos guiados (tours) -->
+    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">🎯 Recorridos guiados</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
+      <button onclick="dmReplayTour('patient_home')" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);border:none;border-radius:12px;padding:14px 16px;color:#fff;text-align:left;cursor:pointer;font-family:inherit">
+        <div style="font-size:14px;font-weight:600;margin-bottom:2px">🏠 Cómo usar el Inicio</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65)">6 pasos · &lt;1 min. Qué hace cada tarjeta del home.</div>
+      </button>
+      <button onclick="dmReplayTour('patient_diary')" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);border:none;border-radius:12px;padding:14px 16px;color:#fff;text-align:left;cursor:pointer;font-family:inherit">
+        <div style="font-size:14px;font-weight:600;margin-bottom:2px">📔 Cómo cargar el diario</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65)">6 pasos · &lt;1 min. Se abre el formulario y te guío por los campos clave.</div>
+      </button>
+      <button onclick="dmReplayTour('patient_results')" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);border:none;border-radius:12px;padding:14px 16px;color:#fff;text-align:left;cursor:pointer;font-family:inherit">
+        <div style="font-size:14px;font-weight:600;margin-bottom:2px">📊 Cómo leer tu score y actograma</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65)">5 pasos · &lt;1 min. Requiere al menos 3 noches cargadas.</div>
+      </button>
+    </div>
+
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Las tres secciones</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
       <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start"><div style="width:36px;height:36px;border-radius:9px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div><div><div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:3px">Inicio</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.55">Accesos rápidos: diario, escalas, test de alerta, perfil de tu hijo/a.</div></div></div>
@@ -3405,7 +3423,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy52';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy53';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -16882,6 +16900,508 @@ async function viewPatientScale(patEmail, scaleId){
     m.onclick = e=>{ if(e.target===m) m.remove(); };
   }, 400);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ─── ONBOARDING INTERACTIVO (tours guiados) — hoy53 ───────────
+// ═══════════════════════════════════════════════════════════════
+// Motor propio: overlay con SVG mask (recorte del target) + tooltip flotante.
+// Persiste "completado" en localStorage por tourId. Autotrigger la primera vez;
+// también relanzable desde "¿Cómo usar Dormetria?".
+
+window._dmTour = { active:null, steps:[], idx:0, container:null, resizeHandler:null };
+
+// Inyectar CSS del tour una sola vez
+(function injectDmTourCSS(){
+  if(document.getElementById('dm-tour-styles')) return;
+  const st = document.createElement('style');
+  st.id = 'dm-tour-styles';
+  st.textContent = `
+    #dm-tour-root { position:fixed; inset:0; z-index:99999; pointer-events:none; }
+    #dm-tour-root svg { position:absolute; inset:0; width:100%; height:100%; }
+    #dm-tour-root .dm-tour-tooltip {
+      position:absolute; pointer-events:auto;
+      background:#F4EFE5; color:#0F2820;
+      border-radius:16px; padding:18px 20px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.3);
+      max-width:340px; min-width:260px;
+      font-family:var(--font, system-ui);
+      animation:dmTourIn 0.28s cubic-bezier(0.2,0.9,0.3,1.1);
+    }
+    @keyframes dmTourIn {
+      from { opacity:0; transform:scale(0.94) translateY(4px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+    #dm-tour-root .dm-tour-title {
+      font-size:16px; font-weight:600; color:#1A4A3A; margin-bottom:6px;
+      display:flex; align-items:center; gap:8px;
+    }
+    #dm-tour-root .dm-tour-body {
+      font-size:13.5px; line-height:1.55; color:#374151; margin-bottom:14px;
+    }
+    #dm-tour-root .dm-tour-body strong { color:#1A4A3A; font-weight:600; }
+    #dm-tour-root .dm-tour-progress {
+      font-size:11px; color:#6B7280; letter-spacing:0.05em; text-transform:uppercase;
+      margin-bottom:2px; font-weight:600;
+    }
+    #dm-tour-root .dm-tour-actions {
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+    }
+    #dm-tour-root .dm-tour-btn {
+      border:none; border-radius:10px; padding:9px 16px;
+      font-size:13px; font-weight:600; cursor:pointer;
+      font-family:inherit;
+    }
+    #dm-tour-root .dm-tour-btn-primary { background:#1A4A3A; color:#fff; }
+    #dm-tour-root .dm-tour-btn-primary:hover { background:#2D6B55; }
+    #dm-tour-root .dm-tour-btn-secondary { background:transparent; color:#6B7280; padding:9px 10px; }
+    #dm-tour-root .dm-tour-btn-secondary:hover { color:#1A4A3A; }
+    #dm-tour-root .dm-tour-skip {
+      position:absolute; top:10px; right:12px;
+      background:none; border:none; color:#9CA3AF;
+      font-size:20px; cursor:pointer; padding:2px 6px;
+      line-height:1; border-radius:6px;
+    }
+    #dm-tour-root .dm-tour-skip:hover { color:#1A4A3A; background:rgba(0,0,0,0.05); }
+    #dm-tour-root .dm-tour-arrow {
+      position:absolute; width:14px; height:14px;
+      background:#F4EFE5; transform:rotate(45deg);
+    }
+    /* Centered tooltip (no target) */
+    #dm-tour-root .dm-tour-tooltip.dm-center {
+      top:50%; left:50%; transform:translate(-50%,-50%);
+    }
+  `;
+  document.head.appendChild(st);
+})();
+
+// Utilidades
+function _dmTourWait(fn, timeout){
+  timeout = timeout || 3000;
+  return new Promise(resolve => {
+    const start = Date.now();
+    const check = () => {
+      try { if(fn()) return resolve(true); } catch(e){}
+      if(Date.now() - start > timeout) return resolve(false);
+      requestAnimationFrame(check);
+    };
+    check();
+  });
+}
+
+function _dmTourResolveTarget(target){
+  if(!target) return null;
+  if(typeof target === 'function'){ try { return target(); } catch(e){ return null; } }
+  if(typeof target === 'string'){
+    return document.querySelector(target);
+  }
+  return target instanceof Element ? target : null;
+}
+
+function _dmTourBuildRoot(){
+  let root = document.getElementById('dm-tour-root');
+  if(root) return root;
+  root = document.createElement('div');
+  root.id = 'dm-tour-root';
+  root.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <mask id="dm-tour-mask">
+          <rect width="100%" height="100%" fill="white"/>
+          <rect id="dm-tour-hole" x="0" y="0" width="0" height="0" rx="12" ry="12" fill="black"/>
+        </mask>
+      </defs>
+      <rect width="100%" height="100%" fill="rgba(15,40,32,0.72)" mask="url(#dm-tour-mask)"/>
+    </svg>
+    <div id="dm-tour-tooltip" class="dm-tour-tooltip"></div>
+  `;
+  document.body.appendChild(root);
+  return root;
+}
+
+async function _dmTourRenderStep(){
+  const t = window._dmTour;
+  if(!t.active) return;
+  const step = t.steps[t.idx];
+  if(!step){ dmSkipTour(); return; }
+  // Ejecutar onEnter
+  if(typeof step.onEnter === 'function'){ try { step.onEnter(); } catch(e){} }
+  // Esperar target si aplica
+  let el = null;
+  if(step.target){
+    if(step.waitFor){
+      await _dmTourWait(step.waitFor, step.waitTimeout || 3000);
+    } else {
+      await _dmTourWait(()=> !!_dmTourResolveTarget(step.target), 2000);
+    }
+    el = _dmTourResolveTarget(step.target);
+    // Scroll el target a la vista si no está visible
+    if(el){
+      try {
+        const rect = el.getBoundingClientRect();
+        if(rect.top < 40 || rect.bottom > window.innerHeight - 40){
+          el.scrollIntoView({ behavior:'smooth', block:'center' });
+          // Esperar a que scroll termine
+          await new Promise(r => setTimeout(r, 350));
+        }
+      } catch(e){}
+    }
+  }
+  _dmTourPositionStep(el, step);
+}
+
+function _dmTourPositionStep(el, step){
+  const root = document.getElementById('dm-tour-root');
+  const tooltip = document.getElementById('dm-tour-tooltip');
+  const hole = document.getElementById('dm-tour-hole');
+  const svg = root.querySelector('svg');
+  // Setear tamaño del SVG
+  svg.setAttribute('width', window.innerWidth);
+  svg.setAttribute('height', window.innerHeight);
+  const total = window._dmTour.steps.length;
+  const idx = window._dmTour.idx;
+  const isLast = idx === total - 1;
+  const isFirst = idx === 0;
+  const stepTitle = step.title || '';
+  const stepBody = step.body || '';
+  tooltip.className = 'dm-tour-tooltip';
+  tooltip.innerHTML = `
+    <button class="dm-tour-skip" onclick="dmSkipTour()" aria-label="Cerrar tour">✕</button>
+    <div class="dm-tour-progress">Paso ${idx+1} de ${total}</div>
+    <div class="dm-tour-title">${stepTitle}</div>
+    <div class="dm-tour-body">${stepBody}</div>
+    <div class="dm-tour-actions">
+      <button class="dm-tour-btn dm-tour-btn-secondary" onclick="dmSkipTour()">Saltar tour</button>
+      <div style="display:flex;gap:8px">
+        ${!isFirst ? '<button class="dm-tour-btn dm-tour-btn-secondary" onclick="dmPrevStep()">Atrás</button>' : ''}
+        <button class="dm-tour-btn dm-tour-btn-primary" onclick="${isLast ? 'dmFinishTour()' : 'dmNextStep()'}">${isLast ? 'Empezar' : 'Siguiente'}</button>
+      </div>
+    </div>
+  `;
+  if(!el){
+    // Sin target: tooltip centrado, sin recorte
+    hole.setAttribute('width', 0);
+    hole.setAttribute('height', 0);
+    tooltip.classList.add('dm-center');
+    return;
+  }
+  // Con target: agujero en el mask + posicionar tooltip
+  const rect = el.getBoundingClientRect();
+  const pad = step.padding != null ? step.padding : 8;
+  const hx = Math.max(6, rect.left - pad);
+  const hy = Math.max(6, rect.top - pad);
+  const hw = Math.min(window.innerWidth - hx - 6, rect.width + pad*2);
+  const hh = Math.min(window.innerHeight - hy - 6, rect.height + pad*2);
+  hole.setAttribute('x', hx);
+  hole.setAttribute('y', hy);
+  hole.setAttribute('width', hw);
+  hole.setAttribute('height', hh);
+  // Posicionamiento del tooltip: preferir abajo, sino arriba, sino centro
+  const tw = 320, th = 200;
+  const margin = 14;
+  let placement = step.placement || 'auto';
+  let tx, ty;
+  const spaceBelow = window.innerHeight - (hy + hh);
+  const spaceAbove = hy;
+  if(placement === 'auto'){
+    placement = spaceBelow >= th + margin ? 'bottom' :
+                spaceAbove >= th + margin ? 'top' : 'bottom';
+  }
+  if(placement === 'bottom'){
+    ty = hy + hh + margin;
+    tx = Math.max(10, Math.min(window.innerWidth - tw - 10, hx + hw/2 - tw/2));
+  } else if(placement === 'top'){
+    ty = Math.max(10, hy - th - margin);
+    tx = Math.max(10, Math.min(window.innerWidth - tw - 10, hx + hw/2 - tw/2));
+  } else if(placement === 'left'){
+    tx = Math.max(10, hx - tw - margin);
+    ty = Math.max(10, Math.min(window.innerHeight - th - 10, hy + hh/2 - th/2));
+  } else {
+    tx = Math.max(10, Math.min(window.innerWidth - tw - 10, hx + hw + margin));
+    ty = Math.max(10, Math.min(window.innerHeight - th - 10, hy + hh/2 - th/2));
+  }
+  tooltip.style.left = tx + 'px';
+  tooltip.style.top = ty + 'px';
+  tooltip.style.transform = 'none';
+}
+
+async function dmStartTour(tourId){
+  const tour = DM_TOURS[tourId];
+  if(!tour || !tour.steps || !tour.steps.length){
+    console.warn('[dmTour] tour desconocido o vacío:', tourId);
+    return;
+  }
+  // Cerrar tour anterior si estaba activo
+  if(window._dmTour.active){ dmSkipTour(); }
+  window._dmTour.active = tourId;
+  window._dmTour.steps = tour.steps;
+  window._dmTour.idx = 0;
+  _dmTourBuildRoot();
+  // Resize handler
+  window._dmTour.resizeHandler = () => {
+    if(window._dmTour.active) _dmTourRenderStep();
+  };
+  window.addEventListener('resize', window._dmTour.resizeHandler);
+  window.addEventListener('scroll', window._dmTour.resizeHandler, { passive:true });
+  await _dmTourRenderStep();
+}
+
+function dmNextStep(){
+  const t = window._dmTour;
+  if(!t.active) return;
+  if(t.idx < t.steps.length - 1){ t.idx++; _dmTourRenderStep(); }
+}
+function dmPrevStep(){
+  const t = window._dmTour;
+  if(!t.active) return;
+  if(t.idx > 0){ t.idx--; _dmTourRenderStep(); }
+}
+function dmSkipTour(){
+  const t = window._dmTour;
+  if(!t.active) return;
+  const tourId = t.active;
+  try { localStorage.setItem('dm_tour_seen_' + tourId, '1'); } catch(e){}
+  t.active = null;
+  t.steps = [];
+  t.idx = 0;
+  const root = document.getElementById('dm-tour-root');
+  if(root) root.remove();
+  if(t.resizeHandler){
+    window.removeEventListener('resize', t.resizeHandler);
+    window.removeEventListener('scroll', t.resizeHandler);
+    t.resizeHandler = null;
+  }
+}
+function dmFinishTour(){
+  const t = window._dmTour;
+  if(!t.active) return;
+  try { localStorage.setItem('dm_tour_done_' + t.active, '1'); } catch(e){}
+  dmSkipTour();
+}
+
+// Autotrigger: se llama al entrar a cada pantalla clave.
+// Si nunca completó ni cerró el tour, arranca automáticamente.
+function dmMaybeAutoStartTour(tourId){
+  try {
+    const done = localStorage.getItem('dm_tour_done_' + tourId);
+    const seen = localStorage.getItem('dm_tour_seen_' + tourId);
+    if(done || seen) return false;
+    // Delay para que el DOM se estabilice
+    setTimeout(() => {
+      if(window._dmTour.active) return; // no interrumpir otro tour
+      dmStartTour(tourId);
+    }, 600);
+    return true;
+  } catch(e){ return false; }
+}
+
+// ─── Definición de los 3 tours (paciente) ───
+const DM_TOURS = {
+  // Tour 1: Home del paciente
+  'patient_home': {
+    steps: [
+      {
+        target: null, // primer paso sin target, centrado
+        title: '👋 Bienvenido/a a Dormetria',
+        body: 'Te voy a mostrar en 6 pasos cómo aprovechar la app. Se hace en menos de un minuto. Podés saltarlo en cualquier momento y volver a verlo desde <strong>Inicio → "¿Cómo usar Dormetria?"</strong>.',
+        placement: 'center'
+      },
+      {
+        target: '#home-howto-card',
+        title: '📖 Guía rápida',
+        body: 'Acá vas a encontrar la explicación completa de cada función. Si te perdés en algún momento, esta guía siempre está disponible.',
+        placement: 'bottom'
+      },
+      {
+        target: '#home-diary-status',
+        title: '📔 Registrá tu noche',
+        body: 'Esta tarjeta es <strong>lo más importante</strong>. Cada mañana, cuando te levantes, tocá acá para registrar cómo dormiste. Te lleva un minuto y es lo que le da valor clínico a tu perfil.',
+        placement: 'top',
+        padding: 12
+      },
+      {
+        target: '#home-scale-card',
+        title: '🧠 Escala del día',
+        body: 'Cada día te sugerimos una escala clínica adaptada a vos. No repetimos las que ya completaste hace poco. Si tenés menos de 5 minutos, priorizá el diario antes que las escalas.',
+        placement: 'top',
+        padding: 10
+      },
+      {
+        target: '#home-edu-card',
+        title: '📚 Material de tu profesional',
+        body: 'Cuando tu profesional te comparta material educativo (artículos, técnicas de higiene, ejercicios), va a aparecer acá. Si aún no tenés profesional vinculado, esta sección se completa cuando escanees el QR de tu médico.',
+        placement: 'top',
+        padding: 10,
+        waitFor: () => {
+          const el = document.getElementById('home-edu-card');
+          return el && el.offsetHeight > 0;
+        },
+        waitTimeout: 1200
+      },
+      {
+        target: null,
+        title: '✨ Listo',
+        body: 'Ya sabés lo esencial. La constancia en el diario es lo que hace la diferencia. Con 2-3 semanas de datos tu profesional va a poder ver patrones que a simple vista se escapan.',
+        placement: 'center'
+      }
+    ]
+  },
+
+  // Tour 2: Diario (primera vez que entra al formulario)
+  'patient_diary': {
+    steps: [
+      {
+        target: null,
+        title: '📔 Registrar una noche',
+        body: 'Este formulario está pensado para que lo llenes en menos de un minuto. Te muestro los campos clave.',
+        placement: 'center'
+      },
+      {
+        target: '#d-date',
+        title: 'Fecha',
+        body: 'La fecha es la de <strong>ayer</strong> (la noche que dormiste). Por defecto se pone ayer, pero podés cambiarla si estás cargando algo atrasado.',
+        placement: 'bottom',
+        padding: 6
+      },
+      {
+        target: '#d-bed',
+        title: '🌙 Hora de acostarte',
+        body: 'La hora en que apagaste la luz. Si estuviste un rato dando vueltas antes de dormirte, eso lo cargás en "latencia" más abajo.',
+        placement: 'top',
+        padding: 6
+      },
+      {
+        target: '#d-latency',
+        title: '⏱ Latencia',
+        body: 'Cuánto tardaste en dormirte, en minutos. Es un dato clínico clave para detectar insomnio de conciliación. Si te dormiste enseguida, poné 0 o 5.',
+        placement: 'top',
+        padding: 6
+      },
+      {
+        target: '#d-wake',
+        title: '☀️ Hora de levantarte',
+        body: 'La hora en que <strong>saliste de la cama</strong>, no la del despertador si te quedaste dando vueltas. Con esto calculamos tu tiempo real de sueño.',
+        placement: 'top',
+        padding: 6
+      },
+      {
+        target: null,
+        title: '💾 Ya está',
+        body: 'Al guardar, tu score se actualiza automáticamente. Con 3 noches ya vas a ver tu primer score. Con 7 noches el score de regularidad empieza a tener sentido.',
+        placement: 'center'
+      }
+    ]
+  },
+
+  // Tour 3: Resultados (score + pilares + actograma)
+  'patient_results': {
+    steps: [
+      {
+        target: null,
+        title: '📊 Tu score de sueño',
+        body: 'Ya tenés datos suficientes para leer tu perfil. Te muestro cómo interpretarlo en 4 pasos.',
+        placement: 'center'
+      },
+      {
+        target: () => document.querySelector('#screen-diary-graphs .score-panel, #screen-diary-graphs [style*="Score de sueño"]') || document.querySelector('#screen-diary-graphs > div > div'),
+        title: 'Score global (0-100)',
+        body: '<strong>≥85 excelente · 70-84 bueno · 55-69 regular · &lt;55 requiere atención</strong>. Es un promedio ponderado de las tres dimensiones que ves abajo.',
+        placement: 'bottom',
+        padding: 10,
+        waitFor: () => {
+          const el = document.querySelector('#screen-diary-graphs [style*="Score de sueño"], #diary-pillar-bars');
+          return el && el.offsetHeight > 0;
+        },
+        waitTimeout: 2500
+      },
+      {
+        target: '#diary-pillar-bars',
+        title: '🏛 Los tres pilares',
+        body: '<strong>Cantidad</strong> (dormís lo suficiente), <strong>Fragmentación</strong> (cuántos despertares), <strong>Regularidad</strong> (mismos horarios cada día). Casi siempre uno arrastra al resto: trabajá primero el más bajo.',
+        placement: 'top',
+        padding: 8
+      },
+      {
+        target: '#diary-chart-actogram',
+        title: '📈 Actograma',
+        body: 'Cada fila es una noche. Las barras verdes muestran cuándo estás dormido/a; las azules las siestas; los recuadros blancos con borde naranja los despertares nocturnos. Las líneas punteadas son tus horarios promedio.',
+        placement: 'top',
+        padding: 8
+      },
+      {
+        target: null,
+        title: '🎯 A partir de acá',
+        body: 'La clave está en seguir cargando el diario todos los días. Después de 2 semanas vas a poder comparar cómo evolucionó cada pilar y qué intervenciones funcionaron.',
+        placement: 'center'
+      }
+    ]
+  }
+};
+
+// ─── Autotriggers integrados con las funciones existentes ───
+// Home: engancharse al render de showHome (una sola vez)
+(function attachHomeTourAutotrigger(){
+  const _origShowHome = window.showHome;
+  if(typeof _origShowHome !== 'function') return;
+  if(_origShowHome._dmTourWrapped) return;
+  window.showHome = async function(...args){
+    const ret = await _origShowHome.apply(this, args);
+    // Solo pacientes, no médicos, no en Incognito
+    try {
+      if(S && S.role === 'patient'){
+        setTimeout(() => dmMaybeAutoStartTour('patient_home'), 800);
+      }
+    } catch(e){}
+    return ret;
+  };
+  window.showHome._dmTourWrapped = true;
+})();
+
+// Diario nuevo (formulario): engancharse a showDiaryNew
+(function attachDiaryTourAutotrigger(){
+  const _origShowDiary = window.showDiaryNew;
+  if(typeof _origShowDiary !== 'function') return;
+  if(_origShowDiary._dmTourWrapped) return;
+  window.showDiaryNew = function(...args){
+    const ret = _origShowDiary.apply(this, args);
+    try {
+      if(S && S.role === 'patient'){
+        setTimeout(() => dmMaybeAutoStartTour('patient_diary'), 700);
+      }
+    } catch(e){}
+    return ret;
+  };
+  window.showDiaryNew._dmTourWrapped = true;
+})();
+
+// Resultados: engancharse a showDiaryTab_ cuando tab='graphs'
+(function attachResultsTourAutotrigger(){
+  const _origShowDiaryTab = window.showDiaryTab_;
+  if(typeof _origShowDiaryTab !== 'function') return;
+  if(_origShowDiaryTab._dmTourWrapped) return;
+  window.showDiaryTab_ = async function(tab, ...args){
+    const ret = await _origShowDiaryTab.call(this, tab, ...args);
+    try {
+      if(tab === 'graphs' && S && S.role === 'patient'){
+        setTimeout(() => dmMaybeAutoStartTour('patient_results'), 1200);
+      }
+    } catch(e){}
+    return ret;
+  };
+  window.showDiaryTab_._dmTourWrapped = true;
+})();
+
+// ─── API para relanzar tours desde "¿Cómo usar Dormetria?" ───
+function dmResetTour(tourId){
+  try {
+    localStorage.removeItem('dm_tour_done_' + tourId);
+    localStorage.removeItem('dm_tour_seen_' + tourId);
+  } catch(e){}
+}
+function dmReplayTour(tourId){
+  dmResetTour(tourId);
+  dmStartTour(tourId);
+}
+
 </script>
 
 <!-- MODAL MEDICAMENTOS -->
