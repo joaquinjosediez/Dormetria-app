@@ -3423,7 +3423,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy54';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy55';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -12727,6 +12727,17 @@ function editChildProfile(chJsonEnc){
         <option value="X" ${ch.sex==='X'?'selected':''}>Prefiero no especificar</option>
       </select>
     </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div class="form-group" style="flex:1;margin:0">
+        <label class="form-label">Peso (kg)</label>
+        <input class="form-input" type="number" step="0.1" min="0" max="200" id="child-edit-weight" value="${ch.weight_kg||''}" placeholder="Ej: 32">
+      </div>
+      <div class="form-group" style="flex:1;margin:0">
+        <label class="form-label">Altura (cm)</label>
+        <input class="form-input" type="number" step="0.5" min="0" max="230" id="child-edit-height" value="${ch.height_cm||''}" placeholder="Ej: 138">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--label-2);margin:-8px 0 12px;line-height:1.4">El peso y la altura permiten calcular el IMC percentilado por edad, relevante para el riesgo de apnea del sueño en pediatría.</div>
     <div id="child-edit-error" class="form-error"></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-s" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancelar</button>
@@ -12742,12 +12753,17 @@ async function saveEditedChildProfile(childEmail){
   const lname = document.getElementById('child-edit-lname')?.value.trim();
   const dob = document.getElementById('child-edit-dob')?.value;
   const sex = document.getElementById('child-edit-sex')?.value;
+  const weight = document.getElementById('child-edit-weight')?.value;
+  const height = document.getElementById('child-edit-height')?.value;
   const err = document.getElementById('child-edit-error');
   if(!name||!lname||!dob){ if(err){err.textContent='Completá nombre, apellido y fecha de nacimiento.';err.classList.add('show');} return; }
   const btn = document.getElementById('child-edit-btn');
   if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
   try{
-    await db.patch('patients?email=eq.'+encodeURIComponent(childEmail), { name, lname, dob, sex:sex||null });
+    const patch = { name, lname, dob, sex:sex||null };
+    patch.weight_kg = weight ? parseFloat(weight) : null;
+    patch.height_cm = height ? parseFloat(height) : null;
+    await db.patch('patients?email=eq.'+encodeURIComponent(childEmail), patch);
     toast('✓ Perfil actualizado');
     document.querySelector('#child-edit-btn')?.closest('[style*=fixed]')?.remove();
     // Refrescar la lista de códigos infantiles
@@ -14010,7 +14026,21 @@ function showChildDiaryNew(){
     <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Contexto al dormirse</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">
-        ${[['teta','🤱 Teta'],['mamadera','🍼 Mamadera'],['upa','🤗 En brazos'],['mecedora','🪑 Meciendo'],['cuna','🛏 En cuna solo/a'],['colecho','👨‍👩‍👧 Colecho'],['chupete','🍬 Chupete'],['otro','✏️ Otro']].map(([v,l])=>`<button type="button" onclick="toggleSleepCtx('${v}',this)" data-ctx="${v}" style="padding:9px 8px;border:2px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:12px;font-family:var(--font);text-align:center">${l}</button>`).join('')}
+        ${(function(){
+          const ag = S.ageGroup || 'school';
+          // Opciones de acompañamiento al dormir, adaptadas a la edad.
+          // Bebé y preescolar: métodos de crianza tempranos (lactancia, upa, chupete).
+          // Escolar y adolescente: rutinas y factores propios de esas edades.
+          let opts;
+          if(ag === 'infant' || ag === 'preschool'){
+            opts = [['teta','🤱 Teta'],['mamadera','🍼 Mamadera'],['upa','🤗 En brazos'],['mecedora','🪑 Meciendo'],['cuna','🛏 En cuna solo/a'],['colecho','👨‍👩‍👧 Colecho'],['chupete','🍬 Chupete'],['otro','✏️ Otro']];
+          } else if(ag === 'school'){
+            opts = [['solo','🛏 Se durmió solo/a'],['acompanado','👪 Con un adulto al lado'],['colecho','🛌 En la cama de los padres'],['cuento','📖 Con cuento/lectura'],['luz','💡 Con luz o velador'],['objeto','🧸 Con objeto de apego'],['pantalla','📱 Con pantalla'],['otro','✏️ Otro']];
+          } else { // teen
+            opts = [['solo','🛏 Se durmió solo/a'],['musica','🎧 Con música/podcast'],['pantalla','📱 Con pantalla'],['luz','💡 Con luz'],['companiaFamiliar','👪 Acompañado por un familiar'],['dificultad','😣 Le costó dormirse'],['otro','✏️ Otro']];
+          }
+          return opts.map(([v,l])=>`<button type="button" onclick="toggleSleepCtx('${v}',this)" data-ctx="${v}" style="padding:9px 8px;border:2px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:12px;font-family:var(--font);text-align:center">${l}</button>`).join('');
+        })()}
       </div>
       <input type="hidden" id="d-sleep-ctx" value="">
     </div>
