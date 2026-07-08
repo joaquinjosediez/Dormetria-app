@@ -3423,7 +3423,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy55';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy57';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -9326,6 +9326,7 @@ async function editChildDiaryEntry(id){
       const dateEl=document.getElementById('d-date'); if(dateEl) dateEl.value=e.diary_date;
       const bedEl=document.getElementById('d-bed'); if(bedEl&&e.bedtime) bedEl.value=e.bedtime.slice(0,5);
       const wakeEl=document.getElementById('d-wake'); if(wakeEl&&e.wake_time) wakeEl.value=e.wake_time.slice(0,5);
+      const getupEl0=document.getElementById('d-getup'); if(getupEl0&&e.get_up_time) getupEl0.value=e.get_up_time.slice(0,5); if(typeof updateAwakeInBed==='function') updateAwakeInBed();
       const latEl=document.getElementById('d-latency'); if(latEl&&e.sleep_latency_mins){
         const opts=[2,10,22,45,90];
         const closest=opts.reduce((a,b)=>Math.abs(b-e.sleep_latency_mins)<Math.abs(a-e.sleep_latency_mins)?b:a);
@@ -9369,6 +9370,7 @@ async function editDiaryEntry(id){
       const bedEl=document.getElementById('d-bed'); if(bedEl) bedEl.value=e.bedtime?e.bedtime.slice(0,5):'';
       if(e.bedtime){const[bh,bm]=e.bedtime.slice(0,5).split(':');const bhs=document.getElementById('d-bed-h');const bms=document.getElementById('d-bed-m');if(bhs)bhs.value=bh;if(bms&&bm){const closest=['00','05','10','15','20','25','30','35','40','45','50','55'].reduce((a,b)=>Math.abs(parseInt(b)-parseInt(bm))<Math.abs(parseInt(a)-parseInt(bm))?b:a);bms.value=closest;}}
       const wakeEl=document.getElementById('d-wake'); if(wakeEl) wakeEl.value=e.wake_time?e.wake_time.slice(0,5):'';
+      const getupEl1=document.getElementById('d-getup'); if(getupEl1) getupEl1.value=e.get_up_time?e.get_up_time.slice(0,5):''; if(typeof updateAwakeInBed==='function') updateAwakeInBed();
       if(e.wake_time){const[wh,wm]=e.wake_time.slice(0,5).split(':');const whs=document.getElementById('d-wake-h');const wms=document.getElementById('d-wake-m');if(whs)whs.value=wh;if(wms&&wm){const closest=['00','05','10','15','20','25','30','35','40','45','50','55'].reduce((a,b)=>Math.abs(parseInt(b)-parseInt(wm))<Math.abs(parseInt(a)-parseInt(wm))?b:a);wms.value=closest;}}
       const latEl=document.getElementById('d-latency'); if(latEl&&e.sleep_latency_mins){
         const opts=[3,10,22,45,90,150];
@@ -9449,7 +9451,12 @@ function showDiaryNew(){
     <div class="sec-title" style="margin-top:4px">Sueño nocturno <span style="color:#dc2626">*</span></div>
     <div class="form-row" style="margin-bottom:14px">
       <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
-      <div class="form-group"><label class="form-label">Me levanté ⏰</label><input class="form-input" type="time" id="d-wake"></div>
+      <div class="form-group"><label class="form-label">Me desperté ☀️<span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">La hora en que abriste los ojos</span></label><input class="form-input" type="time" id="d-wake" onchange="updateAwakeInBed()"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Salí de la cama ⏰ <span style="color:#dc2626">*</span><span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">La hora en que efectivamente te levantaste. Si te levantaste apenas te despertaste, poné la misma hora.</span></label>
+      <input class="form-input" type="time" id="d-getup" onchange="updateAwakeInBed()">
+      <div id="awake-in-bed-hint" style="font-size:12px;color:var(--label-2);margin-top:6px;display:none"></div>
     </div>
     <div class="form-group">
       <label class="form-label">¿Cuánto tardé en dormirme? <span style="color:#dc2626">*</span><span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">Desde que apagaste la luz o tuviste intención de dormir</span></label>
@@ -9590,12 +9597,39 @@ function getMedications(){
   return _medModalMeds.length ? JSON.stringify(_medModalMeds) : '';
 }
 
+// Calcula y muestra el tiempo despierto en cama (entre despertar y levantarse).
+// Se usa tanto en el diario adulto como en el infantil.
+function updateAwakeInBed(){
+  const wakeEl = document.getElementById('d-wake');
+  const getupEl = document.getElementById('d-getup');
+  const hint = document.getElementById('awake-in-bed-hint');
+  if(!wakeEl || !getupEl || !hint) return;
+  const w = wakeEl.value, g = getupEl.value;
+  if(!w || !g){ hint.style.display='none'; return; }
+  const [wh,wm] = w.split(':').map(Number);
+  const [gh,gm] = g.split(':').map(Number);
+  let diff = (gh*60+gm) - (wh*60+wm);
+  if(diff < 0) diff += 1440; // cruce de medianoche defensivo
+  if(diff === 0){
+    hint.textContent = '✓ Te levantaste apenas te despertaste.';
+    hint.style.color = 'var(--label-2)';
+  } else if(diff <= 20){
+    hint.textContent = 'Estuviste ' + diff + ' min despierto/a en la cama antes de levantarte.';
+    hint.style.color = 'var(--label-2)';
+  } else {
+    hint.textContent = '⚠ Estuviste ' + diff + ' min (' + (diff/60).toFixed(1) + ' h) despierto/a en la cama. Levantarse al despertar ayuda a dormir mejor.';
+    hint.style.color = '#d97706';
+  }
+  hint.style.display = 'block';
+}
+
 async function saveDiary(){
   if(!S.user){toast('Sesión no iniciada');return;}
   const date=document.getElementById('d-date')?.value;
   if(!date){toast('Completá la fecha');return;}
   const bed=document.getElementById('d-bed')?.value||null;
   const wake=document.getElementById('d-wake')?.value||null;
+  const getup=document.getElementById('d-getup')?.value||null;
   const latency=parseInt(document.getElementById('d-latency')?.value)||null;
   const dayType=document.getElementById('d-daytype')?.value||'work';
   const quality=parseInt(document.getElementById('d-qual')?.value)||null;
@@ -9611,17 +9645,29 @@ async function saveDiary(){
   // Awakenings (calculados ANTES de sleepMins para descontar WASO de TST)
   const awakList=awakeningList||[];
   const wasoMins=awakList.reduce((a,b)=>a+(parseInt(b.duration)||0),0)||null;
-  // Calculate sleep minutes — TST = TIB - latencia - WASO
-  // tib_minutes (Tiempo en cama) se guarda aparte para sleep restriction therapy
+  // Tiempo despierto en cama entre el despertar final y levantarse (schema v2).
+  // NO se descuenta del TST porque wake_time ahora ES el despertar final: el TST
+  // va de bedtime a wake_time. Este dato es un marcador clínico independiente
+  // (despertar precoz / control de estímulos).
+  let awakeInBedAfter=null;
+  if(wake && getup){
+    const [wh,wm]=wake.split(':').map(Number);
+    const [gh,gm]=getup.split(':').map(Number);
+    let d=(gh*60+gm)-(wh*60+wm);
+    if(d<0) d+=1440;
+    awakeInBedAfter=d;
+  }
+  // Calculate sleep minutes — TST = (bedtime→wake_time) - latencia - WASO
+  // wake_time = despertar final (schema v2). El tramo hasta levantarse queda fuera.
   let sleepMins=null, tibMins=null;
   if(bed&&wake){
     const [bh,bm]=bed.split(':').map(Number);
     const [wh,wm]=wake.split(':').map(Number);
     let mins=(wh*60+wm)-(bh*60+bm);
     if(mins<0) mins+=1440;
-    tibMins=mins; // TIB sin descuentos
+    tibMins=mins; // TIB nocturno hasta el despertar final
     if(latency) mins=Math.max(0,mins-latency);
-    if(wasoMins) mins=Math.max(0,mins-wasoMins); // descontar WASO para TST verdadero
+    if(wasoMins) mins=Math.max(0,mins-wasoMins);
     sleepMins=mins;
   }
   // Caffeine & alcohol
@@ -9632,6 +9678,9 @@ async function saveDiary(){
     diary_date:date,
     bedtime:bed,
     wake_time:wake,
+    get_up_time:getup,
+    awake_in_bed_after_mins:awakeInBedAfter,
+    schema_version:2,
     sleep_minutes:sleepMins,
     sleep_latency_mins:latency,
     day_type:dayType,
@@ -9652,14 +9701,37 @@ async function saveDiary(){
   const btn=document.getElementById('save-diary-btn');
   if(btn) btn.disabled=true;
   try{
-    let ok;
-    if(S._editingDiaryId){
-      ok=await db.patch('sleep_diary?id=eq.'+S._editingDiaryId,payload);
-    } else {
-      ok=await db.post('sleep_diary',payload);
+    // Save resiliente: si Supabase reporta columna inexistente (get_up_time,
+    // awake_in_bed_after_mins, schema_version pueden no estar migradas aún),
+    // la quitamos del payload y reintentamos. Así el diario nunca se rompe por
+    // una migración pendiente.
+    let ok, attempt=0;
+    const maxRetries=5;
+    const workPayload=Object.assign({},payload);
+    while(attempt<=maxRetries){
+      try{
+        if(S._editingDiaryId){
+          ok=await db.patch('sleep_diary?id=eq.'+S._editingDiaryId,workPayload);
+        } else {
+          ok=await db.post('sleep_diary',workPayload);
+        }
+        break;
+      }catch(err){
+        const m=(err&&err.message)||'';
+        const colMatch=m.match(/column "?([a-z_]+)"? of relation|'([a-z_]+)' column|column ([a-z_]+) does not exist/i);
+        const col=colMatch?(colMatch[1]||colMatch[2]||colMatch[3]):null;
+        if(col && col in workPayload && attempt<maxRetries){
+          console.warn('[saveDiary] columna faltante, reintentando sin:',col);
+          delete workPayload[col];
+          attempt++;
+          continue;
+        }
+        throw err;
+      }
     }
+    const wasEditing=!!S._editingDiaryId;
     S._editingDiaryId=null;
-    showSuccessBanner(S._editingDiaryId?'Registro actualizado':'Registro guardado');
+    showSuccessBanner(wasEditing?'Registro actualizado':'Registro guardado');
     showDiaryHome();
   }catch(e){
     toast('Error al guardar: '+e.message);
@@ -14020,7 +14092,12 @@ function showChildDiaryNew(){
     <div class="sec-title">Sueño nocturno <span style="color:#dc2626">*</span></div>
     <div class="form-row" style="margin-bottom:12px">
       <div class="form-group"><label class="form-label">Se acostó 🛏</label><input class="form-input" type="time" id="d-bed"></div>
-      <div class="form-group"><label class="form-label">Se levantó ⏰</label><input class="form-input" type="time" id="d-wake"></div>
+      <div class="form-group"><label class="form-label">Se despertó ☀️<span style="font-size:11px;color:var(--ink3);font-weight:400;display:block;margin-top:2px">Cuándo abrió los ojos</span></label><input class="form-input" type="time" id="d-wake" onchange="updateAwakeInBed()"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Se levantó de la cama ⏰ <span style="color:#dc2626">*</span><span style="font-size:11px;color:var(--ink3);font-weight:400;display:block;margin-top:2px">Cuándo salió de la cama. Si fue apenas se despertó, poné la misma hora.</span></label>
+      <input class="form-input" type="time" id="d-getup" onchange="updateAwakeInBed()">
+      <div id="awake-in-bed-hint" style="font-size:12px;color:var(--ink3);margin-top:6px;display:none"></div>
     </div>
 
     <div class="form-group" style="margin-bottom:12px">
@@ -14166,6 +14243,7 @@ async function saveChildDiary(){
   const date = document.getElementById('d-date')?.value;
   const bed = document.getElementById('d-bed')?.value;
   const wake = document.getElementById('d-wake')?.value;
+  const getup = document.getElementById('d-getup')?.value||null;
   const latency = parseInt(document.getElementById('d-latency')?.value||'0')||null;
   const ctx = document.getElementById('d-sleep-ctx')?.value||null;
   const moodNight = document.getElementById('d-mood-night')?.value||null;
@@ -14177,12 +14255,24 @@ async function saveChildDiary(){
 
   if(!date||!bed||!wake){ toast('Completá fecha y horarios'); return; }
 
-  // Calculate sleep minutes
+  // WASO de los despertares infantiles (antes NO se descontaba — bug del diario infantil)
+  const childWaso=(_childAwakenings||[]).reduce((a,b)=>a+(parseInt(b.duration)||0),0)||null;
+  // Tiempo despierto en cama entre despertar final y levantarse (schema v2)
+  let awakeInBedAfter=null;
+  if(wake && getup){
+    const [wh2,wm2]=wake.split(':').map(Number);
+    const [gh2,gm2]=getup.split(':').map(Number);
+    let d2=(gh2*60+gm2)-(wh2*60+wm2);
+    if(d2<0) d2+=1440;
+    awakeInBedAfter=d2;
+  }
+  // TST = (bedtime→wake_time) - latencia - WASO. wake_time = despertar final.
   const bedH=parseInt(bed.split(':')[0]), bedM=parseInt(bed.split(':')[1]);
   const wkH=parseInt(wake.split(':')[0]), wkM=parseInt(wake.split(':')[1]);
   let totalMin=(wkH*60+wkM)-(bedH*60+bedM);
   if(totalMin<0) totalMin+=1440;
   if(latency) totalMin=Math.max(0,totalMin-latency);
+  if(childWaso) totalMin=Math.max(0,totalMin-childWaso);
 
   const btn=document.getElementById('save-diary-btn');
   if(btn) btn.disabled=true;
@@ -14192,8 +14282,12 @@ async function saveChildDiary(){
       diary_date:date,
       bedtime:bed,
       wake_time:wake,
+      get_up_time:getup,
+      awake_in_bed_after_mins:awakeInBedAfter,
+      schema_version:2,
       awakenings:_childAwakenings.length,
       awakening_detail:JSON.stringify(_childAwakenings)||null,
+      wake_in_bed_mins:childWaso,
       sleep_minutes:totalMin,
       sleep_latency_mins:latency,
       notes:[
@@ -14206,13 +14300,30 @@ async function saveChildDiary(){
       screen_minutes:screen,
       day_type:(window._diaryDayType||'work')
     };
-    if(S._editingDiaryId){
-      await db.patch('sleep_diary?id=eq.'+S._editingDiaryId, body);
-      toast('Registro actualizado ✓');
-      S._editingDiaryId=null;
-    } else {
-      await db.post('sleep_diary',body);
-      toast('Registro guardado ✓');
+    // Save resiliente a columnas faltantes (misma lógica que el diario adulto)
+    const _work=Object.assign({},body);
+    let _att=0;
+    while(_att<=5){
+      try{
+        if(S._editingDiaryId){
+          await db.patch('sleep_diary?id=eq.'+S._editingDiaryId, _work);
+          toast('Registro actualizado ✓');
+          S._editingDiaryId=null;
+        } else {
+          await db.post('sleep_diary',_work);
+          toast('Registro guardado ✓');
+        }
+        break;
+      }catch(err){
+        const m=(err&&err.message)||'';
+        const cm=m.match(/column "?([a-z_]+)"? of relation|'([a-z_]+)' column|column ([a-z_]+) does not exist/i);
+        const col=cm?(cm[1]||cm[2]||cm[3]):null;
+        if(col && col in _work && _att<5){
+          console.warn('[saveChildDiary] columna faltante, reintentando sin:',col);
+          delete _work[col]; _att++; continue;
+        }
+        throw err;
+      }
     }
     setTimeout(()=>{
       if(S.childMode){ showChildHome(); showChildTab('diary',document.getElementById('ch-tab-diary')); }
@@ -14714,30 +14825,73 @@ async function tryAutoLogin(){
 function handleAuthRedirect(){
   if(!supa){ initSupabase(); }
   if(!supa) return;
-  // Escuchar PASSWORD_RECOVERY → mostrar pantalla de cambio de contraseña
-  // Escuchar SIGNED_IN (proviene de invite confirmado) → idem
+
+  // Detectar la INTENCIÓN desde la URL ANTES de que el SDK procese el token.
+  // Con flowType:'pkce', Supabase manda el token como ?code=... en la query string
+  // (no en el hash). El tipo de flujo viene en el parámetro 'type' del hash O como
+  // marca que dejamos en resetPasswordForEmail. Guardamos la intención para que,
+  // cuando el SDK dispare el evento de sesión, sepamos qué pantalla mostrar.
+  let intent = null;
+  try{
+    const hash = (window.location.hash || '').toLowerCase();
+    const search = (window.location.search || '').toLowerCase();
+    const qs = new URLSearchParams(window.location.search);
+    const hasCode = !!qs.get('code');            // PKCE
+    // El tipo puede venir en el hash (#type=recovery) o en la query (?type=recovery,
+    // que es lo que ponemos en redirectTo). Buscamos en ambos.
+    const typeMatch = /type=(recovery|invite|signup|magiclink)/.exec(hash + '&' + search);
+    if(typeMatch){
+      intent = typeMatch[1];
+    } else if(hasCode){
+      // PKCE sin tipo explícito: usar la marca local o asumir recovery.
+      intent = sessionStorage.getItem('dm_auth_intent') || 'recovery';
+    }
+    if(intent){ sessionStorage.setItem('dm_auth_intent', intent); }
+    console.log('[AUTH-REDIRECT] intent detectado=', intent, 'hasCode=', hasCode);
+  }catch(e){ console.warn('[AUTH-REDIRECT] parse url:', e); }
+
+  // El SDK dispara eventos cuando canjea el token de la URL.
   supa.auth.onAuthStateChange((event, session) => {
-    console.log('[AUTH-REDIRECT] event=', event, 'has session=', !!session);
+    console.log('[AUTH-REDIRECT] event=', event, 'session=', !!session, 'intent=', sessionStorage.getItem('dm_auth_intent'));
+    const storedIntent = sessionStorage.getItem('dm_auth_intent');
     if(event === 'PASSWORD_RECOVERY'){
-      // Usuario hizo click en "Reset password" del mail
+      sessionStorage.removeItem('dm_auth_intent');
       showSetPasswordScreen('recovery');
     } else if(event === 'SIGNED_IN' && session){
-      // Detectar si es la primera vez (recién confirmó invitación):
-      // En ese caso user.created_at es muy reciente y no hay perfil aún
-      checkIfNeedsPasswordSetup(session);
+      // Un SIGNED_IN puede venir de: (a) recovery vía PKCE, (b) invite confirmado,
+      // (c) login normal. Desambiguamos con la intención guardada.
+      if(storedIntent === 'recovery'){
+        sessionStorage.removeItem('dm_auth_intent');
+        showSetPasswordScreen('recovery');
+      } else if(storedIntent === 'invite' || storedIntent === 'signup'){
+        sessionStorage.removeItem('dm_auth_intent');
+        showSetPasswordScreen('invite');
+      } else {
+        // Login normal: dejar que checkIfNeedsPasswordSetup / tryAutoLogin decidan.
+        checkIfNeedsPasswordSetup(session);
+      }
     }
   });
-  // También chequear al cargar la página si hay hash de tipo recovery
-  if(window.location.hash){
-    const hash = window.location.hash.toLowerCase();
-    if(hash.includes('type=recovery') || hash.includes('type=invite')){
-      // El SDK ya procesó el token; solo mostramos la pantalla apropiada
-      setTimeout(async ()=>{
-  const {data:{session}} = await supa.auth.getSession();
-  if(session){ showSetPasswordScreen('invite'); }
-  else { showScreen('login'); }
-}, 2000);
-    }
+
+  // Fallback: si hay token en la URL pero el evento no llegó (timing), chequear la
+  // sesión y actuar según la intención. SIN forzar 'invite' como antes.
+  const qs2 = new URLSearchParams(window.location.search);
+  const hasToken = !!qs2.get('code') || /access_token|type=recovery|type=invite/.test((window.location.hash||'').toLowerCase());
+  if(hasToken){
+    setTimeout(async ()=>{
+      try{
+        const {data:{session}} = await supa.auth.getSession();
+        const storedIntent = sessionStorage.getItem('dm_auth_intent');
+        if(session && storedIntent === 'recovery'){
+          sessionStorage.removeItem('dm_auth_intent');
+          showSetPasswordScreen('recovery');
+        } else if(session && (storedIntent === 'invite' || storedIntent === 'signup')){
+          sessionStorage.removeItem('dm_auth_intent');
+          showSetPasswordScreen('invite');
+        }
+        // Si no hay intención clara, no hacemos nada — tryAutoLogin maneja el login normal.
+      }catch(e){ console.warn('[AUTH-REDIRECT] fallback:', e); }
+    }, 1500);
   }
 }
 
@@ -14853,13 +15007,20 @@ function showForgotPasswordPrompt(){
   const cleanEmail = email.trim().toLowerCase();
   if(!cleanEmail.includes('@')){ toast('Email inválido'); return; }
   if(!supa){ initSupabase(); }
+  // Marca local (sirve si abre el link en el mismo navegador).
+  try{ sessionStorage.setItem('dm_auth_intent', 'recovery'); }catch(_){}
+  // redirectTo con marca explícita ?type=recovery en la URL: hace la detección
+  // infalible incluso si el paciente abre el mail en OTRO navegador/dispositivo,
+  // donde el sessionStorage no existe.
+  const base = window.location.origin + window.location.pathname;
+  const redirect = base + (base.includes('?') ? '&' : '?') + 'type=recovery';
   supa.auth.resetPasswordForEmail(cleanEmail, {
-    redirectTo: window.location.origin + window.location.pathname
+    redirectTo: redirect
   }).then(({error}) => {
     if(error){
       toast('Error: '+error.message);
     } else {
-      toast('Te enviamos un mail con instrucciones.');
+      toast('Te enviamos un mail con instrucciones. Revisá también la carpeta de spam.');
     }
   });
 }
@@ -17380,8 +17541,8 @@ const DM_TOURS = {
       },
       {
         target: '#d-wake',
-        title: '☀️ Hora de levantarte',
-        body: 'La hora en que <strong>saliste de la cama</strong>, no la del despertador si te quedaste dando vueltas. Con esto calculamos tu tiempo real de sueño.',
+        title: '☀️ Hora en que te despertaste',
+        body: 'La hora en que <strong>abriste los ojos</strong> por última vez. Con esto calculamos tu tiempo real de sueño. Justo debajo vas a poder anotar a qué hora te levantaste de la cama, que puede ser distinto.',
         placement: 'top',
         padding: 6
       },
