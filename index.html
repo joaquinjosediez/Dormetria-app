@@ -3423,7 +3423,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy57';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy59';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -3621,6 +3621,47 @@ function toast(msg,dur=3000){
 
 
 const SCALES=[
+// ═══════════════════════════════════════════════════════════════════════
+// MOLDES PENDIENTES DE LICENCIA — NO ACTIVAR SIN AUTORIZACIÓN ESCRITA
+// ═══════════════════════════════════════════════════════════════════════
+// Ambas escalas tienen `qs:[]`, por lo que quedan AUTOMÁTICAMENTE OCULTAS del
+// catálogo (ver el guard `!sc.qs||!sc.qs.length` en el render de escalas).
+// Para activarlas:
+//   1. Obtener autorización escrita de los autores.
+//   2. Pegar los ítems VERBATIM del instrumento original en `qs`.
+//   3. Verificar que los cortes de `interp()` correspondan a la fuente.
+//   4. Quitar `disabled:true`.
+// NO redactar los ítems de memoria ni parafrasearlos: una escala con ítems
+// aproximados no es esa escala, sus cortes normativos no aplican, y los datos
+// recolectados no sirven para investigación ni para decisión clínica.
+{
+  id:'cctq',
+  name:'Cronotipo infantil (CCTQ)',
+  cat:'circadian',
+  desc:'Cronotipo en niños de 4 a 12 años (reportado por el cuidador)',
+  ref:'Werner H, LeBourgeois MK, Geiger A, Jenni OG. (2009). Assessment of chronotype in four- to eleven-year-old children: reliability and validity of the Children\'s Chronotype Questionnaire (CCTQ). Chronobiol Int, 26(5), 992–1014.',
+  note:'PENDIENTE DE LICENCIA — Solicitar autorización a los autores (Kinderspital Zürich) antes de usar.',
+  disabled:true,           // ← quitar al obtener licencia
+  max:null,                // ← completar según la fuente
+  qs:[],                   // ← PEGAR ÍTEMS VERBATIM DEL INSTRUMENTO ORIGINAL
+  interp:function(score){  // ← ajustar cortes según la fuente original
+    return {l:'Sin interpretación — escala no licenciada', c:'#888', bg:'#eee'};
+  }
+},
+{
+  id:'mesc',
+  name:'Cronotipo adolescente (MESC)',
+  cat:'circadian',
+  desc:'Matutinidad–vespertinidad en 11 a 17 años (autoadministrada)',
+  ref:'Carskadon MA, Vieira C, Acebo C. (1993). Association between puberty and delayed phase preference. Sleep, 16(3), 258–262.',
+  note:'PENDIENTE DE LICENCIA — Solicitar autorización a Mary Carskadon (Brown University) antes de usar.',
+  disabled:true,           // ← quitar al obtener licencia
+  max:null,                // ← completar según la fuente
+  qs:[],                   // ← PEGAR ÍTEMS VERBATIM DEL INSTRUMENTO ORIGINAL
+  interp:function(score){  // ← ajustar cortes según la fuente original
+    return {l:'Sin interpretación — escala no licenciada', c:'#888', bg:'#eee'};
+  }
+},
 {id:'bears',ref:'Owens JA et al. (2000). The Children\'s Sleep Habits Questionnaire (CSHQ). Sleep, 23(8), 1043–1051.',name:'BEARS — Cribado de sueño infantil',cat:'pediatric',max:15,
  ageGroups:['infant','preschool','school','teen'],
  desc:'Screening de 5 dominios de sueño para niños y adolescentes (respondido por el cuidador)',
@@ -5641,6 +5682,114 @@ function updatePillarBars(entries){
 //
 // Requiere ≥2 días libres registrados con day_type='free' para dar un valor.
 // Los cortes de categorización siguen Roenneberg 2007 (aproximados).
+// ─── Bandas de sueño por edad — AASM 2016 (Paruthi et al., J Clin Sleep Med) ───
+// El rango es de sueño TOTAL en 24h, INCLUYENDO siestas, que es exactamente lo que
+// calculamos con computeChildSleep24h().
+// Excepción: AASM no emite recomendación para 0-3 meses por evidencia insuficiente;
+// para esa franja usamos NSF 2015 (Hirshkowitz et al., Sleep Health), marcada como tal.
+const SLEEP_BANDS_24H = [
+  { max_months:3,   label:'0–3 meses',    min_h:14, max_h:17, source:'NSF 2015',  note:'AASM no emite recomendación para esta edad; se usa NSF 2015.' },
+  { max_months:11,  label:'4–11 meses',   min_h:12, max_h:16, source:'AASM 2016' },
+  { max_months:35,  label:'1–2 años',     min_h:11, max_h:14, source:'AASM 2016' },
+  { max_months:71,  label:'3–5 años',     min_h:10, max_h:13, source:'AASM 2016' },
+  { max_months:155, label:'6–12 años',    min_h:9,  max_h:12, source:'AASM 2016' },
+  { max_months:227, label:'13–18 años',   min_h:8,  max_h:10, source:'AASM 2016' }
+];
+function getSleepBandForAge(dob){
+  if(!dob) return null;
+  const d = new Date(dob);
+  if(isNaN(d)) return null;
+  const now = new Date();
+  const months = (now.getFullYear()-d.getFullYear())*12 + (now.getMonth()-d.getMonth());
+  if(months < 0) return null;
+  for(const b of SLEEP_BANDS_24H){ if(months <= b.max_months) return Object.assign({months}, b); }
+  return null; // >18 años: usar criterios de adulto
+}
+
+// Parsea las siestas guardadas en notes con formato "Siestas: [{start,end,mood},...]"
+function parseChildNaps(entry){
+  if(!entry || !entry.notes) return [];
+  const m = /Siestas: (\[.*?\])(?: \||$)/.exec(entry.notes);
+  if(!m) return [];
+  try{
+    const arr = JSON.parse(m[1]);
+    return Array.isArray(arr) ? arr.filter(n=>n && n.start) : [];
+  }catch(_){ return []; }
+}
+function _napDurationMin(nap){
+  if(!nap || !nap.start || !nap.end) return 0;
+  const [sh,sm] = nap.start.split(':').map(Number);
+  const [eh,em] = nap.end.split(':').map(Number);
+  let d = (eh*60+em) - (sh*60+sm);
+  if(d < 0) d += 1440;
+  return (d > 0 && d <= 8*60) ? d : 0; // descartar valores absurdos
+}
+
+// Sueño total 24h = nocturno (sleep_minutes) + siestas. Métrica pediátrica central.
+// Devuelve promedio y comparación contra la banda AASM correspondiente.
+function computeChildSleep24h(entries, dob){
+  const valid = (entries||[]).filter(e => e.sleep_minutes && e.sleep_minutes >= 60);
+  if(valid.length < 3) return null;
+  const totals = valid.map(e => {
+    const napMin = parseChildNaps(e).reduce((a,n)=>a+_napDurationMin(n), 0);
+    return e.sleep_minutes + napMin;
+  });
+  const nightOnly = valid.map(e => e.sleep_minutes);
+  const napTotals = valid.map(e => parseChildNaps(e).reduce((a,n)=>a+_napDurationMin(n),0));
+  const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+  const sd  = a => { const m=avg(a); return Math.sqrt(a.reduce((x,v)=>x+(v-m)**2,0)/a.length); };
+  const avgTotal = avg(totals);
+  const avgNight = avg(nightOnly);
+  const avgNap   = avg(napTotals);
+  const nightsWithNap = napTotals.filter(v=>v>0).length;
+  const band = getSleepBandForAge(dob);
+  let status = null, statusColor = null;
+  if(band){
+    const h = avgTotal/60;
+    if(h < band.min_h)      { status='Por debajo del rango';  statusColor='#dc2626'; }
+    else if(h > band.max_h) { status='Por encima del rango';  statusColor='#d97706'; }
+    else                    { status='Dentro del rango';      statusColor='#14532d'; }
+  }
+  return {
+    n: valid.length,
+    avgTotalMin: avgTotal, avgNightMin: avgNight, avgNapMin: avgNap,
+    sdTotalMin: sd(totals),
+    napRatio: avgTotal > 0 ? avgNap/avgTotal : 0,
+    nightsWithNap, napFrequencyPct: Math.round(nightsWithNap/valid.length*100),
+    band, status, statusColor
+  };
+}
+
+// Estructura de siestas por franja horaria: distingue matutina (<12h) de vespertina (≥12h).
+// Permite ver si un bebé mantiene dos siestas o ya consolidó a una, y con qué regularidad.
+function computeNapStructure(entries){
+  const rows = (entries||[]).map(e => parseChildNaps(e)).filter(a => a.length);
+  if(rows.length < 3) return null;
+  const morning = [], afternoon = [];
+  const morningStarts = [], afternoonStarts = [];
+  let napsPerDay = [];
+  rows.forEach(naps => {
+    napsPerDay.push(naps.length);
+    naps.forEach(n => {
+      const dur = _napDurationMin(n);
+      if(!dur) return;
+      const startH = parseInt(n.start.split(':')[0], 10);
+      const startMin = startH*60 + parseInt(n.start.split(':')[1]||'0', 10);
+      if(startH < 12){ morning.push(dur); morningStarts.push(startMin); }
+      else           { afternoon.push(dur); afternoonStarts.push(startMin); }
+    });
+  });
+  const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const sd  = a => { if(a.length<2) return null; const m=avg(a); return Math.sqrt(a.reduce((x,v)=>x+(v-m)**2,0)/a.length); };
+  const fmtClock = m => { if(m==null) return '—'; const h=Math.floor(m/60), q=Math.round(m%60); return String(h).padStart(2,'0')+':'+String(q).padStart(2,'0'); };
+  return {
+    daysWithNaps: rows.length,
+    avgNapsPerDay: avg(napsPerDay),
+    morning:   { n:morning.length,   avgDurMin:avg(morning),   sdDurMin:sd(morning),   avgStart:fmtClock(avg(morningStarts)),   sdStartMin:sd(morningStarts) },
+    afternoon: { n:afternoon.length, avgDurMin:avg(afternoon), sdDurMin:sd(afternoon), avgStart:fmtClock(avg(afternoonStarts)), sdStartMin:sd(afternoonStarts) }
+  };
+}
+
 function computeMCTQFromDiary(entries){
   if(!entries || !entries.length) return null;
   const timeToMin = t => { if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; };
@@ -6461,6 +6610,17 @@ const SCALE_FILTERS = {
   moca_sleep:  { age_min:60 },
   bears:       { age_max:17 },
   eedsi:       { age_max:17 },
+  // Cronotipo: MEQ y MCTQ están validados en adultos. Su uso en niños no es válido.
+  // Se habilitan desde los 13 (uso frecuente en investigación de sueño adolescente,
+  // aunque la validación formal es en adultos).
+  meq:         { age_min:13 },
+  mctq:        { age_min:13 },
+  // CCTQ (Werner et al. 2009) — validado en 4-11 años. Se extiende a 12 para no dejar
+  // hueco entre CCTQ y MEQ. PENDIENTE DE LICENCIA: la escala está deshabilitada hasta
+  // obtener autorización escrita de los autores (Kinderspital Zürich).
+  cctq:        { age_min:4, age_max:12 },
+  // MESC (Carskadon et al. 1993) — validado en 11-17 años. PENDIENTE DE LICENCIA.
+  mesc:        { age_min:11, age_max:17 },
   // heteroaplicadas: solo el médico puede administrarlas, no aparecen en el catálogo del paciente
   hamd:        { professional_only:true },
   hama:        { professional_only:true }
@@ -6471,7 +6631,7 @@ const SCALE_FILTERS = {
 // Escalas rasgo o cronotipo: cooldown largo.
 const SCALE_COOLDOWN_DAYS = {
   psqi:30, isi:14, ess:30, gasq:60,
-  meq:180, mctq:180, stopbang:180,
+  meq:180, mctq:180, stopbang:180, cctq:180, mesc:180,
   phq9:14, gad7:14, gds5:14,
   mrs:60, psst:30,
   fss:30, dbas:60, gses:30, psas:30,
@@ -10925,10 +11085,21 @@ async function showDrPTab_(tab){
       // ─── Card de Cronotipo: comparar MEQ (preferencial) vs MCTQ biológico ───
       let cronotipoBody = '';
       try {
+        // Edad del paciente: determina qué instrumentos de cronotipo son aplicables.
+        const _dobC = u.dob ? new Date(u.dob) : null;
+        const _ageC = _dobC ? Math.floor((Date.now() - _dobC)/31557600000) : null;
+        const _isMinor = _ageC != null && _ageC < 13;
         // MEQ (preferencial)
         const meqRec2 = (S.viewRecs||[]).filter(r=>r.scale_id==='meq').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-        let meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial (MEQ)</div>' +
-          '<div style="font-size:13px;font-weight:500;color:rgba(244,239,229,0.5);font-style:italic">Sin datos</div>';
+        let meqBlock;
+        if(_isMinor && !meqRec2){
+          // En menores de 13 el MEQ no está validado: no lo ofrecemos ni lo mostramos vacío.
+          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial</div>' +
+            '<div style="font-size:12px;color:rgba(244,239,229,0.6);line-height:1.4">El MEQ no está validado en menores de 13 años. El instrumento apropiado es el CCTQ (4–12) o el MESC (11–17), pendientes de licencia.</div>';
+        } else {
+          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial (MEQ)</div>' +
+            '<div style="font-size:13px;font-weight:500;color:rgba(244,239,229,0.5);font-style:italic">Sin datos</div>';
+        }
         let meqTag = null;
         if(meqRec2){
           const s = meqRec2.score;
@@ -10952,24 +11123,35 @@ async function showDrPTab_(tab){
           } catch(_ex) { diaryForMCTQ = null; }
         }
         const mctq = diaryForMCTQ ? computeMCTQFromDiary(diaryForMCTQ) : null;
+        // En menores, el MSFsc del diario es el ÚNICO instrumento de cronotipo disponible
+        // sin licencia (es una fórmula publicada, no un cuestionario). Lo destacamos.
+        const _bioLabel = _isMinor
+          ? 'Biológico (MSFsc · diario) <span style="color:#7EC8A4;font-weight:600">· instrumento principal</span>'
+          : 'Biológico (MCTQ · diario)';
         let mctqBlock;
         if(!mctq){
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">'+_bioLabel+'</div>' +
             '<div style="font-size:13px;color:rgba(244,239,229,0.5);font-style:italic">Sin datos de diario</div>';
         } else if(mctq.error === 'insufficient_free_days'){
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">'+_bioLabel+'</div>' +
             '<div style="font-size:12px;color:rgba(244,239,229,0.6);font-style:italic">Necesita ≥2 noches marcadas como "día libre" (tiene '+mctq.n_free+')</div>';
         } else {
           const debtSuffix = mctq.sleep_debt_h > 0.5 ? ' <span style="color:#C8A96E">· deuda '+mctq.sleep_debt_h.toFixed(1)+'h</span>' : '';
-          const varWarn = mctq.high_variability ? '<div style="font-size:10px;color:#C8A96E;margin-top:2px">⚠ Alta variabilidad — revisar posible trabajo por turnos</div>' : '';
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+          const _varMsg = _isMinor
+            ? '⚠ Alta variabilidad entre días libres — revisar consistencia del registro'
+            : '⚠ Alta variabilidad — revisar posible trabajo por turnos';
+          const varWarn = mctq.high_variability ? '<div style="font-size:10px;color:#C8A96E;margin-top:2px">'+_varMsg+'</div>' : '';
+          const _pedNote = _isMinor
+            ? '<div style="font-size:10px;color:rgba(244,239,229,0.5);margin-top:3px;line-height:1.35">Los cortes de categoría derivan de población adulta (Roenneberg 2007). En pediatría interpretar como tendencia, no como diagnóstico.</div>'
+            : '';
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">'+_bioLabel+'</div>' +
             '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+mctq.category+'</div>' +
             '<div style="font-size:11px;color:rgba(244,239,229,0.65);margin-top:2px">MSFsc: '+mctq.MSFsc+' · '+mctq.n_free+' libres, '+mctq.n_work+' laborables'+debtSuffix+'</div>' +
-            varWarn;
+            varWarn + _pedNote;
         }
         // Comparación (si tenemos ambos)
         let compareBlock = '';
-        if(meqTag && mctq && !mctq.error){
+        if(meqTag && mctq && !mctq.error && !_isMinor){
           const tagOrder = { 'M+':1, 'M':2, 'M-':3, 'I':4, 'V-':5, 'V':6, 'V+':7 };
           const diff = Math.abs((tagOrder[meqTag]||4) - (tagOrder[mctq.tag]||4));
           if(diff >= 2){
