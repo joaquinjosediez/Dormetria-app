@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy61-mod1">
+<link rel="stylesheet" href="css/styles.css?v=hoy62-mod1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1260,7 +1260,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy61-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy62-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -5641,9 +5641,16 @@ function getFirstChildName(){
 function updateNavTabs(){
   const yoBtn=document.getElementById('bnav-yo');
   const yoLbl=yoBtn?yoBtn.querySelector('.bnav-lbl'):null;
-  // "Yo" ALWAYS goes to the adult's own profile — never hijack it
-  if(yoLbl) yoLbl.textContent='Yo';
-  if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
+  // En modo hijo, "Yo" debe mostrar el perfil DEL HIJO, no el del adulto:
+  // saltar de contexto sin avisar era desorientador. La salida al perfil adulto
+  // está en el botón "← Mi perfil" del header.
+  if(S.childMode){
+    if(yoLbl) yoLbl.textContent='Perfil';
+    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'child\')');
+  } else {
+    if(yoLbl) yoLbl.textContent='Yo';
+    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
+  }
   // Pestaña "Hijos": visible si el adulto tiene hijos vinculados o si su onboarding los incluye.
   // Al apretarla NO entra directo: abre el selector (siempre).
   const childBtn=document.getElementById('bnav-hijos');
@@ -5692,7 +5699,11 @@ function navTo(dest){
              history:'bnav-mas', docs:'bnav-mas'};
   const btn=document.getElementById(map[dest]);
   if(btn) btn.classList.add('active');
-  if(dest==='home'){ if(S.childMode){ exitToParentHome(); } else { showHome(); } }
+  // "Inicio" dentro del perfil de un hijo debe llevar al home DEL HIJO.
+  // Antes llamaba a exitToParentHome() y expulsaba al padre a su propio perfil
+  // sin que lo hubiera pedido. La salida explícita existe: el botón "← Mi perfil"
+  // del header del home infantil (switchToParentProfile).
+  if(dest==='home'){ if(S.childMode){ showChildHome(); } else { showHome(); } }
   else if(dest==='profile'){showProfile();}
   else if(dest==='child'){openChildProfile();}
   else if(dest==='scales'){showScalesScreen();}
