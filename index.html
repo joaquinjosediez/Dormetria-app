@@ -3423,7 +3423,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy59';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy60';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -5654,7 +5654,7 @@ function updatePillarBars(entries){
   pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
     [{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:'7–9h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
-     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('Variación: ±'+_localRegResult.sd_midpoint_min+' min') : 'Variabilidad del horario', statusOverride: _localRegResult.label}
+     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('Variación: ±'+_localRegResult.sd_midpoint_min+' min') : 'Variabilidad del horario', statusOverride: null}
     ].map(p=>{
       const c=pillarColor(p.val);
       const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
@@ -9372,7 +9372,7 @@ async function showDiaryTab_(tab){
             ${[
               {label:'Cantidad',val:avgQtyP,icon:'',color:'#2d9e6b',sub:'Duración'},
               {label:'Fragmentación',val:avgFragP,icon:'',color:'#0e7490',sub:'Despertares'},
-              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: regResult.label},
+              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: null},
             ].map(p=>{
               const c=pillarColor(p.val);
               const pillarC = p.color || '#1a4a3a';
@@ -10558,6 +10558,13 @@ async function renderPatientList(filter){
           const name=(u.name+' '+(u.lname||'')).trim().toLowerCase();
           return name.includes(f)||u.email.toLowerCase().includes(f);
         });
+        // Orden alfabético por APELLIDO (luego nombre). Los perfiles infantiles
+        // (email con +nombre@child) heredan el apellido del padre, así que quedan agrupados.
+        filtered.sort((a,b)=>{
+          const la=((a.lname||'')+' '+(a.name||'')).trim().toLowerCase();
+          const lb=((b.lname||'')+' '+(b.name||'')).trim().toLowerCase();
+          return la.localeCompare(lb,'es',{sensitivity:'base'});
+        });
         const rows=filtered.map(u=>{
           if(!u)return'';
           const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
@@ -11221,7 +11228,11 @@ async function showDrPTab_(tab){
         const dme=document.getElementById('dr-clinical-metrics');
         if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
         killChart('dr-acto');killChart('dp-dr');
-        const sorted=[...subj].sort((a,b)=>a.diary_date>b.diary_date?1:-1);
+        // Omitir del actograma las noches sin horarios cargados: generaban filas
+        // vacías (p.ej. dos "mar 30-06" en blanco) que confunden la lectura.
+        const sorted=[...subj]
+          .filter(e=>e.bedtime && e.wake_time)
+          .sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,Math.min(w>s?w:w+24,24)];});
@@ -11441,7 +11452,7 @@ async function showDrPTab_(tab){
         function pBar(v,c){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+c+';width:'+v+'%;transition:width .6s ease"></div></div>';}
         const pEl=document.getElementById('dr-pillar-bars');
         if(pEl) pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
-          [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22',statusOverride: regResult.label}].map(p=>{const c=pColor(p.v);const st = p.statusOverride || (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
+          [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22',statusOverride: null}].map(p=>{const c=pColor(p.v);const st = p.statusOverride || (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
             '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+
             ({Cantidad:'7–9h de sueño (recomendado)',Fragmentación:'Número de despertares',Regularidad: (regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')) : 'Variabilidad del horario')}[p.l]||'')+
             '</div></div>';}).join('')+'</div>';
@@ -14274,12 +14285,7 @@ function showChildDiaryNew(){
     <div class="sec-title">Sueño nocturno <span style="color:#dc2626">*</span></div>
     <div class="form-row" style="margin-bottom:12px">
       <div class="form-group"><label class="form-label">Se acostó 🛏</label><input class="form-input" type="time" id="d-bed"></div>
-      <div class="form-group"><label class="form-label">Se despertó ☀️<span style="font-size:11px;color:var(--ink3);font-weight:400;display:block;margin-top:2px">Cuándo abrió los ojos</span></label><input class="form-input" type="time" id="d-wake" onchange="updateAwakeInBed()"></div>
-    </div>
-    <div class="form-group" style="margin-bottom:14px">
-      <label class="form-label">Se levantó de la cama ⏰ <span style="color:#dc2626">*</span><span style="font-size:11px;color:var(--ink3);font-weight:400;display:block;margin-top:2px">Cuándo salió de la cama. Si fue apenas se despertó, poné la misma hora.</span></label>
-      <input class="form-input" type="time" id="d-getup" onchange="updateAwakeInBed()">
-      <div id="awake-in-bed-hint" style="font-size:12px;color:var(--ink3);margin-top:6px;display:none"></div>
+      <div class="form-group"><label class="form-label">Se despertó ☀️<span style="font-size:11px;color:var(--ink3);font-weight:400;display:block;margin-top:2px">Cuándo abrió los ojos</span></label><input class="form-input" type="time" id="d-wake"></div>
     </div>
 
     <div class="form-group" style="margin-bottom:12px">
@@ -14384,6 +14390,17 @@ function toggleSleepCtx(val, btn){
 }
 
 let _siestaCount = 0;
+// Renumera los títulos "Siesta N" según la posición real en el DOM.
+// El contador _siestaCount solo genera IDs únicos; NO se usa para mostrar el número,
+// porque nunca se resetea (bug: al reabrir el form o borrar filas los números saltaban).
+function renumberSiestas(){
+  const list = document.getElementById('siesta-list');
+  if(!list) return;
+  Array.from(list.children).forEach((row, i) => {
+    const t = row.querySelector('[data-siesta-title]');
+    if(t) t.textContent = 'Siesta ' + (i+1);
+  });
+}
 function addSiestaRow(){
   _siestaCount++;
   const id = 'siesta-'+_siestaCount;
@@ -14391,8 +14408,8 @@ function addSiestaRow(){
   const row = document.createElement('div');
   row.id = id;
   row.style.cssText='background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px;position:relative';
-  row.innerHTML=`<button onclick="this.closest('[id]').remove();updateNapData()" style="position:absolute;top:10px;right:10px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--label-3)">✕</button>
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Siesta ${_siestaCount}</div>
+  row.innerHTML=`<button onclick="this.closest('[id]').remove();updateNapData();renumberSiestas()" style="position:absolute;top:10px;right:10px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--label-3)">✕</button>
+    <div data-siesta-title style="font-size:13px;font-weight:600;margin-bottom:10px">Siesta</div>
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <div style="flex:1"><label style="font-size:12px;color:var(--label-2)">Inicio</label><input type="time" class="form-input" id="${id}-start" oninput="updateNapData()"></div>
       <div style="flex:1"><label style="font-size:12px;color:var(--label-2)">Fin</label><input type="time" class="form-input" id="${id}-end" oninput="updateNapData()"></div>
@@ -14405,6 +14422,7 @@ function addSiestaRow(){
     <input type="hidden" id="${id}-mood" value="">
     </div>`;
   document.getElementById('siesta-list').appendChild(row);
+  renumberSiestas();
 }
 
 function updateNapData(){
