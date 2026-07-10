@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy64-mod1">
+<link rel="stylesheet" href="css/styles.css?v=hoy66-mod1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -592,7 +592,7 @@
 
 <div id="screen-diary-home" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="font-size:17px;font-weight:600;color:var(--label)">Diario de sueño</div>
     <div style="display:flex;gap:4px">
       <button class="topbar-btn" onclick="showReminderSettings('diary')" style="font-size:13px" title="Configurar recordatorio">🔔</button>
@@ -609,7 +609,7 @@
 <!-- DIARY NEW -->
 <div id="screen-diary-new" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goBackFromDiaryNew()">← Volver</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Nuevo registro</div></div>
     <div style="width:70px"></div>
   </div>
@@ -686,7 +686,7 @@
 
 <div id="screen-pvt-intro" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goHomeCtx()">← Salir</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Test de alerta <span style="font-size:11px;font-weight:400;opacity:0.7">PVT</span></div></div>
     <button class="topbar-btn" onclick="showPVTReminderMulti()" style="font-size:13px" title="Configurar recordatorios">🔔</button>
   </div>
@@ -1085,7 +1085,7 @@
 <!-- CHILD MODE HOME SCREEN -->
 <div id="screen-child-home" class="screen" style="background:#1a2e23">
   <div class="topbar" style="background:#1a2e23;border-bottom:1px solid rgba(255,255,255,0.08)">
-    <button class="topbar-btn" onclick="switchToParentProfile()" style="font-size:13px;color:#7ec8a4">← Mi perfil</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center">
       <div style="font-size:11px;opacity:0.7;color:#e8f5f0;letter-spacing:.08em;text-transform:uppercase">Dormetria</div>
       <div id="ch-name-wrap" onclick="openChildSwitcher()" style="display:inline-flex;align-items:center;gap:5px;cursor:default">
@@ -1260,7 +1260,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy64-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy66-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -2337,6 +2337,17 @@ function computeSleepRegularity(entries){
 // AUTH
 function setMode(m,el){S.role=m;document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');document.getElementById('reg-toggle').innerHTML=m==='doctor'?'¿Profesional nuevo? <span onclick="showRegister()">Crear cuenta profesional</span>':'¿Primera vez? <span onclick="showRegister()">Crear cuenta</span>';showLogin();}
 function showScreen(id){
+  // Red de seguridad: al sacar los botones "Volver" del header, la barra inferior
+  // pasó a ser la ÚNICA salida en las pantallas de paciente. Si alguna función
+  // (p.ej. showConsultDir) la ocultó, la restauramos al cambiar de pantalla,
+  // para que nadie quede atrapado sin forma de navegar.
+  try{
+    const _TRAPPED = ['diary-home','diary-new','scales','scale','result','hygiene','consult-guide','pvt-intro','child-home','home','profile'];
+    if(S && S.role === 'patient' && _TRAPPED.includes(id)){
+      const _n = document.getElementById('main-nav');
+      if(_n){ _n.style.removeProperty('display'); _n.style.display='flex'; }
+    }
+  }catch(_){}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   // Reset login overlay styling if it was used as an overlay
   const _lg=document.getElementById('screen-login');
@@ -4586,6 +4597,112 @@ function pickScaleOfDay(user, records){
 
 // ─── Copiar resumen del paciente al portapapeles (para HC del médico) ───
 // Compone un texto plano estilo evolución para pegar en cualquier EHR.
+// ─── Edición de datos del paciente por parte del profesional ───
+// Permite corregir/completar la ficha durante la consulta.
+// REQUIERE una política RLS de UPDATE en `patients` que autorice al médico
+// vinculado (ver doctor_patients). Sin esa política, Supabase rechaza el PATCH
+// y mostramos un error explícito en vez de fallar en silencio.
+function openDoctorEditPatient(){
+  const u = S.viewData;
+  if(!u || !u.email){ toast('No hay paciente cargado'); return; }
+  const esc = v => String(v==null?'':v).replace(/"/g,'&quot;');
+  const old = document.getElementById('dr-edit-pat-modal');
+  if(old) old.remove();
+
+  const wrap = document.createElement('div');
+  wrap.id = 'dr-edit-pat-modal';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  wrap.onclick = e => { if(e.target===wrap) wrap.remove(); };
+
+  const paths = Array.isArray(u.pathologies) ? u.pathologies.join(', ') : (u.pathologies||'');
+  const fld = (id,label,val,type,ph) =>
+    '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6B7280;margin-bottom:4px;font-weight:600">'+label+'</label>'+
+    '<input id="'+id+'" type="'+(type||'text')+'" value="'+esc(val)+'" placeholder="'+(ph||'')+'" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #D1D5DB;border-radius:9px;font-size:14px;font-family:inherit"></div>';
+
+  wrap.innerHTML =
+    '<div style="background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:20px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+        '<div style="font-size:17px;font-weight:700;color:#10231c">Editar datos del paciente</div>'+
+        '<button onclick="document.getElementById(\'dr-edit-pat-modal\').remove()" style="background:none;border:none;font-size:22px;color:#9CA3AF;cursor:pointer">✕</button>'+
+      '</div>'+
+      '<div style="font-size:12px;color:#6B7280;margin-bottom:16px">'+esc(u.email)+'</div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<div style="flex:1">'+fld('dep-name','Nombre',u.name)+'</div>'+
+        '<div style="flex:1">'+fld('dep-lname','Apellido',u.lname)+'</div>'+
+      '</div>'+
+      fld('dep-dob','Fecha de nacimiento',u.dob,'date')+
+      '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6B7280;margin-bottom:4px;font-weight:600">Sexo</label>'+
+        '<select id="dep-sex" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #D1D5DB;border-radius:9px;font-size:14px;font-family:inherit">'+
+          ['','Femenino','Masculino','Otro'].map(o=>'<option value="'+o+'"'+((u.sex===o)?' selected':'')+'>'+(o||'—')+'</option>').join('')+
+        '</select></div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<div style="flex:1">'+fld('dep-height','Altura (cm)',u.height_cm,'number')+'</div>'+
+        '<div style="flex:1">'+fld('dep-weight','Peso (kg)',u.weight_kg,'number')+'</div>'+
+      '</div>'+
+      fld('dep-paths','Patologías (separadas por coma)',paths,'text','Ej: HTA, hipotiroidismo')+
+      fld('dep-meds','Medicación',u.medications,'text')+
+      fld('dep-phone','Teléfono',u.phone,'text')+
+      '<div id="dep-err" style="display:none;background:#FEE2E2;color:#991B1B;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:10px;line-height:1.45"></div>'+
+      '<button id="dep-save" onclick="saveDoctorEditPatient()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Guardar cambios</button>'+
+      '<div style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:8px">Los cambios quedan registrados en la ficha del paciente.</div>'+
+    '</div>';
+  document.body.appendChild(wrap);
+}
+
+async function saveDoctorEditPatient(){
+  const u = S.viewData;
+  if(!u) return;
+  const g = id => document.getElementById(id);
+  const btn = g('dep-save'); const err = g('dep-err');
+  if(err) err.style.display='none';
+  if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+  const num = v => (v===''||v==null) ? null : (isNaN(parseFloat(v))?null:parseFloat(v));
+  const patch = {
+    name: (g('dep-name').value||'').trim() || null,
+    lname: (g('dep-lname').value||'').trim() || null,
+    dob: g('dep-dob').value || null,
+    sex: g('dep-sex').value || null,
+    height_cm: num(g('dep-height').value),
+    weight_kg: num(g('dep-weight').value),
+    pathologies: (g('dep-paths').value||'').split(',').map(x=>x.trim()).filter(Boolean),
+    medications: (g('dep-meds').value||'').trim() || null,
+    phone: (g('dep-phone').value||'').trim() || null
+  };
+  try{
+    // Save resiliente a columnas inexistentes (mismo patrón que el resto de la app)
+    const work = Object.assign({}, patch);
+    let att = 0;
+    while(att <= 5){
+      try{
+        await db.patch('patients?email=eq.'+encodeURIComponent(u.email), work);
+        break;
+      }catch(e){
+        const m=(e&&e.message)||'';
+        const cm=m.match(/column "?([a-z_]+)"?/i);
+        const col=cm?cm[1]:null;
+        if(col && col in work && att<5){ delete work[col]; att++; continue; }
+        throw e;
+      }
+    }
+    Object.assign(S.viewData, patch);
+    const modal=document.getElementById('dr-edit-pat-modal'); if(modal) modal.remove();
+    toast('Datos actualizados ✓');
+    try{ if(typeof showPatientDetail==='function' && u.email) showPatientDetail(u.email); }catch(_){}
+  }catch(e){
+    const msg=(e&&e.message)||String(e);
+    const isRls = /row-level security|policy|permission denied|42501/i.test(msg);
+    if(err){
+      err.style.display='block';
+      err.innerHTML = isRls
+        ? '<strong>Supabase rechazó el cambio.</strong> La política de seguridad (RLS) de la tabla <code>patients</code> no autoriza al profesional a modificar la ficha de un paciente. Hay que agregar una política de UPDATE que contemple la relación en <code>doctor_patients</code>.'
+        : 'No se pudo guardar: '+msg;
+    }
+    if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
+  }
+}
+
+function openDoctorEditPatientPlaceholder(){}
+
 async function copyPatientSummaryToClipboard(encodedEmail){
   const btn = document.getElementById('dr-copy-summary-btn');
   const btnOrig = btn ? btn.innerHTML : '';
@@ -8509,7 +8626,14 @@ async function renderPatientList(filter){
         const rows=filtered.map(u=>{
           if(!u)return'';
           const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
-          const nameDisplay = formatPatientName(u);
+          // Panel profesional: mostrar "Apellido, Nombre" para que coincida con el
+          // orden alfabético por apellido. Los perfiles infantiles conservan su etiqueta.
+          const nameDisplay = (function(){
+            const base = formatPatientName(u);
+            if(/perfil infantil/i.test(base)) return base;
+            const ln=(u.lname||'').trim(), fn=(u.name||'').trim();
+            return ln ? (ln + ', ' + fn) : (fn || u.email);
+          })();
           const isArch = archived.has(u.email.toLowerCase());
           const archBtnLabel = isArch ? '↻ Reactivar' : '🗂 Archivar';
           const archBtnColor = isArch ? '#15803d' : 'rgba(255,255,255,0.4)';
@@ -9115,7 +9239,8 @@ async function showDrPTab_(tab){
         '</div>' + compareBlock;
       } catch(_cron){ cronotipoBody = '<div style="color:rgba(244,239,229,0.5);font-style:italic;font-size:12px">Sin datos</div>'; }
       cont.innerHTML = heroHtml + chipsHtml +
-        card('🆔','Datos personales', datosBody) +
+        card('🆔','Datos personales', datosBody +
+          '<button onclick="openDoctorEditPatient()" style="width:100%;margin-top:10px;padding:9px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.08);color:#7EC8A4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Editar datos del paciente</button>') +
         card('🩺','Antecedentes', pathsBody) +
         card('🌙','Cronotipo', cronotipoBody) +
         card('🌿','Hábitos', habitsBody) +
@@ -15853,7 +15978,7 @@ function dmReplayTour(tourId){
 </div></div>
 <div id="screen-hygiene" class="screen" style="background:#1a2e23">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">Higiene del sueño</div>
     <div style="width:70px"></div>
   </div>
@@ -15862,7 +15987,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-consult-guide" class="screen" style="background:#1a2e23">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">¿Cuándo consultar?</div>
     <div style="width:70px"></div>
   </div>
@@ -15873,7 +15998,7 @@ function dmReplayTour(tourId){
 <!-- RECOVERED SCREENS FROM v41 -->
 <div id="screen-scale" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goHomeCtx()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center;flex:1;overflow:hidden"><div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px" id="scale-title">Escala</div></div>
     <div style="width:52px"></div>
   </div>
@@ -15884,7 +16009,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-scales" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cuestionarios</div><div style="font-size:11px;color:var(--g200)">Autoadministrables</div></div>
     <div style="width:70px"></div>
   </div>
@@ -16025,7 +16150,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-result" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="goHomeCtx()">← Inicio</button>
+    <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="r-title">Resultado</div></div>
     <div style="width:70px"></div>
   </div>
