@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy54-mod1">
+<link rel="stylesheet" href="css/styles.css?v=hoy61-mod1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -592,7 +592,7 @@
 
 <div id="screen-diary-home" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="font-size:17px;font-weight:600;color:var(--label)">Diario de sueño</div>
     <div style="display:flex;gap:4px">
       <button class="topbar-btn" onclick="showReminderSettings('diary')" style="font-size:13px" title="Configurar recordatorio">🔔</button>
@@ -686,7 +686,7 @@
 
 <div id="screen-pvt-intro" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Salir</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Salir</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Test de alerta <span style="font-size:11px;font-weight:400;opacity:0.7">PVT</span></div></div>
     <button class="topbar-btn" onclick="showPVTReminderMulti()" style="font-size:13px" title="Configurar recordatorios">🔔</button>
   </div>
@@ -1135,7 +1135,7 @@
 <!-- CONSULT DIRECTORY -->
 <div id="screen-consult" class="screen">
   <div class="topbar">
-    <button id="consult-back-btn" class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button id="consult-back-btn" class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Profesionales</div></div>
     <div style="width:70px"></div>
   </div>
@@ -1260,7 +1260,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy54-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy61-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -1458,6 +1458,47 @@ function toast(msg,dur=3000){
 
 
 const SCALES=[
+// ═══════════════════════════════════════════════════════════════════════
+// MOLDES PENDIENTES DE LICENCIA — NO ACTIVAR SIN AUTORIZACIÓN ESCRITA
+// ═══════════════════════════════════════════════════════════════════════
+// Ambas escalas tienen `qs:[]`, por lo que quedan AUTOMÁTICAMENTE OCULTAS del
+// catálogo (ver el guard `!sc.qs||!sc.qs.length` en el render de escalas).
+// Para activarlas:
+//   1. Obtener autorización escrita de los autores.
+//   2. Pegar los ítems VERBATIM del instrumento original en `qs`.
+//   3. Verificar que los cortes de `interp()` correspondan a la fuente.
+//   4. Quitar `disabled:true`.
+// NO redactar los ítems de memoria ni parafrasearlos: una escala con ítems
+// aproximados no es esa escala, sus cortes normativos no aplican, y los datos
+// recolectados no sirven para investigación ni para decisión clínica.
+{
+  id:'cctq',
+  name:'Cronotipo infantil (CCTQ)',
+  cat:'circadian',
+  desc:'Cronotipo en niños de 4 a 12 años (reportado por el cuidador)',
+  ref:'Werner H, LeBourgeois MK, Geiger A, Jenni OG. (2009). Assessment of chronotype in four- to eleven-year-old children: reliability and validity of the Children\'s Chronotype Questionnaire (CCTQ). Chronobiol Int, 26(5), 992–1014.',
+  note:'PENDIENTE DE LICENCIA — Solicitar autorización a los autores (Kinderspital Zürich) antes de usar.',
+  disabled:true,           // ← quitar al obtener licencia
+  max:null,                // ← completar según la fuente
+  qs:[],                   // ← PEGAR ÍTEMS VERBATIM DEL INSTRUMENTO ORIGINAL
+  interp:function(score){  // ← ajustar cortes según la fuente original
+    return {l:'Sin interpretación — escala no licenciada', c:'#888', bg:'#eee'};
+  }
+},
+{
+  id:'mesc',
+  name:'Cronotipo adolescente (MESC)',
+  cat:'circadian',
+  desc:'Matutinidad–vespertinidad en 11 a 17 años (autoadministrada)',
+  ref:'Carskadon MA, Vieira C, Acebo C. (1993). Association between puberty and delayed phase preference. Sleep, 16(3), 258–262.',
+  note:'PENDIENTE DE LICENCIA — Solicitar autorización a Mary Carskadon (Brown University) antes de usar.',
+  disabled:true,           // ← quitar al obtener licencia
+  max:null,                // ← completar según la fuente
+  qs:[],                   // ← PEGAR ÍTEMS VERBATIM DEL INSTRUMENTO ORIGINAL
+  interp:function(score){  // ← ajustar cortes según la fuente original
+    return {l:'Sin interpretación — escala no licenciada', c:'#888', bg:'#eee'};
+  }
+},
 {id:'bears',ref:'Owens JA et al. (2000). The Children\'s Sleep Habits Questionnaire (CSHQ). Sleep, 23(8), 1043–1051.',name:'BEARS — Cribado de sueño infantil',cat:'pediatric',max:15,
  ageGroups:['infant','preschool','school','teen'],
  desc:'Screening de 5 dominios de sueño para niños y adolescentes (respondido por el cuidador)',
@@ -2693,8 +2734,11 @@ function updateDrListedBtn(){
   const u=S.user; if(!u) return;
   const drKey='dm_dr_profile_'+(u.email||'');
   const cached=JSON.parse(localStorage.getItem(drKey)||'null');
-  const _approved2=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-  const isListed=_approved2[u.email]===true;
+  // La verdad sobre si el profesional está publicado vive en la BASE, no en localStorage.
+  // Antes se leía dm_approved_doctors y el botón mentía: decía "ya estás en el directorio"
+  // mientras la BD tenía listed='none' / public_profile=false y ningún paciente lo veía.
+  const _cachedDoc = (typeof cached!=='undefined' && cached) ? cached : (S.user||{});
+  const isListed = (_cachedDoc.public_profile===true) || (_cachedDoc.listed===true) || (_cachedDoc.listed==='true');
   const isPending=cached&&(cached.listed==='pending'||cached._appliedForDirectory)&&!isListed;
   const btn=document.getElementById('dir-register-btn');
   if(btn){
@@ -3450,7 +3494,7 @@ function updatePillarBars(entries){
   pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
     [{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:'7–9h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
-     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('Variación: ±'+_localRegResult.sd_midpoint_min+' min') : 'Variabilidad del horario', statusOverride: _localRegResult.label}
+     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('Variación: ±'+_localRegResult.sd_midpoint_min+' min') : 'Variabilidad del horario', statusOverride: null}
     ].map(p=>{
       const c=pillarColor(p.val);
       const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
@@ -3478,6 +3522,131 @@ function updatePillarBars(entries){
 //
 // Requiere ≥2 días libres registrados con day_type='free' para dar un valor.
 // Los cortes de categorización siguen Roenneberg 2007 (aproximados).
+// ─── Bandas de sueño por edad — AASM 2016 (Paruthi et al., J Clin Sleep Med) ───
+// El rango es de sueño TOTAL en 24h, INCLUYENDO siestas, que es exactamente lo que
+// calculamos con computeChildSleep24h().
+// Excepción: AASM no emite recomendación para 0-3 meses por evidencia insuficiente;
+// para esa franja usamos NSF 2015 (Hirshkowitz et al., Sleep Health), marcada como tal.
+const SLEEP_BANDS_24H = [
+  { max_months:3,   label:'0–3 meses',    min_h:14, max_h:17, source:'NSF 2015',  note:'AASM no emite recomendación para esta edad; se usa NSF 2015.' },
+  { max_months:11,  label:'4–11 meses',   min_h:12, max_h:16, source:'AASM 2016' },
+  { max_months:35,  label:'1–2 años',     min_h:11, max_h:14, source:'AASM 2016' },
+  { max_months:71,  label:'3–5 años',     min_h:10, max_h:13, source:'AASM 2016' },
+  { max_months:155, label:'6–12 años',    min_h:9,  max_h:12, source:'AASM 2016' },
+  { max_months:227, label:'13–18 años',   min_h:8,  max_h:10, source:'AASM 2016' }
+];
+function getSleepBandForAge(dob){
+  if(!dob) return null;
+  const d = new Date(dob);
+  if(isNaN(d)) return null;
+  const now = new Date();
+  const months = (now.getFullYear()-d.getFullYear())*12 + (now.getMonth()-d.getMonth());
+  if(months < 0) return null;
+  for(const b of SLEEP_BANDS_24H){ if(months <= b.max_months) return Object.assign({months}, b); }
+  return null; // >18 años: usar criterios de adulto
+}
+
+// Parsea las siestas guardadas en notes con formato "Siestas: [{start,end,mood},...]"
+function parseChildNaps(entry){
+  if(!entry || !entry.notes) return [];
+  const m = /Siestas: (\[.*?\])(?: \||$)/.exec(entry.notes);
+  if(!m) return [];
+  try{
+    const arr = JSON.parse(m[1]);
+    return Array.isArray(arr) ? arr.filter(n=>n && n.start) : [];
+  }catch(_){ return []; }
+}
+function _napDurationMin(nap){
+  if(!nap || !nap.start || !nap.end) return 0;
+  const [sh,sm] = nap.start.split(':').map(Number);
+  const [eh,em] = nap.end.split(':').map(Number);
+  let d = (eh*60+em) - (sh*60+sm);
+  if(d < 0) d += 1440;
+  return (d > 0 && d <= 8*60) ? d : 0; // descartar valores absurdos
+}
+
+// Sueño total 24h = nocturno (sleep_minutes) + siestas. Métrica pediátrica central.
+// Devuelve promedio y comparación contra la banda AASM correspondiente.
+function computeChildSleep24h(entries, dob){
+  const valid = (entries||[]).filter(e => e.sleep_minutes && e.sleep_minutes >= 60);
+  if(valid.length < 3) return null;
+  const totals = valid.map(e => {
+    const napMin = parseChildNaps(e).reduce((a,n)=>a+_napDurationMin(n), 0);
+    return e.sleep_minutes + napMin;
+  });
+  const nightOnly = valid.map(e => e.sleep_minutes);
+  const napTotals = valid.map(e => parseChildNaps(e).reduce((a,n)=>a+_napDurationMin(n),0));
+  const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+  const sd  = a => { const m=avg(a); return Math.sqrt(a.reduce((x,v)=>x+(v-m)**2,0)/a.length); };
+  const avgTotal = avg(totals);
+  const avgNight = avg(nightOnly);
+  const avgNap   = avg(napTotals);
+  const nightsWithNap = napTotals.filter(v=>v>0).length;
+  const band = getSleepBandForAge(dob);
+  let status = null, statusColor = null;
+  if(band){
+    const h = avgTotal/60;
+    if(h < band.min_h)      { status='Por debajo del rango';  statusColor='#dc2626'; }
+    else if(h > band.max_h) { status='Por encima del rango';  statusColor='#d97706'; }
+    else                    { status='Dentro del rango';      statusColor='#14532d'; }
+  }
+  return {
+    n: valid.length,
+    avgTotalMin: avgTotal, avgNightMin: avgNight, avgNapMin: avgNap,
+    sdTotalMin: sd(totals),
+    napRatio: avgTotal > 0 ? avgNap/avgTotal : 0,
+    nightsWithNap, napFrequencyPct: Math.round(nightsWithNap/valid.length*100),
+    band, status, statusColor
+  };
+}
+
+// Estructura de siestas por franja horaria: distingue matutina (<12h) de vespertina (≥12h).
+// Permite ver si un bebé mantiene dos siestas o ya consolidó a una, y con qué regularidad.
+function computeNapStructure(entries){
+  const rows = (entries||[]).map(e => parseChildNaps(e)).filter(a => a.length);
+  if(rows.length < 3) return null;
+  const morning = [], afternoon = [];
+  const morningStarts = [], afternoonStarts = [];
+  let napsPerDay = [];
+  rows.forEach(naps => {
+    napsPerDay.push(naps.length);
+    naps.forEach(n => {
+      const dur = _napDurationMin(n);
+      if(!dur) return;
+      const startH = parseInt(n.start.split(':')[0], 10);
+      const startMin = startH*60 + parseInt(n.start.split(':')[1]||'0', 10);
+      if(startH < 12){ morning.push(dur); morningStarts.push(startMin); }
+      else           { afternoon.push(dur); afternoonStarts.push(startMin); }
+    });
+  });
+  const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const sd  = a => { if(a.length<2) return null; const m=avg(a); return Math.sqrt(a.reduce((x,v)=>x+(v-m)**2,0)/a.length); };
+  const fmtClock = m => { if(m==null) return '—'; const h=Math.floor(m/60), q=Math.round(m%60); return String(h).padStart(2,'0')+':'+String(q).padStart(2,'0'); };
+  return {
+    daysWithNaps: rows.length,
+    avgNapsPerDay: avg(napsPerDay),
+    morning:   { n:morning.length,   avgDurMin:avg(morning),   sdDurMin:sd(morning),   avgStart:fmtClock(avg(morningStarts)),   sdStartMin:sd(morningStarts) },
+    afternoon: { n:afternoon.length, avgDurMin:avg(afternoon), sdDurMin:sd(afternoon), avgStart:fmtClock(avg(afternoonStarts)), sdStartMin:sd(afternoonStarts) }
+  };
+}
+
+// Calcula el límite superior del eje X del actograma.
+// El eje va de 0 (mediodía) a 24 (mediodía siguiente). Si alguien duerme más allá
+// del mediodía (p.ej. hasta las 12:30), la barra se cortaba en el borde y no
+// reaparecía abajo. Extendemos el eje lo justo para que entre completa.
+function _actoAxisMax(...barArrays){
+  let maxEnd = 24;
+  barArrays.forEach(arr => {
+    (arr||[]).forEach(b => {
+      if(Array.isArray(b) && b.length>1 && typeof b[1]==='number' && isFinite(b[1])){
+        if(b[1] > maxEnd) maxEnd = b[1];
+      }
+    });
+  });
+  // Redondear al múltiplo de 2 superior (los ticks van cada 2h) y acotar a 30h.
+  return Math.min(30, Math.ceil(maxEnd/2)*2);
+}
+
 function computeMCTQFromDiary(entries){
   if(!entries || !entries.length) return null;
   const timeToMin = t => { if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; };
@@ -4298,6 +4467,17 @@ const SCALE_FILTERS = {
   moca_sleep:  { age_min:60 },
   bears:       { age_max:17 },
   eedsi:       { age_max:17 },
+  // Cronotipo: MEQ y MCTQ están validados en adultos. Su uso en niños no es válido.
+  // Se habilitan desde los 13 (uso frecuente en investigación de sueño adolescente,
+  // aunque la validación formal es en adultos).
+  meq:         { age_min:13 },
+  mctq:        { age_min:13 },
+  // CCTQ (Werner et al. 2009) — validado en 4-11 años. Se extiende a 12 para no dejar
+  // hueco entre CCTQ y MEQ. PENDIENTE DE LICENCIA: la escala está deshabilitada hasta
+  // obtener autorización escrita de los autores (Kinderspital Zürich).
+  cctq:        { age_min:4, age_max:12 },
+  // MESC (Carskadon et al. 1993) — validado en 11-17 años. PENDIENTE DE LICENCIA.
+  mesc:        { age_min:11, age_max:17 },
   // heteroaplicadas: solo el médico puede administrarlas, no aparecen en el catálogo del paciente
   hamd:        { professional_only:true },
   hama:        { professional_only:true }
@@ -4308,7 +4488,7 @@ const SCALE_FILTERS = {
 // Escalas rasgo o cronotipo: cooldown largo.
 const SCALE_COOLDOWN_DAYS = {
   psqi:30, isi:14, ess:30, gasq:60,
-  meq:180, mctq:180, stopbang:180,
+  meq:180, mctq:180, stopbang:180, cctq:180, mesc:180,
   phq9:14, gad7:14, gds5:14,
   mrs:60, psst:30,
   fss:30, dbas:60, gses:30, psas:30,
@@ -5802,9 +5982,15 @@ async function loadCodeConsultDirectory(){
   list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,0.5)">Cargando profesionales…</div>';
   try{
     // Traer profesionales aprobados (listed=true OR public_profile=true)
-    let docs = await db.get('doctors?listed=eq.true&select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=name.asc').catch(()=>[]);
-    if(!docs || !docs.length){
-      docs = await db.get('doctors?public_profile=eq.true&select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=name.asc').catch(()=>[]);
+    // `listed` es una columna de TEXTO ('none' | 'pending' | 'true'), no booleana.
+    // La fuente de verdad para el directorio público es `public_profile` (booleano).
+    // Consultamos ambas con OR y deduplicamos por email.
+    const _sel='select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=lname.asc';
+    let docs = await db.get('doctors?public_profile=eq.true&'+_sel).catch(()=>[]);
+    const alt = await db.get('doctors?listed=eq.true&'+_sel).catch(()=>[]);
+    if(alt && alt.length){
+      const seen=new Set((docs||[]).map(d=>d.email));
+      (alt||[]).forEach(d=>{ if(!seen.has(d.email)){ docs.push(d); seen.add(d.email); } });
     }
     window._codeConsultDocs = docs || [];
     renderCodeConsultList(window._codeConsultDocs);
@@ -6034,7 +6220,7 @@ function showResult(sc,score){
         ${sc.ref?`<div style="margin-top:14px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;border-left:3px solid var(--g400)"><div style="font-size:10px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Referencia</div><div style="font-size:11px;color:var(--label-2);line-height:1.5;font-style:italic">${sc.ref}</div></div>`:''}
         <div style="display:flex;gap:10px;margin-top:18px">
           <button class="btn btn-s" onclick="showPatientHistory()" style="flex:1">Ver historial</button>
-          <button class="btn btn-g" onclick="showHome()" style="flex:1">Inicio</button>
+          <button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button>
         </div>
       </div>`;
     showScreen('result');
@@ -6053,7 +6239,7 @@ function showResult(sc,score){
       ${sc.ref?`<div style="margin-top:18px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;border-left:3px solid var(--g400)"><div style="font-size:10px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Referencia</div><div style="font-size:11px;color:var(--label-2);line-height:1.5;font-style:italic">${sc.ref}</div></div>`:''}
       <div style="display:flex;gap:10px;margin-top:18px">
         <button class="btn btn-s" onclick="showPatientHistory()" style="flex:1">Ver historial</button>
-        <button class="btn btn-g" onclick="showHome()" style="flex:1">Inicio</button>
+        <button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button>
       </div>
     </div>`;
   showScreen('result');
@@ -6593,6 +6779,18 @@ async function saveProfile(){
 }
 
 // DIARY
+// Retorno al inicio SENSIBLE AL CONTEXTO.
+// Bug histórico: los botones "Volver" de diario, escalas, etc. llamaban a showHome()
+// directamente, que es el home del ADULTO. Un padre navegando el perfil de su hijo
+// tocaba "Volver" esperando retroceder un paso y aterrizaba en su propio perfil,
+// sin haberlo elegido. Ahora respetamos S.childMode.
+function goHomeCtx(){
+  try{
+    if(S && S.childMode && typeof showChildHome === 'function'){ showChildHome(); return; }
+  }catch(_){}
+  showHome();
+}
+
 async function showDiaryHome(){showScreen('diary-home');showDiaryTab_('list');}
 function showDiaryTab(tab,el){document.querySelectorAll('#screen-diary-home .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDiaryTab_(tab);}
 async function showDiaryTab_(tab){
@@ -6868,7 +7066,7 @@ async function showDiaryTab_(tab){
               },
               scales:{
                 x:{
-                  min:0,max:24,
+                  min:0,max:_actoAxisMax(sleepBarData, (typeof napBars!=='undefined'?napBars:[])),
                   ticks:{font:{size:10},stepSize:2,callback:function(v){var h=(v+12)%24;return(h<10?'0':'')+h+':00';}},
                   grid:{color:function(c){return c.tick.value===12?'rgba(0,0,0,0.3)':'rgba(0,0,0,0.06)';}},
                   border:{dash:function(c){return c.tick.value===12?[4,4]:[]; }}
@@ -7049,7 +7247,7 @@ async function showDiaryTab_(tab){
             ${[
               {label:'Cantidad',val:avgQtyP,icon:'',color:'#2d9e6b',sub:'Duración'},
               {label:'Fragmentación',val:avgFragP,icon:'',color:'#0e7490',sub:'Despertares'},
-              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: regResult.label},
+              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: null},
             ].map(p=>{
               const c=pillarColor(p.val);
               const pillarC = p.color || '#1a4a3a';
@@ -7163,6 +7361,7 @@ async function editChildDiaryEntry(id){
       const dateEl=document.getElementById('d-date'); if(dateEl) dateEl.value=e.diary_date;
       const bedEl=document.getElementById('d-bed'); if(bedEl&&e.bedtime) bedEl.value=e.bedtime.slice(0,5);
       const wakeEl=document.getElementById('d-wake'); if(wakeEl&&e.wake_time) wakeEl.value=e.wake_time.slice(0,5);
+      const getupEl0=document.getElementById('d-getup'); if(getupEl0&&e.get_up_time) getupEl0.value=e.get_up_time.slice(0,5); if(typeof updateAwakeInBed==='function') updateAwakeInBed();
       const latEl=document.getElementById('d-latency'); if(latEl&&e.sleep_latency_mins){
         const opts=[2,10,22,45,90];
         const closest=opts.reduce((a,b)=>Math.abs(b-e.sleep_latency_mins)<Math.abs(a-e.sleep_latency_mins)?b:a);
@@ -7206,6 +7405,7 @@ async function editDiaryEntry(id){
       const bedEl=document.getElementById('d-bed'); if(bedEl) bedEl.value=e.bedtime?e.bedtime.slice(0,5):'';
       if(e.bedtime){const[bh,bm]=e.bedtime.slice(0,5).split(':');const bhs=document.getElementById('d-bed-h');const bms=document.getElementById('d-bed-m');if(bhs)bhs.value=bh;if(bms&&bm){const closest=['00','05','10','15','20','25','30','35','40','45','50','55'].reduce((a,b)=>Math.abs(parseInt(b)-parseInt(bm))<Math.abs(parseInt(a)-parseInt(bm))?b:a);bms.value=closest;}}
       const wakeEl=document.getElementById('d-wake'); if(wakeEl) wakeEl.value=e.wake_time?e.wake_time.slice(0,5):'';
+      const getupEl1=document.getElementById('d-getup'); if(getupEl1) getupEl1.value=e.get_up_time?e.get_up_time.slice(0,5):''; if(typeof updateAwakeInBed==='function') updateAwakeInBed();
       if(e.wake_time){const[wh,wm]=e.wake_time.slice(0,5).split(':');const whs=document.getElementById('d-wake-h');const wms=document.getElementById('d-wake-m');if(whs)whs.value=wh;if(wms&&wm){const closest=['00','05','10','15','20','25','30','35','40','45','50','55'].reduce((a,b)=>Math.abs(parseInt(b)-parseInt(wm))<Math.abs(parseInt(a)-parseInt(wm))?b:a);wms.value=closest;}}
       const latEl=document.getElementById('d-latency'); if(latEl&&e.sleep_latency_mins){
         const opts=[3,10,22,45,90,150];
@@ -7286,7 +7486,12 @@ function showDiaryNew(){
     <div class="sec-title" style="margin-top:4px">Sueño nocturno <span style="color:#dc2626">*</span></div>
     <div class="form-row" style="margin-bottom:14px">
       <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
-      <div class="form-group"><label class="form-label">Me levanté ⏰</label><input class="form-input" type="time" id="d-wake"></div>
+      <div class="form-group"><label class="form-label">Me desperté ☀️<span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">La hora en que abriste los ojos</span></label><input class="form-input" type="time" id="d-wake" onchange="updateAwakeInBed()"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Salí de la cama ⏰ <span style="color:#dc2626">*</span><span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">La hora en que efectivamente te levantaste. Si te levantaste apenas te despertaste, poné la misma hora.</span></label>
+      <input class="form-input" type="time" id="d-getup" onchange="updateAwakeInBed()">
+      <div id="awake-in-bed-hint" style="font-size:12px;color:var(--label-2);margin-top:6px;display:none"></div>
     </div>
     <div class="form-group">
       <label class="form-label">¿Cuánto tardé en dormirme? <span style="color:#dc2626">*</span><span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">Desde que apagaste la luz o tuviste intención de dormir</span></label>
@@ -7427,12 +7632,39 @@ function getMedications(){
   return _medModalMeds.length ? JSON.stringify(_medModalMeds) : '';
 }
 
+// Calcula y muestra el tiempo despierto en cama (entre despertar y levantarse).
+// Se usa tanto en el diario adulto como en el infantil.
+function updateAwakeInBed(){
+  const wakeEl = document.getElementById('d-wake');
+  const getupEl = document.getElementById('d-getup');
+  const hint = document.getElementById('awake-in-bed-hint');
+  if(!wakeEl || !getupEl || !hint) return;
+  const w = wakeEl.value, g = getupEl.value;
+  if(!w || !g){ hint.style.display='none'; return; }
+  const [wh,wm] = w.split(':').map(Number);
+  const [gh,gm] = g.split(':').map(Number);
+  let diff = (gh*60+gm) - (wh*60+wm);
+  if(diff < 0) diff += 1440; // cruce de medianoche defensivo
+  if(diff === 0){
+    hint.textContent = '✓ Te levantaste apenas te despertaste.';
+    hint.style.color = 'var(--label-2)';
+  } else if(diff <= 20){
+    hint.textContent = 'Estuviste ' + diff + ' min despierto/a en la cama antes de levantarte.';
+    hint.style.color = 'var(--label-2)';
+  } else {
+    hint.textContent = '⚠ Estuviste ' + diff + ' min (' + (diff/60).toFixed(1) + ' h) despierto/a en la cama. Levantarse al despertar ayuda a dormir mejor.';
+    hint.style.color = '#d97706';
+  }
+  hint.style.display = 'block';
+}
+
 async function saveDiary(){
   if(!S.user){toast('Sesión no iniciada');return;}
   const date=document.getElementById('d-date')?.value;
   if(!date){toast('Completá la fecha');return;}
   const bed=document.getElementById('d-bed')?.value||null;
   const wake=document.getElementById('d-wake')?.value||null;
+  const getup=document.getElementById('d-getup')?.value||null;
   const latency=parseInt(document.getElementById('d-latency')?.value)||null;
   const dayType=document.getElementById('d-daytype')?.value||'work';
   const quality=parseInt(document.getElementById('d-qual')?.value)||null;
@@ -7448,17 +7680,29 @@ async function saveDiary(){
   // Awakenings (calculados ANTES de sleepMins para descontar WASO de TST)
   const awakList=awakeningList||[];
   const wasoMins=awakList.reduce((a,b)=>a+(parseInt(b.duration)||0),0)||null;
-  // Calculate sleep minutes — TST = TIB - latencia - WASO
-  // tib_minutes (Tiempo en cama) se guarda aparte para sleep restriction therapy
+  // Tiempo despierto en cama entre el despertar final y levantarse (schema v2).
+  // NO se descuenta del TST porque wake_time ahora ES el despertar final: el TST
+  // va de bedtime a wake_time. Este dato es un marcador clínico independiente
+  // (despertar precoz / control de estímulos).
+  let awakeInBedAfter=null;
+  if(wake && getup){
+    const [wh,wm]=wake.split(':').map(Number);
+    const [gh,gm]=getup.split(':').map(Number);
+    let d=(gh*60+gm)-(wh*60+wm);
+    if(d<0) d+=1440;
+    awakeInBedAfter=d;
+  }
+  // Calculate sleep minutes — TST = (bedtime→wake_time) - latencia - WASO
+  // wake_time = despertar final (schema v2). El tramo hasta levantarse queda fuera.
   let sleepMins=null, tibMins=null;
   if(bed&&wake){
     const [bh,bm]=bed.split(':').map(Number);
     const [wh,wm]=wake.split(':').map(Number);
     let mins=(wh*60+wm)-(bh*60+bm);
     if(mins<0) mins+=1440;
-    tibMins=mins; // TIB sin descuentos
+    tibMins=mins; // TIB nocturno hasta el despertar final
     if(latency) mins=Math.max(0,mins-latency);
-    if(wasoMins) mins=Math.max(0,mins-wasoMins); // descontar WASO para TST verdadero
+    if(wasoMins) mins=Math.max(0,mins-wasoMins);
     sleepMins=mins;
   }
   // Caffeine & alcohol
@@ -7469,6 +7713,9 @@ async function saveDiary(){
     diary_date:date,
     bedtime:bed,
     wake_time:wake,
+    get_up_time:getup,
+    awake_in_bed_after_mins:awakeInBedAfter,
+    schema_version:2,
     sleep_minutes:sleepMins,
     sleep_latency_mins:latency,
     day_type:dayType,
@@ -7489,14 +7736,37 @@ async function saveDiary(){
   const btn=document.getElementById('save-diary-btn');
   if(btn) btn.disabled=true;
   try{
-    let ok;
-    if(S._editingDiaryId){
-      ok=await db.patch('sleep_diary?id=eq.'+S._editingDiaryId,payload);
-    } else {
-      ok=await db.post('sleep_diary',payload);
+    // Save resiliente: si Supabase reporta columna inexistente (get_up_time,
+    // awake_in_bed_after_mins, schema_version pueden no estar migradas aún),
+    // la quitamos del payload y reintentamos. Así el diario nunca se rompe por
+    // una migración pendiente.
+    let ok, attempt=0;
+    const maxRetries=5;
+    const workPayload=Object.assign({},payload);
+    while(attempt<=maxRetries){
+      try{
+        if(S._editingDiaryId){
+          ok=await db.patch('sleep_diary?id=eq.'+S._editingDiaryId,workPayload);
+        } else {
+          ok=await db.post('sleep_diary',workPayload);
+        }
+        break;
+      }catch(err){
+        const m=(err&&err.message)||'';
+        const colMatch=m.match(/column "?([a-z_]+)"? of relation|'([a-z_]+)' column|column ([a-z_]+) does not exist/i);
+        const col=colMatch?(colMatch[1]||colMatch[2]||colMatch[3]):null;
+        if(col && col in workPayload && attempt<maxRetries){
+          console.warn('[saveDiary] columna faltante, reintentando sin:',col);
+          delete workPayload[col];
+          attempt++;
+          continue;
+        }
+        throw err;
+      }
     }
+    const wasEditing=!!S._editingDiaryId;
     S._editingDiaryId=null;
-    showSuccessBanner(S._editingDiaryId?'Registro actualizado':'Registro guardado');
+    showSuccessBanner(wasEditing?'Registro actualizado':'Registro guardado');
     showDiaryHome();
   }catch(e){
     toast('Error al guardar: '+e.message);
@@ -7988,7 +8258,7 @@ async function pvtFinish(){
   }
   const timeStr=now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});const dateStr=now.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
   const cont=document.getElementById('pvt-result-content');
-  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div><div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (≥ 500 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div><div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="showHome()" style="flex:1">Inicio</button></div></div>`;
+  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div><div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (≥ 500 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div><div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button></div></div>`;
   // Calibration offset note
   if(DEVICE_OFFSET !== 0 && cont){
     const calibDiv = document.createElement('div');
@@ -8162,6 +8432,13 @@ async function renderPatientList(filter){
           if(!f) return true;
           const name=(u.name+' '+(u.lname||'')).trim().toLowerCase();
           return name.includes(f)||u.email.toLowerCase().includes(f);
+        });
+        // Orden alfabético por APELLIDO (luego nombre). Los perfiles infantiles
+        // (email con +nombre@child) heredan el apellido del padre, así que quedan agrupados.
+        filtered.sort((a,b)=>{
+          const la=((a.lname||'')+' '+(a.name||'')).trim().toLowerCase();
+          const lb=((b.lname||'')+' '+(b.name||'')).trim().toLowerCase();
+          return la.localeCompare(lb,'es',{sensitivity:'base'});
         });
         const rows=filtered.map(u=>{
           if(!u)return'';
@@ -8690,10 +8967,21 @@ async function showDrPTab_(tab){
       // ─── Card de Cronotipo: comparar MEQ (preferencial) vs MCTQ biológico ───
       let cronotipoBody = '';
       try {
+        // Edad del paciente: determina qué instrumentos de cronotipo son aplicables.
+        const _dobC = u.dob ? new Date(u.dob) : null;
+        const _ageC = _dobC ? Math.floor((Date.now() - _dobC)/31557600000) : null;
+        const _isMinor = _ageC != null && _ageC < 13;
         // MEQ (preferencial)
         const meqRec2 = (S.viewRecs||[]).filter(r=>r.scale_id==='meq').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-        let meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial (MEQ)</div>' +
-          '<div style="font-size:13px;font-weight:500;color:rgba(244,239,229,0.5);font-style:italic">Sin datos</div>';
+        let meqBlock;
+        if(_isMinor && !meqRec2){
+          // En menores de 13 el MEQ no está validado: no lo ofrecemos ni lo mostramos vacío.
+          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial</div>' +
+            '<div style="font-size:12px;color:rgba(244,239,229,0.6);line-height:1.4">El MEQ no está validado en menores de 13 años. El instrumento apropiado es el CCTQ (4–12) o el MESC (11–17), pendientes de licencia.</div>';
+        } else {
+          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Preferencial (MEQ)</div>' +
+            '<div style="font-size:13px;font-weight:500;color:rgba(244,239,229,0.5);font-style:italic">Sin datos</div>';
+        }
         let meqTag = null;
         if(meqRec2){
           const s = meqRec2.score;
@@ -8717,24 +9005,35 @@ async function showDrPTab_(tab){
           } catch(_ex) { diaryForMCTQ = null; }
         }
         const mctq = diaryForMCTQ ? computeMCTQFromDiary(diaryForMCTQ) : null;
+        // En menores, el MSFsc del diario es el ÚNICO instrumento de cronotipo disponible
+        // sin licencia (es una fórmula publicada, no un cuestionario). Lo destacamos.
+        const _bioLabel = _isMinor
+          ? 'Biológico (MSFsc · diario) <span style="color:#7EC8A4;font-weight:600">· instrumento principal</span>'
+          : 'Biológico (MCTQ · diario)';
         let mctqBlock;
         if(!mctq){
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">'+_bioLabel+'</div>' +
             '<div style="font-size:13px;color:rgba(244,239,229,0.5);font-style:italic">Sin datos de diario</div>';
         } else if(mctq.error === 'insufficient_free_days'){
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">'+_bioLabel+'</div>' +
             '<div style="font-size:12px;color:rgba(244,239,229,0.6);font-style:italic">Necesita ≥2 noches marcadas como "día libre" (tiene '+mctq.n_free+')</div>';
         } else {
           const debtSuffix = mctq.sleep_debt_h > 0.5 ? ' <span style="color:#C8A96E">· deuda '+mctq.sleep_debt_h.toFixed(1)+'h</span>' : '';
-          const varWarn = mctq.high_variability ? '<div style="font-size:10px;color:#C8A96E;margin-top:2px">⚠ Alta variabilidad — revisar posible trabajo por turnos</div>' : '';
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">Biológico (MCTQ · diario)</div>' +
+          const _varMsg = _isMinor
+            ? '⚠ Alta variabilidad entre días libres — revisar consistencia del registro'
+            : '⚠ Alta variabilidad — revisar posible trabajo por turnos';
+          const varWarn = mctq.high_variability ? '<div style="font-size:10px;color:#C8A96E;margin-top:2px">'+_varMsg+'</div>' : '';
+          const _pedNote = _isMinor
+            ? '<div style="font-size:10px;color:rgba(244,239,229,0.5);margin-top:3px;line-height:1.35">Los cortes de categoría derivan de población adulta (Roenneberg 2007). En pediatría interpretar como tendencia, no como diagnóstico.</div>'
+            : '';
+          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-bottom:4px">'+_bioLabel+'</div>' +
             '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+mctq.category+'</div>' +
             '<div style="font-size:11px;color:rgba(244,239,229,0.65);margin-top:2px">MSFsc: '+mctq.MSFsc+' · '+mctq.n_free+' libres, '+mctq.n_work+' laborables'+debtSuffix+'</div>' +
-            varWarn;
+            varWarn + _pedNote;
         }
         // Comparación (si tenemos ambos)
         let compareBlock = '';
-        if(meqTag && mctq && !mctq.error){
+        if(meqTag && mctq && !mctq.error && !_isMinor){
           const tagOrder = { 'M+':1, 'M':2, 'M-':3, 'I':4, 'V-':5, 'V':6, 'V+':7 };
           const diff = Math.abs((tagOrder[meqTag]||4) - (tagOrder[mctq.tag]||4));
           if(diff >= 2){
@@ -8804,7 +9103,11 @@ async function showDrPTab_(tab){
         const dme=document.getElementById('dr-clinical-metrics');
         if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
         killChart('dr-acto');killChart('dp-dr');
-        const sorted=[...subj].sort((a,b)=>a.diary_date>b.diary_date?1:-1);
+        // Omitir del actograma las noches sin horarios cargados: generaban filas
+        // vacías (p.ej. dos "mar 30-06" en blanco) que confunden la lectura.
+        const sorted=[...subj]
+          .filter(e=>e.bedtime && e.wake_time)
+          .sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,Math.min(w>s?w:w+24,24)];});
@@ -8905,7 +9208,7 @@ async function showDrPTab_(tab){
                   }
                 }
               },
-              scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}
+              scales:{x:{min:0,max:_actoAxisMax(sleepBars, drNapBars),ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}
             },
             plugins:[{
               id:'drActoOverlay',
@@ -9024,7 +9327,7 @@ async function showDrPTab_(tab){
         function pBar(v,c){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+c+';width:'+v+'%;transition:width .6s ease"></div></div>';}
         const pEl=document.getElementById('dr-pillar-bars');
         if(pEl) pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
-          [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22',statusOverride: regResult.label}].map(p=>{const c=pColor(p.v);const st = p.statusOverride || (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
+          [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22',statusOverride: null}].map(p=>{const c=pColor(p.v);const st = p.statusOverride || (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
             '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+
             ({Cantidad:'7–9h de sueño (recomendado)',Fragmentación:'Número de despertares',Regularidad: (regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')) : 'Variabilidad del horario')}[p.l]||'')+
             '</div></div>';}).join('')+'</div>';
@@ -10564,6 +10867,17 @@ function editChildProfile(chJsonEnc){
         <option value="X" ${ch.sex==='X'?'selected':''}>Prefiero no especificar</option>
       </select>
     </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div class="form-group" style="flex:1;margin:0">
+        <label class="form-label">Peso (kg)</label>
+        <input class="form-input" type="number" step="0.1" min="0" max="200" id="child-edit-weight" value="${ch.weight_kg||''}" placeholder="Ej: 32">
+      </div>
+      <div class="form-group" style="flex:1;margin:0">
+        <label class="form-label">Altura (cm)</label>
+        <input class="form-input" type="number" step="0.5" min="0" max="230" id="child-edit-height" value="${ch.height_cm||''}" placeholder="Ej: 138">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--label-2);margin:-8px 0 12px;line-height:1.4">El peso y la altura permiten calcular el IMC percentilado por edad, relevante para el riesgo de apnea del sueño en pediatría.</div>
     <div id="child-edit-error" class="form-error"></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-s" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancelar</button>
@@ -10579,12 +10893,17 @@ async function saveEditedChildProfile(childEmail){
   const lname = document.getElementById('child-edit-lname')?.value.trim();
   const dob = document.getElementById('child-edit-dob')?.value;
   const sex = document.getElementById('child-edit-sex')?.value;
+  const weight = document.getElementById('child-edit-weight')?.value;
+  const height = document.getElementById('child-edit-height')?.value;
   const err = document.getElementById('child-edit-error');
   if(!name||!lname||!dob){ if(err){err.textContent='Completá nombre, apellido y fecha de nacimiento.';err.classList.add('show');} return; }
   const btn = document.getElementById('child-edit-btn');
   if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
   try{
-    await db.patch('patients?email=eq.'+encodeURIComponent(childEmail), { name, lname, dob, sex:sex||null });
+    const patch = { name, lname, dob, sex:sex||null };
+    patch.weight_kg = weight ? parseFloat(weight) : null;
+    patch.height_cm = height ? parseFloat(height) : null;
+    await db.patch('patients?email=eq.'+encodeURIComponent(childEmail), patch);
     toast('✓ Perfil actualizado');
     document.querySelector('#child-edit-btn')?.closest('[style*=fixed]')?.remove();
     // Refrescar la lista de códigos infantiles
@@ -11841,13 +12160,27 @@ function showChildDiaryNew(){
     <div class="sec-title">Sueño nocturno <span style="color:#dc2626">*</span></div>
     <div class="form-row" style="margin-bottom:12px">
       <div class="form-group"><label class="form-label">Se acostó 🛏</label><input class="form-input" type="time" id="d-bed"></div>
-      <div class="form-group"><label class="form-label">Se levantó ⏰</label><input class="form-input" type="time" id="d-wake"></div>
+      <div class="form-group"><label class="form-label">Se despertó ☀️<span style="font-size:11px;color:var(--ink3);font-weight:400;display:block;margin-top:2px">Cuándo abrió los ojos</span></label><input class="form-input" type="time" id="d-wake"></div>
     </div>
 
     <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Contexto al dormirse</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">
-        ${[['teta','🤱 Teta'],['mamadera','🍼 Mamadera'],['upa','🤗 En brazos'],['mecedora','🪑 Meciendo'],['cuna','🛏 En cuna solo/a'],['colecho','👨‍👩‍👧 Colecho'],['chupete','🍬 Chupete'],['otro','✏️ Otro']].map(([v,l])=>`<button type="button" onclick="toggleSleepCtx('${v}',this)" data-ctx="${v}" style="padding:9px 8px;border:2px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:12px;font-family:var(--font);text-align:center">${l}</button>`).join('')}
+        ${(function(){
+          const ag = S.ageGroup || 'school';
+          // Opciones de acompañamiento al dormir, adaptadas a la edad.
+          // Bebé y preescolar: métodos de crianza tempranos (lactancia, upa, chupete).
+          // Escolar y adolescente: rutinas y factores propios de esas edades.
+          let opts;
+          if(ag === 'infant' || ag === 'preschool'){
+            opts = [['teta','🤱 Teta'],['mamadera','🍼 Mamadera'],['upa','🤗 En brazos'],['mecedora','🪑 Meciendo'],['cuna','🛏 En cuna solo/a'],['colecho','👨‍👩‍👧 Colecho'],['chupete','🍬 Chupete'],['otro','✏️ Otro']];
+          } else if(ag === 'school'){
+            opts = [['solo','🛏 Se durmió solo/a'],['acompanado','👪 Con un adulto al lado'],['colecho','🛌 En la cama de los padres'],['cuento','📖 Con cuento/lectura'],['luz','💡 Con luz o velador'],['objeto','🧸 Con objeto de apego'],['pantalla','📱 Con pantalla'],['otro','✏️ Otro']];
+          } else { // teen
+            opts = [['solo','🛏 Se durmió solo/a'],['musica','🎧 Con música/podcast'],['pantalla','📱 Con pantalla'],['luz','💡 Con luz'],['companiaFamiliar','👪 Acompañado por un familiar'],['dificultad','😣 Le costó dormirse'],['otro','✏️ Otro']];
+          }
+          return opts.map(([v,l])=>`<button type="button" onclick="toggleSleepCtx('${v}',this)" data-ctx="${v}" style="padding:9px 8px;border:2px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:12px;font-family:var(--font);text-align:center">${l}</button>`).join('');
+        })()}
       </div>
       <input type="hidden" id="d-sleep-ctx" value="">
     </div>
@@ -11932,6 +12265,17 @@ function toggleSleepCtx(val, btn){
 }
 
 let _siestaCount = 0;
+// Renumera los títulos "Siesta N" según la posición real en el DOM.
+// El contador _siestaCount solo genera IDs únicos; NO se usa para mostrar el número,
+// porque nunca se resetea (bug: al reabrir el form o borrar filas los números saltaban).
+function renumberSiestas(){
+  const list = document.getElementById('siesta-list');
+  if(!list) return;
+  Array.from(list.children).forEach((row, i) => {
+    const t = row.querySelector('[data-siesta-title]');
+    if(t) t.textContent = 'Siesta ' + (i+1);
+  });
+}
 function addSiestaRow(){
   _siestaCount++;
   const id = 'siesta-'+_siestaCount;
@@ -11939,8 +12283,8 @@ function addSiestaRow(){
   const row = document.createElement('div');
   row.id = id;
   row.style.cssText='background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px;position:relative';
-  row.innerHTML=`<button onclick="this.closest('[id]').remove();updateNapData()" style="position:absolute;top:10px;right:10px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--label-3)">✕</button>
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Siesta ${_siestaCount}</div>
+  row.innerHTML=`<button onclick="this.closest('[id]').remove();updateNapData();renumberSiestas()" style="position:absolute;top:10px;right:10px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--label-3)">✕</button>
+    <div data-siesta-title style="font-size:13px;font-weight:600;margin-bottom:10px">Siesta</div>
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <div style="flex:1"><label style="font-size:12px;color:var(--label-2)">Inicio</label><input type="time" class="form-input" id="${id}-start" oninput="updateNapData()"></div>
       <div style="flex:1"><label style="font-size:12px;color:var(--label-2)">Fin</label><input type="time" class="form-input" id="${id}-end" oninput="updateNapData()"></div>
@@ -11953,6 +12297,7 @@ function addSiestaRow(){
     <input type="hidden" id="${id}-mood" value="">
     </div>`;
   document.getElementById('siesta-list').appendChild(row);
+  renumberSiestas();
 }
 
 function updateNapData(){
@@ -11973,6 +12318,7 @@ async function saveChildDiary(){
   const date = document.getElementById('d-date')?.value;
   const bed = document.getElementById('d-bed')?.value;
   const wake = document.getElementById('d-wake')?.value;
+  const getup = document.getElementById('d-getup')?.value||null;
   const latency = parseInt(document.getElementById('d-latency')?.value||'0')||null;
   const ctx = document.getElementById('d-sleep-ctx')?.value||null;
   const moodNight = document.getElementById('d-mood-night')?.value||null;
@@ -11984,12 +12330,24 @@ async function saveChildDiary(){
 
   if(!date||!bed||!wake){ toast('Completá fecha y horarios'); return; }
 
-  // Calculate sleep minutes
+  // WASO de los despertares infantiles (antes NO se descontaba — bug del diario infantil)
+  const childWaso=(_childAwakenings||[]).reduce((a,b)=>a+(parseInt(b.duration)||0),0)||null;
+  // Tiempo despierto en cama entre despertar final y levantarse (schema v2)
+  let awakeInBedAfter=null;
+  if(wake && getup){
+    const [wh2,wm2]=wake.split(':').map(Number);
+    const [gh2,gm2]=getup.split(':').map(Number);
+    let d2=(gh2*60+gm2)-(wh2*60+wm2);
+    if(d2<0) d2+=1440;
+    awakeInBedAfter=d2;
+  }
+  // TST = (bedtime→wake_time) - latencia - WASO. wake_time = despertar final.
   const bedH=parseInt(bed.split(':')[0]), bedM=parseInt(bed.split(':')[1]);
   const wkH=parseInt(wake.split(':')[0]), wkM=parseInt(wake.split(':')[1]);
   let totalMin=(wkH*60+wkM)-(bedH*60+bedM);
   if(totalMin<0) totalMin+=1440;
   if(latency) totalMin=Math.max(0,totalMin-latency);
+  if(childWaso) totalMin=Math.max(0,totalMin-childWaso);
 
   const btn=document.getElementById('save-diary-btn');
   if(btn) btn.disabled=true;
@@ -11999,8 +12357,12 @@ async function saveChildDiary(){
       diary_date:date,
       bedtime:bed,
       wake_time:wake,
+      get_up_time:getup,
+      awake_in_bed_after_mins:awakeInBedAfter,
+      schema_version:2,
       awakenings:_childAwakenings.length,
       awakening_detail:JSON.stringify(_childAwakenings)||null,
+      wake_in_bed_mins:childWaso,
       sleep_minutes:totalMin,
       sleep_latency_mins:latency,
       notes:[
@@ -12013,13 +12375,30 @@ async function saveChildDiary(){
       screen_minutes:screen,
       day_type:(window._diaryDayType||'work')
     };
-    if(S._editingDiaryId){
-      await db.patch('sleep_diary?id=eq.'+S._editingDiaryId, body);
-      toast('Registro actualizado ✓');
-      S._editingDiaryId=null;
-    } else {
-      await db.post('sleep_diary',body);
-      toast('Registro guardado ✓');
+    // Save resiliente a columnas faltantes (misma lógica que el diario adulto)
+    const _work=Object.assign({},body);
+    let _att=0;
+    while(_att<=5){
+      try{
+        if(S._editingDiaryId){
+          await db.patch('sleep_diary?id=eq.'+S._editingDiaryId, _work);
+          toast('Registro actualizado ✓');
+          S._editingDiaryId=null;
+        } else {
+          await db.post('sleep_diary',_work);
+          toast('Registro guardado ✓');
+        }
+        break;
+      }catch(err){
+        const m=(err&&err.message)||'';
+        const cm=m.match(/column "?([a-z_]+)"? of relation|'([a-z_]+)' column|column ([a-z_]+) does not exist/i);
+        const col=cm?(cm[1]||cm[2]||cm[3]):null;
+        if(col && col in _work && _att<5){
+          console.warn('[saveChildDiary] columna faltante, reintentando sin:',col);
+          delete _work[col]; _att++; continue;
+        }
+        throw err;
+      }
     }
     setTimeout(()=>{
       if(S.childMode){ showChildHome(); showChildTab('diary',document.getElementById('ch-tab-diary')); }
@@ -12521,30 +12900,73 @@ async function tryAutoLogin(){
 function handleAuthRedirect(){
   if(!supa){ initSupabase(); }
   if(!supa) return;
-  // Escuchar PASSWORD_RECOVERY → mostrar pantalla de cambio de contraseña
-  // Escuchar SIGNED_IN (proviene de invite confirmado) → idem
+
+  // Detectar la INTENCIÓN desde la URL ANTES de que el SDK procese el token.
+  // Con flowType:'pkce', Supabase manda el token como ?code=... en la query string
+  // (no en el hash). El tipo de flujo viene en el parámetro 'type' del hash O como
+  // marca que dejamos en resetPasswordForEmail. Guardamos la intención para que,
+  // cuando el SDK dispare el evento de sesión, sepamos qué pantalla mostrar.
+  let intent = null;
+  try{
+    const hash = (window.location.hash || '').toLowerCase();
+    const search = (window.location.search || '').toLowerCase();
+    const qs = new URLSearchParams(window.location.search);
+    const hasCode = !!qs.get('code');            // PKCE
+    // El tipo puede venir en el hash (#type=recovery) o en la query (?type=recovery,
+    // que es lo que ponemos en redirectTo). Buscamos en ambos.
+    const typeMatch = /type=(recovery|invite|signup|magiclink)/.exec(hash + '&' + search);
+    if(typeMatch){
+      intent = typeMatch[1];
+    } else if(hasCode){
+      // PKCE sin tipo explícito: usar la marca local o asumir recovery.
+      intent = sessionStorage.getItem('dm_auth_intent') || 'recovery';
+    }
+    if(intent){ sessionStorage.setItem('dm_auth_intent', intent); }
+    console.log('[AUTH-REDIRECT] intent detectado=', intent, 'hasCode=', hasCode);
+  }catch(e){ console.warn('[AUTH-REDIRECT] parse url:', e); }
+
+  // El SDK dispara eventos cuando canjea el token de la URL.
   supa.auth.onAuthStateChange((event, session) => {
-    console.log('[AUTH-REDIRECT] event=', event, 'has session=', !!session);
+    console.log('[AUTH-REDIRECT] event=', event, 'session=', !!session, 'intent=', sessionStorage.getItem('dm_auth_intent'));
+    const storedIntent = sessionStorage.getItem('dm_auth_intent');
     if(event === 'PASSWORD_RECOVERY'){
-      // Usuario hizo click en "Reset password" del mail
+      sessionStorage.removeItem('dm_auth_intent');
       showSetPasswordScreen('recovery');
     } else if(event === 'SIGNED_IN' && session){
-      // Detectar si es la primera vez (recién confirmó invitación):
-      // En ese caso user.created_at es muy reciente y no hay perfil aún
-      checkIfNeedsPasswordSetup(session);
+      // Un SIGNED_IN puede venir de: (a) recovery vía PKCE, (b) invite confirmado,
+      // (c) login normal. Desambiguamos con la intención guardada.
+      if(storedIntent === 'recovery'){
+        sessionStorage.removeItem('dm_auth_intent');
+        showSetPasswordScreen('recovery');
+      } else if(storedIntent === 'invite' || storedIntent === 'signup'){
+        sessionStorage.removeItem('dm_auth_intent');
+        showSetPasswordScreen('invite');
+      } else {
+        // Login normal: dejar que checkIfNeedsPasswordSetup / tryAutoLogin decidan.
+        checkIfNeedsPasswordSetup(session);
+      }
     }
   });
-  // También chequear al cargar la página si hay hash de tipo recovery
-  if(window.location.hash){
-    const hash = window.location.hash.toLowerCase();
-    if(hash.includes('type=recovery') || hash.includes('type=invite')){
-      // El SDK ya procesó el token; solo mostramos la pantalla apropiada
-      setTimeout(async ()=>{
-  const {data:{session}} = await supa.auth.getSession();
-  if(session){ showSetPasswordScreen('invite'); }
-  else { showScreen('login'); }
-}, 2000);
-    }
+
+  // Fallback: si hay token en la URL pero el evento no llegó (timing), chequear la
+  // sesión y actuar según la intención. SIN forzar 'invite' como antes.
+  const qs2 = new URLSearchParams(window.location.search);
+  const hasToken = !!qs2.get('code') || /access_token|type=recovery|type=invite/.test((window.location.hash||'').toLowerCase());
+  if(hasToken){
+    setTimeout(async ()=>{
+      try{
+        const {data:{session}} = await supa.auth.getSession();
+        const storedIntent = sessionStorage.getItem('dm_auth_intent');
+        if(session && storedIntent === 'recovery'){
+          sessionStorage.removeItem('dm_auth_intent');
+          showSetPasswordScreen('recovery');
+        } else if(session && (storedIntent === 'invite' || storedIntent === 'signup')){
+          sessionStorage.removeItem('dm_auth_intent');
+          showSetPasswordScreen('invite');
+        }
+        // Si no hay intención clara, no hacemos nada — tryAutoLogin maneja el login normal.
+      }catch(e){ console.warn('[AUTH-REDIRECT] fallback:', e); }
+    }, 1500);
   }
 }
 
@@ -12660,13 +13082,20 @@ function showForgotPasswordPrompt(){
   const cleanEmail = email.trim().toLowerCase();
   if(!cleanEmail.includes('@')){ toast('Email inválido'); return; }
   if(!supa){ initSupabase(); }
+  // Marca local (sirve si abre el link en el mismo navegador).
+  try{ sessionStorage.setItem('dm_auth_intent', 'recovery'); }catch(_){}
+  // redirectTo con marca explícita ?type=recovery en la URL: hace la detección
+  // infalible incluso si el paciente abre el mail en OTRO navegador/dispositivo,
+  // donde el sessionStorage no existe.
+  const base = window.location.origin + window.location.pathname;
+  const redirect = base + (base.includes('?') ? '&' : '?') + 'type=recovery';
   supa.auth.resetPasswordForEmail(cleanEmail, {
-    redirectTo: window.location.origin + window.location.pathname
+    redirectTo: redirect
   }).then(({error}) => {
     if(error){
       toast('Error: '+error.message);
     } else {
-      toast('Te enviamos un mail con instrucciones.');
+      toast('Te enviamos un mail con instrucciones. Revisá también la carpeta de spam.');
     }
   });
 }
@@ -15187,8 +15616,8 @@ const DM_TOURS = {
       },
       {
         target: '#d-wake',
-        title: '☀️ Hora de levantarte',
-        body: 'La hora en que <strong>saliste de la cama</strong>, no la del despertador si te quedaste dando vueltas. Con esto calculamos tu tiempo real de sueño.',
+        title: '☀️ Hora en que te despertaste',
+        body: 'La hora en que <strong>abriste los ojos</strong> por última vez. Con esto calculamos tu tiempo real de sueño. Justo debajo vas a poder anotar a qué hora te levantaste de la cama, que puede ser distinto.',
         placement: 'top',
         padding: 6
       },
@@ -15334,7 +15763,7 @@ function dmReplayTour(tourId){
 </div></div>
 <div id="screen-hygiene" class="screen" style="background:#1a2e23">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">Higiene del sueño</div>
     <div style="width:70px"></div>
   </div>
@@ -15343,7 +15772,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-consult-guide" class="screen" style="background:#1a2e23">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">¿Cuándo consultar?</div>
     <div style="width:70px"></div>
   </div>
@@ -15354,7 +15783,7 @@ function dmReplayTour(tourId){
 <!-- RECOVERED SCREENS FROM v41 -->
 <div id="screen-scale" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
+    <button class="topbar-btn" onclick="goHomeCtx()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
     <div style="text-align:center;flex:1;overflow:hidden"><div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px" id="scale-title">Escala</div></div>
     <div style="width:52px"></div>
   </div>
@@ -15365,7 +15794,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-scales" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cuestionarios</div><div style="font-size:11px;color:var(--g200)">Autoadministrables</div></div>
     <div style="width:70px"></div>
   </div>
@@ -15506,7 +15935,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-result" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Inicio</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Inicio</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="r-title">Resultado</div></div>
     <div style="width:70px"></div>
   </div>
