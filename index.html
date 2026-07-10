@@ -2755,7 +2755,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 
 <div id="screen-diary-home" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="font-size:17px;font-weight:600;color:var(--label)">Diario de sueño</div>
     <div style="display:flex;gap:4px">
       <button class="topbar-btn" onclick="showReminderSettings('diary')" style="font-size:13px" title="Configurar recordatorio">🔔</button>
@@ -2849,7 +2849,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 
 <div id="screen-pvt-intro" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Salir</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Salir</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Test de alerta <span style="font-size:11px;font-weight:400;opacity:0.7">PVT</span></div></div>
     <button class="topbar-btn" onclick="showPVTReminderMulti()" style="font-size:13px" title="Configurar recordatorios">🔔</button>
   </div>
@@ -3298,7 +3298,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 <!-- CONSULT DIRECTORY -->
 <div id="screen-consult" class="screen">
   <div class="topbar">
-    <button id="consult-back-btn" class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button id="consult-back-btn" class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Profesionales</div></div>
     <div style="width:70px"></div>
   </div>
@@ -3423,7 +3423,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy60';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy61';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -4897,8 +4897,11 @@ function updateDrListedBtn(){
   const u=S.user; if(!u) return;
   const drKey='dm_dr_profile_'+(u.email||'');
   const cached=JSON.parse(localStorage.getItem(drKey)||'null');
-  const _approved2=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-  const isListed=_approved2[u.email]===true;
+  // La verdad sobre si el profesional está publicado vive en la BASE, no en localStorage.
+  // Antes se leía dm_approved_doctors y el botón mentía: decía "ya estás en el directorio"
+  // mientras la BD tenía listed='none' / public_profile=false y ningún paciente lo veía.
+  const _cachedDoc = (typeof cached!=='undefined' && cached) ? cached : (S.user||{});
+  const isListed = (_cachedDoc.public_profile===true) || (_cachedDoc.listed===true) || (_cachedDoc.listed==='true');
   const isPending=cached&&(cached.listed==='pending'||cached._appliedForDirectory)&&!isListed;
   const btn=document.getElementById('dir-register-btn');
   if(btn){
@@ -5788,6 +5791,23 @@ function computeNapStructure(entries){
     morning:   { n:morning.length,   avgDurMin:avg(morning),   sdDurMin:sd(morning),   avgStart:fmtClock(avg(morningStarts)),   sdStartMin:sd(morningStarts) },
     afternoon: { n:afternoon.length, avgDurMin:avg(afternoon), sdDurMin:sd(afternoon), avgStart:fmtClock(avg(afternoonStarts)), sdStartMin:sd(afternoonStarts) }
   };
+}
+
+// Calcula el límite superior del eje X del actograma.
+// El eje va de 0 (mediodía) a 24 (mediodía siguiente). Si alguien duerme más allá
+// del mediodía (p.ej. hasta las 12:30), la barra se cortaba en el borde y no
+// reaparecía abajo. Extendemos el eje lo justo para que entre completa.
+function _actoAxisMax(...barArrays){
+  let maxEnd = 24;
+  barArrays.forEach(arr => {
+    (arr||[]).forEach(b => {
+      if(Array.isArray(b) && b.length>1 && typeof b[1]==='number' && isFinite(b[1])){
+        if(b[1] > maxEnd) maxEnd = b[1];
+      }
+    });
+  });
+  // Redondear al múltiplo de 2 superior (los ticks van cada 2h) y acotar a 30h.
+  return Math.min(30, Math.ceil(maxEnd/2)*2);
 }
 
 function computeMCTQFromDiary(entries){
@@ -8125,9 +8145,15 @@ async function loadCodeConsultDirectory(){
   list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,0.5)">Cargando profesionales…</div>';
   try{
     // Traer profesionales aprobados (listed=true OR public_profile=true)
-    let docs = await db.get('doctors?listed=eq.true&select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=name.asc').catch(()=>[]);
-    if(!docs || !docs.length){
-      docs = await db.get('doctors?public_profile=eq.true&select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=name.asc').catch(()=>[]);
+    // `listed` es una columna de TEXTO ('none' | 'pending' | 'true'), no booleana.
+    // La fuente de verdad para el directorio público es `public_profile` (booleano).
+    // Consultamos ambas con OR y deduplicamos por email.
+    const _sel='select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=lname.asc';
+    let docs = await db.get('doctors?public_profile=eq.true&'+_sel).catch(()=>[]);
+    const alt = await db.get('doctors?listed=eq.true&'+_sel).catch(()=>[]);
+    if(alt && alt.length){
+      const seen=new Set((docs||[]).map(d=>d.email));
+      (alt||[]).forEach(d=>{ if(!seen.has(d.email)){ docs.push(d); seen.add(d.email); } });
     }
     window._codeConsultDocs = docs || [];
     renderCodeConsultList(window._codeConsultDocs);
@@ -8357,7 +8383,7 @@ function showResult(sc,score){
         ${sc.ref?`<div style="margin-top:14px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;border-left:3px solid var(--g400)"><div style="font-size:10px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Referencia</div><div style="font-size:11px;color:var(--label-2);line-height:1.5;font-style:italic">${sc.ref}</div></div>`:''}
         <div style="display:flex;gap:10px;margin-top:18px">
           <button class="btn btn-s" onclick="showPatientHistory()" style="flex:1">Ver historial</button>
-          <button class="btn btn-g" onclick="showHome()" style="flex:1">Inicio</button>
+          <button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button>
         </div>
       </div>`;
     showScreen('result');
@@ -8376,7 +8402,7 @@ function showResult(sc,score){
       ${sc.ref?`<div style="margin-top:18px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;border-left:3px solid var(--g400)"><div style="font-size:10px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Referencia</div><div style="font-size:11px;color:var(--label-2);line-height:1.5;font-style:italic">${sc.ref}</div></div>`:''}
       <div style="display:flex;gap:10px;margin-top:18px">
         <button class="btn btn-s" onclick="showPatientHistory()" style="flex:1">Ver historial</button>
-        <button class="btn btn-g" onclick="showHome()" style="flex:1">Inicio</button>
+        <button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button>
       </div>
     </div>`;
   showScreen('result');
@@ -8916,6 +8942,18 @@ async function saveProfile(){
 }
 
 // DIARY
+// Retorno al inicio SENSIBLE AL CONTEXTO.
+// Bug histórico: los botones "Volver" de diario, escalas, etc. llamaban a showHome()
+// directamente, que es el home del ADULTO. Un padre navegando el perfil de su hijo
+// tocaba "Volver" esperando retroceder un paso y aterrizaba en su propio perfil,
+// sin haberlo elegido. Ahora respetamos S.childMode.
+function goHomeCtx(){
+  try{
+    if(S && S.childMode && typeof showChildHome === 'function'){ showChildHome(); return; }
+  }catch(_){}
+  showHome();
+}
+
 async function showDiaryHome(){showScreen('diary-home');showDiaryTab_('list');}
 function showDiaryTab(tab,el){document.querySelectorAll('#screen-diary-home .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDiaryTab_(tab);}
 async function showDiaryTab_(tab){
@@ -9191,7 +9229,7 @@ async function showDiaryTab_(tab){
               },
               scales:{
                 x:{
-                  min:0,max:24,
+                  min:0,max:_actoAxisMax(sleepBarData, (typeof napBars!=='undefined'?napBars:[])),
                   ticks:{font:{size:10},stepSize:2,callback:function(v){var h=(v+12)%24;return(h<10?'0':'')+h+':00';}},
                   grid:{color:function(c){return c.tick.value===12?'rgba(0,0,0,0.3)':'rgba(0,0,0,0.06)';}},
                   border:{dash:function(c){return c.tick.value===12?[4,4]:[]; }}
@@ -10383,7 +10421,7 @@ async function pvtFinish(){
   }
   const timeStr=now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});const dateStr=now.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
   const cont=document.getElementById('pvt-result-content');
-  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div><div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (≥ 500 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div><div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="showHome()" style="flex:1">Inicio</button></div></div>`;
+  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div><div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (≥ 500 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div><div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button></div></div>`;
   // Calibration offset note
   if(DEVICE_OFFSET !== 0 && cont){
     const calibDiv = document.createElement('div');
@@ -11333,7 +11371,7 @@ async function showDrPTab_(tab){
                   }
                 }
               },
-              scales:{x:{min:0,max:24,ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}
+              scales:{x:{min:0,max:_actoAxisMax(sleepBars, drNapBars),ticks:{font:{size:10},stepSize:2,callback:function(v){const h=(v+12)%24;return(h<10?'0':'')+h+':00';}},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}
             },
             plugins:[{
               id:'drActoOverlay',
@@ -17888,7 +17926,7 @@ function dmReplayTour(tourId){
 </div></div>
 <div id="screen-hygiene" class="screen" style="background:#1a2e23">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">Higiene del sueño</div>
     <div style="width:70px"></div>
   </div>
@@ -17897,7 +17935,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-consult-guide" class="screen" style="background:#1a2e23">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center;font-size:14px;font-weight:600;color:#fff">¿Cuándo consultar?</div>
     <div style="width:70px"></div>
   </div>
@@ -17908,7 +17946,7 @@ function dmReplayTour(tourId){
 <!-- RECOVERED SCREENS FROM v41 -->
 <div id="screen-scale" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
+    <button class="topbar-btn" onclick="goHomeCtx()" style="color:#1a4a3a;font-weight:600;flex-shrink:0">← Salir</button>
     <div style="text-align:center;flex:1;overflow:hidden"><div style="font-size:13px;font-weight:600;color:#1a4a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px" id="scale-title">Escala</div></div>
     <div style="width:52px"></div>
   </div>
@@ -17919,7 +17957,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-scales" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Volver</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Cuestionarios</div><div style="font-size:11px;color:var(--g200)">Autoadministrables</div></div>
     <div style="width:70px"></div>
   </div>
@@ -18060,7 +18098,7 @@ function dmReplayTour(tourId){
 
 <div id="screen-result" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showHome()">← Inicio</button>
+    <button class="topbar-btn" onclick="goHomeCtx()">← Inicio</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="r-title">Resultado</div></div>
     <div style="width:70px"></div>
   </div>
