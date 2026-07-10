@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy62-mod1">
+<link rel="stylesheet" href="css/styles.css?v=hoy63-mod1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1260,7 +1260,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy62-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy63-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -5639,31 +5639,57 @@ function getFirstChildName(){
   return 'Mi hijo/a';
 }
 function updateNavTabs(){
-  const yoBtn=document.getElementById('bnav-yo');
-  const yoLbl=yoBtn?yoBtn.querySelector('.bnav-lbl'):null;
-  // En modo hijo, "Yo" debe mostrar el perfil DEL HIJO, no el del adulto:
-  // saltar de contexto sin avisar era desorientador. La salida al perfil adulto
-  // está en el botón "← Mi perfil" del header.
-  if(S.childMode){
-    if(yoLbl) yoLbl.textContent='Perfil';
-    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'child\')');
-  } else {
-    if(yoLbl) yoLbl.textContent='Yo';
-    if(yoBtn) yoBtn.setAttribute('onclick','navTo(\'profile\')');
-  }
-  // Pestaña "Hijos": visible si el adulto tiene hijos vinculados o si su onboarding los incluye.
-  // Al apretarla NO entra directo: abre el selector (siempre).
-  const childBtn=document.getElementById('bnav-hijos');
-  if(childBtn){
-    const kids=S._linkedChildren||[];
-    let forWhom='self';
-    try{ forWhom=getOnboardingFor(); }catch(_){}
-    const showHijos = !S.childMode && (kids.length>0 || forWhom==='child' || forWhom==='both');
-    childBtn.style.display = showHijos ? '' : 'none';
-  }
-  // Limpiar la versión anterior (bnav-hijo) si quedó
+  const kids = S._linkedChildren || [];
+  let forWhom='self';
+  try{ forWhom=getOnboardingFor(); }catch(_){}
+
+  // Limpiar pestañas de hijos generadas en renders anteriores
+  document.querySelectorAll('.bnav-child-dyn').forEach(b=>b.remove());
   const oldChild=document.getElementById('bnav-hijo');
   if(oldChild) oldChild.remove();
+
+  const nav = document.getElementById('main-nav');
+  const masBtn = document.getElementById('bnav-mas');
+  const yoBtn = document.getElementById('bnav-yo');
+  const yoLbl = yoBtn ? yoBtn.querySelector('.bnav-lbl') : null;
+  const hijosBtn = document.getElementById('bnav-hijos');
+
+  // "Yo" siempre lleva al perfil del ADULTO. Si estás dentro de un hijo,
+  // apretarlo te devuelve a tu propia cuenta (salida explícita y visible).
+  if(yoLbl) yoLbl.textContent='Yo';
+  if(yoBtn) yoBtn.setAttribute('onclick','switchToParentProfile()');
+
+  const hasKids = kids.length>0 || forWhom==='child' || forWhom==='both';
+  if(!hasKids){
+    if(hijosBtn) hijosBtn.style.display='none';
+    return;
+  }
+
+  // Con 1 o 2 hijos mostramos una pestaña por nombre (contexto explícito).
+  // Con 3+ la barra no entra en pantalla: usamos el selector.
+  if(kids.length>=1 && kids.length<=2 && nav && masBtn){
+    if(hijosBtn) hijosBtn.style.display='none';
+    kids.forEach(c=>{
+      const btn=document.createElement('button');
+      btn.className='bnav bnav-child-dyn';
+      btn.dataset.childEmail=c.email;
+      const first=((c.name||'').trim().split(/\s+/)[0])||'Hijo/a';
+      btn.setAttribute('onclick',"switchToChild('"+String(c.email).replace(/'/g,"\\'")+"')");
+      btn.innerHTML='<div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path stroke-linecap="round" d="M5.5 19c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></div>'
+        + '<span class="bnav-lbl">'+first.replace(/[<>&]/g,'')+'</span>';
+      nav.insertBefore(btn, masBtn);
+    });
+  } else {
+    if(hijosBtn) hijosBtn.style.display='';
+  }
+
+  // Marcar activa la pestaña del perfil que se está viendo
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
+  if(S.childMode && S.user){
+    const act=document.querySelector('.bnav-child-dyn[data-child-email="'+S.user.email+'"]');
+    if(act) act.classList.add('active');
+    else if(hijosBtn) hijosBtn.classList.add('active');
+  }
 }
 
 async function openChildPicker(){
@@ -5704,7 +5730,7 @@ function navTo(dest){
   // sin que lo hubiera pedido. La salida explícita existe: el botón "← Mi perfil"
   // del header del home infantil (switchToParentProfile).
   if(dest==='home'){ if(S.childMode){ showChildHome(); } else { showHome(); } }
-  else if(dest==='profile'){showProfile();}
+  else if(dest==='profile'){ if(S.childMode){ switchToParentProfile(); } else { showProfile(); } }
   else if(dest==='child'){openChildProfile();}
   else if(dest==='scales'){showScalesScreen();}
   else if(dest==='diary'){showDiaryHome();}
@@ -11795,6 +11821,7 @@ async function switchToParentProfile(){
     if(d&&d.length){
       S.user = d[0];
       setPatientMode(d[0].dob);
+      try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(_){}
       showHome();
     } else {
       toast('No se encontró la cuenta adulta');
