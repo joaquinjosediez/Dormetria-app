@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy63-mod1">
+<link rel="stylesheet" href="css/styles.css?v=hoy64-mod1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -609,7 +609,7 @@
 <!-- DIARY NEW -->
 <div id="screen-diary-new" class="screen">
   <div class="topbar">
-    <button class="topbar-btn" onclick="showScreen('diary-home')">← Volver</button>
+    <button class="topbar-btn" onclick="goBackFromDiaryNew()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Nuevo registro</div></div>
     <div style="width:70px"></div>
   </div>
@@ -1260,7 +1260,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy63-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy64-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -5638,6 +5638,30 @@ function getFirstChildName(){
   }
   return 'Mi hijo/a';
 }
+// "Yo" en la barra inferior: abre el PERFIL del adulto.
+// Si estás dentro del perfil de un hijo, primero sale del modo hijo y después
+// muestra el perfil. Antes llamaba a switchToParentProfile(), que termina en
+// showHome() — por eso "Yo" te dejaba en el inicio en vez del perfil.
+// "Volver" del formulario de registro: regresa a DONDE SE ENTRÓ.
+// Si venís del home de un hijo ("Registrar noche"), volvés a ese home.
+// Si venís de la lista del diario ("+ Nuevo"), volvés a la lista.
+function goBackFromDiaryNew(){
+  const origin = S._diaryNewOrigin;
+  S._diaryNewOrigin = null;
+  if(origin === 'child-home' && typeof showChildHome === 'function'){ showChildHome(); return; }
+  if(origin === 'home'){ if(typeof goHomeCtx==='function') goHomeCtx(); else showHome(); return; }
+  showScreen('diary-home');
+}
+
+async function goToMyProfile(){
+  try{
+    if(S && S.childMode && typeof switchToParentProfile==='function'){
+      await switchToParentProfile();
+    }
+  }catch(_){}
+  if(typeof showProfile==='function') showProfile();
+}
+
 function updateNavTabs(){
   const kids = S._linkedChildren || [];
   let forWhom='self';
@@ -5657,7 +5681,7 @@ function updateNavTabs(){
   // "Yo" siempre lleva al perfil del ADULTO. Si estás dentro de un hijo,
   // apretarlo te devuelve a tu propia cuenta (salida explícita y visible).
   if(yoLbl) yoLbl.textContent='Yo';
-  if(yoBtn) yoBtn.setAttribute('onclick','switchToParentProfile()');
+  if(yoBtn) yoBtn.setAttribute('onclick','goToMyProfile()');
 
   const hasKids = kids.length>0 || forWhom==='child' || forWhom==='both';
   if(!hasKids){
@@ -5730,7 +5754,7 @@ function navTo(dest){
   // sin que lo hubiera pedido. La salida explícita existe: el botón "← Mi perfil"
   // del header del home infantil (switchToParentProfile).
   if(dest==='home'){ if(S.childMode){ showChildHome(); } else { showHome(); } }
-  else if(dest==='profile'){ if(S.childMode){ switchToParentProfile(); } else { showProfile(); } }
+  else if(dest==='profile'){ goToMyProfile(); }
   else if(dest==='child'){openChildProfile();}
   else if(dest==='scales'){showScalesScreen();}
   else if(dest==='diary'){showDiaryHome();}
@@ -7470,6 +7494,11 @@ async function editDiaryEntry(id){
 }
 
 function showDiaryNew(){
+  // Recordar desde qué pantalla se abrió, para que "Volver" no adivine.
+  try{
+    const cur=document.querySelector('.screen.active');
+    S._diaryNewOrigin = cur ? cur.id.replace(/^screen-/,'') : null;
+  }catch(_){ S._diaryNewOrigin=null; }
   resetDiaryHelpers();showScreen('diary-new');setTimeout(showPeriodSectionIfFemale,100);
   // Auto-detect día laboral/libre desde la fecha y re-detectar si cambia
   setTimeout(()=>{
@@ -12076,7 +12105,30 @@ async function renderChildDiaryList(){
     }
     // Lista
     const listHtml = entries.map(e => {
-      const hrs = e.sleep_minutes ? Math.round(e.sleep_minutes/60*10)/10 : null;
+      // El número grande debe ser el TOTAL de 24 h (nocturno + siestas):
+      // las bandas etarias (AASM/NSF) se definen sobre el total, no sobre la noche.
+      // Antes se mostraba sólo `sleep_minutes` y se lo comparaba contra la banda de
+      // 24 h, lo que teñía de rojo/ámbar noches que en total estaban en rango.
+      const _napMin = (function(){
+        try{
+          const m=(e.notes||'').match(/Siestas: (\[.*?\])/);
+          if(!m) return 0;
+          return (JSON.parse(m[1])||[]).reduce((acc,n)=>{
+            if(!n || !n.start || !n.end) return acc;
+            let a=timeToMinRaw(n.start), b=timeToMinRaw(n.end);
+            let d=b-a; if(d<0) d+=1440;
+            return (d>0 && d<600) ? acc+d : acc;
+          },0);
+        }catch(_){ return 0; }
+      })();
+      const _nightMin = e.sleep_minutes||0;
+      const _totalMin = _nightMin + _napMin;
+      const hrs = _totalMin ? Math.round(_totalMin/60*10)/10 : null;
+      const _nightH = _nightMin ? Math.round(_nightMin/60*10)/10 : 0;
+      const _napH   = _napMin   ? Math.round(_napMin/60*10)/10   : 0;
+      const _breakdown = _napMin>0
+        ? '<div style="font-size:10px;color:var(--label-3);margin-top:1px;white-space:nowrap">'+_nightH+'h noche · '+_napH+'h siestas</div>'
+        : '';
       const dateStr = new Date(e.diary_date+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'short'});
       const hrsColor = !hrs?'var(--label-2)':S.ageGroup==='infant'?(hrs>=12&&hrs<=16?'#14532d':hrs>=10?'#92400e':'#991b1b'):(hrs>=9?'#14532d':hrs>=7?'#92400e':'#991b1b');
       return `<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
@@ -12086,7 +12138,7 @@ async function renderChildDiaryList(){
           ${e.notes?'<div style="font-size:11px;color:var(--label-3);margin-top:2px">'+e.notes.slice(0,40)+'</div>':''}
         </div>
         <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          ${hrs?'<div style="font-size:18px;font-weight:700;color:'+hrsColor+'">'+hrs+'h</div>':'<div style="font-size:12px;color:var(--label-3)">—</div>'}
+          ${hrs?'<div style="font-size:18px;font-weight:700;color:'+hrsColor+'">'+hrs+'h<span style="font-size:10px;font-weight:400;color:var(--label-3)"> total</span></div>'+_breakdown:'<div style="font-size:12px;color:var(--label-3)">—</div>'}
           <div style="display:flex;gap:6px">
             <button onclick="editDiaryEntry('${e.id}')" style="font-size:11px;color:#1a4a3a;background:rgba(26,74,58,0.1);border:none;border-radius:6px;padding:4px 10px;font-weight:600;cursor:pointer">✏️ Editar</button>
             <button onclick="deleteDiaryEntry('${e.id}')" style="font-size:11px;color:#dc2626;background:rgba(220,38,38,0.1);border:none;border-radius:6px;padding:4px 8px;cursor:pointer">🗑</button>
