@@ -89,6 +89,45 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
 /* ── SCREENS ── */
 .screen{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
 .screen.active{display:flex;flex-direction:column;}
+
+/* ══ VISTA ESCRITORIO PROFESIONAL — Fase 1: shell de dos paneles ══
+   Se activa SOLO cuando body.dr-desktop está presente (lo pone showScreen
+   cuando el rol es médico y la pantalla es la lista o el detalle) Y la
+   ventana mide ≥900px. En celular el media query no aplica → cero cambios.
+   En el lado paciente la clase nunca se agrega → cero cambios. */
+#dr-desktop-placeholder{display:none;}
+@media (min-width:900px){
+  body.dr-desktop #app{
+    max-width:none;width:100%;
+    display:grid;
+    grid-template-columns:360px minmax(0,1fr);
+    grid-template-rows:100vh;
+    align-items:stretch;
+  }
+  /* Lista de pacientes: columna izquierda, SIEMPRE visible (aunque no sea la
+     pantalla activa), con su propio scroll. */
+  body.dr-desktop #screen-doctor-home{
+    display:flex !important;
+    grid-column:1;grid-row:1;
+    border-right:1px solid rgba(126,200,164,0.16);
+    height:100vh;overflow:hidden;
+  }
+  /* Detalle del paciente: columna derecha. */
+  body.dr-desktop #screen-patient-history{
+    grid-column:2;grid-row:1;
+    height:100vh;overflow:hidden;
+  }
+  body.dr-desktop.dr-has-patient #screen-patient-history{ display:flex !important; }
+  /* Placeholder cuando todavía no se eligió un paciente. */
+  body.dr-desktop:not(.dr-has-patient) #dr-desktop-placeholder{
+    display:flex;grid-column:2;grid-row:1;
+    align-items:center;justify-content:center;text-align:center;
+    color:rgba(244,239,229,0.35);font-size:15px;padding:40px;
+    background:#0f2820;
+  }
+  /* El botón "Volver" del detalle es redundante en dos paneles (la lista está
+     al lado), pero lo dejamos por si el médico reduce la ventana. */
+}
 .dark-screen{background:#1a2e23 !important;}
 #screen-home .scroll, #screen-home .scroll *:not(button):not(.btn) {
   color: rgba(255,255,255,0.85) !important;
