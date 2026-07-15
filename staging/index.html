@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy71-mod1">
+<link rel="stylesheet" href="css/styles.css?v=hoy72-mod1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1240,6 +1240,7 @@
     <button class="tab" id="admin-tab-patients" onclick="loadAdminTab('patients')" style="color:#1a4a3a">Pacientes</button>
     <button class="tab" id="admin-tab-stats" onclick="loadAdminTab('stats')" style="color:#1a4a3a">Estadísticas</button>
     <button class="tab" id="admin-tab-preview" onclick="loadAdminTab('preview')" style="color:#1a4a3a">Vista previa</button>
+    <span style="margin-left:auto;align-self:center;font-size:11px;color:#8a8a8a;padding-right:12px" id="admin-version"></span>
   </div>
   <div class="scroll"><div id="admin-content" style="padding:0 16px"></div></div>
 </div>
@@ -1262,7 +1263,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy71-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy72-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -2952,6 +2953,7 @@ async function saveDrRegisterForm(){
 }
 
 async function showAdminPanel(){
+  try{ const _v=document.getElementById('admin-version'); if(_v) _v.textContent=APP_VERSION; }catch(_){}
   if(!checkAdminAccess()){ toast('Acceso no autorizado'); return; }
   const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
   showScreen('admin');
@@ -9035,7 +9037,17 @@ async function showDrPTab_(tab){
     if(tab==='summary'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);S.viewRecs=recs||[];
       const last={};(recs||[]).forEach(r=>{last[r.scale_id]=r;});
-      const alerts=Object.values(last).filter(r=>{const t=ALERT_THR[r.scale_id];return t&&r.score>=t.score;});
+      const alerts=Object.values(last)
+        .filter(r=>{const t=ALERT_THR[r.scale_id];return t&&r.score>=t.score;})
+        // Orden clínico: primero por severidad relativa (cuánto excede el umbral,
+        // normalizado por el máximo de la escala) y, a igual severidad, la más
+        // reciente arriba.
+        .sort((a,b)=>{
+          const sev=r=>{const t=ALERT_THR[r.scale_id]||{score:0};const mx=r.max_score||r.score||1;return (r.score-t.score)/mx;};
+          const d=sev(b)-sev(a);
+          if(Math.abs(d)>0.001) return d;
+          return new Date(b.created_at)-new Date(a.created_at);
+        });
       // ── KEY FINDINGS ──
       const kf=[];
       // Pathological scales
@@ -9137,7 +9149,7 @@ async function showDrPTab_(tab){
         if(hasMeds) kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir registrada</strong></div>');
       }
       const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div>'+kf.join(''):'';
-      const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div>'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'</div>';}).join(''):'');
+      const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div>'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'<span style="float:right;font-size:11px;opacity:0.75">'+(a.created_at?new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'')+'</span></div>';}).join(''):'');
       const latest=SCALES.filter(sc=>isScaleVisibleForProfile(sc, S.viewData)).map(sc=>{const scR=(recs||[]).filter(r=>r.scale_id===sc.id);return scR.length?{sc,r:scR[scR.length-1]}:null;}).filter(Boolean);
       // Build a natural-language summary
       const summaryParts=[];
