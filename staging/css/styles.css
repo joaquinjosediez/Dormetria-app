@@ -136,22 +136,30 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   body.dr-desktop #screen-doctor-patient .topbar-btn[onclick*="showDoctorHome"]{
     visibility:hidden;
   }
-  /* Aprovechar el ancho del panel de detalle para el contenido. */
+  /* Aprovechar el ancho del panel de detalle para el contenido.
+     GRID en vez de column-count: las columnas CSS parten los elementos por el
+     medio (cards cortadas, contenido que parece duplicado); el grid ubica cada
+     bloque ENTERO en una celda. */
   body.dr-desktop #screen-doctor-patient #drp-content{
     max-width:1100px;margin:0 auto;width:100%;
-    /* Cockpit: las cards fluyen en dos columnas. break-inside evita que una
-       card se parta entre columnas. */
-    column-count:2;column-gap:16px;
+    display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;
+    align-items:start;grid-auto-flow:row dense;
   }
-  body.dr-desktop #screen-doctor-patient #drp-content > *{
-    break-inside:avoid;-webkit-column-break-inside:avoid;
-    margin-bottom:16px;
-  }
-  /* Elementos anchos (gráficos, actograma, títulos de sección) ocupan las dos
-     columnas: un canvas apretado en media columna se vuelve ilegible. */
+  /* Títulos de sección y bloques con gráficos ocupan el ancho completo. */
   body.dr-desktop #screen-doctor-patient #drp-content > .sec-title,
-  body.dr-desktop #screen-doctor-patient #drp-content > div:has(canvas){
-    column-span:all;-webkit-column-span:all;
+  body.dr-desktop #screen-doctor-patient #drp-content > div:has(canvas),
+  body.dr-desktop #screen-doctor-patient #drp-content > p{
+    grid-column:1 / -1;
+  }
+  /* Pedido clínico: métricas y regularidad lado a lado — el bloque de métricas
+     clínicas ocupa una columna (su vecino en el flujo queda al lado). */
+  body.dr-desktop #screen-doctor-patient #dr-clinical-metrics{ grid-column:auto; }
+  /* Actograma compacto: imagen general para comparar, no un mural. */
+  body.dr-desktop #screen-doctor-patient #dr-acto-chart{
+    max-height:300px !important;
+  }
+  body.dr-desktop #screen-doctor-patient div:has(> #dr-acto-chart){
+    max-height:330px;overflow-y:hidden;
   }
 }
 .dark-screen{background:#1a2e23 !important;}
