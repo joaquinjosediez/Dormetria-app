@@ -17,11 +17,11 @@
   <link rel="apple-touch-icon" href="icon-192.png">
 <title>Dormetria v2</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" onerror="window._jspdfFailed=true"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous" onerror="window._chartFailed=true"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy66-mod1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer crossorigin="anonymous" onerror="window._jspdfFailed=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
+<link rel="stylesheet" href="css/styles.css?v=hoy69-mod1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1238,6 +1238,7 @@
     <button class="tab" id="admin-tab-doctors" onclick="loadAdminTab('doctors')" style="color:#1a4a3a">Profesionales</button>
     <button class="tab" id="admin-tab-patients" onclick="loadAdminTab('patients')" style="color:#1a4a3a">Pacientes</button>
     <button class="tab" id="admin-tab-stats" onclick="loadAdminTab('stats')" style="color:#1a4a3a">Estadísticas</button>
+    <button class="tab" id="admin-tab-preview" onclick="loadAdminTab('preview')" style="color:#1a4a3a">Vista previa</button>
   </div>
   <div class="scroll"><div id="admin-content" style="padding:0 16px"></div></div>
 </div>
@@ -1260,7 +1261,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy66-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy69-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -3159,8 +3160,75 @@ async function loadAdminTab(tab){
                 :`<button onclick="revokeAdmin('${ae}')" style="padding:3px 10px;border:none;border-radius:6px;background:#fee2e2;color:#991b1b;font-size:11px;cursor:pointer">Revocar</button>`}
             </div>`).join('')}
         </div>`;
+    } else if(tab==='preview'){
+      // ─── Modo VISTA PREVIA (solo admin) ───
+      // Permite previsualizar cómo se ve la app para distintos perfiles de
+      // sexo/edad SIN modificar ningún dato en la base. Solo cambia S.user en
+      // memoria; al recargar la página todo vuelve a la normalidad.
+      const opt = (v,l)=>'<option value="'+v+'">'+l+'</option>';
+      cont.innerHTML =
+        '<div style="background:#fff8e1;border:1px solid #f0d98c;border-radius:12px;padding:14px 16px;margin:8px 0 16px">'+
+          '<div style="font-size:13px;font-weight:700;color:#8a6d1a;margin-bottom:4px">🔍 Vista previa de perfiles</div>'+
+          '<div style="font-size:12px;color:#8a6d1a;line-height:1.5">Simula cómo ve la app un paciente de cierto sexo/edad. <strong>No modifica ningún dato</strong>: solo cambia lo que se muestra en esta sesión. Al recargar la página, volvés a tu cuenta real.</div>'+
+        '</div>'+
+        '<div style="background:var(--bg-secondary);border-radius:12px;padding:16px;margin-bottom:14px">'+
+          '<label style="display:block;font-size:12px;font-weight:600;color:var(--label-2);margin-bottom:6px">Sexo simulado</label>'+
+          '<select id="prev-sex" style="width:100%;padding:10px;border:1.5px solid var(--sep-opaque);border-radius:9px;font-size:14px;font-family:var(--font);background:var(--bg-primary);color:var(--label);margin-bottom:14px">'+
+            opt('Femenino','Femenino')+opt('Masculino','Masculino')+
+          '</select>'+
+          '<label style="display:block;font-size:12px;font-weight:600;color:var(--label-2);margin-bottom:6px">Edad simulada</label>'+
+          '<select id="prev-age" style="width:100%;padding:10px;border:1.5px solid var(--sep-opaque);border-radius:9px;font-size:14px;font-family:var(--font);background:var(--bg-primary);color:var(--label);margin-bottom:14px">'+
+            opt('35','Adulto/a (35 años)')+opt('50','Adulto/a 45+ (50 años)')+opt('68','Adulto/a mayor (68 años)')+opt('15','Adolescente (15 años)')+opt('8','Escolar (8 años)')+opt('2','Lactante (2 años)')+
+          '</select>'+
+          '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--bg-primary);border:1px solid var(--sep-opaque);border-radius:9px;padding:11px 13px;margin-bottom:6px">'+
+            '<input id="prev-menstrual" type="checkbox" checked style="width:18px;height:18px;accent-color:#e11d48">'+
+            '<span style="font-size:13px;color:var(--label)">Seguimiento menstrual activado</span>'+
+          '</label>'+
+          '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--bg-primary);border:1px solid var(--sep-opaque);border-radius:9px;padding:11px 13px;margin-bottom:16px">'+
+            '<input id="prev-menopause" type="checkbox" style="width:18px;height:18px;accent-color:#e11d48">'+
+            '<span style="font-size:13px;color:var(--label)">Menopausia marcada</span>'+
+          '</label>'+
+          '<button onclick="applyPreviewProfile()" style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Previsualizar como este perfil</button>'+
+        '</div>'+
+        (S._previewActive
+          ? '<button onclick="exitPreviewProfile()" style="width:100%;padding:12px;border:1px solid rgba(255,80,80,0.35);border-radius:10px;background:rgba(255,80,80,0.08);color:#c0392b;font-size:13px;font-weight:600;cursor:pointer">Salir de vista previa (recarga la página)</button>'
+          : '');
     }
   }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||e)+'</div>';}
+}
+
+// ─── Vista previa de perfiles (admin) — NO persiste, solo memoria ───
+function applyPreviewProfile(){
+  if(!checkAdminAccess()){ toast('Acceso no autorizado'); return; }
+  const sex = document.getElementById('prev-sex')?.value || 'Femenino';
+  const age = parseInt(document.getElementById('prev-age')?.value || '35', 10);
+  const tm  = !!document.getElementById('prev-menstrual')?.checked;
+  const mp  = !!document.getElementById('prev-menopause')?.checked;
+  // Guardar la identidad real UNA sola vez, para poder restaurar y para no
+  // sobrescribirla si se aplica preview varias veces seguidas.
+  if(!S._realUser){ S._realUser = JSON.parse(JSON.stringify(S.user||{})); }
+  // Construir un DOB coherente con la edad simulada
+  const dob = new Date(); dob.setFullYear(dob.getFullYear() - age);
+  const dobStr = dob.toISOString().slice(0,10);
+  // Clonar el usuario real y sobrescribir SOLO los campos de simulación
+  S.user = Object.assign({}, S._realUser, {
+    sex: sex,
+    dob: dobStr,
+    track_menstrual: tm,
+    has_menopause: mp,
+    has_menarche: (sex==='Femenino')
+  });
+  S._previewActive = true;
+  try{ setPatientMode(dobStr); }catch(_){}
+  S.role = 'patient';
+  toast('Vista previa: '+sex+', '+age+' años'+(tm?' · menstrual ON':''));
+  showHome();
+}
+function exitPreviewProfile(){
+  // No intentamos deshacer en memoria (frágil): recargamos, que restaura
+  // la sesión real desde Supabase de forma limpia.
+  S._previewActive = false;
+  location.reload();
 }
 
 
@@ -4701,7 +4769,6 @@ async function saveDoctorEditPatient(){
   }
 }
 
-function openDoctorEditPatientPlaceholder(){}
 
 async function copyPatientSummaryToClipboard(encodedEmail){
   const btn = document.getElementById('dr-copy-summary-btn');
@@ -5848,16 +5915,8 @@ async function openChildPicker(){
   // Fallback ultra defensivo
   if(kids.length===1 && typeof switchToChild==='function'){ switchToChild(kids[0].email); }
 }
-async function exitToParentHome(){
-  // "Inicio" desde la vista de un hijo: volver SIEMPRE a la cuenta del adulto.
-  if(S.user && S.user.parent_email && S.childMode){
-    try{
-      const pd=await db.get('patients?email=eq.'+encodeURIComponent(S.user.parent_email)+'&select=*');
-      if(pd&&pd[0]){ S.user=pd[0]; setPatientMode(pd[0].dob); }
-    }catch(e){ console.warn('exitToParentHome failed', e); }
-  }
-  showHome();
-}
+// (exitToParentHome eliminada en hoy67: sin llamadores desde hoy63 — la salida es goToMyProfile)
+
 function navTo(dest){
   if(S.role==='doctor' && !S.patientOverride){ showDoctorHome(); return; }
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('active'));
@@ -6533,7 +6592,7 @@ function drawChart(records,canvasId,key){
   killChart(key);const ctx=document.getElementById(canvasId);if(!ctx||!records.length)return;
   const ids=[...new Set(records.map(r=>r.scale_id))].slice(0,8);
   const cols=['#1a4a3a','#185fa5','#9b1c1c','#7c3aed','#92400e','#14532d','#be185d','#0f766e'];
-  S.charts[key]=new Chart(ctx,{type:'line',data:{datasets:ids.map((id,i)=>{const sc=SCALES.find(s=>s.id===id);return{label:sc?sc.name.split('(')[0].split('—')[0].trim():id,data:records.filter(r=>r.scale_id===id).map(r=>({x:r.created_at.split('T')[0],y:r.score})),borderColor:cols[i%cols.length],backgroundColor:cols[i%cols.length]+'18',tension:.4,pointRadius:5,borderWidth:2};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8}}},scales:{x:{type:'time',time:{unit:'day'},ticks:{font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  (function(){try{if(S.charts[key])S.charts[key].destroy();}catch(_){}})(),S.charts[key]=new Chart(ctx,{type:'line',data:{datasets:ids.map((id,i)=>{const sc=SCALES.find(s=>s.id===id);return{label:sc?sc.name.split('(')[0].split('—')[0].trim():id,data:records.filter(r=>r.scale_id===id).map(r=>({x:r.created_at.split('T')[0],y:r.score})),borderColor:cols[i%cols.length],backgroundColor:cols[i%cols.length]+'18',tension:.4,pointRadius:5,borderWidth:2};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8}}},scales:{x:{type:'time',time:{unit:'day'},ticks:{font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
 }
 
 // PROFILE
@@ -6962,6 +7021,15 @@ async function saveProfile(){
 // directamente, que es el home del ADULTO. Un padre navegando el perfil de su hijo
 // tocaba "Volver" esperando retroceder un paso y aterrizaba en su propio perfil,
 // sin haberlo elegido. Ahora respetamos S.childMode.
+// Escape de HTML para strings controlados por el paciente que se renderizan
+// en el DOM del profesional (nombre, medicación, patologías, títulos de estudios).
+// Sin esto, un valor con <script> o atributos on* ejecuta en la sesión del médico.
+function escHtml(v){
+  return String(v==null?'':v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function goHomeCtx(){
   try{
     if(S && S.childMode && typeof showChildHome === 'function'){ showChildHome(); return; }
@@ -7090,7 +7158,7 @@ async function showDiaryTab_(tab){
           if(!ctx) return;
           const labels = wearSorted.slice(-14).map(e=>new Date(e.diary_date).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}));
           const data = wearSorted.slice(-14).map(e=>Math.round((e.sleep_minutes||0)/60*10)/10);
-          S.charts.wear = new Chart(ctx, {type:'bar', data:{labels, datasets:[{data, backgroundColor:data.map(h=>h>=7?'#1a4a3a99':h>=6?'#FF950099':'#FF3B3099'), borderRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:9}}, grid:{display:false}}, y:{min:0, max:10, ticks:{font:{size:10}, callback:function(v){return v+'h'}}, grid:{color:'rgba(0,0,0,0.04)'}}}},afterDraw:function(ch){const ctx2=ch.ctx;ctx2.save();ctx2.strokeStyle='rgba(26,74,58,0.4)';ctx2.lineWidth=1;ctx2.setLineDash([4,4]);const y=ch.scales.y.getPixelForValue(7);ctx2.beginPath();ctx2.moveTo(ch.chartArea.left,y);ctx2.lineTo(ch.chartArea.right,y);ctx2.stroke();ctx2.restore();}});
+          (function(){try{if(S.charts.wear)S.charts.wear.destroy();}catch(_){}})(),S.charts.wear = new Chart(ctx, {type:'bar', data:{labels, datasets:[{data, backgroundColor:data.map(h=>h>=7?'#1a4a3a99':h>=6?'#FF950099':'#FF3B3099'), borderRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:9}}, grid:{display:false}}, y:{min:0, max:10, ticks:{font:{size:10}, callback:function(v){return v+'h'}}, grid:{color:'rgba(0,0,0,0.04)'}}}},afterDraw:function(ch){const ctx2=ch.ctx;ctx2.save();ctx2.strokeStyle='rgba(26,74,58,0.4)';ctx2.lineWidth=1;ctx2.setLineDash([4,4]);const y=ch.scales.y.getPixelForValue(7);ctx2.beginPath();ctx2.moveTo(ch.chartArea.left,y);ctx2.lineTo(ch.chartArea.right,y);ctx2.stroke();ctx2.restore();}});
         }, 100);
       }
       return;
@@ -7206,7 +7274,7 @@ async function showDiaryTab_(tab){
           if(hasPeriodData){ const pl=document.getElementById('acto-period-legend'); if(pl) pl.style.display='inline'; }
           const chartH=Math.max(220,sorted.length*28+100);
           ctxA.style.height=chartH+'px';ctxA.height=chartH;
-          S.charts.acto=new Chart(ctxA,{
+          (function(){try{if(S.charts.acto)S.charts.acto.destroy();}catch(_){}})(),S.charts.acto=new Chart(ctxA,{
             type:'bar',
             data:{
               labels:actoLabels,
@@ -7442,7 +7510,7 @@ async function showDiaryTab_(tab){
         const ctxP=document.getElementById('diary-chart-pillars');
         if(ctxP){
           killChart('dp');
-          S.charts.dp=new Chart(ctxP,{
+          (function(){try{if(S.charts.dp)S.charts.dp.destroy();}catch(_){}})(),S.charts.dp=new Chart(ctxP,{
             type:'line',
             data:{
               labels,
@@ -8632,7 +8700,7 @@ async function renderPatientList(filter){
             const base = formatPatientName(u);
             if(/perfil infantil/i.test(base)) return base;
             const ln=(u.lname||'').trim(), fn=(u.name||'').trim();
-            return ln ? (ln + ', ' + fn) : (fn || u.email);
+            return escHtml(ln ? (ln + ', ' + fn) : (fn || u.email));
           })();
           const isArch = archived.has(u.email.toLowerCase());
           const archBtnLabel = isArch ? '↻ Reactivar' : '🗂 Archivar';
@@ -9088,7 +9156,7 @@ async function showDrPTab_(tab){
       const imc=(u.weight_kg&&u.height_cm)?((u.weight_kg/((u.height_cm/100)**2)).toFixed(1)):null;
       const imcCat = imc ? (imc<18.5?'Bajo peso':imc<25?'Normal':imc<30?'Sobrepeso':'Obesidad') : null;
       const imcCatColor = imc ? (imc<18.5?'#C8A96E':imc<25?'#7EC8A4':imc<30?'#C8A96E':'#FF9500') : '#7EC8A4';
-      const paths=(u.pathologies||[]).map(p=>'<span style="background:rgba(200,169,110,0.18);border:0.5px solid rgba(200,169,110,0.35);color:#C8A96E;font-size:11.5px;padding:4px 10px;border-radius:14px;font-weight:500">'+p+'</span>').join('');
+      const paths=(u.pathologies||[]).map(p=>'<span style="background:rgba(200,169,110,0.18);border:0.5px solid rgba(200,169,110,0.35);color:#C8A96E;font-size:11.5px;padding:4px 10px;border-radius:14px;font-weight:500">'+escHtml(p)+'</span>').join('');
       const sexAbbr = u.sex==='Masculino'?'M':u.sex==='Femenino'?'F':(u.sex||'-');
       const initials = ((u.name||'?')[0]||'?').toUpperCase() + ((u.lname||'')[0]||'').toUpperCase();
       // Cronotipo desde la última MEQ si la hay
@@ -9109,8 +9177,8 @@ async function showDrPTab_(tab){
         : '<div style="width:96px;height:96px;border-radius:50%;background:#1A4A3A;border:3px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:500;color:#F4EFE5">'+(initials||'?')+'</div>';
       const heroHtml = '<div style="background:linear-gradient(180deg,#1A4A3A,#0F2820);margin:-16px -16px 0;padding:24px 20px 20px;text-align:center;border-bottom:0.5px solid rgba(126,200,164,0.18)">'+
         '<div style="display:inline-block;margin-bottom:12px">'+photoEl+'</div>'+
-        '<div style="font-size:18px;font-weight:500;letter-spacing:0.2px;color:#F4EFE5">'+(u.name||'')+' '+(u.lname||'')+'</div>'+
-        '<div style="font-size:12px;color:rgba(244,239,229,0.6);margin-top:2px">'+(u.email||'')+'</div>'+
+        '<div style="font-size:18px;font-weight:500;letter-spacing:0.2px;color:#F4EFE5">'+escHtml((u.name||'')+' '+(u.lname||''))+'</div>'+
+        '<div style="font-size:12px;color:rgba(244,239,229,0.6);margin-top:2px">'+escHtml(u.email||'')+'</div>'+
         '</div>';
       const chipsHtml = '<div style="padding:16px 0 8px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
         '<div style="background:rgba(126,200,164,0.08);border-radius:10px;padding:10px 6px;text-align:center;border:0.5px solid rgba(126,200,164,0.15)">'+
@@ -9140,7 +9208,7 @@ async function showDrPTab_(tab){
       const pathsBody = '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:6px">Patologías</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+(paths||'<span style="font-size:12px;color:rgba(244,239,229,0.5);font-style:italic">No registradas</span>')+'</div>'+
         '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:4px">Medicación habitual</div>'+
-        '<div style="font-size:13px;color:'+(u.medications?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medications?'':'font-style:italic')+'">'+(u.medications||'Sin medicación registrada')+'</div>';
+        '<div style="font-size:13px;color:'+(u.medications?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medications?'':'font-style:italic')+'">'+escHtml(u.medications||'Sin medicación registrada')+'</div>';
       const habitChip = (lbl,val) => '<div style="background:rgba(126,200,164,0.06);border-radius:8px;padding:8px 10px"><div style="font-size:10px;color:rgba(244,239,229,0.5);margin-bottom:2px">'+lbl+'</div><div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(val||'—')+'</div></div>';
       // Traductores: codes EN → labels ES (igual que en _mpAct / _mpWork)
       const ACT_LABELS = {child:'Niño/a',teen:'Adolescente',student:'Estudiante',athlete:'Deportista/Atleta',shift:'Trabajo en turnos',night:'Trabajo nocturno',healthcare:'Profesional de salud',office:'Trabajo de oficina',remote:'Trabajo remoto',retired:'Jubilado/a',other:'Otro'};
@@ -9368,7 +9436,7 @@ async function showDrPTab_(tab){
           if(drPeriodNights>0){ const dpl=document.getElementById('dr-acto-period-legend'); if(dpl) dpl.style.display='inline'; }
           // Mostrar leyenda "Día libre" solo si hay datos
           const dfl=document.getElementById('dr-acto-freeday-legend'); if(dfl) dfl.style.display = drWeekendRows.length>0?'inline':'none';
-          S.charts['dr-acto']=new Chart(ctxA,{
+          (function(){try{if(S.charts['dr-acto'])S.charts['dr-acto'].destroy();}catch(_){}})(),S.charts['dr-acto']=new Chart(ctxA,{
             type:'bar',
             data:{labels:actoLabels,datasets:[
               {label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false},
@@ -9523,7 +9591,7 @@ async function showDrPTab_(tab){
             ({Cantidad:'7–9h de sueño (recomendado)',Fragmentación:'Número de despertares',Regularidad: (regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')) : 'Variabilidad del horario')}[p.l]||'')+
             '</div></div>';}).join('')+'</div>';
         const ctxP=document.getElementById('dr-pillar-chart');
-        if(ctxP){killChart('dp-dr');S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8,padding:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});}
+        if(ctxP){killChart('dp-dr');(function(){try{if(S.charts['dp-dr'])S.charts['dp-dr'].destroy();}catch(_){}})(),S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8,padding:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});}
       },150);
     }else if(tab==='pvt'){
       // Show circadian alert PATTERN for doctor view
@@ -9605,7 +9673,7 @@ async function showDrPTab_(tab){
         const labels=Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+':00');
         const rtData=labels.map((_,h)=>hoursWithData.includes(h)?hourAvgs[h]:null);
         killChart('dr-pvt-chart');
-        S.charts['dr-pvt-chart']=new Chart(canvas,{type:'line',
+        (function(){try{if(S.charts['dr-pvt-chart'])S.charts['dr-pvt-chart'].destroy();}catch(_){}})(),S.charts['dr-pvt-chart']=new Chart(canvas,{type:'line',
           data:{labels,datasets:[
             {label:'TR paciente',data:rtData,borderColor:'#1a4a3a',backgroundColor:'rgba(26,74,58,0.1)',borderWidth:2,pointRadius:5,
               pointBackgroundColor:rtData.map(v=>v==null?'transparent':v<300?'#34C759':v<350?'#FF9500':'#FF3B30'),
@@ -9635,9 +9703,9 @@ async function showDrPTab_(tab){
           (cp.pressure?'Presión: '+cp.pressure+'cmH₂O · ':'')+(cp.hours?'Uso: '+cp.hours+'h · ':'')+(cp.ahi?'AHI: '+cp.ahi+' · ':'')+(cp.period||'')+'</div>';}catch(ex){}}
         return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
           '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-          '<div style="flex:1"><div style="font-size:15px;font-weight:500;color:#F4EFE5">'+d.title+'</div>'+
+          '<div style="flex:1"><div style="font-size:15px;font-weight:500;color:#F4EFE5">'+escHtml(d.title)+'</div>'+
           '<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:3px">'+cat+' · '+date+'</div>'+
-          (d.description?'<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:2px">'+d.description+'</div>':'')+
+          (d.description?'<div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:2px">'+escHtml(d.description)+'</div>':'')+
           cpapHtml+'</div>'+
           (d.file_type?'<div style="font-size:20px;margin-left:8px">'+(d.file_type.includes('pdf')?'📋':d.file_type.includes('image')?'🖼️':'📄')+'</div>':'')+
           '</div>'+
@@ -9955,7 +10023,7 @@ async function renderCircadianPattern(container){
       const CIRC_RT=[258,263,268,275,280,278,270,265,260,258,260,265,270,278,280,282,285,288,290,288,282,275,268,262];
       
       killChart('circadian-chart');
-      S.charts['circadian-chart'] = new Chart(canvas, {
+      (function(){try{if(S.charts['circadian-chart'])S.charts['circadian-chart'].destroy();}catch(_){}})(),S.charts['circadian-chart']=new Chart(canvas, {
         type: 'line',
         data: {
           labels,
@@ -12283,7 +12351,7 @@ async function renderChildDiaryList(){
         const nsf = NSF_RANGES[S.ageGroup] || {recMin:9,recMax:11,mayMin:7,mayMax:12};
         const dataMax = Math.max(...totals, nsf.recMax);
         const dataMin = Math.min(...totals, nsf.recMin);
-        S.charts.chDiary=new Chart(ctx,{
+        (function(){try{if(S.charts.chDiary)S.charts.chDiary.destroy();}catch(_){}})(),S.charts.chDiary=new Chart(ctx,{
           type:'line',
           data:{labels,datasets:[{
             label:'Sueño total',
@@ -14063,9 +14131,14 @@ function showPeriodSectionIfFemale(){
   const u = S.user || {};
   const el = document.getElementById('period-section');
   if(!el) return;
-  // Mostrar solo si la usuaria activó el seguimiento menstrual en su perfil
-  const show = (u.sex === 'Femenino' || u.sex === 'F') && u.track_menstrual === true;
-  el.style.display = show ? 'block' : 'none';
+  // Detección tolerante de sexo femenino: acepta 'F', 'Femenino', 'femenino',
+  // 'mujer', etc. Antes exigía coincidencia exacta y fallaba con variantes.
+  const rawSex = String(u.sex || u.gender || '').trim().toLowerCase();
+  const isFemale = rawSex === 'f' || rawSex.startsWith('femenin') || rawSex.startsWith('mujer');
+  // track_menstrual puede venir como boolean true o como string 'true' según cómo
+  // lo devuelva la BD; aceptamos ambos.
+  const tracks = u.track_menstrual === true || u.track_menstrual === 'true';
+  el.style.display = (isFemale && tracks) ? 'block' : 'none';
 }
 
 async function saveDrProfile(){
