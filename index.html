@@ -3401,6 +3401,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     <button class="tab" id="admin-tab-doctors" onclick="loadAdminTab('doctors')" style="color:#1a4a3a">Profesionales</button>
     <button class="tab" id="admin-tab-patients" onclick="loadAdminTab('patients')" style="color:#1a4a3a">Pacientes</button>
     <button class="tab" id="admin-tab-stats" onclick="loadAdminTab('stats')" style="color:#1a4a3a">Estadísticas</button>
+    <button class="tab" id="admin-tab-preview" onclick="loadAdminTab('preview')" style="color:#1a4a3a">Vista previa</button>
   </div>
   <div class="scroll"><div id="admin-content" style="padding:0 16px"></div></div>
 </div>
@@ -3423,7 +3424,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy68';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy69';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -5322,8 +5323,75 @@ async function loadAdminTab(tab){
                 :`<button onclick="revokeAdmin('${ae}')" style="padding:3px 10px;border:none;border-radius:6px;background:#fee2e2;color:#991b1b;font-size:11px;cursor:pointer">Revocar</button>`}
             </div>`).join('')}
         </div>`;
+    } else if(tab==='preview'){
+      // ─── Modo VISTA PREVIA (solo admin) ───
+      // Permite previsualizar cómo se ve la app para distintos perfiles de
+      // sexo/edad SIN modificar ningún dato en la base. Solo cambia S.user en
+      // memoria; al recargar la página todo vuelve a la normalidad.
+      const opt = (v,l)=>'<option value="'+v+'">'+l+'</option>';
+      cont.innerHTML =
+        '<div style="background:#fff8e1;border:1px solid #f0d98c;border-radius:12px;padding:14px 16px;margin:8px 0 16px">'+
+          '<div style="font-size:13px;font-weight:700;color:#8a6d1a;margin-bottom:4px">🔍 Vista previa de perfiles</div>'+
+          '<div style="font-size:12px;color:#8a6d1a;line-height:1.5">Simula cómo ve la app un paciente de cierto sexo/edad. <strong>No modifica ningún dato</strong>: solo cambia lo que se muestra en esta sesión. Al recargar la página, volvés a tu cuenta real.</div>'+
+        '</div>'+
+        '<div style="background:var(--bg-secondary);border-radius:12px;padding:16px;margin-bottom:14px">'+
+          '<label style="display:block;font-size:12px;font-weight:600;color:var(--label-2);margin-bottom:6px">Sexo simulado</label>'+
+          '<select id="prev-sex" style="width:100%;padding:10px;border:1.5px solid var(--sep-opaque);border-radius:9px;font-size:14px;font-family:var(--font);background:var(--bg-primary);color:var(--label);margin-bottom:14px">'+
+            opt('Femenino','Femenino')+opt('Masculino','Masculino')+
+          '</select>'+
+          '<label style="display:block;font-size:12px;font-weight:600;color:var(--label-2);margin-bottom:6px">Edad simulada</label>'+
+          '<select id="prev-age" style="width:100%;padding:10px;border:1.5px solid var(--sep-opaque);border-radius:9px;font-size:14px;font-family:var(--font);background:var(--bg-primary);color:var(--label);margin-bottom:14px">'+
+            opt('35','Adulto/a (35 años)')+opt('50','Adulto/a 45+ (50 años)')+opt('68','Adulto/a mayor (68 años)')+opt('15','Adolescente (15 años)')+opt('8','Escolar (8 años)')+opt('2','Lactante (2 años)')+
+          '</select>'+
+          '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--bg-primary);border:1px solid var(--sep-opaque);border-radius:9px;padding:11px 13px;margin-bottom:6px">'+
+            '<input id="prev-menstrual" type="checkbox" checked style="width:18px;height:18px;accent-color:#e11d48">'+
+            '<span style="font-size:13px;color:var(--label)">Seguimiento menstrual activado</span>'+
+          '</label>'+
+          '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--bg-primary);border:1px solid var(--sep-opaque);border-radius:9px;padding:11px 13px;margin-bottom:16px">'+
+            '<input id="prev-menopause" type="checkbox" style="width:18px;height:18px;accent-color:#e11d48">'+
+            '<span style="font-size:13px;color:var(--label)">Menopausia marcada</span>'+
+          '</label>'+
+          '<button onclick="applyPreviewProfile()" style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Previsualizar como este perfil</button>'+
+        '</div>'+
+        (S._previewActive
+          ? '<button onclick="exitPreviewProfile()" style="width:100%;padding:12px;border:1px solid rgba(255,80,80,0.35);border-radius:10px;background:rgba(255,80,80,0.08);color:#c0392b;font-size:13px;font-weight:600;cursor:pointer">Salir de vista previa (recarga la página)</button>'
+          : '');
     }
   }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||e)+'</div>';}
+}
+
+// ─── Vista previa de perfiles (admin) — NO persiste, solo memoria ───
+function applyPreviewProfile(){
+  if(!checkAdminAccess()){ toast('Acceso no autorizado'); return; }
+  const sex = document.getElementById('prev-sex')?.value || 'Femenino';
+  const age = parseInt(document.getElementById('prev-age')?.value || '35', 10);
+  const tm  = !!document.getElementById('prev-menstrual')?.checked;
+  const mp  = !!document.getElementById('prev-menopause')?.checked;
+  // Guardar la identidad real UNA sola vez, para poder restaurar y para no
+  // sobrescribirla si se aplica preview varias veces seguidas.
+  if(!S._realUser){ S._realUser = JSON.parse(JSON.stringify(S.user||{})); }
+  // Construir un DOB coherente con la edad simulada
+  const dob = new Date(); dob.setFullYear(dob.getFullYear() - age);
+  const dobStr = dob.toISOString().slice(0,10);
+  // Clonar el usuario real y sobrescribir SOLO los campos de simulación
+  S.user = Object.assign({}, S._realUser, {
+    sex: sex,
+    dob: dobStr,
+    track_menstrual: tm,
+    has_menopause: mp,
+    has_menarche: (sex==='Femenino')
+  });
+  S._previewActive = true;
+  try{ setPatientMode(dobStr); }catch(_){}
+  S.role = 'patient';
+  toast('Vista previa: '+sex+', '+age+' años'+(tm?' · menstrual ON':''));
+  showHome();
+}
+function exitPreviewProfile(){
+  // No intentamos deshacer en memoria (frágil): recargamos, que restaura
+  // la sesión real desde Supabase de forma limpia.
+  S._previewActive = false;
+  location.reload();
 }
 
 
