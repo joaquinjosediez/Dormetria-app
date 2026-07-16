@@ -142,24 +142,34 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
      bloque ENTERO en una celda. */
   body.dr-desktop #screen-doctor-patient #drp-content{
     max-width:1100px;margin:0 auto;width:100%;
-    display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;
-    align-items:start;grid-auto-flow:row dense;
   }
-  /* Títulos de sección y bloques con gráficos ocupan el ancho completo. */
-  body.dr-desktop #screen-doctor-patient #drp-content > .sec-title,
-  body.dr-desktop #screen-doctor-patient #drp-content > div:has(canvas),
-  body.dr-desktop #screen-doctor-patient #drp-content > p{
+  /* ── RESUMEN: dos columnas parejas, bloques enteros, sin huecos ── */
+  body.dr-desktop #drp-content[data-tab="resumen"]{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;align-items:start;
+  }
+  body.dr-desktop #drp-content[data-tab="resumen"] > .sec-title,
+  body.dr-desktop #drp-content[data-tab="resumen"] > div:has(canvas){
     grid-column:1 / -1;
   }
-  /* Pedido clínico: métricas y regularidad lado a lado — el bloque de métricas
-     clínicas ocupa una columna (su vecino en el flujo queda al lado). */
-  body.dr-desktop #screen-doctor-patient #dr-clinical-metrics{ grid-column:auto; }
-  /* Actograma compacto: imagen general para comparar, no un mural. */
-  body.dr-desktop #screen-doctor-patient #dr-acto-chart{
-    max-height:300px !important;
+  /* ── DIARIO: score+pilares a la izquierda, actograma y métricas a la derecha ── */
+  body.dr-desktop #drp-content[data-tab="diary"]{
+    display:grid;grid-template-columns:minmax(360px,44%) 1fr;
+    gap:14px 18px;align-items:start;
   }
-  body.dr-desktop #screen-doctor-patient div:has(> #dr-acto-chart){
-    max-height:330px;overflow-y:hidden;
+  body.dr-desktop #drp-content[data-tab="diary"] > *{ grid-column:1; }
+  body.dr-desktop #drp-content[data-tab="diary"] #dr-score-panel-wrap{ grid-column:1; }
+  body.dr-desktop #drp-content[data-tab="diary"] #dr-clinical-metrics,
+  body.dr-desktop #drp-content[data-tab="diary"] > div:has(> #dr-acto-chart),
+  body.dr-desktop #drp-content[data-tab="diary"] > div:has(#dr-acto-chart){
+    grid-column:2;
+  }
+  /* Gráficos compactados a su columna, no a toda la pantalla */
+  body.dr-desktop #drp-content[data-tab="diary"] canvas{ max-width:100%; }
+  body.dr-desktop #drp-content[data-tab="diary"] #dr-acto-chart{ max-height:320px !important; }
+  /* ── Los demás tabs (Perfil, Estudios, Notas…): flujo normal centrado,
+        sin grid — cada uno ya trae su propio layout interno. ── */
+  body.dr-desktop #drp-content:not([data-tab="resumen"]):not([data-tab="diary"]){
+    display:block;
   }
 }
 .dark-screen{background:#1a2e23 !important;}
