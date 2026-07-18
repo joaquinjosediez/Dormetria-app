@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod1">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod2">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1263,7 +1263,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod1';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy75-mod2';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -2124,6 +2124,14 @@ const SCALES=[
 ];
 
 function killChart(k){try{S.charts[k].destroy();}catch(e){}S.charts[k]=null;}
+function toggleActoLayer(name, btnEl){
+  const ch=S.charts['dr-acto']; if(!ch) return;
+  const cv=ch.canvas; cv._layers = cv._layers || {};
+  cv._layers[name] = !cv._layers[name];
+  const btn = btnEl || document.querySelector('.dm-layer-btn[data-layer="'+name+'"]');
+  if(btn) btn.classList.toggle('on', !!cv._layers[name]);
+  ch.update();
+}
 function timeToOffset(t){if(!t)return null;const p=t.split(':').map(Number);const h=p[0],m=p[1]||0;return(h>=12?h-12:h+12)+m/60;}
 function meanStd(arr){if(!arr||!arr.length)return{mean:0,std:0};const mean=arr.reduce((a,b)=>a+b,0)/arr.length;const variance=arr.reduce((a,b)=>a+(b-mean)*(b-mean),0)/arr.length;return{mean:mean,std:Math.sqrt(variance)};}
 function computePillarScore(e){
@@ -8667,6 +8675,8 @@ async function showDrTab_(tab){
       // Expongo en window solo para los botones inline de archivar
       window._drToggleArchive = toggleArchive;
       let currentView = 'active'; // 'active' | 'archived'
+      let _tagFilter = null; // null=todas, o id de PATHOLOGY_TAGS
+      let _sortMode = 'name'; // 'name' | 'priority' — prioridad = pacientes con hallazgos primero
 function formatPatientName(u){
   if(!u) return '';
   // Detectar perfil infantil por sufijo +<nombre>@child (creado en registerChildProfile)
@@ -8694,17 +8704,32 @@ async function renderPatientList(filter){
           const isArch = archived.has(u.email.toLowerCase());
           if(currentView==='active' && isArch) return false;
           if(currentView==='archived' && !isArch) return false;
+          if(_tagFilter && !(u.tags&&u.tags.resolved&&u.tags.resolved.includes(_tagFilter))) return false;
           if(!f) return true;
           const name=(u.name+' '+(u.lname||'')).trim().toLowerCase();
           return name.includes(f)||u.email.toLowerCase().includes(f);
         });
         // Orden alfabético por APELLIDO (luego nombre). Los perfiles infantiles
         // (email con +nombre@child) heredan el apellido del padre, así que quedan agrupados.
-        filtered.sort((a,b)=>{
+        const _alphaCmp=(a,b)=>{
           const la=((a.lname||'')+' '+(a.name||'')).trim().toLowerCase();
           const lb=((b.lname||'')+' '+(b.name||'')).trim().toLowerCase();
           return la.localeCompare(lb,'es',{sensitivity:'base'});
-        });
+        };
+        if(_sortMode==='priority'){
+          // Prioridad clínica: pacientes con etiquetas detectadas (SAHOS/Insomnio/
+          // SPI/Parasomnia) primero, más etiquetas arriba, después orden alfabético.
+          // Es la forma más directa de mostrar que el procesamiento automático de
+          // escalas se traduce en algo accionable para la práctica del médico.
+          filtered.sort((a,b)=>{
+            const na=(a.tags&&a.tags.resolved&&a.tags.resolved.length)||0;
+            const nb=(b.tags&&b.tags.resolved&&b.tags.resolved.length)||0;
+            if(na!==nb) return nb-na;
+            return _alphaCmp(a,b);
+          });
+        } else {
+          filtered.sort(_alphaCmp);
+        }
         const rows=filtered.map(u=>{
           if(!u)return'';
           const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
@@ -8719,7 +8744,7 @@ async function renderPatientList(filter){
           const isArch = archived.has(u.email.toLowerCase());
           const archBtnLabel = isArch ? '↻ Reactivar' : '🗂 Archivar';
           const archBtnColor = isArch ? '#15803d' : 'rgba(255,255,255,0.4)';
-          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div style="display:flex;gap:3px;position:absolute;margin-top:30px;margin-left:44px">'+u.tags.resolved.map(t=>{const c=(PATHOLOGY_TAGS[t]||{}).color||'#888';return '<span style="width:7px;height:7px;border-radius:2px;background:'+c+'"></span>';}).join('')+'</div>':''}<div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><button onclick="event.stopPropagation();window._drToggleArchive('${u.email}')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:${archBtnColor};font-size:11px;padding:5px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;font-family:var(--font)">${archBtnLabel}</button><div class="chev" style="flex-shrink:0">›</div></div>`;
+          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div>${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-tags">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888',label:t};return '<span class="dm-patlist-tag" style="color:'+meta.color+'">'+meta.label+'</span>';}).join('')+'</div>':''}</div><button onclick="event.stopPropagation();window._drToggleArchive('${u.email}')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:${archBtnColor};font-size:11px;padding:5px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;font-family:var(--font)">${archBtnLabel}</button><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
         const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
@@ -8748,7 +8773,34 @@ async function renderPatientList(filter){
         </div>
         <div id="dr-patient-count" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.55)">Pacientes vinculados (${validPts.length})</div>
       </div>
+      <div class="dm-tagfilter-bar" id="dr-tagfilter-bar">
+        <span class="dm-tagfilter-chip${_tagFilter?'':' on'}" data-tagid="" onclick="window._drSetTagFilter(null)">Todas</span>
+        ${Object.keys(PATHOLOGY_TAGS).map(id=>{const t=PATHOLOGY_TAGS[id];const on=_tagFilter===id;return '<span class="dm-tagfilter-chip'+(on?' on':'')+'" data-tagid="'+id+'" data-tagcolor="'+t.color+'" style="'+(on?('background:'+t.color+'22;border-color:'+t.color+';color:'+t.color):'')+'" onclick="window._drSetTagFilter(\''+id+'\')">'+t.label+'</span>';}).join('')}
+      </div>
+      <div class="dm-tagfilter-bar" style="padding-top:0;margin-top:-4px">
+        <span style="font-size:11px;color:rgba(255,255,255,0.4);align-self:center;margin-right:2px">Ordenar:</span>
+        <span class="dm-tagfilter-chip${_sortMode==='name'?' on':''}" data-sortmode="name" onclick="window._drSetSortMode('name')">🔤 Nombre</span>
+        <span class="dm-tagfilter-chip${_sortMode==='priority'?' on':''}" data-sortmode="priority" onclick="window._drSetSortMode('priority')">⚠️ Prioridad clínica</span>
+      </div>
       <div id="dr-patient-list"></div>`;
+      window._drSetSortMode = (mode)=>{
+        _sortMode = mode;
+        document.querySelectorAll('[data-sortmode]').forEach(chip=>{
+          chip.classList.toggle('on', chip.dataset.sortmode===mode);
+        });
+        renderPatientList((document.getElementById('dr-patient-search')||{}).value||'');
+      };
+      window._drSetTagFilter = (id)=>{
+        _tagFilter = (_tagFilter===id) ? null : id;
+        document.querySelectorAll('#dr-tagfilter-bar .dm-tagfilter-chip').forEach(chip=>{
+          const cid = chip.dataset.tagid || null;
+          const on = cid === (_tagFilter||'');
+          chip.classList.toggle('on', on);
+          const c = chip.dataset.tagcolor;
+          chip.style.cssText = (on && c) ? ('background:'+c+'22;border-color:'+c+';color:'+c) : '';
+        });
+        renderPatientList((document.getElementById('dr-patient-search')||{}).value||'');
+      };
       // Wiring después del innerHTML — captura el closure correcto
       const _searchEl = document.getElementById('dr-patient-search');
       if(_searchEl) _searchEl.addEventListener('input', e=> renderPatientList(e.target.value));
@@ -8762,7 +8814,13 @@ async function renderPatientList(filter){
       };
       if(_tA) _tA.addEventListener('click', ()=>_swapTab('active'));
       if(_tR) _tR.addEventListener('click', ()=>_swapTab('archived'));
-      renderPatientList('');}catch(e){cont.innerHTML='<div class="empty-state">Error al cargar pacientes</div>';}
+      renderPatientList('');
+      // Etiquetas: para pacientes que el médico nunca abrió, tags.resolved
+      // todavía no existe. Las calculamos en segundo plano (sin bloquear la
+      // lista) y parcheamos solo esa fila, para que se vean sin tener que
+      // entrar a cada paciente.
+      try{ backgroundFillMissingTags(validPts); }catch(_bgErr){}
+      }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar pacientes</div>';}
   }else if(tab==='consult_req'){
     loadConsultRequests();
     return;
@@ -9035,51 +9093,113 @@ function resolvePatientTags(u, recs){
   dismissed.forEach(d=>set.delete(d));
   return {resolved:[...set], auto, added, dismissed};
 }
-function renderPatientTagChips(){
-  const u=S.viewData; if(!u) return;
+// Trae SOLO las evaluaciones necesarias para calcular tags automáticos
+// (stopbang/isi/irls), de ESE paciente puntual — nunca reutiliza S.viewRecs,
+// que pertenece a la pestaña Resumen y puede corresponder a otro paciente
+// visto antes en la misma sesión (esa mezcla era la causa de que casi todos
+// los pacientes mostraran los mismos tags "Insomnio"/"SPI").
+const _tagRecsCache = {};
+async function fetchPatientTagRecs(email){
+  if(_tagRecsCache[email]) return _tagRecsCache[email];
+  const recs = await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&scale_id=in.(stopbang,isi,irls)&select=scale_id,score,created_at&order=created_at.desc`).catch(()=>[]);
+  _tagRecsCache[email] = recs||[];
+  return _tagRecsCache[email];
+}
+function renderTagHeaderPills(u, st){
   const host=document.getElementById('drp-sub'); if(!host) return;
   let bar=document.getElementById('drp-tagbar');
   if(!bar){ bar=document.createElement('div'); bar.id='drp-tagbar';
-    bar.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:6px';
+    bar.style.cssText='display:flex;gap:5px;flex-wrap:wrap;margin-top:5px';
     host.parentNode.insertBefore(bar, host.nextSibling); }
-  const st=resolvePatientTags(u, S.viewRecs||[]);
-  bar.innerHTML = Object.keys(PATHOLOGY_TAGS).map(id=>{
+  // Solo lectura acá — es un lugar de encabezado angosto. Editar vive en la
+  // tarjeta "Etiquetas clínicas" de la pestaña Perfil, donde hay espacio para
+  // explicar cuáles son automáticas y cuáles cargó el profesional a mano.
+  bar.innerHTML = st.resolved.length ? st.resolved.map(id=>{
+    const c=PATHOLOGY_TAGS[id]||{label:id,color:'#888'};
+    return '<span class="dm-tagpill" style="color:'+c.color+'">'+c.label+'</span>';
+  }).join('') : '';
+}
+function renderTagsCardBody(st){
+  return Object.keys(PATHOLOGY_TAGS).map(id=>{
     const on=st.resolved.includes(id); const c=PATHOLOGY_TAGS[id];
     const isAuto=st.auto.includes(id);
-    return '<span onclick="toggleDrTag(\''+id+'\')" title="'+(isAuto?'Detectada por escalas — click para descartar':'Click para '+(on?'quitar':'agregar'))+'" style="cursor:pointer;font-size:10.5px;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid '+c.color+';'+(on?('background:'+c.color+'22;color:'+c.color):'background:transparent;color:rgba(244,239,229,0.35);border-color:rgba(244,239,229,0.2)')+'">'+(on?'● ':'○ ')+c.label+'</span>';
-  }).join('');
-  // Persistir resolved para que la lista muestre los puntos sin recalcular
+    return '<span class="dm-tagtoggle" onclick="toggleDrTag(\''+id+'\')" title="'+(isAuto?'Detectada automáticamente por las escalas — click para descartar':'Click para '+(on?'quitar':'agregar'))+'" style="border-color:'+c.color+';'+(on?('background:'+c.color+'1c;color:'+c.color):'background:transparent;color:rgba(244,239,229,0.4)')+'">'+(on?'● ':'○ ')+c.label+(isAuto&&on?' <span style="opacity:0.6;font-weight:400">· auto</span>':'')+'</span>';
+  }).join('') +
+  '<div style="font-size:11px;color:rgba(244,239,229,0.5);margin-top:10px;line-height:1.4">Las marcadas "auto" salen de SAHOS (STOP-BANG≥5), Insomnio (ISI≥15) y SPI (IRLS≥15). Click para agregar o descartar cualquiera manualmente.</div>';
+}
+async function computePatientTagState(email){
+  const recs = await fetchPatientTagRecs(email);
+  const u = (S.viewData&&S.viewData.email===email) ? S.viewData : null;
+  return resolvePatientTags(u||{tags:{}}, recs);
+}
+async function refreshPatientTagsHeader(email){
   try{
-    const cur=JSON.stringify((u.tags&&u.tags.resolved)||[]);
+    const st=await computePatientTagState(email);
+    if(S.viewData&&S.viewData.email===email) renderTagHeaderPills(S.viewData, st);
+    await persistResolvedTags(email, st);
+  }catch(_){}
+}
+async function persistResolvedTags(email, st){
+  try{
+    const cur = JSON.stringify((S.viewData&&S.viewData.tags&&S.viewData.tags.resolved)||[]);
     if(JSON.stringify(st.resolved)!==cur){
-      u.tags=Object.assign({},u.tags,{resolved:st.resolved});
-      db.patch('patients?email='+encodeURIComponent('eq.'+u.email).replace('eq.','eq.'), {tags:u.tags}).catch(()=>{});
+      const patch = {added:st.added, dismissed:st.dismissed, resolved:st.resolved};
+      if(S.viewData&&S.viewData.email===email) S.viewData.tags = patch;
+      await db.patch('patients?email=eq.'+encodeURIComponent(email), {tags:patch});
     }
   }catch(_){}
 }
 async function toggleDrTag(id){
   const u=S.viewData; if(!u) return;
   const t=u.tags||{}; const added=new Set(t.added||[]), dismissed=new Set(t.dismissed||[]);
-  const st=resolvePatientTags(u, S.viewRecs||[]);
+  const st=await computePatientTagState(u.email);
   if(st.resolved.includes(id)){
-    // quitar: si era automática → va a dismissed; si era manual → sale de added
     if(st.auto.includes(id)) dismissed.add(id);
     added.delete(id);
   } else {
     added.add(id); dismissed.delete(id);
   }
   u.tags={added:[...added], dismissed:[...dismissed]};
-  const st2=resolvePatientTags(u, S.viewRecs||[]);
+  delete _tagRecsCache[u.email+'__stale']; // no-op guard, mantiene intención explícita
+  const st2=resolvePatientTags(u, await fetchPatientTagRecs(u.email));
   u.tags.resolved=st2.resolved;
   try{
     await db.patch('patients?email=eq.'+encodeURIComponent(u.email), {tags:u.tags});
-    renderPatientTagChips();
+    renderTagHeaderPills(u, st2);
+    const cardBody=document.getElementById('drp-tags-card-body');
+    if(cardBody) cardBody.innerHTML=renderTagsCardBody(st2);
   }catch(e){ toast('No se pudo guardar la etiqueta: '+e.message); }
+}
+// Lista de pacientes: a los que el médico nunca abrió les falta tags.resolved.
+// Los calculamos de a poco en segundo plano (no bloquea el render inicial) y
+// parcheamos solo esa fila del DOM — así se ven sin tener que entrar a cada uno.
+async function backgroundFillMissingTags(patients){
+  const pending=(patients||[]).filter(u=>u&&u.email&&!(u.tags&&Array.isArray(u.tags.resolved)));
+  for(const u of pending){
+    try{
+      const recs=await fetchPatientTagRecs(u.email);
+      const st=resolvePatientTags(u, recs);
+      if(!st.resolved.length) { u.tags=Object.assign({},u.tags,{resolved:[]}); continue; }
+      u.tags=Object.assign({},u.tags,{resolved:st.resolved});
+      db.patch('patients?email=eq.'+encodeURIComponent(u.email), {tags:{added:(u.tags&&u.tags.added)||[],dismissed:(u.tags&&u.tags.dismissed)||[],resolved:st.resolved}}).catch(()=>{});
+      const row=document.querySelector('.pat-row[data-pemail="'+u.email+'"]');
+      if(row){
+        const emailLine=row.querySelector('div[style*="flex:1"]');
+        if(emailLine && !emailLine.querySelector('.dm-patlist-tags')){
+          const pillsHtml='<div class="dm-patlist-tags">'+st.resolved.map(t=>{const m=PATHOLOGY_TAGS[t]||{color:'#888',label:t};return '<span class="dm-patlist-tag" style="color:'+m.color+'">'+m.label+'</span>';}).join('')+'</div>';
+          emailLine.insertAdjacentHTML('beforeend', pillsHtml);
+        }
+      }
+    }catch(_bgTagErr){ /* seguimos con el resto aunque uno falle */ }
+    await new Promise(r=>setTimeout(r,120)); // throttle: no saturar la API con 24+ requests simultáneos
+  }
 }
 
 async function viewPatient(email){
   S.viewEmail=email;showScreen('doctor-patient');
-  setTimeout(()=>{ try{ renderPatientTagChips(); }catch(_){}} , 900);
+  // Pills de solo lectura en el encabezado — usan SU PROPIO fetch (nunca
+  // S.viewRecs) para no heredar por error las etiquetas del paciente anterior.
+  refreshPatientTagsHeader(email);
   // En la vista de escritorio la lista queda visible: mover el resaltado al
   // paciente recién elegido sin re-renderizar toda la lista.
   try{
@@ -9107,6 +9227,7 @@ async function viewPatient(email){
 function showDrPTab(tab,el){document.querySelectorAll('#screen-doctor-patient .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDrPTab_(tab);}
 async function showDrPTab_(tab){
   const cont=document.getElementById('drp-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';const email=S.viewEmail;
+  cont.dataset.tab=tab; // hook para CSS por pestaña (ver body.dr-desktop #drp-content[data-tab=...])
   try{
     if(tab==='summary'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);S.viewRecs=recs||[];
@@ -9124,8 +9245,26 @@ async function showDrPTab_(tab){
         });
       // ── KEY FINDINGS ──
       const kf=[];
-      // Pathological scales
-      Object.values(last).forEach(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);if(!sc)return;const i=sc.interp(r.score);if(i&&(i.bg==='#fee2e2'||i.bg==='#fef2f2'))kf.push('<div style="background:#fee2e2;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+r.score+'/'+r.max_score+')</div>');});
+      // Pathological scales — comparativa: mismo recuadro, valor actual Y anterior
+      // de la MISMA escala (antes solo se mostraba el valor vigente, sin contexto
+      // de si el paciente venía mejorando o empeorando en esa escala puntual).
+      const _byScale={}; (recs||[]).forEach(r=>{ (_byScale[r.scale_id]=_byScale[r.scale_id]||[]).push(r); });
+      Object.values(last).forEach(r=>{
+        const sc=SCALES.find(s=>s.id===r.scale_id);if(!sc)return;
+        const i=sc.interp(r.score);if(!i||(i.bg!=='#fee2e2'&&i.bg!=='#fef2f2'))return;
+        const _hist=_byScale[r.scale_id]||[];
+        const _prev=_hist.length>=2?_hist[_hist.length-2]:null;
+        const _d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+        let _compareHtml='';
+        if(_prev){
+          const _pi=sc.interp(_prev.score);
+          const _delta=r.score-_prev.score;
+          const _pd=new Date(_prev.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+          const _arrow=_delta>0?'↗':_delta<0?'↘':'≈';
+          _compareHtml='<div class="dm-compare"><div class="dm-compare-then"><div style="font-size:10px;color:#7a4444">'+_pd+'</div><div style="font-size:13px;font-weight:600">'+_prev.score+'/'+_prev.max_score+'</div></div><div class="dm-compare-arrow">'+_arrow+'</div><div><div style="font-size:10px;color:#7a4444">'+_d+' (actual)</div><div style="font-size:13px;font-weight:700">'+r.score+'/'+r.max_score+'</div></div></div>';
+        }
+        kf.push('<div style="background:#fee2e2;border-radius:'+(_prev?'16px':'10px')+';padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+r.score+'/'+r.max_score+')'+(_prev?'':' · '+_d)+_compareHtml+'</div>');
+      });
       // Diary score
       // Resumen: traemos hasta 30 noches para poder comparar últimos 14 vs 14 anteriores.
       const diaryForSummary=await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=*&order=diary_date.desc&limit=30`).catch(()=>[]);
@@ -9277,33 +9416,31 @@ async function showDrPTab_(tab){
       const photoEl = u.photo_url
         ? '<img src="'+u.photo_url+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #C8A96E">'
         : '<div style="width:96px;height:96px;border-radius:50%;background:#1A4A3A;border:3px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:500;color:#F4EFE5">'+(initials||'?')+'</div>';
-      const heroHtml = '<div style="background:linear-gradient(180deg,#1A4A3A,#0F2820);margin:-16px -16px 0;padding:24px 20px 20px;text-align:center;border-bottom:0.5px solid rgba(126,200,164,0.18)">'+
+      const heroHtml = '<div class="dm-hero dm-wide" style="background:linear-gradient(180deg,#1A4A3A,#0F2820);padding:22px 20px 20px;text-align:center;border:0.5px solid rgba(126,200,164,0.18)">'+
         '<div style="display:inline-block;margin-bottom:12px">'+photoEl+'</div>'+
         '<div style="font-size:18px;font-weight:500;letter-spacing:0.2px;color:#F4EFE5">'+escHtml((u.name||'')+' '+(u.lname||''))+'</div>'+
         '<div style="font-size:12px;color:rgba(244,239,229,0.6);margin-top:2px">'+escHtml(u.email||'')+'</div>'+
         '</div>';
-      const chipsHtml = '<div style="padding:16px 0 8px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
-        '<div style="background:rgba(126,200,164,0.08);border-radius:10px;padding:10px 6px;text-align:center;border:0.5px solid rgba(126,200,164,0.15)">'+
+      const chipsHtml = '<div class="dm-grid3 dm-wide">'+
+        '<div class="dm-stat">'+
           '<div style="font-size:10px;color:rgba(244,239,229,0.55);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px">Edad</div>'+
           '<div style="font-size:18px;font-weight:500;color:#F4EFE5">'+(age||'—')+'</div>'+
           '<div style="font-size:9px;color:rgba(244,239,229,0.5);margin-top:1px">años · '+sexAbbr+'</div>'+
         '</div>'+
-        '<div style="background:rgba(126,200,164,0.08);border-radius:10px;padding:10px 6px;text-align:center;border:0.5px solid rgba(126,200,164,0.15)">'+
+        '<div class="dm-stat">'+
           '<div style="font-size:10px;color:rgba(244,239,229,0.55);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px">IMC</div>'+
           '<div style="font-size:18px;font-weight:500;color:#F4EFE5">'+(imc||'—')+'</div>'+
           '<div style="font-size:9px;color:'+imcCatColor+';margin-top:1px;font-weight:500">'+(imcCat||'')+'</div>'+
         '</div>'+
-        '<div style="background:rgba(126,200,164,0.08);border-radius:10px;padding:10px 6px;text-align:center;border:0.5px solid rgba(126,200,164,0.15)">'+
+        '<div class="dm-stat">'+
           '<div style="font-size:10px;color:rgba(244,239,229,0.55);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px">Cronotipo</div>'+
           '<div style="font-size:18px;font-weight:500;color:#F4EFE5">'+cronoTxt+'</div>'+
           '<div style="font-size:9px;color:rgba(244,239,229,0.5);margin-top:1px">'+cronoLabel+'</div>'+
         '</div>'+
       '</div>';
-      const card = (icon,title,bodyHtml) => '<div style="background:#1d3a2b;border-radius:12px;padding:14px 16px;margin-bottom:8px;border:0.5px solid rgba(126,200,164,0.12)">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
-          '<span style="font-size:14px">'+icon+'</span>'+
-          '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:#7EC8A4">'+title+'</div>'+
-        '</div>'+bodyHtml+'</div>';
+      const card = (icon,title,bodyHtml,wide) => '<div class="dm-card'+(wide?' dm-wide':'')+'">'+
+        '<div class="dm-card-title"><span style="font-size:14px">'+icon+'</span><span>'+title+'</span></div>'+
+        bodyHtml+'</div>';
       const kv = (label,val) => '<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:0.5px solid rgba(126,200,164,0.08)"><span style="font-size:13px;color:rgba(244,239,229,0.65)">'+label+'</span><span style="font-size:13px;font-weight:500;color:#F4EFE5;text-align:right">'+val+'</span></div>';
       const kvFirst = (label,val) => '<div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:13px;color:rgba(244,239,229,0.65)">'+label+'</span><span style="font-size:13px;font-weight:500;color:#F4EFE5;text-align:right">'+val+'</span></div>';
       const datosBody = kvFirst('Sexo', u.sex||'—') + kv('País', u.country||'—') + kv('Altura / Peso', (u.height_cm?u.height_cm+' cm':'—')+' / '+(u.weight_kg?u.weight_kg+' kg':'—'));
@@ -9360,7 +9497,7 @@ async function showDrPTab_(tab){
         let diaryForMCTQ = S._drDiaryCache && S._drDiaryCache.email === email ? S._drDiaryCache.data : null;
         if(!diaryForMCTQ){
           try {
-            diaryForMCTQ = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+'&select=bedtime,wake_time,sleep_minutes,day_type,diary_date&order=diary_date.desc&limit=60').catch(()=>null);
+            diaryForMCTQ = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+'&select=bedtime,wake_time,sleep_minutes,day_type,diary_date,exercise_mins,exercise_time,coffee_cups,alcohol_drinks,screen_minutes&order=diary_date.desc&limit=60').catch(()=>null);
             S._drDiaryCache = { email, data: diaryForMCTQ };
           } catch(_ex) { diaryForMCTQ = null; }
         }
@@ -9408,13 +9545,47 @@ async function showDrPTab_(tab){
           '<div>'+mctqBlock+'</div>' +
         '</div>' + compareBlock;
       } catch(_cron){ cronotipoBody = '<div style="color:rgba(244,239,229,0.5);font-style:italic;font-size:12px">Sin datos</div>'; }
+      // ─── Etiquetas clínicas: tarjeta editable (el pill del encabezado es solo lectura) ───
+      let tagsCardBody = '<div style="color:rgba(244,239,229,0.5);font-style:italic;font-size:12px">Cargando…</div>';
+      try{
+        const _tagState = await computePatientTagState(u.email);
+        tagsCardBody = renderTagsCardBody(_tagState);
+        renderTagHeaderPills(u, _tagState);
+      }catch(_tagErr){ tagsCardBody = '<div style="color:rgba(244,239,229,0.5);font-style:italic;font-size:12px">No se pudieron cargar las etiquetas</div>'; }
+      // ─── Hábitos REGISTRADOS en el diario (últimos 14 días) — no lo declarado
+      // una vez en el alta, sino lo que el paciente efectivamente fue cargando
+      // noche a noche. Así lo que completa en el diario se ve reflejado acá,
+      // no solo en los gráficos de la pestaña Diario de sueño. ───
+      let habitsDiaryBody = '<div style="color:rgba(244,239,229,0.5);font-style:italic;font-size:12px">Sin datos de diario aún</div>';
+      try{
+        const _hd = (S._drDiaryCache && S._drDiaryCache.email===email ? S._drDiaryCache.data : null) || [];
+        const _last14 = _hd.slice(0,14);
+        if(_last14.length){
+          const _exDays = _last14.filter(e=>e.exercise_mins>0).length;
+          const _exLate = _last14.filter(e=>e.exercise_time==='late').length;
+          const _caffDays = _last14.filter(e=>e.coffee_cups>0).length;
+          const _caffHigh = _last14.filter(e=>e.coffee_cups>400).length;
+          const _alcDays = _last14.filter(e=>e.alcohol_drinks>0).length;
+          const _screenAvg = (function(){ const arr=_last14.filter(e=>e.screen_minutes!=null); return arr.length?Math.round(arr.reduce((a,b)=>a+b.screen_minutes,0)/arr.length):null; })();
+          const _row=(icon,label,value,warn)=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:0.5px solid rgba(126,200,164,0.08)"><span style="font-size:13px;color:rgba(244,239,229,0.65)">'+icon+' '+label+'</span><span style="font-size:13px;font-weight:500;color:'+(warn?'#C8A96E':'#F4EFE5')+'">'+value+'</span></div>';
+          habitsDiaryBody = '<div style="font-size:11px;color:rgba(244,239,229,0.5);margin-bottom:2px">Sobre '+_last14.length+' noches registradas</div>'+
+            _row('🏃','Con actividad física', _exDays+' de '+_last14.length+' días', false) +
+            (_exLate>0?_row('⚠️','Ejercicio tarde en la noche', _exLate+' vez(es)', true):'') +
+            _row('☕','Con consumo de cafeína', _caffDays+' de '+_last14.length+' días', false) +
+            (_caffHigh>0?_row('⚠️','Días con cafeína >400mg', _caffHigh, true):'') +
+            _row('🍷','Con consumo de alcohol', _alcDays+' de '+_last14.length+' días', _alcDays>=_last14.length*0.4) +
+            (_screenAvg!=null?_row('📱','Pantallas antes de dormir (prom.)', _screenAvg+' min', _screenAvg>60):'');
+        }
+      }catch(_hdErr){ /* deja el mensaje "sin datos" */ }
       cont.innerHTML = heroHtml + chipsHtml +
+        card('🏷️','Etiquetas clínicas', '<div id="drp-tags-card-body">'+tagsCardBody+'</div>', true) +
         card('🆔','Datos personales', datosBody +
+          '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Ocupación</div>'+ocupacionBody+
           '<button onclick="openDoctorEditPatient()" style="width:100%;margin-top:10px;padding:9px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.08);color:#7EC8A4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Editar datos del paciente</button>') +
         card('🩺','Antecedentes', pathsBody) +
-        card('🌙','Cronotipo', cronotipoBody) +
-        card('🌿','Hábitos', habitsBody) +
-        card('💼','Ocupación', ocupacionBody);
+        card('🌙','Cronotipo', cronotipoBody, true) +
+        card('🌿','Hábitos declarados', habitsBody) +
+        card('📔','Hábitos registrados · 14 días', habitsDiaryBody);
     // Render the existing annotation section after innerHTML is set
     const _annotArea=document.getElementById('dr-notes-area');
     if(_annotArea){
@@ -9433,32 +9604,43 @@ async function showDrPTab_(tab){
       const subj7=subj.filter(e=>new Date(e.diary_date)>=cutoff7dr);
       window._drGraficosSubj=subj;
       const drScoreEntries=subj30.length>=3?subj30:subj;
-      cont.innerHTML='<div style="display:flex;gap:8px;margin:8px 0 4px;align-items:center">'+
-        '<span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>'+
-        '<button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:'+(subj7.length>=3?'#e8f0eb':'#e5e7eb')+';color:'+(subj7.length>=3?'#1a4a3a':'#9ca3af')+'">7 días</button>'+
-        '<button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:#1a4a3a;color:#fff">30 días</button>'+
-        '<button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>'+
-        '</div><div id="dr-score-panel-wrap">'+renderSleepScorePanel(drScoreEntries)+'</div>'
-      +`
-        <div class="sec-title" style="margin-top:12px">PILARES DEL SUEÑO</div>
-        <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
-        <div style="background:#fff;border-radius:12px;padding:10px;margin-top:8px"><div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div></div>
-        <div style="height:8px"></div>
-        <div class="sec-title" style="margin-top:12px">MÉTRICAS CLÍNICAS</div>
-        <div id="dr-clinical-metrics" style="margin-bottom:8px"></div>
-        <div class="sec-title" style="margin-top:12px">ACTOGRAMA — HORARIOS DE SUEÑO</div>
-        <p style="font-size:12px;color:var(--ink3);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
-        <div style="background:#fff;border-radius:12px;padding:10px;overflow-x:auto;padding-bottom:8px">
-          <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
+      cont.innerHTML=`
+        <div class="dm-card dm-light">
+          <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center">
+            <span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>
+            <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:${subj7.length>=3?'#e8f0eb':'#e5e7eb'};color:${subj7.length>=3?'#1a4a3a':'#9ca3af'}">7 días</button>
+            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:#1a4a3a;color:#fff">30 días</button>
+            <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>
+          </div>
+          <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries)}</div>
         </div>
-        <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 14px;flex-wrap:wrap">
-          <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
-          <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
-          <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
-          <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
+        <div class="dm-card dm-light">
+          <div class="dm-card-title">🧩 Pilares del sueño</div>
+          <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
+          <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
         </div>
-        <div style="height:16px"></div>`;
+        <div class="dm-wide" id="dr-clinical-metrics"></div>
+        <div class="dm-card dm-light dm-wide">
+          <div class="dm-card-title">🌙 Actograma — horarios de sueño</div>
+          <p style="font-size:12px;color:var(--ink3);margin-bottom:6px">La medianoche queda al centro. Cada fila es un día. A la derecha, capas con lo que el paciente registró ese día — se pueden mostrar u ocultar.</p>
+          <div class="dm-layer-bar">
+            <span class="dm-layer-btn on" data-layer="exercise" onclick="toggleActoLayer('exercise',this)">🏃 Ejercicio</span>
+            <span class="dm-layer-btn on" data-layer="caffeine" onclick="toggleActoLayer('caffeine',this)">☕ Cafeína</span>
+            <span class="dm-layer-btn on" data-layer="alcohol" onclick="toggleActoLayer('alcohol',this)">🍷 Alcohol</span>
+            <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
+          </div>
+          <div style="overflow-x:auto;padding-bottom:8px">
+            <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
+          </div>
+          <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 4px;flex-wrap:wrap">
+            <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
+            <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
+            <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
+            <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
+            <span>🏃 Ejercicio (naranja = tarde en la noche) · ☕ Cafeína (naranja &gt;400mg) · 🍷 Alcohol · 📱 Pantallas (naranja &gt;60min)</span>
+          </div>
+        </div>`;
       setTimeout(()=>{
         // Métricas clínicas del médico — incluye bloque técnico de regularidad
         const dme=document.getElementById('dr-clinical-metrics');
@@ -9538,6 +9720,19 @@ async function showDrPTab_(tab){
           if(drPeriodNights>0){ const dpl=document.getElementById('dr-acto-period-legend'); if(dpl) dpl.style.display='inline'; }
           // Mostrar leyenda "Día libre" solo si hay datos
           const dfl=document.getElementById('dr-acto-freeday-legend'); if(dfl) dfl.style.display = drWeekendRows.length>0?'inline':'none';
+          // Hábitos por noche (ejercicio/cafeína/alcohol/pantallas) — se dibujan
+          // en un margen a la derecha del actograma, fila por fila, con la MISMA
+          // fila que usa el bloque de sueño (mismo array "sorted", mismo índice),
+          // así el alineado es exacto sin depender de una lista HTML aparte.
+          ctxA._layers = ctxA._layers || {exercise:true,caffeine:true,alcohol:true,screens:true};
+          ctxA._habitRows = sorted.map(e=>({
+            exercise: e.exercise_mins>0 ? e.exercise_mins : null,
+            exerciseLate: e.exercise_time==='late',
+            caffeine: e.coffee_cups>0 ? e.coffee_cups : null,
+            caffeineHigh: e.coffee_cups>400,
+            alcohol: e.alcohol_drinks>0 ? e.alcohol_drinks : null,
+            screens: e.screen_minutes>0 ? e.screen_minutes : null
+          }));
           (function(){try{if(S.charts['dr-acto'])S.charts['dr-acto'].destroy();}catch(_){}})(),S.charts['dr-acto']=new Chart(ctxA,{
             type:'bar',
             data:{labels:actoLabels,datasets:[
@@ -9545,7 +9740,7 @@ async function showDrPTab_(tab){
               {label:'Siesta',data:drNapBars,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
             ]},
             options:{
-              indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4}},
+              indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4,right:98}},
               plugins:{
                 legend:{display:false},
                 annotation:{annotations:annots},
@@ -9659,6 +9854,35 @@ async function showDrPTab_(tab){
                 if(bs)dL(bs.m,'promedio','acostarse','rgba(217,119,6,0.9)','left');
                 if(ws)dL(ws.m,'promedio','levantarse','rgba(45,90,158,0.9)','right');
               }
+            },
+            {
+              // "Capas" de hábitos — mismo concepto que el toggle de líneas en el
+              // gráfico de pilares, pero explícito con botones (acá no hay leyenda
+              // nativa de Chart.js porque los datasets son de horario, no de hábito).
+              id:'drHabitGutter',
+              afterDatasetsDraw:(chart)=>{try{
+                  const cv=chart.canvas;
+                  const rows=cv._habitRows||[];
+                  const layers=cv._layers||{};
+                  if(!rows.length) return;
+                  const yS=chart.scales.y, ca=chart.chartArea;
+                  const barH=Math.abs(yS.getPixelForValue(1)-yS.getPixelForValue(0));
+                  const cx=chart.ctx;
+                  const gx=ca.right+8;
+                  cx.save();
+                  cx.font=Math.min(12,Math.max(9,barH*0.4))+'px system-ui';
+                  cx.textBaseline='middle';
+                  rows.forEach((r,i)=>{
+                    const yMid=yS.getPixelForValue(i);
+                    let x=gx;
+                    const put=(icon,warn)=>{ cx.fillStyle=warn?'#ea580c':'#44403c'; cx.fillText(icon,x,yMid); x+=16; };
+                    if(layers.exercise && r.exercise) put('🏃', r.exerciseLate);
+                    if(layers.caffeine && r.caffeine) put('☕', r.caffeineHigh);
+                    if(layers.alcohol && r.alcohol) put('🍷', false);
+                    if(layers.screens && r.screens) put('📱', r.screens>60);
+                  });
+                  cx.restore();
+                }catch(_){}}
             }]
           });
         }
