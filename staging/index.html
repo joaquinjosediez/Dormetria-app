@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod7">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1277,7 +1277,20 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod7';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy75-mod9';
+// ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
+window.addEventListener('offline',()=>{
+  if(document.getElementById('dm-offline-banner')) return;
+  const b=document.createElement('div');
+  b.id='dm-offline-banner';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font-size:13px;font-weight:600;text-align:center;padding:8px 12px;font-family:inherit';
+  b.textContent='⚠ Sin conexión a internet — los datos no se pueden cargar ni guardar hasta que vuelva';
+  document.body.appendChild(b);
+});
+window.addEventListener('online',()=>{
+  const b=document.getElementById('dm-offline-banner');
+  if(b){ b.style.background='#14532d'; b.textContent='✓ Conexión restablecida'; setTimeout(()=>b.remove(),2000); }
+});  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -4679,12 +4692,17 @@ function pickScaleOfDay(user, records){
       latest[r.scale_id] = r;
     }
   });
-  // Escalas elegibles (patient role) + fuera de cooldown
+  // REGLA METÓDICA: al inicio se completan las pendientes; una escala ya
+  // respondida NUNCA se vuelve a sugerir antes de los 30 días (aunque su
+  // cooldown clínico sea menor), y al mes se propone como REEVALUACIÓN
+  // explícita. Si no hay nada pendiente ni vencido, no se sugiere nada:
+  // completar datos porque sí solo cansa al paciente.
+  const REEVAL_DAYS = 30;
   const eligible = SCALES.filter(sc => {
     if(!scaleIsEligible(sc.id, user, 'patient')) return false;
     const last = latest[sc.id];
     if(!last) return true; // nunca completada
-    const cooldown = SCALE_COOLDOWN_DAYS[sc.id] || SCALE_COOLDOWN_DEFAULT;
+    const cooldown = Math.max(SCALE_COOLDOWN_DAYS[sc.id] || SCALE_COOLDOWN_DEFAULT, REEVAL_DAYS);
     return daysSince(last.created_at) >= cooldown;
   });
   if(!eligible.length) return null;
@@ -4692,26 +4710,36 @@ function pickScaleOfDay(user, records){
   //   1. Si nunca completó GASQ (cribado inicial), esa siempre primero
   const gasqNeverDone = eligible.find(s => s.id === 'gasq' && !latest['gasq']);
   if(gasqNeverDone) return gasqNeverDone;
-  //   2. Escalas core (PSQI, ISI, ESS) nunca hechas
+  //   2. Escalas core (PSQI, ISI, ESS...) nunca hechas
   for(const id of ['psqi','isi','ess','stopbang','meq']){
     const sc = eligible.find(s => s.id === id && !latest[id]);
     if(sc) return sc;
   }
-  //   3. Escalas patológicas que ya vencieron su cooldown (repetir para ver evolución)
-  //      Sólo la más antigua para no abrumar.
-  const pathologicalStale = eligible
-    .filter(sc => {
-      const last = latest[sc.id];
-      if(!last) return false;
-      const interp = sc.interp ? sc.interp(last.score) : null;
-      if(!interp) return false;
-      return interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg);
-    })
-    .sort((a,b) => new Date(latest[a.id].created_at) - new Date(latest[b.id].created_at));
-  if(pathologicalStale.length) return pathologicalStale[0];
-  //   4. Resto por rotación estable (día del año % elegibles) para que no cambie cada vez
-  const doy = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-  return eligible[doy % eligible.length];
+  //   3. CUALQUIER escala nunca hecha antes que repetir una ya respondida
+  const neverDone = eligible.filter(sc => !latest[sc.id]);
+  if(neverDone.length){
+    const doy = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    return neverDone[doy % neverDone.length];
+  }
+  //   4. Reevaluación mensual: primero las que dieron resultado patológico,
+  //      después el resto; siempre la más antigua primero, de a UNA.
+  const isPatho = sc => {
+    const last = latest[sc.id];
+    const interp = sc.interp ? sc.interp(last.score) : null;
+    return !!(interp && interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg));
+  };
+  const stale = eligible.slice().sort((a,b) => {
+    const pa=isPatho(a)?0:1, pb=isPatho(b)?0:1;
+    if(pa!==pb) return pa-pb;
+    return new Date(latest[a.id].created_at) - new Date(latest[b.id].created_at);
+  });
+  if(stale.length){
+    const sc = Object.create(stale[0]);
+    sc._isReeval = true;
+    sc._lastDate = latest[stale[0].id].created_at;
+    return sc;
+  }
+  return null;
 }
 
 // ─── Copiar resumen del paciente al portapapeles (para HC del médico) ───
@@ -5476,7 +5504,16 @@ async function showHome(){
   const scaleNameEl=document.getElementById('home-scale-name');
   const scaleSubEl=document.getElementById('home-scale-sub');
   if(scaleNameEl&&todayScale) scaleNameEl.textContent=todayScale.name||todayScale.id.toUpperCase();
-  if(scaleSubEl&&todayScale) scaleSubEl.textContent=todayScale.desc||'';
+  if(scaleSubEl&&todayScale){
+    if(todayScale._isReeval){
+      const _ld=new Date(todayScale._lastDate).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
+      scaleSubEl.textContent='Reevaluación mensual — la completaste el '+_ld+', veamos cómo evolucionó';
+    } else {
+      scaleSubEl.textContent=todayScale.desc||'';
+    }
+  }
+  const scaleTitleEl=document.querySelector('#home-scale-card > div:first-child');
+  if(scaleTitleEl&&todayScale) scaleTitleEl.textContent = todayScale._isReeval ? 'Reevaluación del mes' : 'Escala del día';
   const scaleCard=document.getElementById('home-scale-card');
   if(scaleCard) scaleCard.style.display = todayScale ? '' : 'none';
   S._todayScaleId=todayScale ? todayScale.id : null;
@@ -8744,7 +8781,13 @@ async function renderPatientList(filter){
           if(_tagFilter && !(u.tags&&u.tags.resolved&&u.tags.resolved.includes(_tagFilter))) return false;
           if(!f) return true;
           const name=(u.name+' '+(u.lname||'')).trim().toLowerCase();
-          return name.includes(f)||u.email.toLowerCase().includes(f);
+          if(name.includes(f)||u.email.toLowerCase().includes(f)) return true;
+          // También por etiqueta: escribir "insomnio" lista los pacientes etiquetados
+          if(u.tags&&u.tags.resolved&&u.tags.resolved.some(t=>{
+            const m=PATHOLOGY_TAGS[t];
+            return t.includes(f)||(m&&m.label.toLowerCase().includes(f));
+          })) return true;
+          return false;
         });
         // Orden alfabético por APELLIDO (luego nombre). Los perfiles infantiles
         // (email con +nombre@child) heredan el apellido del padre, así que quedan agrupados.
@@ -8779,9 +8822,7 @@ async function renderPatientList(filter){
             return escHtml(ln ? (ln + ', ' + fn) : (fn || u.email));
           })();
           const isArch = archived.has(u.email.toLowerCase());
-          const archBtnLabel = isArch ? '↻ Reactivar' : '🗂 Archivar';
-          const archBtnColor = isArch ? '#15803d' : 'rgba(255,255,255,0.4)';
-          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}${u.photo_url?'<div style="flex-shrink:0"><img src="'+u.photo_url+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover"></div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><button onclick="event.stopPropagation();window._drToggleArchive('${u.email}')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:${archBtnColor};font-size:11px;padding:5px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;font-family:var(--font)">${archBtnLabel}</button><div class="chev" style="flex-shrink:0">›</div></div>`;
+          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}${u.photo_url?'<div style="flex-shrink:0"><img src="'+u.photo_url+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover"></div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
         const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
@@ -9259,8 +9300,16 @@ async function viewPatient(email){
       ? '<img src="'+u.photo_url+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'
       : _initials;
   }
-  if(_drpname) _drpname.textContent = (u.name||u.email.split('@')[0])+' '+(u.lname||'');
-  if(_drpsub) _drpsub.textContent=u.email+(u._placeholder?' (datos pendientes)':'');
+  if(_drpname) _drpname.textContent = (u.name||u.email.split('@')[0])+' '+(u.lname||'')+(u._placeholder?' (datos pendientes)':'');
+  if(_drpsub){
+    // Acciones de contacto en vez del correo en texto: ✉️ abre el mail al
+    // paciente, 💬 abre WhatsApp (solo si hay teléfono cargado; el tooltip
+    // muestra el dato real al pasar el cursor).
+    const _tel=String(u.phone||'').replace(/[^0-9]/g,'');
+    _drpsub.innerHTML =
+      '<a href="mailto:'+u.email+'" title="Enviar correo · '+u.email+'" style="text-decoration:none;font-size:17px;line-height:1" onclick="event.stopPropagation()">✉️</a>'+
+      (_tel?'<a href="https://wa.me/'+_tel+'" target="_blank" rel="noopener" title="Abrir WhatsApp · '+u.phone+'" style="text-decoration:none;font-size:17px;line-height:1;margin-left:8px" onclick="event.stopPropagation()">💬</a>':'');
+  }
   if(_drpAgeSex){
     try{
       const _dob=u.dob?new Date(u.dob):null;
@@ -9271,6 +9320,21 @@ async function viewPatient(email){
     }catch(_ageErr){ _drpAgeSex.textContent=''; }
   }
   showDrPTab_('profile');
+}
+function drArchiveFromProfile(email){
+  try{
+    if(typeof window._drToggleArchive==='function'){ window._drToggleArchive(email); }
+    else{
+      const k='dm_dr_archived_pts_'+(S.user&&S.user.email||'').toLowerCase();
+      const arr=JSON.parse(localStorage.getItem(k)||'[]').map(x=>String(x).toLowerCase());
+      const e=email.toLowerCase();
+      const i=arr.indexOf(e);
+      if(i>=0) arr.splice(i,1); else arr.push(e);
+      localStorage.setItem(k, JSON.stringify(arr));
+    }
+    toast('Estado del paciente actualizado');
+    showDrPTab_('profile');
+  }catch(_){ toast('No se pudo cambiar el estado'); }
 }
 function showDrPTab(tab,el){document.querySelectorAll('#screen-doctor-patient .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDrPTab_(tab);}
 async function showDrPTab_(tab){
@@ -9644,7 +9708,14 @@ async function showDrPTab_(tab){
         '<div class="dm-profcol">'+
           card('🆔','Datos personales', datosBody +
             '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Ocupación</div>'+ocupacionBody+
-            '<button onclick="openDoctorEditPatient()" style="width:100%;margin-top:10px;padding:9px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.08);color:#7EC8A4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Editar datos del paciente</button>')+
+            '<button onclick="openDoctorEditPatient()" style="width:100%;margin-top:10px;padding:9px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.08);color:#7EC8A4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Editar datos del paciente</button>'+
+          (function(){
+            // Archivar se movió ACÁ desde el listado: es una acción poco
+            // frecuente y de riesgo, no merece un botón en cada fila.
+            let _isArch=false;
+            try{ _isArch=JSON.parse(localStorage.getItem('dm_dr_archived_pts_'+(S.user&&S.user.email||'').toLowerCase())||'[]').map(x=>String(x).toLowerCase()).includes(u.email.toLowerCase()); }catch(_){}
+            return '<button onclick="drArchiveFromProfile(\''+u.email+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,0.18);border-radius:9px;background:transparent;color:'+(_isArch?'#7EC8A4':'rgba(244,239,229,0.55)')+';font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">'+(_isArch?'↻ Reactivar paciente':'🗂 Archivar paciente')+'</button>';
+          })())+
         '</div>'+
         '<div class="dm-profcol">'+
           card('🩺','Antecedentes', pathsBody)+
@@ -9772,7 +9843,7 @@ async function showDrPTab_(tab){
         const drSleepBorders=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a');
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
-          const H=Math.max(240,sorted.length*28+80);ctxA.style.height=H+'px';ctxA.height=H;
+          const H=Math.max(200,sorted.length*15+80);ctxA.style.height=H+'px';ctxA.height=H;
           // Filtrar las noches válidas con el MISMO criterio que computeDiaryMetrics
           // así el promedio que se muestra arriba coincide con la línea del actograma.
           const _validForAvg = sorted.filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));

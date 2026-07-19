@@ -216,7 +216,9 @@
 .dm-drp-tags{ display:flex;gap:4px;flex-wrap:wrap; }
 .dm-drp-meta{ font-size:10.5px;color:rgba(255,255,255,0.4);white-space:nowrap;margin-left:auto; }
 @media (max-width:899px){
-  .dm-drp-email,.dm-drp-meta{ display:none; }
+  /* Los íconos de contacto (✉️/💬) entran bien en móvil; solo el meta
+     (edad·sexo·IMC) se oculta por espacio. */
+  .dm-drp-meta{ display:none; }
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
