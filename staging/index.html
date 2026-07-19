@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod5">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod6">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1277,7 +1277,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod5';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy75-mod6';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -8782,7 +8782,7 @@ async function renderPatientList(filter){
           const isArch = archived.has(u.email.toLowerCase());
           const archBtnLabel = isArch ? '↻ Reactivar' : '🗂 Archivar';
           const archBtnColor = isArch ? '#15803d' : 'rgba(255,255,255,0.4)';
-          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')"><div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div>${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-tags">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888',label:t};return '<span class="dm-patlist-tag" style="color:'+meta.color+'">'+meta.label+'</span>';}).join('')+'</div>':''}</div><button onclick="event.stopPropagation();window._drToggleArchive('${u.email}')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:${archBtnColor};font-size:11px;padding:5px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;font-family:var(--font)">${archBtnLabel}</button><div class="chev" style="flex-shrink:0">›</div></div>`;
+          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">':(`<div class="avatar">${init}</div>`)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><button onclick="event.stopPropagation();window._drToggleArchive('${u.email}')" style="background:none;border:1px solid rgba(255,255,255,0.15);color:${archBtnColor};font-size:11px;padding:5px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;font-family:var(--font)">${archBtnLabel}</button><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
         const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
@@ -8813,7 +8813,7 @@ async function renderPatientList(filter){
       </div>
       <div class="dm-tagfilter-bar" id="dr-tagfilter-bar">
         <span class="dm-tagfilter-chip${_tagFilter?'':' on'}" data-tagid="" onclick="window._drSetTagFilter(null)">Todas</span>
-        ${Object.keys(PATHOLOGY_TAGS).map(id=>{const t=PATHOLOGY_TAGS[id];const on=_tagFilter===id;return '<span class="dm-tagfilter-chip'+(on?' on':'')+'" data-tagid="'+id+'" data-tagcolor="'+t.color+'" style="'+(on?('background:'+t.color+'22;border-color:'+t.color+';color:'+t.color):'')+'" onclick="window._drSetTagFilter(\''+id+'\')">'+t.label+'</span>';}).join('')}
+        ${Object.keys(PATHOLOGY_TAGS).map(id=>{const t=PATHOLOGY_TAGS[id];const on=_tagFilter===id;return '<span class="dm-tagfilter-chip'+(on?' on':'')+'" data-tagid="'+id+'" data-tagcolor="'+t.color+'" style="'+(on?('background:'+t.color+'22;border-color:'+t.color+';color:'+t.color):'')+'" onclick="window._drSetTagFilter(\''+id+'\')"><span class="dm-tagdot" style="background:'+t.color+'"></span>'+t.label+'</span>';}).join('')}
       </div>
       <div class="dm-tagfilter-bar" style="padding-top:0;margin-top:-4px">
         <span style="font-size:11px;color:rgba(255,255,255,0.4);align-self:center;margin-right:2px">Ordenar:</span>
@@ -9224,12 +9224,9 @@ async function backgroundFillMissingTags(patients){
       u.tags=Object.assign({},u.tags,{resolved:st.resolved});
       db.patch('patients?email=eq.'+encodeURIComponent(u.email), {tags:{added:(u.tags&&u.tags.added)||[],dismissed:(u.tags&&u.tags.dismissed)||[],resolved:st.resolved}}).catch(()=>{});
       const row=document.querySelector('.pat-row[data-pemail="'+u.email+'"]');
-      if(row){
-        const emailLine=row.querySelector('div[style*="flex:1"]');
-        if(emailLine && !emailLine.querySelector('.dm-patlist-tags')){
-          const pillsHtml='<div class="dm-patlist-tags">'+st.resolved.map(t=>{const m=PATHOLOGY_TAGS[t]||{color:'#888',label:t};return '<span class="dm-patlist-tag" style="color:'+m.color+'">'+m.label+'</span>';}).join('')+'</div>';
-          emailLine.insertAdjacentHTML('beforeend', pillsHtml);
-        }
+      if(row && !row.querySelector('.dm-patlist-stripe')){
+        const stripeHtml='<div class="dm-patlist-stripe">'+st.resolved.map(t=>{const m=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+m.color+'"></span>';}).join('')+'</div>';
+        row.insertAdjacentHTML('afterbegin', stripeHtml);
       }
     }catch(_bgTagErr){ /* seguimos con el resto aunque uno falle */ }
     await new Promise(r=>setTimeout(r,120)); // throttle: no saturar la API con 24+ requests simultáneos
@@ -9409,8 +9406,29 @@ async function showDrPTab_(tab){
         }
         const avgLat=subjLast14.filter(e=>e.sleep_latency_mins>0).reduce((a,b,i,arr)=>a+b.sleep_latency_mins/arr.length,0);
         if(avgLat>20) kf.push('<div style="background:#fef3c7;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#92400e">⏱ <strong>Latencia de inicio prolongada</strong>: ~'+Math.round(avgLat)+' min</div>');
-        const hasMeds=subjLast14.some(e=>e.medications&&e.medications!=='[]'&&e.medications!=='');
-        if(hasMeds) kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir registrada</strong></div>');
+        // Medicación para dormir: no solo avisar que existe — listar CUÁL y
+        // con qué dosis (si el paciente la cargó), con cuántas noches de las
+        // últimas 14 la tomó. El diario guarda medications como JSON [{name,dose}].
+        const _medMap={};
+        subjLast14.forEach(e=>{
+          if(!e.medications||e.medications==='[]'||e.medications==='') return;
+          try{
+            const _arr=typeof e.medications==='string'?JSON.parse(e.medications):e.medications;
+            if(!Array.isArray(_arr)) return;
+            _arr.forEach(m=>{
+              const _nm=(m&&m.name)||(typeof m==='string'?m:null);
+              if(!_nm) return;
+              const _key=_nm+((m&&m.dose)?' '+m.dose:'');
+              _medMap[_key]=(_medMap[_key]||0)+1;
+            });
+          }catch(_){}
+        });
+        const _medKeys=Object.keys(_medMap);
+        if(_medKeys.length){
+          kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir</strong>: '+
+            _medKeys.map(k=>escHtml(k)+' <span style="opacity:0.7;font-size:11px">('+_medMap[k]+' de '+subjLast14.length+' noches)</span>').join(' · ')+
+          '</div>');
+        }
       }
       const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div><div class="dm-grid2">'+kf.join('')+'</div>':'';
       const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div><div class="dm-grid2">'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'<span style="float:right;font-size:11px;opacity:0.75">'+(a.created_at?new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'')+'</span></div>';}).join('')+'</div>':'');
@@ -9478,16 +9496,17 @@ async function showDrPTab_(tab){
       // que armamos una franja compacta con foto chica + esos 4 datos, y el
       // detalle de Cronotipo queda solo en su tarjeta (columna 2).
       const identityAvatar = u.photo_url
-        ? '<img src="'+u.photo_url+'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #C8A96E;flex-shrink:0">'
-        : '<div style="width:52px;height:52px;border-radius:50%;background:#1A4A3A;border:2px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;color:#F4EFE5;flex-shrink:0">'+(initials||'?')+'</div>';
-      const identityStat = (lbl,val,color) => '<div style="text-align:center;min-width:52px"><div style="font-size:9px;color:rgba(244,239,229,0.5);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">'+lbl+'</div><div style="font-size:17px;font-weight:600;color:'+(color||'#F4EFE5')+'">'+val+'</div></div>';
-      const chipsHtml = '<div class="dm-wide dm-identity-strip" style="padding:14px 16px;background:rgba(126,200,164,0.06);border:1px solid rgba(126,200,164,0.15);border-radius:16px">'+
+        ? '<img src="'+u.photo_url+'" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #C8A96E;flex-shrink:0">'
+        : '<div style="width:60px;height:60px;border-radius:50%;background:#1A4A3A;border:2px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:500;color:#F4EFE5;flex-shrink:0">'+(initials||'?')+'</div>';
+      const identityStat = (lbl,val,color) => '<div style="text-align:center;min-width:56px"><div style="font-size:9.5px;color:rgba(244,239,229,0.5);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">'+lbl+'</div><div style="font-size:19px;font-weight:600;color:'+(color||'#F4EFE5')+'">'+val+'</div></div>';
+      const chipsHtml = '<div class="dm-wide dm-identity-strip" style="padding:16px 20px;background:rgba(126,200,164,0.06);border:1px solid rgba(126,200,164,0.15);border-radius:16px">'+
         identityAvatar+
-        '<div style="flex:1;min-width:0">'+
-          '<div style="font-size:16px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml((u.name||'')+' '+(u.lname||''))+'</div>'+
-          '<div style="font-size:12.5px;color:rgba(244,239,229,0.6);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(u.email||'—')+'</div>'+
+        '<div style="min-width:0;text-align:center">'+
+          '<div style="font-size:21px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml((u.name||'')+' '+(u.lname||''))+'</div>'+
+          '<div style="font-size:13px;color:rgba(244,239,229,0.6);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(u.email||'—')+'</div>'+
         '</div>'+
-        '<div style="display:flex;gap:18px;flex-shrink:0">'+
+        '<div style="width:1px;height:36px;background:rgba(126,200,164,0.2);flex-shrink:0"></div>'+
+        '<div style="display:flex;gap:20px;flex-shrink:0">'+
           identityStat('Edad', age!=null?age+' a':'—')+
           identityStat('IMC', imc||'—', imcCatColor)+
         '</div>'+
@@ -9632,15 +9651,21 @@ async function showDrPTab_(tab){
         }
       }catch(_hdErr){ /* deja el mensaje "sin datos" */ }
       cont.innerHTML =
-        card('🏷️','Etiquetas clínicas', '<div id="drp-tags-card-body">'+tagsCardBody+'</div>', true) +
         chipsHtml +
-        card('🆔','Datos personales', datosBody +
-          '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Ocupación</div>'+ocupacionBody+
-          '<button onclick="openDoctorEditPatient()" style="width:100%;margin-top:10px;padding:9px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.08);color:#7EC8A4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Editar datos del paciente</button>', false, 1) +
-        card('🩺','Antecedentes', pathsBody, false, 2) +
-        card('🌙','Cronotipo', cronotipoBody, false, 2) +
-        card('🌿','Hábitos declarados', habitsBody, false, 3) +
-        card('📔','Hábitos registrados · 14 días', habitsDiaryBody, false, 3);
+        card('🏷️','Etiquetas clínicas', '<div id="drp-tags-card-body">'+tagsCardBody+'</div>', true) +
+        '<div class="dm-profcol">'+
+          card('🆔','Datos personales', datosBody +
+            '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Ocupación</div>'+ocupacionBody+
+            '<button onclick="openDoctorEditPatient()" style="width:100%;margin-top:10px;padding:9px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.08);color:#7EC8A4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Editar datos del paciente</button>')+
+        '</div>'+
+        '<div class="dm-profcol">'+
+          card('🩺','Antecedentes', pathsBody)+
+          card('🌙','Cronotipo', cronotipoBody)+
+        '</div>'+
+        '<div class="dm-profcol">'+
+          card('🌿','Hábitos declarados', habitsBody)+
+          card('📔','Hábitos registrados · 14 días', habitsDiaryBody)+
+        '</div>';
     // Render the existing annotation section after innerHTML is set
     const _annotArea=document.getElementById('dr-notes-area');
     if(_annotArea){
@@ -9759,7 +9784,7 @@ async function showDrPTab_(tab){
         const drSleepBorders=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a');
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
-          const H=Math.max(220,sorted.length*34+70);ctxA.style.height=H+'px';ctxA.height=H;
+          const H=Math.max(280,sorted.length*40+80);ctxA.style.height=H+'px';ctxA.height=H;
           // Filtrar las noches válidas con el MISMO criterio que computeDiaryMetrics
           // así el promedio que se muestra arriba coincide con la línea del actograma.
           const _validForAvg = sorted.filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
@@ -9842,7 +9867,7 @@ async function showDrPTab_(tab){
               {label:'Siesta',data:drNapBars,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
             ]},
             options:{
-              indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4,right:98}},
+              indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4,right:76}},
               plugins:{
                 legend:{display:false},
                 annotation:{annotations:annots},

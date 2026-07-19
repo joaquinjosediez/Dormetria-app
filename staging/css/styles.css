@@ -118,6 +118,12 @@
 .dm-tagfilter-chip.on{ background:rgba(126,200,164,0.16);border-color:#7EC8A4;color:#7EC8A4; }
 .dm-patlist-tags{ display:flex;gap:4px;flex-wrap:wrap;margin-top:3px; }
 .dm-patlist-tag{ font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid currentColor;line-height:1.5; }
+/* Franja de color a la izquierda de cada fila del listado: reemplaza el pill
+   con texto ("Insomnio", "SAHOS"...) que ocupaba espacio. La referencia de
+   qué color es qué patología queda en los chips de filtro de arriba. */
+.dm-patlist-stripe{ position:absolute;left:0;top:0;bottom:0;display:flex; }
+.dm-patlist-stripe span{ width:4px;height:100%; }
+.dm-tagdot{ display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle; }
 
 /* Toggle de capas (actograma / hábitos) */
 .dm-layer-bar{ display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px; }
@@ -148,7 +154,7 @@
 .dm-diary-top{ display:block; }
 @media (min-width:900px){
   body.dr-desktop .dm-diary-top{
-    display:grid;grid-template-columns:1fr 1.15fr;grid-template-rows:auto auto;gap:12px;margin-bottom:12px;
+    display:grid;grid-template-columns:1fr 1.4fr;grid-template-rows:auto auto;gap:12px;margin-bottom:12px;
   }
   body.dr-desktop .dm-diary-score{ grid-column:1;grid-row:1;margin-bottom:0 !important; }
   body.dr-desktop .dm-diary-pillars{ grid-column:1;grid-row:2;margin-bottom:0 !important; }
@@ -308,8 +314,9 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   body.dr-desktop #drp-content > p{
     grid-column:1 / -1;
   }
-  /* Diario: el actograma compacto, no un mural */
-  body.dr-desktop #drp-content #dr-acto-chart{ max-height:320px !important; }
+  /* (El tope de 320px de altura del actograma se eliminó: era de la época
+     en que ocupaba todo el ancho. Ahora vive en su propia columna a todo
+     alto y la altura la calcula el JS según cantidad de noches.) */
   body.dr-desktop #drp-content canvas{ max-width:100%; }
 
   /* ── Auditoría UX: grid dense (rellena huecos) + gap simétrico + anchos explícitos ── */
@@ -353,16 +360,29 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
      ubicación explícita (no auto-flow de items parejos), no genera huecos:
      cada columna simplemente termina a una altura distinta, lo cual es
      visualmente aceptable en un layout de tarjetas. */
+  /* OJO especificidad: la regla base del panel (body.dr-desktop
+     #screen-doctor-patient #drp-content → 2 IDs) le gana a esta (1 ID +
+     atributo) para toda propiedad SIN !important. En la ronda anterior solo
+     display llevaba !important y la grilla quedaba en 2 columnas heredadas
+     + auto-flow dense → el desorden con huecos que se vio en producción.
+     Por eso acá TODO lleva !important. Además cada columna vive en su
+     propio contenedor .dm-profcol (flex vertical), así el apilado dentro
+     de la columna es natural y no dependemos del algoritmo de colocación
+     del grid (que deja celdas vacías con items de alturas distintas). */
   body.dr-desktop #drp-content[data-tab="profile"]{
     display:grid !important;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px 14px;
+    grid-template-columns:repeat(3,1fr) !important;
+    grid-auto-flow:row !important;
+    gap:12px 14px !important;
     align-items:start;
   }
   body.dr-desktop #drp-content[data-tab="profile"] > .dm-wide{
-    grid-column:1/-1;margin-bottom:0 !important;
+    grid-column:1/-1 !important;margin-bottom:0 !important;
   }
-  body.dr-desktop #drp-content[data-tab="profile"] > .dm-card{
+  body.dr-desktop #drp-content[data-tab="profile"] > .dm-profcol{
+    display:flex;flex-direction:column;gap:12px;min-width:0;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-card{
     margin-bottom:0 !important;padding:10px 12px;
   }
   body.dr-desktop #drp-content[data-tab="profile"] .dm-card-title{
@@ -378,7 +398,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
      reemplaza los dos "cuadritos" de stats sueltos (IMC + Cronotipo) que
      ocupaban una fila entera para poca información. */
   body.dr-desktop #drp-content[data-tab="profile"] .dm-identity-strip{
-    grid-column:1/-1;display:flex;align-items:center;gap:16px;
+    grid-column:1/-1 !important;display:flex;align-items:center;justify-content:center;gap:22px;
   }
 }
 .dark-screen{background:#1a2e23 !important;}
