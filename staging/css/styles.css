@@ -104,6 +104,7 @@
 .dm-card.dm-light > .dm-card-title{ color:var(--label-2); }
 .dm-hero{ border-radius:var(--rxl); overflow:hidden; margin-bottom:16px; }
 .dm-grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+.dm-identity-strip{ display:flex; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
 .dm-stat{ background:rgba(126,200,164,0.08); border:0.5px solid rgba(126,200,164,0.15); border-radius:var(--r); padding:10px 6px; text-align:center; }
 
 /* Etiquetas clínicas: pill compacta (encabezado, solo lectura) y toggle grande (tarjeta Perfil) */
@@ -156,6 +157,30 @@
     display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;
   }
   body.dr-desktop .dm-diary-metrics > div{ margin-top:0 !important; }
+
+  /* La caja de Score ocupaba demasiado lugar (número gigante de 64px +
+     mucho padding) para lo poco que aporta al lado del actograma. La
+     achicamos acá con overrides puntuales sobre la estructura fija que
+     devuelve renderSleepScorePanel (compartida con la vista del paciente,
+     por eso no tocamos esa función — solo el envoltorio en desktop). */
+  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child{
+    padding:12px 14px !important;margin-bottom:8px !important;
+  }
+  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(1){
+    font-size:10px !important;margin-bottom:3px !important;
+  }
+  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(2){
+    font-size:36px !important;
+  }
+  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(3){
+    font-size:13px !important;margin-top:3px !important;
+  }
+  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(4){
+    font-size:10px !important;margin-top:5px !important;
+  }
+  body.dr-desktop .dm-diary-score #dr-score-panel-wrap details summary{
+    padding:9px 14px !important;font-size:12px !important;
+  }
 }
 
 /* Comparativa de una escala: valor actual + anterior en la misma tarjeta */
@@ -216,7 +241,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
      escritorio profesional, pero SIN el grid de 2 columnas (no tiene lista +
      detalle, es un solo panel con tabs). */
   body.dr-wide #app{
-    max-width:none;width:100%;height:100vh;display:block;
+    max-width:none;width:100%;
   }
   body.dr-wide #screen-admin .scroll{
     max-width:1200px;margin:0 auto;width:100%;
@@ -318,20 +343,27 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   body.dr-desktop #drp-content[data-tab="summary"] .sc-card{
     margin-bottom:8px !important;
   }
-  /* Perfil: 3 columnas en vez de 2, usando CSS multi-column en vez de grid.
-     Con grid, 4-5 tarjetas de altura pareja en 3 columnas siempre dejan
-     huecos en la última fila; con column-count el contenido se reparte solo
-     según altura real, sin celdas vacías. Los bloques "anchos" (etiquetas,
-     cronotipo, la fila de stats) usan column-span:all para cruzar las 3. */
+  /* Perfil: 3 columnas con posición explícita por tarjeta (col:1/2/3 vía
+     inline style desde JS), en vez de CSS multi-column. El usuario pidió una
+     ubicación exacta (col2 = Antecedentes+Cronotipo apilados, col3 = Hábitos
+     declarados+registrados apilados) que column-count no puede expresar
+     (no tiene equivalente a grid-column). Con grid-auto-flow:row normal y
+     cada tarjeta con su grid-column fijo, cada columna apila sus tarjetas
+     en orden de aparición en el DOM sin intervención adicional. Como es
+     ubicación explícita (no auto-flow de items parejos), no genera huecos:
+     cada columna simplemente termina a una altura distinta, lo cual es
+     visualmente aceptable en un layout de tarjetas. */
   body.dr-desktop #drp-content[data-tab="profile"]{
-    display:block !important;
-    column-count:3;column-gap:14px;
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px 14px;
+    align-items:start;
   }
   body.dr-desktop #drp-content[data-tab="profile"] > .dm-wide{
-    column-span:all;margin-bottom:14px !important;
+    grid-column:1/-1;margin-bottom:0 !important;
   }
   body.dr-desktop #drp-content[data-tab="profile"] > .dm-card{
-    break-inside:avoid;margin-bottom:14px !important;padding:10px 12px;
+    margin-bottom:0 !important;padding:10px 12px;
   }
   body.dr-desktop #drp-content[data-tab="profile"] .dm-card-title{
     margin-bottom:6px;font-size:10px;
@@ -341,6 +373,12 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   }
   body.dr-desktop #drp-content[data-tab="profile"] .dm-stat{
     padding:7px 6px;
+  }
+  /* Franja de identidad (nombre, edad, IMC, correo) más visible que antes,
+     reemplaza los dos "cuadritos" de stats sueltos (IMC + Cronotipo) que
+     ocupaban una fila entera para poca información. */
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-identity-strip{
+    grid-column:1/-1;display:flex;align-items:center;gap:16px;
   }
 }
 .dark-screen{background:#1a2e23 !important;}
