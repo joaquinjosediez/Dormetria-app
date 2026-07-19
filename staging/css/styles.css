@@ -160,13 +160,19 @@
   body.dr-desktop .dm-diary-top{
     display:grid;grid-template-columns:1fr 1.15fr;gap:12px;margin-bottom:12px;align-items:start;
   }
-  body.dr-desktop .dm-diary-left{ display:flex;flex-direction:column;gap:12px;min-width:0; }
-  body.dr-desktop .dm-diary-left .dm-card{ margin-bottom:0 !important; }
+  body.dr-desktop .dm-diary-left,
+  body.dr-desktop .dm-diary-right{ display:flex;flex-direction:column;gap:12px;min-width:0; }
+  body.dr-desktop .dm-diary-left .dm-card,
+  body.dr-desktop .dm-diary-right .dm-card{ margin-bottom:0 !important; }
   body.dr-desktop .dm-diary-acto{ margin-bottom:0 !important; }
-  body.dr-desktop .dm-diary-metrics{
-    display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;
-  }
+  /* Las métricas clínicas quedan en la columna izquierda (la caja de
+     regularidad se muda por JS a la derecha, bajo el actograma). */
+  body.dr-desktop .dm-diary-metrics{ display:flex;flex-direction:column;gap:12px; }
   body.dr-desktop .dm-diary-metrics > div{ margin-top:0 !important; }
+  body.dr-desktop #dr-reg-slot > div{ margin-top:0 !important; }
+  /* Score y Pilares un poco más compactos */
+  body.dr-desktop .dm-diary-score,
+  body.dr-desktop .dm-diary-pillars{ padding:10px 14px; }
 
   /* La caja de Score ocupaba demasiado lugar (número gigante de 64px +
      mucho padding) para lo poco que aporta al lado del actograma. La
@@ -390,13 +396,18 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     grid-template-columns:repeat(3,1fr) !important;
     grid-auto-flow:row !important;
     gap:12px 14px !important;
-    align-items:start;
+    align-items:stretch;
   }
   body.dr-desktop #drp-content[data-tab="profile"] > .dm-wide{
     grid-column:1/-1 !important;margin-bottom:0 !important;
   }
   body.dr-desktop #drp-content[data-tab="profile"] > .dm-profcol{
     display:flex;flex-direction:column;gap:12px;min-width:0;
+  }
+  /* La última tarjeta de cada columna crece para que las TRES columnas
+     terminen en la misma línea de base. */
+  body.dr-desktop #drp-content[data-tab="profile"] > .dm-profcol > .dm-card:last-child{
+    flex:1;
   }
   body.dr-desktop #drp-content[data-tab="profile"] .dm-card{
     margin-bottom:0 !important;padding:10px 12px;

@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod10">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod11">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1277,7 +1277,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod10';
+const APP_VERSION='hoy75-mod11';
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -9306,10 +9306,12 @@ async function viewPatient(email){
     // paciente, 💬 abre WhatsApp (solo si hay teléfono cargado; el tooltip
     // muestra el dato real al pasar el cursor).
     const _tel=String(u.phone||'').replace(/[^0-9]/g,'');
+    _drpsub.style.display='inline-flex';
+    _drpsub.style.alignItems='center';
     _drpsub.innerHTML =
-      '<a href="mailto:'+u.email+'" title="Enviar correo · '+u.email+'" style="text-decoration:none;font-size:17px;line-height:1" onclick="event.stopPropagation()">✉️</a>'+
-      (_tel?'<a href="https://wa.me/'+_tel+'" target="_blank" rel="noopener" title="Abrir WhatsApp · '+u.phone+'" style="text-decoration:none;line-height:1;margin-left:8px;display:inline-flex;vertical-align:middle" onclick="event.stopPropagation()">'+
-        '<svg viewBox="0 0 448 512" width="17" height="17" aria-label="WhatsApp"><path fill="#25D366" d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg></a>':'');
+      '<a href="mailto:'+u.email+'" title="Enviar correo · '+u.email+'" style="text-decoration:none;font-size:17px;line-height:1;display:inline-flex;align-items:center" onclick="event.stopPropagation()">✉️</a>'+
+      (_tel?'<a href="https://wa.me/'+_tel+'" target="_blank" rel="noopener" title="Abrir WhatsApp · '+u.phone+'" style="text-decoration:none;line-height:1;margin-left:8px;display:inline-flex;align-items:center" onclick="event.stopPropagation()">'+
+        '<svg viewBox="0 0 448 512" width="16" height="16" style="display:block" aria-label="WhatsApp"><path fill="#25D366" d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg></a>':'');
   }
   if(_drpAgeSex){
     try{
@@ -9410,64 +9412,8 @@ async function showDrPTab_(tab){
                 '</div>');
             }
           }
-          // PROGRESIÓN SEMANAL — bloques de 7 días corriendo hacia atrás (hasta 12 semanas)
-          // Para que el médico vea progreso longitudinal a lo largo del tratamiento (TCC-I)
-          try{
-            const allDiary = await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=*&order=diary_date.desc&limit=120`).catch(()=>[]);
-            if(allDiary && allDiary.length >= 7){
-              const blocks = [];
-              const today = new Date(); today.setHours(0,0,0,0);
-              for(let w = 0; w < 12; w++){
-                const end = new Date(today); end.setDate(end.getDate() - 7*w);
-                const start = new Date(end); start.setDate(start.getDate() - 7);
-                const inBlock = allDiary.filter(e => {
-                  const d = new Date(e.diary_date+'T00:00:00');
-                  return d >= start && d < end;
-                });
-                if(inBlock.length >= 3){
-                  const wsc = calcSleepScore(inBlock);
-                  blocks.push({
-                    w, start, end, n: inBlock.length,
-                    score: wsc?wsc.total:null,
-                    label: wsc?wsc.label:null,
-                    color: wsc?wsc.color:'#999'
-                  });
-                }
-              }
-              if(blocks.length >= 2){
-                // Orden cronológico (más vieja a más nueva, izq → der)
-                blocks.reverse();
-                const maxScore = 100;
-                const barsHtml = blocks.map((b,i)=>{
-                  const h = Math.max(8, Math.round((b.score||0) / maxScore * 60));
-                  const prev = i>0 ? blocks[i-1] : null;
-                  const delta = prev ? (b.score - prev.score) : null;
-                  const tooltipText = b.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) + '–' + 
-                                      new Date(b.end.getTime()-86400000).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) +
-                                      ' · ' + b.score + '/100 · ' + b.n + ' noches' +
-                                      (delta!==null ? ' · ' + (delta>=0?'+':'') + delta + ' vs anterior' : '');
-                  const isLast = i === blocks.length - 1;
-                  const weekLbl = isLast ? 'Esta sem.' : ('−' + (blocks.length - 1 - i) + ' sem.');
-                  return '<div title="'+tooltipText.replace(/"/g,'&quot;')+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:32px;cursor:help">'+
-                    '<div style="font-size:10px;font-weight:600;color:'+b.color+'">'+b.score+'</div>'+
-                    '<div style="width:18px;height:'+h+'px;background:'+b.color+';border-radius:3px 3px 0 0;border:'+(isLast?'2px solid #C8A96E':'none')+'"></div>'+
-                    '<div style="font-size:9px;color:#666;white-space:nowrap">'+weekLbl+'</div>'+
-                  '</div>';
-                }).join('');
-                const bestBlock = blocks.reduce((a,b)=>(!a||b.score>a.score)?b:a, null);
-                const worstBlock = blocks.reduce((a,b)=>(!a||b.score<a.score)?b:a, null);
-                kf.push('<div style="background:#F4EFE5;border-radius:10px;padding:12px 14px;margin-bottom:6px">'+
-                  '<div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:10px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
-                  '<div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:10px">'+barsHtml+'</div>'+
-                  '<div style="font-size:11px;color:#444;line-height:1.5">'+
-                    '<div>📈 <strong>Mejor semana</strong>: '+bestBlock.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' · <span style="color:'+bestBlock.color+';font-weight:600">'+bestBlock.score+'/100</span></div>'+
-                    (worstBlock!==bestBlock?'<div>📉 <strong>Peor semana</strong>: '+worstBlock.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' · <span style="color:'+worstBlock.color+';font-weight:600">'+worstBlock.score+'/100</span></div>':'')+
-                  '</div>'+
-                  '<div style="font-size:10px;color:#888;margin-top:6px;font-style:italic">Pasá el cursor sobre cada barra para ver fecha y comparación con la semana anterior.</div>'+
-                  '</div>');
-              }
-            }
-          }catch(_wp){ console.warn('[weeklyProgression]', _wp); }
+          // (La progresión semanal se movió a la pestaña Diario de sueño,
+          //  donde acompaña al score y los pilares — ver renderWeeklyProgressionHtml.)
         }
         const avgLat=subjLast14.filter(e=>e.sleep_latency_mins>0).reduce((a,b,i,arr)=>a+b.sleep_latency_mins/arr.length,0);
         if(avgLat>20) kf.push('<div style="background:#fef3c7;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#92400e">⏱ <strong>Latencia de inicio prolongada</strong>: ~'+Math.round(avgLat)+' min</div>');
@@ -9784,9 +9730,12 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-pillars">
           <div class="dm-card-title">🧩 Pilares del sueño</div>
           <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
-          <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
+          <div class="chart-wrap" style="height:150px"><canvas id="dr-pillar-chart"></canvas></div>
         </div>
+        <div class="dm-card dm-light" id="dr-weekly-prog" style="display:none"></div>
+        <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
         </div>
+        <div class="dm-diary-right">
         <div class="dm-card dm-light dm-diary-acto">
           <div class="dm-card-title">🌙 Actograma — horarios de sueño</div>
           <p style="font-size:12px;color:#6b6b76;margin-bottom:6px">La medianoche queda al centro. Cada fila es un día.</p>
@@ -9810,12 +9759,25 @@ async function showDrPTab_(tab){
             <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
           </div>
         </div>
+        <div id="dr-reg-slot"></div>
         </div>
-        <div class="dm-wide dm-diary-metrics" id="dr-clinical-metrics"></div>`;
+        </div>`;
       setTimeout(()=>{
-        // Métricas clínicas del médico — incluye bloque técnico de regularidad
+        // Métricas clínicas del médico — la función devuelve DOS cajas
+        // (clínicas + regularidad técnica); la de regularidad se muda a la
+        // columna derecha, debajo del actograma, para balancear las alturas.
         const dme=document.getElementById('dr-clinical-metrics');
-        if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
+        if(dme){
+          dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
+          const _regSlot=document.getElementById('dr-reg-slot');
+          if(_regSlot && dme.children.length>1) _regSlot.appendChild(dme.children[1]);
+        }
+        // Progresión semanal (movida desde Resumen)
+        const _wpEl=document.getElementById('dr-weekly-prog');
+        if(_wpEl){
+          const _wpHtml=renderWeeklyProgressionHtml(subj);
+          if(_wpHtml){ _wpEl.innerHTML=_wpHtml; _wpEl.style.display=''; }
+        }
         // Resumen de hábitos de 14 días en una sola línea arriba del actograma
         // (las capas de colores en el gráfico ya muestran el detalle noche a
         // noche; esto es solo el conteo rápido).
@@ -10093,7 +10055,7 @@ async function showDrPTab_(tab){
                         const dur=r.screens/60;
                         const x1=xS.getPixelForValue(r.bedOffset-dur), x2=xS.getPixelForValue(r.bedOffset);
                         const yBot=yMid+barH/2-5;
-                        cx.fillStyle=r.screens>60?'#ea580c':'#7c3aed';
+                        cx.fillStyle='#7c3aed';
                         cx.fillRect(Math.min(x1,x2), yBot, Math.max(3,Math.abs(x2-x1)), 3);
                       } else {
                         put('📱', r.screens>60);
@@ -11898,6 +11860,54 @@ function calcSleepScore(entries){
     color: total>=85?'#34C759':total>=70?'#1a4a3a':total>=55?'#FF9500':total>=40?'#FF6B00':'#FF3B30',
     bg:    total>=85?'#f0fdf4':total>=70?'#eef8f5':total>=55?'#FFF9EC':total>=40?'#FFF3E0':'#fef2f2',
   };
+}
+
+// PROGRESIÓN SEMANAL — bloques de 7 días hacia atrás (hasta 12 semanas).
+// Vivía en Resumen; ahora se muestra en Diario de sueño junto al score.
+function renderWeeklyProgressionHtml(allDiary){
+  try{
+    if(!allDiary || allDiary.length < 7) return '';
+    const blocks = [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    for(let w = 0; w < 12; w++){
+      const end = new Date(today); end.setDate(end.getDate() - 7*w);
+      const start = new Date(end); start.setDate(start.getDate() - 7);
+      const inBlock = allDiary.filter(e => {
+        const d = new Date(e.diary_date+'T00:00:00');
+        return d >= start && d < end;
+      });
+      if(inBlock.length >= 3){
+        const wsc = calcSleepScore(inBlock);
+        blocks.push({ w, start, end, n: inBlock.length, score: wsc?wsc.total:null, color: wsc?wsc.color:'#999' });
+      }
+    }
+    if(blocks.length < 2) return '';
+    blocks.reverse();
+    const barsHtml = blocks.map((b,i)=>{
+      const h = Math.max(8, Math.round((b.score||0) / 100 * 60));
+      const prev = i>0 ? blocks[i-1] : null;
+      const delta = prev ? (b.score - prev.score) : null;
+      const tooltipText = b.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) + '–' +
+        new Date(b.end.getTime()-86400000).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) +
+        ' · ' + b.score + '/100 · ' + b.n + ' noches' +
+        (delta!==null ? ' · ' + (delta>=0?'+':'') + delta + ' vs anterior' : '');
+      const isLast = i === blocks.length - 1;
+      const weekLbl = isLast ? 'Esta sem.' : ('−' + (blocks.length - 1 - i) + ' sem.');
+      return '<div title="'+tooltipText.replace(/"/g,'&quot;')+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:28px;cursor:help">'+
+        '<div style="font-size:10px;font-weight:600;color:'+b.color+'">'+b.score+'</div>'+
+        '<div style="width:16px;height:'+h+'px;background:'+b.color+';border-radius:3px 3px 0 0;border:'+(isLast?'2px solid #C8A96E':'none')+'"></div>'+
+        '<div style="font-size:9px;color:#666;white-space:nowrap">'+weekLbl+'</div>'+
+      '</div>';
+    }).join('');
+    const bestBlock = blocks.reduce((a,b)=>(!a||b.score>a.score)?b:a, null);
+    const worstBlock = blocks.reduce((a,b)=>(!a||b.score<a.score)?b:a, null);
+    return '<div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:10px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
+      '<div style="display:flex;align-items:flex-end;gap:4px;height:78px;margin-bottom:8px">'+barsHtml+'</div>'+
+      '<div style="font-size:11px;color:#444;line-height:1.5">'+
+        '<div>📈 <strong>Mejor semana</strong>: '+bestBlock.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' · <span style="color:'+bestBlock.color+';font-weight:600">'+bestBlock.score+'/100</span></div>'+
+        (worstBlock!==bestBlock?'<div>📉 <strong>Peor semana</strong>: '+worstBlock.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' · <span style="color:'+worstBlock.color+';font-weight:600">'+worstBlock.score+'/100</span></div>':'')+
+      '</div>';
+  }catch(_wp){ return ''; }
 }
 
 function renderSleepScorePanel(entries){
