@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod3">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod4">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1277,7 +1277,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod3';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy75-mod4';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -2139,7 +2139,18 @@ const SCALES=[
 
 function killChart(k){try{S.charts[k].destroy();}catch(e){}S.charts[k]=null;}
 function toggleDrPanelCollapse(){
-  document.body.classList.toggle('dr-panel-open');
+  const collapsed = document.body.classList.toggle('dr-panel-collapsed');
+  try{ localStorage.setItem('dm_dr_panel_collapsed', collapsed?'1':'0'); }catch(_){}
+  const _chev=document.getElementById('dr-panel-chevron'); if(_chev) _chev.innerHTML = collapsed?'&#9662; más':'&#9662; menos';
+}
+function applyDrPanelCollapsePref(){
+  // Por default va EXPANDIDO (el médico recién está conociendo esos botones).
+  // Si alguna vez lo colapsó a mano, recordamos esa elección la próxima vez.
+  try{
+    const collapsed = localStorage.getItem('dm_dr_panel_collapsed')==='1';
+    document.body.classList.toggle('dr-panel-collapsed', collapsed);
+    const _chev=document.getElementById('dr-panel-chevron'); if(_chev) _chev.innerHTML = collapsed?'&#9662; más':'&#9662; menos';
+  }catch(_){}
 }
 function toggleActoLayer(name, btnEl){
   const ch=S.charts['dr-acto']; if(!ch) return;
@@ -2384,6 +2395,7 @@ function showScreen(id){
     const _twoPanel = _isDr && (id === 'doctor-home' || id === 'doctor-patient');
     document.body.classList.toggle('dr-desktop', !!_twoPanel);
     document.body.classList.toggle('dr-has-patient', _isDr && id === 'doctor-patient');
+    if(_twoPanel && typeof applyDrPanelCollapsePref==='function') applyDrPanelCollapsePref();
     // Panel admin: no necesita el split lista+detalle, pero tampoco debería
     // quedar atrapado en el ancho de celular (430px) en una pantalla grande.
     document.body.classList.toggle('dr-wide', _isDr && id === 'admin');
@@ -9097,10 +9109,10 @@ async function linkPatient(){
 // Persistencia: columna JSONB patients.tags = {added:[], dismissed:[]}
 // (la política patients_doctor ALL ya autoriza el UPDATE del médico).
 const PATHOLOGY_TAGS = {
-  sahos:      { label:'SAHOS',      color:'#3b82f6' },
-  insomnio:   { label:'Insomnio',   color:'#ef4444' },
-  spi:        { label:'SPI',        color:'#a855f7' },
-  parasomnia: { label:'Parasomnia', color:'#eab308' }
+  sahos:      { label:'SAHOS',      color:'#3b82f6', textOn:'#ffffff' },
+  insomnio:   { label:'Insomnio',   color:'#ef4444', textOn:'#ffffff' },
+  spi:        { label:'SPI',        color:'#a855f7', textOn:'#ffffff' },
+  parasomnia: { label:'Parasomnia', color:'#eab308', textOn:'#3a2c00' }
 };
 // Umbrales de detección automática (últimas evaluaciones):
 function computeAutoTags(recs){
@@ -9144,10 +9156,15 @@ function renderTagHeaderPills(u, st){
   }).join('') : '';
 }
 function renderTagsCardBody(st){
+  // Contraste fuerte entre activa/inactiva: la activa es una pastilla SÓLIDA
+  // con tilde (antes era apenas un 11% de opacidad, costaba distinguir cuál
+  // estaba marcada de un vistazo).
   return Object.keys(PATHOLOGY_TAGS).map(id=>{
     const on=st.resolved.includes(id); const c=PATHOLOGY_TAGS[id];
     const isAuto=st.auto.includes(id);
-    return '<span class="dm-tagtoggle" onclick="toggleDrTag(\''+id+'\')" title="'+(isAuto?'Detectada automáticamente por las escalas — click para descartar':'Click para '+(on?'quitar':'agregar'))+'" style="border-color:'+c.color+';'+(on?('background:'+c.color+'1c;color:'+c.color):'background:transparent;color:rgba(244,239,229,0.4)')+'">'+(on?'● ':'○ ')+c.label+(isAuto&&on?' <span style="opacity:0.6;font-weight:400">· auto</span>':'')+'</span>';
+    const activeStyle='background:'+c.color+';color:'+c.textOn+';border-color:'+c.color+';box-shadow:0 1px 4px '+c.color+'55';
+    const inactiveStyle='background:transparent;color:rgba(244,239,229,0.45);border-color:rgba(244,239,229,0.25)';
+    return '<span class="dm-tagtoggle" onclick="toggleDrTag(\''+id+'\')" title="'+(isAuto?'Detectada automáticamente por las escalas — click para descartar':'Click para '+(on?'quitar':'agregar'))+'" style="'+(on?activeStyle:inactiveStyle)+'">'+(on?'✓ ':'+ ')+c.label+(isAuto&&on?' <span style="opacity:0.75;font-weight:400;font-size:10px">· auto</span>':'')+'</span>';
   }).join('') +
   '<div style="font-size:11px;color:rgba(244,239,229,0.5);margin-top:10px;line-height:1.4">Las marcadas "auto" salen de SAHOS (STOP-BANG≥5), Insomnio (ISI≥15) y SPI (IRLS≥15). Click para agregar o descartar cualquiera manualmente.</div>';
 }
@@ -9453,12 +9470,9 @@ async function showDrPTab_(tab){
       // heroHtml (foto+nombre+email grandes) se eliminó: esos mismos datos ya
       // están arriba en el header compacto de la ficha (avatar chico + nombre +
       // email + tags), no hace falta repetirlos acá abajo.
-      const chipsHtml = '<div class="dm-grid3 dm-wide">'+
-        '<div class="dm-stat">'+
-          '<div style="font-size:10px;color:rgba(244,239,229,0.55);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px">Edad</div>'+
-          '<div style="font-size:18px;font-weight:500;color:#F4EFE5">'+(age||'—')+'</div>'+
-          '<div style="font-size:9px;color:rgba(244,239,229,0.5);margin-top:1px">años · '+sexAbbr+'</div>'+
-        '</div>'+
+      // "Edad" ya no va acá: se muestra arriba, en el header compacto de la
+      // ficha (junto al nombre), no hace falta repetirla.
+      const chipsHtml = '<div class="dm-grid3 dm-wide" style="grid-template-columns:1fr 1fr">'+
         '<div class="dm-stat">'+
           '<div style="font-size:10px;color:rgba(244,239,229,0.55);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px">IMC</div>'+
           '<div style="font-size:18px;font-weight:500;color:#F4EFE5">'+(imc||'—')+'</div>'+
@@ -9609,8 +9623,9 @@ async function showDrPTab_(tab){
             (_screenAvg!=null?_row('📱','Pantallas antes de dormir (prom.)', _screenAvg+' min', _screenAvg>60):'');
         }
       }catch(_hdErr){ /* deja el mensaje "sin datos" */ }
-      cont.innerHTML = chipsHtml +
+      cont.innerHTML =
         card('🏷️','Etiquetas clínicas', '<div id="drp-tags-card-body">'+tagsCardBody+'</div>', true) +
+        chipsHtml +
         card('🆔','Datos personales', datosBody +
           '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Ocupación</div>'+ocupacionBody+
           '<button onclick="openDoctorEditPatient()" style="width:100%;margin-top:10px;padding:9px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.08);color:#7EC8A4;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Editar datos del paciente</button>') +
@@ -9661,7 +9676,8 @@ async function showDrPTab_(tab){
         }
       }catch(_wkErr){}
       cont.innerHTML=`
-        <div class="dm-card dm-light">
+        <div class="dm-diary-top">
+        <div class="dm-card dm-light dm-diary-score">
           <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center">
             <span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>
             <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:${subj7.length>=3?'#e8f0eb':'#e5e7eb'};color:${subj7.length>=3?'#1a4a3a':'#9ca3af'}">7 días</button>
@@ -9671,60 +9687,51 @@ async function showDrPTab_(tab){
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries)}</div>
           ${weekCompareHtml}
         </div>
-        <div class="dm-card dm-light">
+        <div class="dm-card dm-light dm-diary-pillars">
           <div class="dm-card-title">🧩 Pilares del sueño</div>
           <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
           <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
         </div>
-        <div class="dm-wide" id="dr-clinical-metrics"></div>
-        <div class="dm-card dm-light dm-wide dm-acto-layout">
-          <div class="dm-acto-main">
-            <div class="dm-card-title">🌙 Actograma — horarios de sueño</div>
-            <p style="font-size:12px;color:var(--ink3);margin-bottom:6px">La medianoche queda al centro. Cada fila es un día.</p>
-            <div class="dm-layer-bar">
-              <span class="dm-layer-btn on" data-layer="exercise" onclick="toggleActoLayer('exercise',this)">🏃 Ejercicio</span>
-              <span class="dm-layer-btn on" data-layer="caffeine" onclick="toggleActoLayer('caffeine',this)">☕ Cafeína</span>
-              <span class="dm-layer-btn on" data-layer="alcohol" onclick="toggleActoLayer('alcohol',this)">🍷 Alcohol</span>
-              <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
-            </div>
-            <div style="overflow-x:auto;padding-bottom:8px">
-              <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
-            </div>
-            <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 4px;flex-wrap:wrap">
-              <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
-              <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
-              <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
-              <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
-              <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
-            </div>
+        <div class="dm-card dm-light dm-diary-acto">
+          <div class="dm-card-title">🌙 Actograma — horarios de sueño</div>
+          <p style="font-size:12px;color:var(--ink3);margin-bottom:6px">La medianoche queda al centro. Cada fila es un día.</p>
+          <div class="dm-layer-bar">
+            <span class="dm-layer-btn on" data-layer="exercise" onclick="toggleActoLayer('exercise',this)">🏃 Ejercicio</span>
+            <span class="dm-layer-btn on" data-layer="caffeine" onclick="toggleActoLayer('caffeine',this)">☕ Cafeína</span>
+            <span class="dm-layer-btn on" data-layer="alcohol" onclick="toggleActoLayer('alcohol',this)">🍷 Alcohol</span>
+            <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
           </div>
-          <div class="dm-acto-side">
-            <div class="dm-card-title">📔 Hábitos · 14 días</div>
-            <div id="dr-habit-summary" style="font-size:12px;color:var(--ink2);line-height:2.1">Cargando…</div>
+          <div id="dr-habit-summary" style="font-size:11px;color:var(--ink3);margin-bottom:6px">Cargando hábitos…</div>
+          <div style="overflow-x:auto;padding-bottom:8px">
+            <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
           </div>
-        </div>`;
+          <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 4px;flex-wrap:wrap">
+            <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
+            <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
+            <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
+            <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
+          </div>
+        </div>
+        </div>
+        <div class="dm-wide dm-diary-metrics" id="dr-clinical-metrics"></div>`;
       setTimeout(()=>{
         // Métricas clínicas del médico — incluye bloque técnico de regularidad
         const dme=document.getElementById('dr-clinical-metrics');
         if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
-        // Panel lateral del actograma: mismo resumen de hábitos de 14 días que
-        // se ve en Perfil, para que el médico lo tenga también acá al lado de
-        // los horarios de sueño (subj está ordenado ascendente por fecha).
+        // Resumen de hábitos de 14 días en una sola línea arriba del actograma
+        // (las capas de colores en el gráfico ya muestran el detalle noche a
+        // noche; esto es solo el conteo rápido).
         try{
           const dhs=document.getElementById('dr-habit-summary');
           if(dhs){
             const _l14=subj.slice(-14);
-            if(!_l14.length){ dhs.innerHTML='Sin datos de diario aún'; }
+            if(!_l14.length){ dhs.textContent='Sin datos de hábitos aún'; }
             else{
               const _exDays=_l14.filter(e=>e.exercise_mins>0).length;
               const _caffDays=_l14.filter(e=>e.coffee_cups>0).length;
               const _alcDays=_l14.filter(e=>e.alcohol_drinks>0).length;
-              const _scrArr=_l14.filter(e=>e.screen_minutes!=null);
-              const _scrAvg=_scrArr.length?Math.round(_scrArr.reduce((a,b)=>a+b.screen_minutes,0)/_scrArr.length):null;
-              dhs.innerHTML='🏃 Con actividad: '+_exDays+'/'+_l14.length+'<br>'+
-                '☕ Con cafeína: '+_caffDays+'/'+_l14.length+'<br>'+
-                '🍷 Con alcohol: '+_alcDays+'/'+_l14.length+
-                (_scrAvg!=null?'<br>📱 Pantallas prom: '+_scrAvg+' min':'');
+              dhs.textContent='Últimos '+_l14.length+' días: 🏃 '+_exDays+' con actividad · ☕ '+_caffDays+' con cafeína · 🍷 '+_alcDays+' con alcohol';
             }
           }
         }catch(_habitSideErr){}

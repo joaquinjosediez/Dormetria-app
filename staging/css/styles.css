@@ -124,29 +124,38 @@
 .dm-layer-btn.on{ background:rgba(26,74,58,0.08);border-color:#1a4a3a;color:#1a4a3a; }
 
 /* Resumen en escritorio: hallazgos/alertas/evaluaciones en 2 columnas para
-   no dejar tanto aire — en mobile siguen apiladas en 1 columna. */
+   no dejar tanto aire — en mobile siguen apiladas en 1 columna. Usamos
+   CSS multi-column, no grid: con grid, una cantidad IMPAR de tarjetas deja
+   la última sola con un hueco vacío al lado (exactamente lo que pasaba con
+   3 alertas). Con column-count el contenido se reparte solo. */
 .dm-grid2{ display:block; }
 .dm-grid2 > *{ margin-bottom:8px; }
 @media (min-width:900px){
   body.dr-desktop .dm-grid2{
-    display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;align-items:start;
+    display:block;column-count:2;column-gap:10px;
   }
-  body.dr-desktop .dm-grid2 > *{ margin-bottom:0; }
-  body.dr-desktop .dm-grid2 .sc-card{ margin-bottom:0 !important; }
+  body.dr-desktop .dm-grid2 > *{ margin-bottom:8px !important;break-inside:avoid; }
+  body.dr-desktop .dm-grid2 .sc-card{ margin-bottom:8px !important;break-inside:avoid; }
 }
 
-/* Actograma + panel lateral de hábitos: el actograma solo, a ancho completo,
-   dejaba mucho aire horizontal vacío — le sumamos un panel angosto al lado
-   con el resumen de hábitos para aprovechar ese espacio. */
-.dm-acto-layout{ display:block; }
-.dm-acto-side{ margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.08); }
+/* Diario de sueño: Score+evolución y Pilares apilados a la izquierda, el
+   Actograma ocupando esa misma altura total a la derecha (según boceto).
+   Abajo, a ancho completo, Métricas clínicas — que renderClinicalMetricsHtml
+   ya devuelve como 2 cajas (clínicas + regularidad) para audience 'doctor',
+   así que alcanza con ponerlas en grid de 2 columnas para que queden lado
+   a lado en vez de una debajo de la otra. */
+.dm-diary-top{ display:block; }
 @media (min-width:900px){
-  body.dr-desktop .dm-acto-layout{
-    display:grid;grid-template-columns:2.2fr 1fr;gap:16px;align-items:start;
+  body.dr-desktop .dm-diary-top{
+    display:grid;grid-template-columns:1fr 1.15fr;grid-template-rows:auto auto;gap:12px;margin-bottom:12px;
   }
-  body.dr-desktop .dm-acto-side{
-    margin-top:0;padding-top:0;padding-left:16px;border-top:none;border-left:1px solid rgba(0,0,0,0.08);
+  body.dr-desktop .dm-diary-score{ grid-column:1;grid-row:1;margin-bottom:0 !important; }
+  body.dr-desktop .dm-diary-pillars{ grid-column:1;grid-row:2;margin-bottom:0 !important; }
+  body.dr-desktop .dm-diary-acto{ grid-column:2;grid-row:1 / 3;margin-bottom:0 !important; }
+  body.dr-desktop .dm-diary-metrics{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;
   }
+  body.dr-desktop .dm-diary-metrics > div{ margin-top:0 !important; }
 }
 
 /* Comparativa de una escala: valor actual + anterior en la misma tarjeta */
@@ -196,9 +205,12 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
     display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;
     border-bottom:1px solid rgba(126,200,164,0.12);background:#0f2820;flex-shrink:0;
   }
-  body.dr-desktop:not(.dr-panel-open) #dr-panel-hero{ display:none; }
-  body.dr-desktop.dr-panel-open #dr-panel-hero{ max-height:60vh;overflow-y:auto; }
-  body.dr-desktop.dr-panel-open .dm-panel-chevron{ transform:rotate(180deg); }
+  /* Expandido por default: recién cuando el médico lo colapsa a mano
+     (toggleDrPanelCollapse) se le suma dr-panel-collapsed al body, y esa
+     elección se recuerda la próxima vez (localStorage). */
+  body.dr-desktop.dr-panel-collapsed #dr-panel-hero{ display:none; }
+  body.dr-desktop:not(.dr-panel-collapsed) #dr-panel-hero{ max-height:60vh;overflow-y:auto; }
+  body.dr-desktop:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 
   /* Panel admin: mismo criterio de "no quedar en 430px" que el resto del
      escritorio profesional, pero SIN el grid de 2 columnas (no tiene lista +
@@ -306,14 +318,20 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   body.dr-desktop #drp-content[data-tab="summary"] .sc-card{
     margin-bottom:8px !important;
   }
-  /* Perfil: ahora que el nombre/foto grandes ya no están (viven en el header
-     compacto de arriba), achicamos paddings/fuentes para que todo entre sin
-     scroll en una laptop estándar. */
+  /* Perfil: 3 columnas en vez de 2, usando CSS multi-column en vez de grid.
+     Con grid, 4-5 tarjetas de altura pareja en 3 columnas siempre dejan
+     huecos en la última fila; con column-count el contenido se reparte solo
+     según altura real, sin celdas vacías. Los bloques "anchos" (etiquetas,
+     cronotipo, la fila de stats) usan column-span:all para cruzar las 3. */
   body.dr-desktop #drp-content[data-tab="profile"]{
-    gap:10px 14px;
+    display:block !important;
+    column-count:3;column-gap:14px;
   }
-  body.dr-desktop #drp-content[data-tab="profile"] .dm-card{
-    padding:10px 12px;
+  body.dr-desktop #drp-content[data-tab="profile"] > .dm-wide{
+    column-span:all;margin-bottom:14px !important;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] > .dm-card{
+    break-inside:avoid;margin-bottom:14px !important;padding:10px 12px;
   }
   body.dr-desktop #drp-content[data-tab="profile"] .dm-card-title{
     margin-bottom:6px;font-size:10px;
