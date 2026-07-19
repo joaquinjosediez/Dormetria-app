@@ -154,12 +154,15 @@
    a lado en vez de una debajo de la otra. */
 .dm-diary-top{ display:block; }
 @media (min-width:900px){
+  /* align-items:start + wrapper .dm-diary-left: las tarjetas miden lo que
+     mide su contenido (antes las filas del grid se estiraban a la altura del
+     actograma y el blanco sobrante quedaba ADENTRO de Score y Pilares). */
   body.dr-desktop .dm-diary-top{
-    display:grid;grid-template-columns:1fr 1.4fr;grid-template-rows:auto auto;gap:12px;margin-bottom:12px;
+    display:grid;grid-template-columns:1fr 1.15fr;gap:12px;margin-bottom:12px;align-items:start;
   }
-  body.dr-desktop .dm-diary-score{ grid-column:1;grid-row:1;margin-bottom:0 !important; }
-  body.dr-desktop .dm-diary-pillars{ grid-column:1;grid-row:2;margin-bottom:0 !important; }
-  body.dr-desktop .dm-diary-acto{ grid-column:2;grid-row:1 / 3;margin-bottom:0 !important; }
+  body.dr-desktop .dm-diary-left{ display:flex;flex-direction:column;gap:12px;min-width:0; }
+  body.dr-desktop .dm-diary-left .dm-card{ margin-bottom:0 !important; }
+  body.dr-desktop .dm-diary-acto{ margin-bottom:0 !important; }
   body.dr-desktop .dm-diary-metrics{
     display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;
   }
@@ -677,6 +680,13 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   color:var(--label-2);background:none;font-family:var(--font);white-space:nowrap;
 }
 .tab.active{color:#1a4a3a;border-bottom-color:#1a4a3a;}
+@media (min-width:900px){
+  /* Ficha del paciente: las pestañas reparten todo el ancho disponible
+     en vez de amontonarse a la izquierda. */
+  body.dr-desktop #screen-doctor-patient .tab-bar .tab{
+    flex:1;text-align:center;padding:12px 8px;
+  }
+}
 
 /* ── PATIENT ROW ── */
 .pat-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:0.5px solid var(--sep);cursor:pointer;}
