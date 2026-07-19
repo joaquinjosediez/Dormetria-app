@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod2">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod3">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -955,7 +955,15 @@
     <div style="text-align:center;flex:1"><div data-dm-logo data-dm-h="22" data-dm-fill="#fff" style="display:inline-block;line-height:0"></div><div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px" id="dr-topbar-sub">Medicina del Sueño</div></div>
     <button class="topbar-btn" onclick="doLogout()" style="color:rgba(255,200,200,0.9)">Salir</button>
   </div>
-  <div class="hero">
+  <div class="dm-panel-compact" id="dr-panel-compact" onclick="toggleDrPanelCollapse()">
+    <div class="dm-panel-compact-avatar" id="dr-panel-avatar">DR</div>
+    <div style="flex:1;min-width:0">
+      <div class="dm-panel-compact-name" id="dr-panel-compact-name">Panel profesional</div>
+      <div class="dm-panel-compact-sub" id="dr-panel-compact-sub">—</div>
+    </div>
+    <span class="dm-panel-chevron" id="dr-panel-chevron">&#9662; más</span>
+  </div>
+  <div class="hero" id="dr-panel-hero">
     <div class="hero-label" id="dr-panel-label">Panel profesional</div>
     <div class="hero-name" id="dr-name" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
     <div class="hero-meta" id="dr-meta">—</div>
@@ -1047,16 +1055,22 @@
 <div id="screen-doctor-patient" class="screen">
   <div class="topbar">
     <button class="topbar-btn" onclick="showScreen('doctor-home')">← Volver</button>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0" id="drp-name">Paciente</div><div style="font-size:11px;color:var(--g200)" id="drp-sub"></div></div>
+    <div class="dm-drp-header">
+      <div class="dm-drp-avatar" id="drp-avatar" style="display:none"></div>
+      <div class="dm-drp-name" id="drp-name">Paciente</div>
+      <div class="dm-drp-email" id="drp-sub"></div>
+      <div class="dm-drp-tags" id="drp-tagbar"></div>
+      <div class="dm-drp-meta" id="drp-agesex"></div>
+    </div>
     <button class="topbar-btn" onclick="exportDoctorPDF()">↓ PDF</button>
   </div>
   <div class="tab-bar">
     <button class="tab active" onclick="showDrPTab('profile',this)">Perfil</button>
     <button class="tab" onclick="showDrPTab('summary',this)">Resumen</button>
-    <button class="tab" onclick="showDrPTab('notes',this)">📝 Notas</button>
     <button class="tab" onclick="showDrPTab('diary',this)">Diario sueño</button>
-    <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
     <button class="tab" onclick="showDrPTab('docs',this)">Estudios</button>
+    <button class="tab" onclick="showDrPTab('notes',this)">📝 Notas</button>
+    <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
     <button class="tab" onclick="showDrPTab('suggest',this)">Sugerir escalas</button>
     <button class="tab" onclick="showDrPTab('edumat',this)">📚 Material</button>
     <button class="tab" onclick="showDrPTab('history',this)">Historial</button>
@@ -1263,7 +1277,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod2';  // versión visible en pantalla "Más" — actualizar en cada release
+const APP_VERSION='hoy75-mod3';  // versión visible en pantalla "Más" — actualizar en cada release
 
 // ─── Wordmark "Dormetria" reusable (paths del logo SVG real, mismo del login) ──
 const _DM_LOGO_PATHS = '<path d="M145 74 L 139 76 L 142 75 L 152 75 L 159 77 L 166 81 L 175 90 L 180 99 L 182 106 L 182 121 L 181 122 L 181 125 L 175 137 L 163 148 L 156 151 L 153 151 L 152 152 L 138 152 L 130 149 L 123 144 L 132 151 L 141 155 L 145 155 L 146 156 L 161 156 L 174 151 L 180 147 L 188 138 L 194 125 L 195 109 L 190 94 L 186 88 L 177 80 L 163 74 L 156 74 L 155 73 Z" fill-rule="evenodd"/>'+
@@ -2124,6 +2138,9 @@ const SCALES=[
 ];
 
 function killChart(k){try{S.charts[k].destroy();}catch(e){}S.charts[k]=null;}
+function toggleDrPanelCollapse(){
+  document.body.classList.toggle('dr-panel-open');
+}
 function toggleActoLayer(name, btnEl){
   const ch=S.charts['dr-acto']; if(!ch) return;
   const cv=ch.canvas; cv._layers = cv._layers || {};
@@ -2367,6 +2384,9 @@ function showScreen(id){
     const _twoPanel = _isDr && (id === 'doctor-home' || id === 'doctor-patient');
     document.body.classList.toggle('dr-desktop', !!_twoPanel);
     document.body.classList.toggle('dr-has-patient', _isDr && id === 'doctor-patient');
+    // Panel admin: no necesita el split lista+detalle, pero tampoco debería
+    // quedar atrapado en el ancho de celular (430px) en una pantalla grande.
+    document.body.classList.toggle('dr-wide', _isDr && id === 'admin');
   }catch(_){}
   // Reset login overlay styling if it was used as an overlay
   const _lg=document.getElementById('screen-login');
@@ -8589,6 +8609,12 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
   document.getElementById('dr-name').textContent=_drTitle+' '+d.name+(d.lname?' '+d.lname:'');const specLabels={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General',other_health:'Profesional de salud'};
   const specLabel=specLabels[d.specialty]||'Panel profesional';
   document.getElementById('dr-meta').textContent=(d.mat?d.mat+' · ':'')+specLabel+' · '+APP_VERSION;
+  // Espejo en la fila compacta del sidebar (colapsada por default en escritorio)
+  try{
+    const _cn=document.getElementById('dr-panel-compact-name'); if(_cn) _cn.textContent=_drTitle+' '+d.name+(d.lname?' '+d.lname:'');
+    const _cs=document.getElementById('dr-panel-compact-sub'); if(_cs) _cs.textContent=specLabel;
+    const _ca=document.getElementById('dr-panel-avatar'); if(_ca) _ca.textContent=((d.name||'?')[0]||'?').toUpperCase()+((d.lname||'')[0]||'').toUpperCase();
+  }catch(_panelMirrorErr){}
   if(checkAdminAccess()){
     const ab=document.getElementById('admin-btn');if(ab)ab.style.display='inline-flex';
     const asb=document.getElementById('admin-setup-btn');if(asb)asb.style.display='inline-flex';
@@ -9106,11 +9132,9 @@ async function fetchPatientTagRecs(email){
   return _tagRecsCache[email];
 }
 function renderTagHeaderPills(u, st){
-  const host=document.getElementById('drp-sub'); if(!host) return;
-  let bar=document.getElementById('drp-tagbar');
-  if(!bar){ bar=document.createElement('div'); bar.id='drp-tagbar';
-    bar.style.cssText='display:flex;gap:5px;flex-wrap:wrap;margin-top:5px';
-    host.parentNode.insertBefore(bar, host.nextSibling); }
+  // El header ahora es una fila fija en el HTML (#drp-tagbar), no algo que
+  // esta función crea a mano — solo la rellena.
+  const bar=document.getElementById('drp-tagbar'); if(!bar) return;
   // Solo lectura acá — es un lugar de encabezado angosto. Editar vive en la
   // tarjeta "Etiquetas clínicas" de la pestaña Perfil, donde hay espacio para
   // explicar cuáles son automáticas y cuáles cargó el profesional a mano.
@@ -9213,15 +9237,25 @@ async function viewPatient(email){
   S.viewData=u;
   const _drpname=document.getElementById('drp-name');
   const _drpsub=document.getElementById('drp-sub');
-  if(_drpname){
+  const _drpAvatar=document.getElementById('drp-avatar');
+  const _drpAgeSex=document.getElementById('drp-agesex');
+  if(_drpAvatar){
     const _initials=((u.name||'?')[0]+(u.lname||'')[0]||'').toUpperCase();
-    const _photoHtml=u.photo_url
-      ?'<img src="'+u.photo_url+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;margin-right:8px;border:2px solid rgba(255,255,255,0.3);vertical-align:middle">'
-      :`<div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:600;margin-right:8px;vertical-align:middle;flex-shrink:0">${_initials}</div>`;
-    _drpname.style.display='flex';_drpname.style.alignItems='center';
-    _drpname.innerHTML=_photoHtml+'<span>'+(u.name||u.email.split('@')[0])+' '+(u.lname||'')+'</span>';
+    _drpAvatar.style.display='flex';
+    _drpAvatar.innerHTML = u.photo_url
+      ? '<img src="'+u.photo_url+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'
+      : _initials;
   }
+  if(_drpname) _drpname.textContent = (u.name||u.email.split('@')[0])+' '+(u.lname||'');
   if(_drpsub) _drpsub.textContent=u.email+(u._placeholder?' (datos pendientes)':'');
+  if(_drpAgeSex){
+    try{
+      const _dob=u.dob?new Date(u.dob):null;
+      const _age=_dob?Math.floor((new Date()-_dob)/31557600000):null;
+      const _sexAbbr=u.sex==='Masculino'?'M':u.sex==='Femenino'?'F':'';
+      _drpAgeSex.textContent = (_age!=null||_sexAbbr) ? [(_age!=null?_age+'a':null),_sexAbbr].filter(Boolean).join(' · ') : '';
+    }catch(_ageErr){ _drpAgeSex.textContent=''; }
+  }
   showDrPTab_('profile');
 }
 function showDrPTab(tab,el){document.querySelectorAll('#screen-doctor-patient .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDrPTab_(tab);}
@@ -9361,8 +9395,8 @@ async function showDrPTab_(tab){
         const hasMeds=subjLast14.some(e=>e.medications&&e.medications!=='[]'&&e.medications!=='');
         if(hasMeds) kf.push('<div style="background:#eff6ff;border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:13px;color:#1e40af">💊 <strong>Medicación para dormir registrada</strong></div>');
       }
-      const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div>'+kf.join(''):'';
-      const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div>'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'<span style="float:right;font-size:11px;opacity:0.75">'+(a.created_at?new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'')+'</span></div>';}).join(''):'');
+      const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div><div class="dm-grid2">'+kf.join('')+'</div>':'';
+      const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div><div class="dm-grid2">'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'<span style="float:right;font-size:11px;opacity:0.75">'+(a.created_at?new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'')+'</span></div>';}).join('')+'</div>':'');
       const latest=SCALES.filter(sc=>isScaleVisibleForProfile(sc, S.viewData)).map(sc=>{const scR=(recs||[]).filter(r=>r.scale_id===sc.id);return scR.length?{sc,r:scR[scR.length-1]}:null;}).filter(Boolean);
       // Build a natural-language summary
       const summaryParts=[];
@@ -9389,7 +9423,7 @@ async function showDrPTab_(tab){
         '<div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:6px">Copia datos, escalas, diario y cronotipo en texto plano — pegalo en tu historia clínica</div>' +
       '</div>';
 
-      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div>'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join(''):'<div class="empty-state">Sin evaluaciones aún</div>')+copyAllBtn;
+      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div><div class="dm-grid2">'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join('')+'</div>':'<div class="empty-state">Sin evaluaciones aún</div>')+copyAllBtn;
     }else if(tab==='profile'){
       const u=S.viewData;
       const dob=u.dob?new Date(u.dob):null;
@@ -9416,11 +9450,9 @@ async function showDrPTab_(tab){
       const photoEl = u.photo_url
         ? '<img src="'+u.photo_url+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #C8A96E">'
         : '<div style="width:96px;height:96px;border-radius:50%;background:#1A4A3A;border:3px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:500;color:#F4EFE5">'+(initials||'?')+'</div>';
-      const heroHtml = '<div class="dm-hero dm-wide" style="background:linear-gradient(180deg,#1A4A3A,#0F2820);padding:22px 20px 20px;text-align:center;border:0.5px solid rgba(126,200,164,0.18)">'+
-        '<div style="display:inline-block;margin-bottom:12px">'+photoEl+'</div>'+
-        '<div style="font-size:18px;font-weight:500;letter-spacing:0.2px;color:#F4EFE5">'+escHtml((u.name||'')+' '+(u.lname||''))+'</div>'+
-        '<div style="font-size:12px;color:rgba(244,239,229,0.6);margin-top:2px">'+escHtml(u.email||'')+'</div>'+
-        '</div>';
+      // heroHtml (foto+nombre+email grandes) se eliminó: esos mismos datos ya
+      // están arriba en el header compacto de la ficha (avatar chico + nombre +
+      // email + tags), no hace falta repetirlos acá abajo.
       const chipsHtml = '<div class="dm-grid3 dm-wide">'+
         '<div class="dm-stat">'+
           '<div style="font-size:10px;color:rgba(244,239,229,0.55);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px">Edad</div>'+
@@ -9577,7 +9609,7 @@ async function showDrPTab_(tab){
             (_screenAvg!=null?_row('📱','Pantallas antes de dormir (prom.)', _screenAvg+' min', _screenAvg>60):'');
         }
       }catch(_hdErr){ /* deja el mensaje "sin datos" */ }
-      cont.innerHTML = heroHtml + chipsHtml +
+      cont.innerHTML = chipsHtml +
         card('🏷️','Etiquetas clínicas', '<div id="drp-tags-card-body">'+tagsCardBody+'</div>', true) +
         card('🆔','Datos personales', datosBody +
           '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Ocupación</div>'+ocupacionBody+
@@ -9604,6 +9636,30 @@ async function showDrPTab_(tab){
       const subj7=subj.filter(e=>new Date(e.diary_date)>=cutoff7dr);
       window._drGraficosSubj=subj;
       const drScoreEntries=subj30.length>=3?subj30:subj;
+      // Evolución 7 días vs 7 anteriores — mismo patrón que la comparación de
+      // 14 vs 14 de Resumen, pero en la ventana corta que sirve para ver
+      // cambios recientes (ajuste de medicación, inicio de TCC-I, etc.).
+      let weekCompareHtml='';
+      try{
+        const _last7=subj.slice(-7), _prev7=subj.slice(-14,-7);
+        if(_last7.length>=3 && _prev7.length>=3){
+          const _scNow=calcSleepScore(_last7), _scPrev=calcSleepScore(_prev7);
+          if(_scNow && _scPrev){
+            const _delta=_scNow.total-_scPrev.total;
+            const _arrow=_delta>=5?'↗':_delta<=-5?'↘':'≈';
+            const _lbl=_delta>=5?'Mejorando':_delta<=-5?'Empeorando':'Estable';
+            const _col=_delta>=5?'#14532d':_delta<=-5?'#9b1c1c':'#666';
+            weekCompareHtml='<div style="background:#F4EFE5;border-radius:12px;padding:10px 14px;margin-top:10px">'+
+              '<div style="font-size:10.5px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:5px">Evolución · últimos 7 días vs 7 anteriores</div>'+
+              '<div style="display:flex;align-items:baseline;gap:10px">'+
+                '<div style="font-size:17px;font-weight:600;color:'+_col+'">'+_arrow+' '+(_delta>=0?'+':'')+_delta+' pts</div>'+
+                '<div style="font-size:12px;color:#444">'+_lbl+'</div>'+
+              '</div>'+
+              '<div style="font-size:11px;color:#666;margin-top:3px">Esta semana: <strong>'+_scNow.total+'</strong> · Anterior: <strong>'+_scPrev.total+'</strong></div>'+
+              '</div>';
+          }
+        }
+      }catch(_wkErr){}
       cont.innerHTML=`
         <div class="dm-card dm-light">
           <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center">
@@ -9613,6 +9669,7 @@ async function showDrPTab_(tab){
             <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>
           </div>
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries)}</div>
+          ${weekCompareHtml}
         </div>
         <div class="dm-card dm-light">
           <div class="dm-card-title">🧩 Pilares del sueño</div>
@@ -9620,31 +9677,57 @@ async function showDrPTab_(tab){
           <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
         </div>
         <div class="dm-wide" id="dr-clinical-metrics"></div>
-        <div class="dm-card dm-light dm-wide">
-          <div class="dm-card-title">🌙 Actograma — horarios de sueño</div>
-          <p style="font-size:12px;color:var(--ink3);margin-bottom:6px">La medianoche queda al centro. Cada fila es un día. A la derecha, capas con lo que el paciente registró ese día — se pueden mostrar u ocultar.</p>
-          <div class="dm-layer-bar">
-            <span class="dm-layer-btn on" data-layer="exercise" onclick="toggleActoLayer('exercise',this)">🏃 Ejercicio</span>
-            <span class="dm-layer-btn on" data-layer="caffeine" onclick="toggleActoLayer('caffeine',this)">☕ Cafeína</span>
-            <span class="dm-layer-btn on" data-layer="alcohol" onclick="toggleActoLayer('alcohol',this)">🍷 Alcohol</span>
-            <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
+        <div class="dm-card dm-light dm-wide dm-acto-layout">
+          <div class="dm-acto-main">
+            <div class="dm-card-title">🌙 Actograma — horarios de sueño</div>
+            <p style="font-size:12px;color:var(--ink3);margin-bottom:6px">La medianoche queda al centro. Cada fila es un día.</p>
+            <div class="dm-layer-bar">
+              <span class="dm-layer-btn on" data-layer="exercise" onclick="toggleActoLayer('exercise',this)">🏃 Ejercicio</span>
+              <span class="dm-layer-btn on" data-layer="caffeine" onclick="toggleActoLayer('caffeine',this)">☕ Cafeína</span>
+              <span class="dm-layer-btn on" data-layer="alcohol" onclick="toggleActoLayer('alcohol',this)">🍷 Alcohol</span>
+              <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
+            </div>
+            <div style="overflow-x:auto;padding-bottom:8px">
+              <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
+            </div>
+            <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 4px;flex-wrap:wrap">
+              <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
+              <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
+              <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
+              <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
+            </div>
           </div>
-          <div style="overflow-x:auto;padding-bottom:8px">
-            <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
-          </div>
-          <div style="display:flex;gap:16px;font-size:11px;color:var(--ink3);margin:6px 0 4px;flex-wrap:wrap">
-            <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
-            <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
-            <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
-            <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
-            <span>🏃 Ejercicio (naranja = tarde en la noche) · ☕ Cafeína (naranja &gt;400mg) · 🍷 Alcohol · 📱 Pantallas (naranja &gt;60min)</span>
+          <div class="dm-acto-side">
+            <div class="dm-card-title">📔 Hábitos · 14 días</div>
+            <div id="dr-habit-summary" style="font-size:12px;color:var(--ink2);line-height:2.1">Cargando…</div>
           </div>
         </div>`;
       setTimeout(()=>{
         // Métricas clínicas del médico — incluye bloque técnico de regularidad
         const dme=document.getElementById('dr-clinical-metrics');
         if(dme) dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
+        // Panel lateral del actograma: mismo resumen de hábitos de 14 días que
+        // se ve en Perfil, para que el médico lo tenga también acá al lado de
+        // los horarios de sueño (subj está ordenado ascendente por fecha).
+        try{
+          const dhs=document.getElementById('dr-habit-summary');
+          if(dhs){
+            const _l14=subj.slice(-14);
+            if(!_l14.length){ dhs.innerHTML='Sin datos de diario aún'; }
+            else{
+              const _exDays=_l14.filter(e=>e.exercise_mins>0).length;
+              const _caffDays=_l14.filter(e=>e.coffee_cups>0).length;
+              const _alcDays=_l14.filter(e=>e.alcohol_drinks>0).length;
+              const _scrArr=_l14.filter(e=>e.screen_minutes!=null);
+              const _scrAvg=_scrArr.length?Math.round(_scrArr.reduce((a,b)=>a+b.screen_minutes,0)/_scrArr.length):null;
+              dhs.innerHTML='🏃 Con actividad: '+_exDays+'/'+_l14.length+'<br>'+
+                '☕ Con cafeína: '+_caffDays+'/'+_l14.length+'<br>'+
+                '🍷 Con alcohol: '+_alcDays+'/'+_l14.length+
+                (_scrAvg!=null?'<br>📱 Pantallas prom: '+_scrAvg+' min':'');
+            }
+          }
+        }catch(_habitSideErr){}
         killChart('dr-acto');killChart('dp-dr');
         // Omitir del actograma las noches sin horarios cargados: generaban filas
         // vacías (p.ej. dos "mar 30-06" en blanco) que confunden la lectura.

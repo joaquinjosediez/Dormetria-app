@@ -123,10 +123,50 @@
 .dm-layer-btn{ cursor:pointer;font-size:11px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.4);background:#fff;transition:all .12s; }
 .dm-layer-btn.on{ background:rgba(26,74,58,0.08);border-color:#1a4a3a;color:#1a4a3a; }
 
+/* Resumen en escritorio: hallazgos/alertas/evaluaciones en 2 columnas para
+   no dejar tanto aire — en mobile siguen apiladas en 1 columna. */
+.dm-grid2{ display:block; }
+.dm-grid2 > *{ margin-bottom:8px; }
+@media (min-width:900px){
+  body.dr-desktop .dm-grid2{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;align-items:start;
+  }
+  body.dr-desktop .dm-grid2 > *{ margin-bottom:0; }
+  body.dr-desktop .dm-grid2 .sc-card{ margin-bottom:0 !important; }
+}
+
+/* Actograma + panel lateral de hábitos: el actograma solo, a ancho completo,
+   dejaba mucho aire horizontal vacío — le sumamos un panel angosto al lado
+   con el resumen de hábitos para aprovechar ese espacio. */
+.dm-acto-layout{ display:block; }
+.dm-acto-side{ margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.08); }
+@media (min-width:900px){
+  body.dr-desktop .dm-acto-layout{
+    display:grid;grid-template-columns:2.2fr 1fr;gap:16px;align-items:start;
+  }
+  body.dr-desktop .dm-acto-side{
+    margin-top:0;padding-top:0;padding-left:16px;border-top:none;border-left:1px solid rgba(0,0,0,0.08);
+  }
+}
+
 /* Comparativa de una escala: valor actual + anterior en la misma tarjeta */
 .dm-compare{ display:flex;align-items:center;gap:14px;margin-top:6px;padding-top:8px;border-top:1px dashed rgba(0,0,0,0.08); }
 .dm-compare .dm-compare-then{ opacity:0.55; }
 .dm-compare .dm-compare-arrow{ font-size:15px; }
+
+/* Header compacto de la ficha de paciente — una sola fila con avatar, nombre,
+   email, tags y edad/sexo, en vez de repetir esos mismos datos otra vez en
+   una tarjeta grande dentro de Perfil. */
+#screen-doctor-patient .topbar{ height:auto;min-height:56px;padding:6px 12px; }
+.dm-drp-header{ display:flex;align-items:center;gap:8px;flex:1;min-width:0;flex-wrap:wrap;padding:2px 0; }
+.dm-drp-avatar{ width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.18);align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0; }
+.dm-drp-name{ font-size:13px;font-weight:600;color:#e8f5f0;white-space:nowrap; }
+.dm-drp-email{ font-size:11px;color:var(--g200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px; }
+.dm-drp-tags{ display:flex;gap:4px;flex-wrap:wrap; }
+.dm-drp-meta{ font-size:10.5px;color:rgba(255,255,255,0.4);white-space:nowrap;margin-left:auto; }
+@media (max-width:899px){
+  .dm-drp-email,.dm-drp-meta{ display:none; }
+}
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;font-family:var(--font);background:var(--bg-primary);color:var(--label);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
@@ -142,8 +182,39 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
    cuando el rol es médico y la pantalla es la lista o el detalle) Y la
    ventana mide ≥900px. En celular el media query no aplica → cero cambios.
    En el lado paciente la clase nunca se agrega → cero cambios. */
-#dr-desktop-placeholder{display:none;}
+/* Fila compacta del Panel profesional — reemplaza el bloque grande de
+   botones (Admin/Cómo se usa/etc.) en el sidebar de escritorio, que le
+   robaba alto fijo a la lista de pacientes. En mobile no se usa: el hero
+   completo sigue siendo la pantalla de entrada normal. */
+.dm-panel-compact{ display:none; }
+.dm-panel-compact-avatar{ width:30px;height:30px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#F4EFE5;font-weight:600;flex-shrink:0; }
+.dm-panel-compact-name{ font-size:12.5px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.dm-panel-compact-sub{ font-size:10px;color:rgba(244,239,229,0.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.dm-panel-chevron{ font-size:10px;color:rgba(244,239,229,0.4);flex-shrink:0;transition:transform .15s; }
 @media (min-width:900px){
+  body.dr-desktop .dm-panel-compact{
+    display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;
+    border-bottom:1px solid rgba(126,200,164,0.12);background:#0f2820;flex-shrink:0;
+  }
+  body.dr-desktop:not(.dr-panel-open) #dr-panel-hero{ display:none; }
+  body.dr-desktop.dr-panel-open #dr-panel-hero{ max-height:60vh;overflow-y:auto; }
+  body.dr-desktop.dr-panel-open .dm-panel-chevron{ transform:rotate(180deg); }
+
+  /* Panel admin: mismo criterio de "no quedar en 430px" que el resto del
+     escritorio profesional, pero SIN el grid de 2 columnas (no tiene lista +
+     detalle, es un solo panel con tabs). */
+  body.dr-wide #app{
+    max-width:none;width:100%;height:100vh;display:block;
+  }
+  body.dr-wide #screen-admin .scroll{
+    max-width:1200px;margin:0 auto;width:100%;
+  }
+  /* No forzamos grid de 2 columnas acá: el contenido de cada tab admin
+     (pendientes, profesionales, estadísticas, vista previa) no lo revisé
+     todavía uno por uno, y romper una tabla o iframe sin verlo es peor que
+     dejarlo en una columna ancha. Si querés esa vista en 2 columnas, la
+     armamos mirando cada tab primero. */
+
   body.dr-desktop #app{
     max-width:none;width:100%;
     display:grid;
@@ -234,6 +305,24 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
   }
   body.dr-desktop #drp-content[data-tab="summary"] .sc-card{
     margin-bottom:8px !important;
+  }
+  /* Perfil: ahora que el nombre/foto grandes ya no están (viven en el header
+     compacto de arriba), achicamos paddings/fuentes para que todo entre sin
+     scroll en una laptop estándar. */
+  body.dr-desktop #drp-content[data-tab="profile"]{
+    gap:10px 14px;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-card{
+    padding:10px 12px;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-card-title{
+    margin-bottom:6px;font-size:10px;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-grid3{
+    gap:8px;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-stat{
+    padding:7px 6px;
   }
 }
 .dark-screen{background:#1a2e23 !important;}
