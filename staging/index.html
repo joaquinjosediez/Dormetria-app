@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod11">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod12">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1277,7 +1277,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod11';
+const APP_VERSION='hoy75-mod12';
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -9149,10 +9149,11 @@ async function linkPatient(){
 // Persistencia: columna JSONB patients.tags = {added:[], dismissed:[]}
 // (la política patients_doctor ALL ya autoriza el UPDATE del médico).
 const PATHOLOGY_TAGS = {
-  sahos:      { label:'SAHOS',      color:'#3b82f6', textOn:'#ffffff' },
-  insomnio:   { label:'Insomnio',   color:'#ef4444', textOn:'#ffffff' },
-  spi:        { label:'SPI',        color:'#a855f7', textOn:'#ffffff' },
-  parasomnia: { label:'Parasomnia', color:'#eab308', textOn:'#3a2c00' }
+  sahos:      { label:'SAHOS',       color:'#3b82f6', textOn:'#ffffff' },
+  insomnio:   { label:'Insomnio',    color:'#ef4444', textOn:'#ffffff' },
+  spi:        { label:'SPI',         color:'#a855f7', textOn:'#ffffff' },
+  parasomnia: { label:'Parasomnia',  color:'#eab308', textOn:'#3a2c00' },
+  narcolepsia:{ label:'Narcolepsia', color:'#f97316', textOn:'#ffffff' }
 };
 // Umbrales de detección automática (últimas evaluaciones):
 function computeAutoTags(recs){
@@ -9703,7 +9704,7 @@ async function showDrPTab_(tab){
             const _arrow=_delta>=5?'↗':_delta<=-5?'↘':'≈';
             const _lbl=_delta>=5?'Mejorando':_delta<=-5?'Empeorando':'Estable';
             const _col=_delta>=5?'#14532d':_delta<=-5?'#9b1c1c':'#666';
-            weekCompareHtml='<div style="background:#F4EFE5;border-radius:12px;padding:10px 14px;margin-top:10px">'+
+            weekCompareHtml='<div style="background:#F4EFE5;border-radius:12px;padding:8px 12px;margin-top:8px">'+
               '<div style="font-size:10.5px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:5px">Evolución · últimos 7 días vs 7 anteriores</div>'+
               '<div style="display:flex;align-items:baseline;gap:10px">'+
                 '<div style="font-size:17px;font-weight:600;color:'+_col+'">'+_arrow+' '+(_delta>=0?'+':'')+_delta+' pts</div>'+
@@ -9720,9 +9721,9 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-score">
           <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center">
             <span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>
-            <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:${subj7.length>=3?'#e8f0eb':'#e5e7eb'};color:${subj7.length>=3?'#1a4a3a':'#9ca3af'}">7 días</button>
-            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:#1a4a3a;color:#fff">30 días</button>
-            <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>
+            <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${subj7.length>=3?'#e8f0eb':'#e5e7eb'};color:${subj7.length>=3?'#1a4a3a':'#9ca3af'}">7 días</button>
+            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:#1a4a3a;color:#fff">30 días</button>
+            <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>
           </div>
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries)}</div>
           ${weekCompareHtml}
@@ -9730,7 +9731,7 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-pillars">
           <div class="dm-card-title">🧩 Pilares del sueño</div>
           <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
-          <div class="chart-wrap" style="height:150px"><canvas id="dr-pillar-chart"></canvas></div>
+          <div class="chart-wrap" style="height:130px"><canvas id="dr-pillar-chart"></canvas></div>
         </div>
         <div class="dm-card dm-light" id="dr-weekly-prog" style="display:none"></div>
         <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
