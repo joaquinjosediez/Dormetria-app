@@ -113,8 +113,9 @@
 .dm-tagtoggle:active{ transform:scale(0.96); }
 
 /* Filtro de etiquetas en la lista de pacientes */
-.dm-tagfilter-bar{ display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px; }
-.dm-tagfilter-chip{ cursor:pointer;font-size:11px;font-weight:600;padding:5px 11px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.55);background:transparent;transition:all .12s; }
+.dm-tagfilter-bar{ display:flex;gap:5px;flex-wrap:nowrap;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none; }
+.dm-tagfilter-bar::-webkit-scrollbar{ display:none; }
+.dm-tagfilter-chip{ cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.55);background:transparent;transition:all .12s;white-space:nowrap;flex-shrink:0; }
 .dm-tagfilter-chip.on{ background:rgba(126,200,164,0.16);border-color:#7EC8A4;color:#7EC8A4; }
 .dm-patlist-tags{ display:flex;gap:4px;flex-wrap:wrap;margin-top:3px; }
 .dm-patlist-tag{ font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid currentColor;line-height:1.5; }
@@ -202,6 +203,16 @@
 .dm-drp-avatar{ width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.18);align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0; }
 .dm-drp-name{ font-size:13px;font-weight:600;color:#e8f5f0;white-space:nowrap; }
 .dm-drp-email{ font-size:11px;color:var(--g200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px; }
+/* En desktop el header ES la franja de identidad del paciente (se quitó la
+   repetida de adentro del tab Perfil): nombre grande, correo y edad·sexo·IMC
+   legibles, todo centrado entre los botones Volver y PDF. */
+@media (min-width:900px){
+  body.dr-desktop .dm-drp-header{ justify-content:center;gap:12px;padding:6px 0; }
+  body.dr-desktop .dm-drp-avatar{ width:34px;height:34px;font-size:12px; }
+  body.dr-desktop .dm-drp-name{ font-size:17px; }
+  body.dr-desktop .dm-drp-email{ font-size:12px;max-width:240px; }
+  body.dr-desktop .dm-drp-meta{ font-size:12.5px;color:rgba(255,255,255,0.75);font-weight:600;margin-left:0; }
+}
 .dm-drp-tags{ display:flex;gap:4px;flex-wrap:wrap; }
 .dm-drp-meta{ font-size:10.5px;color:rgba(255,255,255,0.4);white-space:nowrap;margin-left:auto; }
 @media (max-width:899px){
