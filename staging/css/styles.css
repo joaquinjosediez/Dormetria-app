@@ -174,30 +174,29 @@
   body.dr-desktop .dm-diary-score,
   body.dr-desktop .dm-diary-pillars{ padding:8px 12px; }
   body.dr-desktop .dm-diary-pillars .dm-card-title{ margin-bottom:4px; }
+  body.dr-desktop .dm-diary-pillars .chart-wrap{ height:130px !important; }
 
-  /* La caja de Score ocupaba demasiado lugar (número gigante de 64px +
-     mucho padding) para lo poco que aporta al lado del actograma. La
-     achicamos acá con overrides puntuales sobre la estructura fija que
-     devuelve renderSleepScorePanel (compartida con la vista del paciente,
-     por eso no tocamos esa función — solo el envoltorio en desktop). */
-  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child{
-    padding:8px 12px !important;margin-bottom:6px !important;
-  }
-  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(1){
-    font-size:10px !important;margin-bottom:3px !important;
-  }
-  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(2){
-    font-size:30px !important;
-  }
-  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(3){
-    font-size:13px !important;margin-top:3px !important;
-  }
-  body.dr-desktop .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(4){
-    font-size:10px !important;margin-top:5px !important;
-  }
-  body.dr-desktop .dm-diary-score #dr-score-panel-wrap details summary{
-    padding:9px 14px !important;font-size:12px !important;
-  }
+}
+/* La caja de Score ocupaba demasiado lugar (número gigante de 64px + mucho
+   padding). Compactado FUERA del media query: aplica en desktop Y en móvil
+   (en el teléfono el score gigante empujaba todo lo demás fuera de vista). */
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child{
+  padding:8px 12px !important;margin-bottom:6px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(1){
+  font-size:10px !important;margin-bottom:3px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(2){
+  font-size:30px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(3){
+  font-size:13px !important;margin-top:3px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(4){
+  font-size:10px !important;margin-top:5px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap details summary{
+  padding:9px 14px !important;font-size:12px !important;
 }
 
 /* Comparativa de una escala: valor actual + anterior en la misma tarjeta */
@@ -249,7 +248,16 @@ html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;fo
    botones (Admin/Cómo se usa/etc.) en el sidebar de escritorio, que le
    robaba alto fijo a la lista de pacientes. En mobile no se usa: el hero
    completo sigue siendo la pantalla de entrada normal. */
-.dm-panel-compact{ display:none; }
+/* El placeholder de "elegí un paciente" existe SOLO para el layout de dos
+   paneles de escritorio; sin esta regla base quedaba visible como una barra
+   suelta arriba de todo en el celular. */
+#dr-desktop-placeholder{ display:none; }
+/* La barra compacta del panel profesional ahora también se ve en móvil:
+   permite colapsar el bloque fijo de arriba (directorio, admin, cómo se
+   usa, ayudanos a mejorar) que ocupaba media pantalla del teléfono. */
+.dm-panel-compact{ display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(126,200,164,0.12);background:#0f2820;flex-shrink:0; }
+body.dr-panel-collapsed #dr-panel-hero{ display:none; }
+body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 .dm-panel-compact-avatar{ width:30px;height:30px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#F4EFE5;font-weight:600;flex-shrink:0; }
 .dm-panel-compact-name{ font-size:12.5px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .dm-panel-compact-sub{ font-size:10px;color:rgba(244,239,229,0.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }

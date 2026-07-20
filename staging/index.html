@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod12">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod13">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1277,7 +1277,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod12';
+const APP_VERSION='hoy75-mod13';
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -2135,6 +2135,79 @@ const SCALES=[
  ]
 }
 
+,{id:'promis_pi8a',
+  ref:'PROMIS Pain Interference Short Form 8a v1.0 · © PROMIS Health Organization. Uso libre en práctica clínica individual (HealthMeasures). Puntaje bruto orientativo — el T-score oficial requiere la tabla de conversión de HealthMeasures.',
+  name:'PROMIS Dolor — Interferencia (8a)',
+  cat:'pain', max:40,
+  desc:'Cuánto interfirió el dolor en la vida diaria durante los últimos 7 días',
+  icon:'🩹', bg:'#fdf2f8',
+  note:'Pensá en los últimos 7 días.',
+  qs:[
+    {t:'¿Cuánto interfirió el dolor con tus actividades cotidianas?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Cuánto interfirió el dolor con las tareas del hogar?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Cuánto interfirió el dolor con tu capacidad de participar en actividades sociales?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Cuánto interfirió el dolor con tus tareas habituales (trabajo, estudio)?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Cuánto interfirió el dolor con las cosas que hacés para divertirte?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Cuánto interfirió el dolor con disfrutar de la vida?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Cuánto interfirió el dolor con tu concentración?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Cuánto interfirió el dolor con tus actividades recreativas?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]}
+  ],
+  interp:function(s){
+    if(s<=8)  return{l:'Sin interferencia por dolor',c:'#15803d',bg:'#f0fdf4'};
+    if(s<=15) return{l:'Interferencia leve',c:'#a16207',bg:'#fef9c3'};
+    if(s<=25) return{l:'Interferencia moderada',c:'#b45309',bg:'#fef3c7'};
+    return{l:'Interferencia severa',c:'#991b1b',bg:'#fee2e2'};
+  }
+}
+,{id:'promis_f8a',
+  ref:'PROMIS Fatigue Short Form 8a v1.0 · © PROMIS Health Organization. Uso libre en práctica clínica individual (HealthMeasures). Puntaje bruto orientativo — el T-score oficial requiere la tabla de conversión de HealthMeasures.',
+  name:'PROMIS Fatiga (8a)',
+  cat:'fatigue', max:40,
+  desc:'Frecuencia e impacto de la fatiga durante los últimos 7 días',
+  icon:'🪫', bg:'#fff7ed',
+  note:'Pensá en los últimos 7 días.',
+  qs:[
+    {t:'¿Con qué frecuencia te sentiste cansado/a?',opts:['Nunca','Rara vez','Algunas veces','A menudo','Siempre'],sc:[1,2,3,4,5]},
+    {t:'¿Con qué frecuencia experimentaste un cansancio extremo?',opts:['Nunca','Rara vez','Algunas veces','A menudo','Siempre'],sc:[1,2,3,4,5]},
+    {t:'¿Con qué frecuencia te quedaste sin energía?',opts:['Nunca','Rara vez','Algunas veces','A menudo','Siempre'],sc:[1,2,3,4,5]},
+    {t:'¿Con qué frecuencia la fatiga te dificultó pensar con claridad?',opts:['Nunca','Rara vez','Algunas veces','A menudo','Siempre'],sc:[1,2,3,4,5]},
+    {t:'En promedio, ¿qué tan intensa fue tu fatiga?',opts:['Nada','Un poco','Algo','Mucha','Muchísima'],sc:[1,2,3,4,5]},
+    {t:'¿En qué medida la fatiga interfirió con tu funcionamiento físico?',opts:['Nada','Un poco','Algo','Mucho','Muchísimo'],sc:[1,2,3,4,5]},
+    {t:'¿Con qué frecuencia tuviste que esforzarte más de lo normal para hacer las cosas, por el cansancio?',opts:['Nunca','Rara vez','Algunas veces','A menudo','Siempre'],sc:[1,2,3,4,5]},
+    {t:'¿Con qué frecuencia el cansancio te impidió terminar lo que habías empezado?',opts:['Nunca','Rara vez','Algunas veces','A menudo','Siempre'],sc:[1,2,3,4,5]}
+  ],
+  interp:function(s){
+    if(s<=12) return{l:'Fatiga mínima',c:'#15803d',bg:'#f0fdf4'};
+    if(s<=19) return{l:'Fatiga leve',c:'#a16207',bg:'#fef9c3'};
+    if(s<=28) return{l:'Fatiga moderada',c:'#b45309',bg:'#fef3c7'};
+    return{l:'Fatiga severa',c:'#991b1b',bg:'#fee2e2'};
+  }
+}
+,{id:'promis_gh10',
+  ref:'PROMIS Global Health v1.2 (10 ítems) · © PROMIS Health Organization. Uso libre en práctica clínica individual (HealthMeasures). Puntaje bruto total orientativo — la versión oficial reporta T-scores separados de salud física (GPH) y mental (GMH).',
+  name:'PROMIS Salud Global (10)',
+  cat:'quality', max:50,
+  desc:'Percepción general de salud física, mental y social',
+  icon:'🌐', bg:'#f0f9ff',
+  qs:[
+    {t:'En general, dirías que tu salud es:',opts:['Excelente','Muy buena','Buena','Regular','Mala'],sc:[5,4,3,2,1]},
+    {t:'En general, dirías que tu calidad de vida es:',opts:['Excelente','Muy buena','Buena','Regular','Mala'],sc:[5,4,3,2,1]},
+    {t:'En general, ¿cómo calificarías tu salud física?',opts:['Excelente','Muy buena','Buena','Regular','Mala'],sc:[5,4,3,2,1]},
+    {t:'¿Cómo calificarías tu salud mental, incluyendo tu estado de ánimo y tu capacidad de pensar?',opts:['Excelente','Muy buena','Buena','Regular','Mala'],sc:[5,4,3,2,1]},
+    {t:'En general, ¿qué tan satisfecho/a estás con tus actividades sociales y tus relaciones?',opts:['Excelente','Muy buena','Buena','Regular','Mala'],sc:[5,4,3,2,1]},
+    {t:'¿En qué medida podés llevar a cabo tus roles sociales habituales? (actividades con familia, amigos, trabajo)',opts:['Totalmente','Mayormente','Moderadamente','Un poco','Nada'],sc:[5,4,3,2,1]},
+    {t:'¿En qué medida podés realizar tus actividades físicas cotidianas, como caminar, subir escaleras, llevar las compras o mover una silla?',opts:['Totalmente','Mayormente','Moderadamente','Un poco','Nada'],sc:[5,4,3,2,1]},
+    {t:'En los últimos 7 días, ¿con qué frecuencia te afectaron problemas emocionales como ansiedad, depresión o irritabilidad?',opts:['Nunca','Rara vez','Algunas veces','A menudo','Siempre'],sc:[5,4,3,2,1]},
+    {t:'En los últimos 7 días, ¿cómo calificarías tu nivel de fatiga en promedio?',opts:['Ninguno','Leve','Moderado','Intenso','Muy intenso'],sc:[5,4,3,2,1]},
+    {t:'En los últimos 7 días, ¿cómo calificarías tu dolor en promedio? (0 = sin dolor, 10 = el peor imaginable)',opts:['0 — Sin dolor','1–3 — Leve','4–6 — Moderado','7–9 — Intenso','10 — Máximo'],sc:[5,4,3,2,1]}
+  ],
+  interp:function(s){
+    if(s>=42) return{l:'Salud global muy buena',c:'#15803d',bg:'#f0fdf4'};
+    if(s>=34) return{l:'Salud global buena',c:'#166534',bg:'#f0fdf4'};
+    if(s>=26) return{l:'Salud global intermedia',c:'#a16207',bg:'#fef9c3'};
+    return{l:'Salud global comprometida',c:'#991b1b',bg:'#fee2e2'};
+  }
+}
 ,{id:'eedsi',
   ref:'EEDSI · Escala Evolutiva Dimensional del Sueño e Insomnio Infantil. Versión piloto · Dr. Joaquín J. Diez (2026).',
   name:'EEDSI — Sueño infantil (evolutiva)',
@@ -4560,6 +4633,7 @@ function maybePromptProfileCompletion(){
     if(u.phone === null || u.phone === '') missing.push('teléfono / WhatsApp');
   }
   if(!u.lname) missing.push('apellido');
+  if(!u.height_cm || !u.weight_kg) missing.push('altura y peso (para el IMC)');
   if(!missing.length) return;
   // Insertar banner al tope del home (antes del primer hijo del scroll)
   const homeScroll = document.querySelector('#screen-home .scroll');
@@ -4639,7 +4713,8 @@ const SCALE_COOLDOWN_DAYS = {
   fsfi:180, iief:180, sassv:60, sassv_screen:90,
   ais:30, jss:30,
   flep:180, hamd:14, hama:14, pcl5:60,
-  bears:180, eedsi:180
+  bears:180, eedsi:180,
+  promis_pi8a:30, promis_f8a:30, promis_gh10:30
 };
 const SCALE_COOLDOWN_DEFAULT = 21;
 
@@ -4789,6 +4864,18 @@ function openDoctorEditPatient(){
       fld('dep-paths','Patologías (separadas por coma)',paths,'text','Ej: HTA, hipotiroidismo')+
       fld('dep-meds','Medicación',u.medications,'text')+
       fld('dep-phone','Teléfono',u.phone,'text')+
+      '<div style="display:flex;gap:10px">'+
+        '<div style="flex:1">'+fld('dep-country','País',u.country,'text','Argentina')+'</div>'+
+        '<div style="flex:1">'+fld('dep-occupation','Ocupación / actividad',(Array.isArray(u.activity_type)?u.activity_type.join(', '):u.activity_type)||'','text','office, remote…')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<div style="flex:1">'+fld('dep-alcohol','Alcohol',u.alcohol,'text','nunca / ocasional / frecuente')+'</div>'+
+        '<div style="flex:1">'+fld('dep-tobacco','Tabaco',u.tobacco,'text','no / sí')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<div style="flex:1">'+fld('dep-activity','Actividad física',u.physical_activity,'text','sedentario / moderada / intensa')+'</div>'+
+        '<div style="flex:1">'+fld('dep-work','Horario laboral',(Array.isArray(u.work_schedule)?u.work_schedule.join(', '):u.work_schedule)||'','text','diurno / nocturno / rotativo')+'</div>'+
+      '</div>'+
       '<div id="dep-err" style="display:none;background:#FEE2E2;color:#991B1B;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:10px;line-height:1.45"></div>'+
       '<button id="dep-save" onclick="saveDoctorEditPatient()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Guardar cambios</button>'+
       '<div style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:8px">Los cambios quedan registrados en la ficha del paciente.</div>'+
@@ -4813,7 +4900,13 @@ async function saveDoctorEditPatient(){
     weight_kg: num(g('dep-weight').value),
     pathologies: (g('dep-paths').value||'').split(',').map(x=>x.trim()).filter(Boolean),
     medications: (g('dep-meds').value||'').trim() || null,
-    phone: (g('dep-phone').value||'').trim() || null
+    phone: (g('dep-phone').value||'').trim() || null,
+    country: (g('dep-country')&&g('dep-country').value||'').trim() || null,
+    activity_type: (g('dep-occupation')&&g('dep-occupation').value||'').trim() || null,
+    alcohol: (g('dep-alcohol')&&g('dep-alcohol').value||'').trim() || null,
+    tobacco: (g('dep-tobacco')&&g('dep-tobacco').value||'').trim() || null,
+    physical_activity: (g('dep-activity')&&g('dep-activity').value||'').trim() || null,
+    work_schedule: (g('dep-work')&&g('dep-work').value||'').trim() || null
   };
   try{
     // Save resiliente a columnas inexistentes (mismo patrón que el resto de la app)
@@ -4933,21 +5026,37 @@ async function copyPatientSummaryToClipboard(encodedEmail){
     }
     // Diario y métricas
     if(metrics && score){
+      // Formato compacto para HC: 3-4 líneas densas en vez de una lista de
+      // un dato por renglón (pedido del profesional: menos scroll al pegar).
       L.push('');
-      L.push('DIARIO — últimas '+metrics.n+' noches (30 días):');
-      L.push('  - Score de sueño: '+score.total+'/100 ('+score.label+')');
-      if(metrics.avgTotal != null) L.push('  - TST promedio: '+metrics.fmtDur(metrics.avgTotal));
-      if(metrics.avgTIB != null) L.push('  - TIB promedio: '+metrics.fmtDur(metrics.avgTIB));
-      if(metrics.sleepEfficiency != null) L.push('  - Eficiencia de sueño: '+metrics.sleepEfficiency+'%');
-      if(metrics.avgLatency != null) L.push('  - Latencia de inicio promedio: '+metrics.fmtMin(metrics.avgLatency));
-      if(metrics.avgAwakDur != null) L.push('  - Duración media de despertares: '+metrics.fmtMin(metrics.avgAwakDur));
-      if(metrics.avgBed != null) L.push('  - Horario promedio de acostarse: '+metrics.fmtClock(metrics.avgBed));
-      if(metrics.avgWake != null) L.push('  - Horario promedio de levantarse: '+metrics.fmtClock(metrics.avgWake));
-      if(metrics.socialJetLag != null) L.push('  - Jet lag social: '+metrics.socialJetLag+' min');
+      L.push('DIARIO ('+metrics.n+' noches / 30 días): Score '+score.total+'/100 ('+score.label+')');
+      const l1=[];
+      if(metrics.avgTotal != null) l1.push('TST '+metrics.fmtDur(metrics.avgTotal));
+      if(metrics.avgTIB != null) l1.push('TIB '+metrics.fmtDur(metrics.avgTIB));
+      if(metrics.sleepEfficiency != null) l1.push('eficiencia '+metrics.sleepEfficiency+'%');
+      if(metrics.avgLatency != null) l1.push('latencia '+metrics.fmtMin(metrics.avgLatency));
+      if(metrics.avgAwakDur != null) l1.push('despertares '+metrics.fmtMin(metrics.avgAwakDur));
+      if(l1.length) L.push('  '+l1.join(' · '));
+      const l2=[];
+      if(metrics.avgBed != null) l2.push('acostarse '+metrics.fmtClock(metrics.avgBed));
+      if(metrics.avgWake != null) l2.push('levantarse '+metrics.fmtClock(metrics.avgWake));
+      if(metrics.socialJetLag != null) l2.push('jet lag social '+metrics.socialJetLag+' min');
+      if(metrics.under7Pct > 30) l2.push(metrics.under7Pct+'% noches <7h');
+      if(l2.length) L.push('  '+l2.join(' · '));
+      // Regularidad (pedido explícito: que el resumen para HC la incluya)
+      try{
+        const _regHC = computeSleepRegularity(diary30);
+        if(_regHC){
+          const l3=[];
+          if(_regHC.score != null) l3.push('score regularidad '+_regHC.score+'%');
+          if(_regHC.sd_midpoint_min != null) l3.push('SD punto medio '+_regHC.sd_midpoint_min+' min');
+          if(_regHC.sri != null) l3.push('SRI (Phillips) '+_regHC.sri);
+          if(l3.length) L.push('  REGULARIDAD: '+l3.join(' · '));
+        }
+      }catch(_rhc){}
       if(metrics.sleepDebt != null && metrics.sleepDebt > 30){
-        L.push('  - Sugerencia: duerme '+Math.round(metrics.sleepDebt)+' min más los días libres — posible restricción crónica de sueño');
+        L.push('  Sugerencia: dormir '+Math.round(metrics.sleepDebt)+' min más los días libres — posible restricción crónica de sueño');
       }
-      if(metrics.under7Pct > 30) L.push('  - '+metrics.under7Pct+'% de las noches con TST <7h');
     }
     // Nota clínica del médico si existe
     const note = localStorage.getItem('dm_note_'+email) || localStorage.getItem('dm_dr_notes_'+email) || '';
@@ -5352,6 +5461,7 @@ async function showHome(){
   try{ maybePromptDoctorLink(); }catch(_){}
   try{ maybePromptProfileCompletion(); }catch(_){}
   try{ maybePromptReevalScales(); }catch(_){}
+  try{ renderHomeQuickActions(); }catch(_){}
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
 
   const hr=new Date().getHours();
@@ -5609,6 +5719,13 @@ function renderHomeQuickActions(){
       </div>
       <div style="color:rgba(255,255,255,0.25);font-size:20px;flex-shrink:0">›</div>
     </button>`).join('');
+  // BUG histórico: el contenedor #home-quick nace con display:none en el HTML
+  // y nunca se desocultaba — por eso los accesos rápidos (incluido el test de
+  // alerta) NO se veían en el inicio aunque el código los generara.
+  el.style.display='flex';
+  el.style.flexDirection='column';
+  el.style.gap='10px';
+  el.style.marginBottom='14px';
 }
 function renderMetrics(){
   const r=S.records;const last=r.length?new Date(r[r.length-1].created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}):'—';
@@ -6374,6 +6491,21 @@ function startScale(id){
   try{
     S.scale=SCALES.find(s=>s.id===id);
     if(!S.scale){toast('Escala no encontrada');console.error('[ESCALA] no encontrada:',id);return;}
+    // Freno metódico: repetir una escala a los pocos días no aporta evolución
+    // real y solo suma ruido. Se avisa (no se bloquea: el médico puede haber
+    // pedido una re-toma puntual).
+    try{
+      if(S.role!=='doctor'){
+        const _prev=(S.records||[]).filter(r=>r.scale_id===id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+        if(_prev){
+          const _dd=Math.floor((Date.now()-new Date(_prev.created_at))/86400000);
+          if(_dd<14){
+            const _ok=confirm('Completaste esta escala hace '+(_dd===0?'menos de un día':_dd+' día'+(_dd>1?'s':''))+'.\n\nPara ver una evolución real conviene esperar al menos 2 semanas entre una toma y la siguiente. ¿Querés completarla igual?');
+            if(!_ok) return;
+          }
+        }
+      }
+    }catch(_cd){}
     // EEDSI: pantalla custom con 4 subescalas según edad
     if(S.scale.custom==='eedsi'){ startEEDSI(); return; }
     if(!S.scale.qs||!S.scale.qs.length){toast('Esta escala requiere entrevista clínica');return;}
@@ -8680,13 +8812,13 @@ function showDrTab(tab,el){
 
 // ─── Gestión de alertas: marcar visto / restablecer ────────────────────
 function markAlertReviewed(evalId){
+  // Acepta un id o varios separados por coma (tarjeta agrupada por paciente)
   if(!S.user||!S.user.email||!evalId) return;
   const key = 'dm_dr_reviewed_evals_' + S.user.email.toLowerCase();
   let arr=[]; try{ arr=JSON.parse(localStorage.getItem(key)||'[]'); }catch(_){ arr=[]; }
-  const id=String(evalId);
-  if(!arr.includes(id)){ arr.push(id); }
+  String(evalId).split(',').forEach(id=>{ id=id.trim(); if(id&&!arr.includes(id)) arr.push(id); });
   try{ localStorage.setItem(key, JSON.stringify(arr)); }catch(_){}
-  toast('✓ Alerta marcada como vista');
+  toast('✓ Alerta(s) marcada(s) como vista(s)');
   if(typeof showDrTab_==='function') showDrTab_('alerts');
 }
 function resetReviewedAlerts(){
@@ -9047,29 +9179,41 @@ async function renderPatientList(filter){
         alertHtml+='<div style="font-size:12px;color:var(--label-2);margin-bottom:10px">'+reviewedSet.size+' alerta(s) marcada(s) como vistas — <a href="javascript:void(0)" onclick="resetReviewedAlerts()" style="color:#1a4a3a;font-weight:600;text-decoration:underline">mostrar todas</a></div>';
       }
       if(pathResults.length){
-        alertHtml+=pathResults.map(r=>{
-          const dateStr = new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
-          const firstName = (r._patientName||'').split(' ')[0] || 'estimado/a';
+        // UNA tarjeta por paciente: si tiene varias escalas patológicas se
+        // listan juntas y la acción (WhatsApp/Email/Visto) es una sola —
+        // antes salía una alerta con botones por CADA escala del mismo
+        // paciente y el panel se volvía repetitivo.
+        const _byPt={};
+        pathResults.forEach(r=>{ (_byPt[r._patientEmail]=_byPt[r._patientEmail]||[]).push(r); });
+        alertHtml+=Object.values(_byPt).map(list=>{
+          list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+          const r0=list[0];
+          const firstName = (r0._patientName||'').split(' ')[0] || 'estimado/a';
           const drFirst = (S.user.name||'tu profesional').split(' ')[0];
-          const msgBody = '¡Hola '+firstName+'! Soy '+drFirst+'. Recibí tu última evaluación de '+r._scName+' en Dormetria — quedó registrada y vamos a conversarla tranquilo/a en nuestra próxima consulta. Si veo que vale la pena adelantar la cita o pedir algún estudio complementario, te aviso por este mismo medio. Cualquier cosa que te preocupe mientras tanto, escribime. Saludos.';
-          const waPhone = (r._patientPhone||'').replace(/[^0-9]/g,'');
+          const scNames = list.map(r=>r._scName);
+          const evalTxt = list.length>1
+            ? 'tus últimas evaluaciones ('+scNames.join(', ')+')'
+            : 'tu última evaluación de '+r0._scName;
+          const msgBody = '¡Hola '+firstName+'! Soy '+drFirst+'. Recibí '+evalTxt+' en Dormetria — quedó todo registrado y vamos a conversarlo tranquilo/a en nuestra próxima consulta. Si veo que vale la pena adelantar la cita o pedir algún estudio complementario, te aviso por este mismo medio. Cualquier cosa que te preocupe mientras tanto, escribime. Saludos.';
+          const waPhone = (r0._patientPhone||'').replace(/[^0-9]/g,'');
           const waLink = waPhone ? 'https://wa.me/'+waPhone+'?text='+encodeURIComponent(msgBody) : null;
-          const subject = 'Sobre tu evaluación reciente en Dormetria';
-          const mailLink = 'mailto:'+encodeURIComponent(r._patientEmail)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(msgBody);
-          const darkBorder = (r._interp.c||'#991b1b');
-          return '<div style="background:'+(r._interp.bg||'#fee2e2')+';border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:4px solid '+darkBorder+'">'+
-            '<div onclick="viewPatientScale(\''+r._patientEmail+'\',\''+r.scale_id+'\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
-              '<div style="flex:1;min-width:0">'+
-                '<div style="font-size:14px;font-weight:700;color:#0F2820;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(r._patientName.trim()||r._patientEmail.split('@')[0])+'</div>'+
-                '<div style="font-size:12px;font-weight:600;color:'+r._interp.c+';margin-top:3px">'+r._scName+' · '+r._interp.l+'</div>'+
-                '<div style="font-size:11px;color:#0F2820;opacity:0.7;margin-top:3px;font-weight:500">'+dateStr+'</div>'+
-              '</div>'+
-              '<div style="text-align:right;flex-shrink:0"><div style="font-size:22px;font-weight:700;color:'+r._interp.c+';line-height:1">'+r.score+'</div></div>'+
-            '</div>'+
+          const mailLink = 'mailto:'+encodeURIComponent(r0._patientEmail)+'?subject='+encodeURIComponent('Sobre tus evaluaciones recientes en Dormetria')+'&body='+encodeURIComponent(msgBody);
+          const darkBorder = (r0._interp.c||'#991b1b');
+          const idsCsv = list.map(r=>r.id).join(',');
+          const rows = list.map(r=>{
+            const dateStr = new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+            return '<div onclick="viewPatientScale(\''+r._patientEmail+'\',\''+r.scale_id+'\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;border-top:1px solid rgba(15,40,32,0.08)">'+
+              '<div style="flex:1;min-width:0"><span style="font-size:12.5px;font-weight:600;color:'+r._interp.c+'">'+r._scName+' · '+r._interp.l+'</span> <span style="font-size:11px;color:#0F2820;opacity:0.65">'+dateStr+'</span></div>'+
+              '<div style="font-size:18px;font-weight:700;color:'+r._interp.c+';line-height:1;flex-shrink:0">'+r.score+'</div>'+
+            '</div>';
+          }).join('');
+          return '<div style="background:'+(r0._interp.bg||'#fee2e2')+';border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:4px solid '+darkBorder+'">'+
+            '<div style="font-size:14px;font-weight:700;color:#0F2820;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">'+((r0._patientName||'').trim()||r0._patientEmail.split('@')[0])+(list.length>1?' <span style="font-weight:600;font-size:11px;background:rgba(15,40,32,0.12);border-radius:9px;padding:2px 8px;vertical-align:middle">'+list.length+' escalas</span>':'')+'</div>'+
+            rows+
             '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
               (waLink?'<a href="'+waLink+'" target="_blank" rel="noopener" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:12px;font-weight:600">💬 WhatsApp</a>':'<span style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;background:rgba(0,0,0,0.05);color:#0F2820;opacity:0.4;font-size:11px;font-weight:500">💬 Sin tel.</span>')+
               '<a href="'+mailLink+'" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:#0F2820;color:#fff;text-decoration:none;font-size:12px;font-weight:600">📧 Email</a>'+
-              '<button onclick="event.stopPropagation();markAlertReviewed(\''+r.id+'\')" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.85);color:#0F2820;border:1px solid '+darkBorder+';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✓ Visto</button>'+
+              '<button onclick="event.stopPropagation();markAlertReviewed(\''+idsCsv+'\')" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.85);color:#0F2820;border:1px solid '+darkBorder+';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✓ Visto</button>'+
             '</div>'+
           '</div>';
         }).join('');
@@ -9153,7 +9297,8 @@ const PATHOLOGY_TAGS = {
   insomnio:   { label:'Insomnio',    color:'#ef4444', textOn:'#ffffff' },
   spi:        { label:'SPI',         color:'#a855f7', textOn:'#ffffff' },
   parasomnia: { label:'Parasomnia',  color:'#eab308', textOn:'#3a2c00' },
-  narcolepsia:{ label:'Narcolepsia', color:'#f97316', textOn:'#ffffff' }
+  narcolepsia:{ label:'Narcolepsia', color:'#f97316', textOn:'#ffffff' },
+  cronodisrupcion:{ label:'Cronodisrupción', color:'#22c55e', textOn:'#052e13' }
 };
 // Umbrales de detección automática (últimas evaluaciones):
 function computeAutoTags(recs){
@@ -9731,7 +9876,8 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-pillars">
           <div class="dm-card-title">🧩 Pilares del sueño</div>
           <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
-          <div class="chart-wrap" style="height:130px"><canvas id="dr-pillar-chart"></canvas></div>
+          <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
+          <div id="dr-quality-concord" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
         </div>
         <div class="dm-card dm-light" id="dr-weekly-prog" style="display:none"></div>
         <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
@@ -9756,6 +9902,7 @@ async function showDrPTab_(tab){
             <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
             <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
             <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(to right,rgba(26,74,58,0.25),#1a4a3a);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Latencia (tramo tenue hasta dormirse)</span>
             <span><span style="display:inline-block;width:10px;height:3px;background:#16a34a;margin-right:3px;vertical-align:middle"></span>🏃 Ejercicio (ancho = duración)</span>
             <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
           </div>
@@ -9876,6 +10023,7 @@ async function showDrPTab_(tab){
           // así el alineado es exacto sin depender de una lista HTML aparte.
           ctxA._layers = ctxA._layers || {exercise:true,caffeine:true,alcohol:true,screens:true};
           ctxA._habitRows = sorted.map((e,_hi)=>({
+            latency: (e.sleep_latency_mins!=null && e.sleep_latency_mins>0) ? parseInt(e.sleep_latency_mins) : null,
             exercise: e.exercise_mins>0 ? e.exercise_mins : null,
             exerciseTime: e.exercise_time||null,
             exerciseLate: e.exercise_time==='late',
@@ -10036,6 +10184,16 @@ async function showDrPTab_(tab){
                     const yMid=yS.getPixelForValue(i);
                     let x=gx;
                     const put=(icon,warn)=>{ cx.fillStyle=warn?'#ea580c':'#44403c'; cx.fillText(icon,x,yMid); x+=16; };
+                    // Latencia como "fantasma": el tramo entre acostarse y
+                    // dormirse se aclara casi al fondo — la barra sólida que
+                    // queda es el sueño real, y el tramo tenue ES la latencia.
+                    if(r.latency && r.bedOffset!=null){
+                      const lx1=xS.getPixelForValue(r.bedOffset);
+                      const lx2=xS.getPixelForValue(r.bedOffset + r.latency/60);
+                      const lyTop=yMid-barH*0.36;
+                      cx.fillStyle='rgba(255,255,255,0.72)';
+                      cx.fillRect(lx1+1, lyTop, Math.max(2,lx2-lx1-1), barH*0.72);
+                    }
                     if(layers.exercise && r.exercise){
                       const hOfDay=EX_HOUR[r.exerciseTime];
                       if(hOfDay!=null){
@@ -10098,8 +10256,39 @@ async function showDrPTab_(tab){
             '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+
             ({Cantidad:'7–9h de sueño (recomendado)',Fragmentación:'Número de despertares',Regularidad: (regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')) : 'Variabilidad del horario')}[p.l]||'')+
             '</div></div>';}).join('')+'</div>';
+        // Concordancia subjetivo↔objetivo: correlación de Pearson entre la
+        // calidad reportada cada mañana y cada pilar calculado. Un r alto en
+        // fragmentación, por ejemplo, dice que la percepción del paciente
+        // sigue a sus despertares; un r bajo sugiere disociación (típico de
+        // insomnio paradójico) — dato clínicamente interesante en sí mismo.
+        try{
+          const _pearson=(xs,ys)=>{
+            const pares=xs.map((x,i)=>[x,ys[i]]).filter(p=>p[0]!=null&&p[1]!=null&&!isNaN(p[0])&&!isNaN(p[1]));
+            const n=pares.length; if(n<5) return null;
+            const mx=pares.reduce((a,p)=>a+p[0],0)/n, my=pares.reduce((a,p)=>a+p[1],0)/n;
+            let num=0,dx=0,dy=0;
+            pares.forEach(p=>{ num+=(p[0]-mx)*(p[1]-my); dx+=(p[0]-mx)**2; dy+=(p[1]-my)**2; });
+            if(dx===0||dy===0) return null;
+            return {r:num/Math.sqrt(dx*dy), n};
+          };
+          const _qual=sorted.map(e=>e.sleep_quality||null);
+          const _ener=sorted.map(e=>e.energy||null);
+          const _fmt=v=>v==null?'s/d':((v.r>=0?'+':'−')+Math.abs(v.r).toFixed(2));
+          const _rQty=_pearson(_qual,pillarData.map(p=>p.qty));
+          const _rFrag=_pearson(_qual,pillarData.map(p=>p.frag));
+          const _rReg=_pearson(_qual,pillarData.map(p=>p.regNight));
+          const _rEner=_pearson(_qual,_ener);
+          const _cEl=document.getElementById('dr-quality-concord');
+          if(_cEl){
+            if(!_rQty&&!_rFrag&&!_rReg){ _cEl.textContent='Concordancia calidad↔pilares: sin datos subjetivos suficientes (necesita ≥5 noches con calidad reportada).'; }
+            else _cEl.innerHTML='<strong>Concordancia con la calidad reportada</strong> (r de Pearson'+(_rQty?' · n='+_rQty.n:'')+'): '+
+              'cantidad '+_fmt(_rQty)+' · fragmentación '+_fmt(_rFrag)+' · regularidad '+_fmt(_rReg)+
+              (_rEner?' · energía diurna '+_fmt(_rEner):'')+
+              '. <span style="font-style:italic">r bajo con todos los pilares sugiere disociación percepción-métrica (evaluar insomnio paradójico).</span>';
+          }
+        }catch(_conc){}
         const ctxP=document.getElementById('dr-pillar-chart');
-        if(ctxP){killChart('dp-dr');(function(){try{if(S.charts['dp-dr'])S.charts['dp-dr'].destroy();}catch(_){}})(),S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8,padding:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});}
+        if(ctxP){killChart('dp-dr');(function(){try{if(S.charts['dp-dr'])S.charts['dp-dr'].destroy();}catch(_){}})(),S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Calidad reportada',data:sorted.map(e=>e.sleep_quality?e.sleep_quality*20:null),borderColor:'#a855f7',backgroundColor:'transparent',pointBackgroundColor:'#a855f7',tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[5,3],spanGaps:true,fill:false},{label:'Energía reportada',data:sorted.map(e=>e.energy?e.energy*20:null),borderColor:'#0891b2',backgroundColor:'transparent',pointBackgroundColor:'#0891b2',tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[2,3],spanGaps:true,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:8,padding:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});}
       },150);
     }else if(tab==='pvt'){
       // Show circadian alert PATTERN for doctor view
@@ -11920,7 +12109,7 @@ function renderSleepScorePanel(entries){
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${sc.color};margin-bottom:6px">Score de sueño</div>
       <div style="font-size:64px;font-weight:300;color:${sc.color};line-height:1;letter-spacing:-0.03em">${sc.total}</div>
       <div style="font-size:15px;color:${sc.color};font-weight:600;margin-top:6px">${sc.label}</div>
-      <div style="font-size:11px;color:var(--label-3);margin-top:8px">Basado en ${sc.nNights} noches de registro</div>
+      <div style="font-size:11px;color:#77776e;margin-top:8px">Basado en ${sc.nNights} noches de registro</div>
     </div>
 
     <details style="background:#eef8f5;border-radius:12px;margin-bottom:12px;overflow:hidden">
@@ -14692,9 +14881,13 @@ function showPeriodSectionIfFemale(){
   const rawSex = String(u.sex || u.gender || '').trim().toLowerCase();
   const isFemale = rawSex === 'f' || rawSex.startsWith('femenin') || rawSex.startsWith('mujer');
   // track_menstrual puede venir como boolean true o como string 'true' según cómo
-  // lo devuelva la BD; aceptamos ambos.
+  // lo devuelva la BD; aceptamos ambos. Y si NUNCA respondió (null/undefined),
+  // en mujeres en edad fértil (menarca sí, menopausia no) lo mostramos igual:
+  // antes esas pacientes no veían la sección nunca, y el dato se perdía.
+  const explicitNo = u.track_menstrual === false || u.track_menstrual === 'false';
   const tracks = u.track_menstrual === true || u.track_menstrual === 'true';
-  el.style.display = (isFemale && tracks) ? 'block' : 'none';
+  const fertileDefault = !explicitNo && u.track_menstrual == null && u.has_menarche !== false && u.has_menopause !== true;
+  el.style.display = (isFemale && (tracks || fertileDefault)) ? 'block' : 'none';
 }
 
 async function saveDrProfile(){
@@ -14953,10 +15146,12 @@ function renderDrScalesPicker(selected){
     'movement':'🦵 Movimiento','mental':'🧠 Salud mental','geriatric':'👴 Geriátrico',
     'sexual':'❤️ Sexualidad','female':'♀️ Salud femenina','pediatric':'🧒 Pediátrico',
     'sleepiness':'😴 Somnolencia','fatigue':'⚡ Fatiga','addiction':'📱 Adicción',
-    'ptsd':'🎗️ TEPT','quality':'⭐ Calidad de vida'
+    'ptsd':'🎗️ TEPT','quality':'⭐ Calidad de vida','pain':'🩹 Dolor'
   };
   SCALES.forEach(sc=>{
-    if(sc.disabled||!sc.qs||!sc.qs.length) return;
+    // Las escalas "custom" (EEDSI) no tienen qs[] pero SÍ son usables:
+    // antes quedaban afuera del selector por error.
+    if(sc.disabled||((!sc.qs||!sc.qs.length)&&!sc.custom)) return;
     const cat = sc.cat||'other';
     if(!cats[cat]) cats[cat]=[];
     cats[cat].push(sc);
