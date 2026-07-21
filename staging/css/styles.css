@@ -174,7 +174,7 @@
   body.dr-desktop .dm-diary-score,
   body.dr-desktop .dm-diary-pillars{ padding:8px 12px; }
   body.dr-desktop .dm-diary-pillars .dm-card-title{ margin-bottom:4px; }
-  body.dr-desktop .dm-diary-pillars .chart-wrap{ height:130px !important; }
+  body.dr-desktop .dm-diary-pillars .chart-wrap{ height:170px !important; }
 
 }
 /* La caja de Score ocupaba demasiado lugar (número gigante de 64px + mucho
@@ -216,7 +216,7 @@
    repetida de adentro del tab Perfil): nombre grande, correo y edad·sexo·IMC
    legibles, todo centrado entre los botones Volver y PDF. */
 @media (min-width:900px){
-  body.dr-desktop .dm-drp-header{ justify-content:center;gap:12px;padding:6px 0; }
+  body.dr-desktop .dm-drp-header{ justify-content:center;gap:22px;padding:6px 48px; }
   body.dr-desktop .dm-drp-avatar{ width:34px;height:34px;font-size:12px; }
   body.dr-desktop .dm-drp-name{ font-size:17px; }
   body.dr-desktop .dm-drp-email{ font-size:12px;max-width:240px; }
