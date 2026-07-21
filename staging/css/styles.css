@@ -378,6 +378,19 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
     display:block !important;
     max-width:100% !important;
   }
+  /* Estudios / Notas / Alerta / Sugerir escalas / Material / Historial:
+     su contenido es una sola columna de bloques — bajo el grid base quedaban
+     apretados contra la izquierda. Columna única centrada. */
+  body.dr-desktop #drp-content[data-tab="docs"],
+  body.dr-desktop #drp-content[data-tab="notes"],
+  body.dr-desktop #drp-content[data-tab="pvt"],
+  body.dr-desktop #drp-content[data-tab="suggest"],
+  body.dr-desktop #drp-content[data-tab="edumat"],
+  body.dr-desktop #drp-content[data-tab="history"]{
+    display:block !important;
+    max-width:860px !important;
+    margin:0 auto !important;
+  }
   body.dr-desktop #drp-content[data-tab="summary"] .sc-card{
     margin-bottom:8px !important;
   }
