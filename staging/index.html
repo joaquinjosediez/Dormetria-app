@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod18">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod19">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1279,7 +1279,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod18';
+const APP_VERSION='hoy75-mod19';
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -3709,21 +3709,40 @@ function updatePillarBars(entries){
   console.log('[GRAFICOS] pillarsEl=',!!pillarsEl);
   if(!pillarsEl) return;
   const nLabel=lastN===pillarData.length?'Todo':lastN+' noches';
-  pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
-    [{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:'7–9h recomendado'},
+  // Edad del paciente (propia vista) — para modo pediátrico.
+  let _ageOwn=null; try{ const _d=S.user&&S.user.dob?new Date(S.user.dob):null; if(_d) _ageOwn=Math.floor((Date.now()-_d)/31557600000); }catch(_){}
+  const _pedOwn=isPediatric(_ageOwn);
+  const _optOwn=optimalSleepHours(_ageOwn);
+  const cardHtml=(label,valHtml,color,status,sub,pillarC)=>'<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+pillarC+'">'+
+    '<div style="font-size:10px;font-weight:700;color:'+pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+label+'</div>'+
+    '<div style="font-size:22px;font-weight:700;color:'+color+';margin:2px 0">'+valHtml+'</div>'+
+    '<div style="font-size:10px;font-weight:600;color:'+color+';margin-bottom:4px">'+status+'</div>'+
+    '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+sub+'</div></div>';
+  let cardsOwn;
+  if(_pedOwn){
+    const _sjlOwn=socialJetLagMin(sorted);
+    const _st=_sjlOwn==null?{t:'Sin datos',c:'#888'}:_sjlOwn<30?{t:'Muy buena',c:'#14532d'}:_sjlOwn<60?{t:'Buena',c:'#2d9e6b'}:_sjlOwn<90?{t:'Mejorable',c:'#d97706'}:{t:'Requiere atención',c:'#dc2626'};
+    const _awkOwn=(function(){const a=sorted.filter(e=>e.sleep_minutes);if(!a.length)return 0;return a.reduce((x,e)=>x+(e.awakenings||0),0)/a.length;})();
+    const cQ=pillarColor(avgQtyP);
+    const stQ=avgQtyP>=90?'Muy bien':avgQtyP>=80?'Bien':avgQtyP>=70?'Mejorable':avgQtyP>=60?'Regular':'Requiere atención';
+    cardsOwn=
+      cardHtml('Cantidad',avgQtyP+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span>',cQ,stQ,_optOwn.lo+'–'+_optOwn.hi+'h para tu edad',' #2d9e6b'.trim())+
+      cardHtml('Fragmentación',(_awkOwn>0?_awkOwn.toFixed(1):'0')+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> desp/noche</span>','#44403c','Informativo','En chicos los despertares se sobreestiman; se muestra como dato, no como nota.','#0e7490')+
+      cardHtml('Regularidad',(_sjlOwn==null?'—':_sjlOwn+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> min</span>'),_st.c,_st.t,'Diferencia de horario entre semana y fin de semana.','#e67e22');
+  } else {
+    cardsOwn=[{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:_optOwn.lo+'–'+_optOwn.hi+'h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
-     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub: _localRegResult.sd_midpoint_min!==null ? ('Variación: ±'+_localRegResult.sd_midpoint_min+' min') : 'Variabilidad del horario', statusOverride: null}
-    ].map(p=>{
-      const c=pillarColor(p.val);
-      const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
+     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub:_localRegResult.sd_midpoint_min!==null?('Variación: ±'+_localRegResult.sd_midpoint_min+' min'):'Variabilidad del horario'}
+    ].map(p=>{const c=pillarColor(p.val);const status=(p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
       return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.color+'">'+
         '<div style="font-size:10px;font-weight:700;color:'+p.color+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.label+'</div>'+
         '<div style="font-size:22px;font-weight:700;color:'+c+';margin:2px 0">'+p.val+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div>'+
-        '<div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+status+'</div>'+
-        pillarBar(p.val,c)+
-        '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+p.sub+'</div>'+
-        '</div>';
-    }).join('')+'</div>';
+        '<div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+status+'</div>'+pillarBar(p.val,c)+
+        '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+p.sub+'</div></div>';
+    }).join('');
+  }
+  pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+cardsOwn+'</div>'+
+    (_pedOwn?'<div style="font-size:9.5px;color:rgba(255,255,255,0.55);margin-top:8px;line-height:1.4;font-style:italic">Las referencias están ajustadas a la edad del perfil.</div>':'');
 }
 
 
@@ -3937,6 +3956,38 @@ function optimalSleepHours(ageYears){
   if(a<18) return {lo:8,  hi:10};
   if(a<65) return {lo:7,  hi:9};
   return {lo:7, hi:8};
+}
+// ── Modo pediátrico ──
+// Umbral <13 años (escolares y menores). Fundamento: en niños los despertares
+// y la fragmentación DISMINUYEN con la edad (Scholle 2011; Stores & Crawford
+// 2000) y la actigrafía/diario los SOBREESTIMA por el mayor movimiento
+// (Meltzer). No hay cortes clínicos de fragmentación ni de SRI validados en
+// pediatría, así que esos pilares se muestran descriptivos y el puntaje de
+// regularidad se apoya en el JET LAG SOCIAL, que sí tiene respaldo pediátrico
+// (Sun 2019). Cantidad usa el rango de Paruthi/AASM 2016 por edad.
+function isPediatric(ageYears){ return ageYears!=null && ageYears<13; }
+// Jet lag social (min) desde un set de entradas: |punto medio finde − semana|.
+function socialJetLagMin(entries){
+  const wd=[], we=[];
+  (entries||[]).forEach(e=>{
+    if(!e.bedtime||!e.sleep_minutes) return;
+    const day=new Date(e.diary_date+'T12:00').getDay();
+    const [bh,bm]=e.bedtime.split(':').map(Number);
+    let bed=bh*60+bm; if(bed<12*60) bed+=24*60;
+    const mid=bed+e.sleep_minutes/2;
+    const isFree=(e.day_type==='free')||(day===0||day===6);
+    (isFree?we:wd).push(mid);
+  });
+  if(!wd.length||!we.length) return null;
+  const m=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  return Math.round(Math.abs(m(we)-m(wd)));
+}
+// Puntaje 0–30 de regularidad a partir del jet lag social (para el score
+// pediátrico). Cortes prácticos: <30 óptimo … >120 alto.
+function jetLagRegScore(sjl){
+  if(sjl==null) return 15; // neutral sin datos
+  if(sjl<30) return 30; if(sjl<60) return 24; if(sjl<90) return 18;
+  if(sjl<120) return 12; if(sjl<150) return 6; return 0;
 }
 // Puntaje de cantidad 0–50 relativo al rango óptimo de la edad.
 function qtyScoreForAge(hrs, ageYears){
@@ -10415,11 +10466,40 @@ async function showDrPTab_(tab){
         function pColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
         function pBar(v,c){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+c+';width:'+v+'%;transition:width .6s ease"></div></div>';}
         const pEl=document.getElementById('dr-pillar-bars');
-        if(pEl) pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+
-          [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22',statusOverride: null}].map(p=>{const c=pColor(p.v);const st = p.statusOverride || (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.pillarC+'"><div style="font-size:10px;font-weight:700;color:'+p.pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.l+'</div><div style="font-size:22px;font-weight:700;color:'+c+'">'+p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div><div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+st+'</div>'+pBar(p.v,c)+
-            '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+
-            ({Cantidad:_optH.lo+'–'+_optH.hi+'h recomendado'+(_ageForPillar!=null&&_ageForPillar<18?' (para '+_ageForPillar+' años)':''),Fragmentación:(_awakAvg>0?_awakAvg.toFixed(1)+' despertares/noche':'Sin despertares registrados'),Regularidad: (regResult.sd_midpoint_min!==null ? ('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')) : 'Variabilidad del horario')}[p.l]||'')+
-            '</div></div>';}).join('')+'</div>';
+        const _pedP=isPediatric(_ageForPillar);
+        const _sjlP=socialJetLagMin(sorted);
+        // Estado + color a partir del jet lag social (cortes pediátricos).
+        const _sjlStatus = _sjlP==null?{t:'Sin datos',c:'#888'}:_sjlP<30?{t:'Muy buena',c:'#14532d'}:_sjlP<60?{t:'Buena',c:'#2d9e6b'}:_sjlP<90?{t:'Mejorable',c:'#d97706'}:{t:'Requiere atención',c:'#dc2626'};
+        function pillarCard(title,valHtml,color,status,sub,pillarC){
+          return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+pillarC+'">'+
+            '<div style="font-size:10px;font-weight:700;color:'+pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+title+'</div>'+
+            '<div style="font-size:22px;font-weight:700;color:'+color+'">'+valHtml+'</div>'+
+            '<div style="font-size:10px;font-weight:600;color:'+color+';margin-bottom:4px">'+status+'</div>'+
+            '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+sub+'</div>'+
+          '</div>';
+        }
+        if(pEl){
+          let cards;
+          if(_pedP){
+            // PEDIÁTRICO: Cantidad se puntúa (por edad). Fragmentación queda
+            // DESCRIPTIVA (sin cortes de adulto). Regularidad se puntúa por
+            // jet lag social.
+            const cQ=pColor(avgQtyP);
+            const stQ=avgQtyP>=90?'Muy bien':avgQtyP>=80?'Bien':avgQtyP>=70?'Mejorable':avgQtyP>=60?'Regular':'Requiere atención';
+            cards =
+              pillarCard('Cantidad', avgQtyP+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span>', cQ, stQ, _optH.lo+'–'+_optH.hi+'h recomendado'+(_ageForPillar!=null?' (para '+_ageForPillar+' años)':'')+' · Paruthi/AASM 2016', '#1a4a3a')+
+              pillarCard('Fragmentación', (_awakAvg>0?_awakAvg.toFixed(1):'0')+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> desp/noche</span>', '#44403c', 'Descriptivo', 'En niños la fragmentación por diario/actigrafía se sobreestima y no tiene cortes clínicos validados. Se informa como observación, no puntúa.', '#0e7490')+
+              pillarCard('Regularidad', (_sjlP==null?'—':_sjlP+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> min</span>'), _sjlStatus.c, _sjlStatus.t, 'Jet lag social (finde vs. semana). Es la métrica de regularidad con respaldo pediátrico (Sun 2019). Este pilar SÍ pesa en el puntaje.', '#e67e22');
+          } else {
+            cards = [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22'}].map(p=>{
+              const c=pColor(p.v);const st=(p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');
+              const sub=({Cantidad:_optH.lo+'–'+_optH.hi+'h recomendado',Fragmentación:(_awakAvg>0?_awakAvg.toFixed(1)+' despertares/noche':'Sin despertares registrados'),Regularidad:(regResult.sd_midpoint_min!==null?('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')):'Variabilidad del horario')})[p.l]||'';
+              return pillarCard(p.l, p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span>', c, st, sub, p.pillarC);
+            }).join('');
+          }
+          pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+cards+'</div>'+
+            (_pedP?'<div style="font-size:9.5px;color:var(--label-3);margin-top:8px;line-height:1.4;font-style:italic">Modo pediátrico: los cortes de adulto (SRI, índice de fragmentación) no están validados en menores de 13 años. El puntaje de sueño toma cantidad (por edad), calidad reportada y regularidad por jet lag social.</div>':'');
+        }
         // Concordancia subjetivo↔objetivo: correlación de Pearson entre la
         // calidad reportada cada mañana y cada pilar calculado. Un r alto en
         // fragmentación, por ejemplo, dice que la percepción del paciente
@@ -12172,18 +12252,28 @@ function calcSleepScore(entries, ageYears){
   if(scores.length === 0) return null;
   
   // ── REGULARITY (0-30 pts) ──
-  // UNIFICADO con computeSleepRegularity (misma función que usan paciente y médico)
-  // Mapeo: score 0-100 → 0-30 pts. Si no hay datos suficientes, usar valor neutral.
+  const _ped = isPediatric(ageYears);
+  const _sjl = socialJetLagMin(entries);
   let regularity;
-  try {
-    const regRes = computeSleepRegularity(entries);
-    if(regRes && regRes.score !== null){
-      regularity = Math.round(regRes.score * 30 / 100);
-    } else {
-      regularity = 15; // neutral cuando no hay datos suficientes
-    }
-  } catch(_) {
-    regularity = 15;
+  if(_ped){
+    // Pediátrico: la regularidad la lleva el jet lag social (respaldo pediátrico),
+    // no el SRI de adulto.
+    regularity = jetLagRegScore(_sjl);
+  } else {
+    // Adulto: UNIFICADO con computeSleepRegularity (SRI/SD punto medio).
+    try {
+      const regRes = computeSleepRegularity(entries);
+      regularity = (regRes && regRes.score !== null) ? Math.round(regRes.score * 30 / 100) : 15;
+    } catch(_) { regularity = 15; }
+  }
+  // Pediátrico: la fragmentación por despertares es poco fiable (sobreestimada
+  // y sin cortes validados) → el componente de 0-20 pts pasa a apoyarse en la
+  // CALIDAD reportada por el cuidador, que sí es un dato significativo.
+  if(_ped){
+    scores.forEach(s=>{
+      const q=s.quality;
+      s.frag = q ? Math.max(0,Math.min(20, q*4)) : 12; // 5→20 … 1→4 ; neutral 12 sin dato
+    });
   }
   
   // Per-night scores
@@ -12225,6 +12315,7 @@ function calcSleepScore(entries, ageYears){
   return {
     total, avgQty: Math.round(avgQty), avgFrag: Math.round(avgFrag),
     regularity, nightScores, socialJetLag, insufficiencyPct,
+    pediatric: _ped, sjlMin: _sjl,
     nNights: scores.length,
     label: total>=85?'Excelente':total>=70?'Bueno':total>=55?'Regular':total>=40?'Deficiente':'Muy deficiente',
     color: total>=85?'#34C759':total>=70?'#1a4a3a':total>=55?'#FF9500':total>=40?'#FF6B00':'#FF3B30',
