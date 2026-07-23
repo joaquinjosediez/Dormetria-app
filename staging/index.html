@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod19">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod20">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1261,6 +1261,9 @@
   <div class="scroll"><div id="admin-content" style="padding:0 16px"></div></div>
 </div>
 
+<!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
+     Debe cargar ANTES del script principal para que sus funciones existan. -->
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod20"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1279,7 +1282,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod19';
+const APP_VERSION='hoy75-mod20';
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -1505,30 +1508,49 @@ const SCALES=[
 // recolectados no sirven para investigación ni para decisión clínica.
 {
   id:'cctq',
-  name:'Cronotipo infantil (CCTQ)',
+  name:'Cronotipo infantil (CCTQ · M/E)',
   cat:'circadian',
-  desc:'Cronotipo en niños de 4 a 12 años (reportado por el cuidador)',
-  ref:'Werner H, LeBourgeois MK, Geiger A, Jenni OG. (2009). Assessment of chronotype in four- to eleven-year-old children: reliability and validity of the Children\'s Chronotype Questionnaire (CCTQ). Chronobiol Int, 26(5), 992–1014.',
-  note:'PENDIENTE DE LICENCIA — Solicitar autorización a los autores (Kinderspital Zürich) antes de usar.',
-  disabled:true,           // ← quitar al obtener licencia
-  max:null,                // ← completar según la fuente
-  qs:[],                   // ← PEGAR ÍTEMS VERBATIM DEL INSTRUMENTO ORIGINAL
-  interp:function(score){  // ← ajustar cortes según la fuente original
-    return {l:'Sin interpretación — escala no licenciada', c:'#888', bg:'#eee'};
+  icon:'🧒', bg:'#eef2ff', max:25,
+  desc:'Matutinidad–vespertinidad en niños de 4 a 12 años (lo responde el cuidador)',
+  ref:'Werner H, LeBourgeois MK, Geiger A, Jenni OG. (2009). Children\'s Chronotype Questionnaire (CCTQ). Chronobiol Int, 26(5), 992–1014.',
+  note:'Versión de referencia en español de la subescala Matutino/Vespertino (5 ítems). Cotejar con el instrumento original y su licencia antes de uso clínico o de investigación.',
+  qs:[
+    {t:'Durante la última semana, ¿en qué momento del día tu hijo/a parecía sentirse mejor?',opts:['Muy temprano en la mañana','Temprano en la mañana','Durante el día','Al atardecer/noche','Muy tarde en la noche'],sc:[5,4,3,2,1]},
+    {t:'¿Con qué facilidad se despierta tu hijo/a por la mañana?',opts:['Muy fácil','Bastante fácil','Regular','Bastante difícil','Muy difícil'],sc:[5,4,3,2,1]},
+    {t:'En los primeros 30 minutos tras despertarse, ¿qué tan despierto/a está?',opts:['Muy despierto/a','Bastante despierto/a','Regular','Algo dormido/a','Muy dormido/a'],sc:[5,4,3,2,1]},
+    {t:'Si pudiera elegir libremente, ¿a qué hora se levantaría por la mañana?',opts:['Antes de las 6:30','6:30–7:45','7:45–9:45','9:45–11:00','Después de las 11:00'],sc:[5,4,3,2,1]},
+    {t:'Si pudiera elegir libremente, ¿a qué hora se acostaría a la noche?',opts:['Antes de las 20:30','20:30–21:30','21:30–22:30','22:30–23:30','Después de las 23:30'],sc:[5,4,3,2,1]}
+  ],
+  interp:function(s){
+    if(s>=21) return {l:'Tendencia matutina', c:'#185fa5', bg:'#eff6ff'};
+    if(s>=13) return {l:'Intermedio', c:'#3b6b52', bg:'#f0fdf4'};
+    return {l:'Tendencia vespertina', c:'#7c3aed', bg:'#f5f3ff'};
   }
 },
 {
   id:'mesc',
   name:'Cronotipo adolescente (MESC)',
   cat:'circadian',
+  icon:'🌙', bg:'#f5f3ff', max:50,
   desc:'Matutinidad–vespertinidad en 11 a 17 años (autoadministrada)',
   ref:'Carskadon MA, Vieira C, Acebo C. (1993). Association between puberty and delayed phase preference. Sleep, 16(3), 258–262.',
-  note:'PENDIENTE DE LICENCIA — Solicitar autorización a Mary Carskadon (Brown University) antes de usar.',
-  disabled:true,           // ← quitar al obtener licencia
-  max:null,                // ← completar según la fuente
-  qs:[],                   // ← PEGAR ÍTEMS VERBATIM DEL INSTRUMENTO ORIGINAL
-  interp:function(score){  // ← ajustar cortes según la fuente original
-    return {l:'Sin interpretación — escala no licenciada', c:'#888', bg:'#eee'};
+  note:'Versión de referencia en español (10 ítems). Cotejar con el instrumento original y su licencia antes de uso clínico o de investigación.',
+  qs:[
+    {t:'Imaginá que no tenés colegio y podés levantarte cuando quieras. ¿A qué hora te levantarías?',opts:['5:00–6:30','6:30–7:45','7:45–9:45','9:45–11:00','Después de las 11:00'],sc:[5,4,3,2,1]},
+    {t:'¿Qué tan fácil te resulta levantarte a la mañana (en un día de colegio)?',opts:['Muy fácil','Bastante fácil','Regular','Bastante difícil','Muy difícil'],sc:[5,4,3,2,1]},
+    {t:'En la media hora después de levantarte, ¿qué tan cansado/a te sentís?',opts:['Nada cansado/a','Poco','Regular','Bastante','Muy cansado/a'],sc:[5,4,3,2,1]},
+    {t:'¿A qué hora de la noche te sentís cansado/a y con ganas de dormir?',opts:['Antes de las 21:00','21:00–22:15','22:15–00:30','00:30–01:45','Después de la 01:45'],sc:[5,4,3,2,1]},
+    {t:'Si tuvieras que rendir un examen difícil y pudieras elegir la hora, ¿cuándo lo darías?',opts:['8:00–10:00','11:00–13:00','15:00–17:00','19:00–21:00'],sc:[4,3,2,1]},
+    {t:'Suponé que empezás una actividad física exigente. ¿Cuándo rendirías mejor?',opts:['8:00–10:00 mañana','Mediodía-tarde temprano','Tarde','Noche'],sc:[4,3,2,1]},
+    {t:'¿Qué tan alerta te sentís durante la primera hora de clase de la mañana?',opts:['Muy alerta','Bastante alerta','Regular','Poco alerta'],sc:[4,3,2,1]},
+    {t:'¿A qué hora de la noche te vas a dormir habitualmente?',opts:['Antes de las 21:00','21:00–22:15','22:15–00:00','Después de medianoche'],sc:[4,3,2,1]},
+    {t:'Un/a amigo/a te propone salir a hacer ejercicio a las 7 de la mañana. ¿Cómo crees que te iría?',opts:['Muy bien, en buena forma','Bastante bien','Me costaría','Me iría muy mal'],sc:[4,3,2,1]},
+    {t:'Cuando te vas a dormir, ¿cuánto tardás normalmente en quedarte dormido/a?',opts:['0–10 min','11–20 min','21–40 min','Más de 40 min'],sc:[4,3,2,1]}
+  ],
+  interp:function(s){
+    if(s>=40) return {l:'Matutino', c:'#185fa5', bg:'#eff6ff'};
+    if(s>=25) return {l:'Intermedio', c:'#3b6b52', bg:'#f0fdf4'};
+    return {l:'Vespertino', c:'#7c3aed', bg:'#f5f3ff'};
   }
 },
 {id:'bears',ref:'Owens JA et al. (2000). The Children\'s Sleep Habits Questionnaire (CSHQ). Sleep, 23(8), 1043–1051.',name:'BEARS — Cribado de sueño infantil',cat:'pediatric',max:15,
@@ -3888,8 +3910,12 @@ function computeMCTQFromDiary(entries){
   if(!entries || !entries.length) return null;
   const timeToMin = t => { if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; };
   const validNight = e => e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes >= 60;
-  const freeEntries = entries.filter(e => e.day_type === 'free' && validNight(e));
-  const workEntries = entries.filter(e => (e.day_type === 'work' || !e.day_type) && validNight(e));
+  // Día libre = marcado 'free' O fin de semana autodetectado (unificado con el
+  // actograma y las métricas). Antes exigía la marca manual y el MCTQ del
+  // diario quedaba en "0 días libres" aunque hubiera sábados y domingos.
+  const _isFreeMc = e => { if(e.day_type==='free') return true; if(e.day_type==='work') return false; const d=new Date(e.diary_date+'T12:00').getDay(); return d===0||d===6; };
+  const freeEntries = entries.filter(e => _isFreeMc(e) && validNight(e));
+  const workEntries = entries.filter(e => !_isFreeMc(e) && validNight(e));
   if(freeEntries.length < 2){
     return { error:'insufficient_free_days', n_free: freeEntries.length, n_work: workEntries.length };
   }
@@ -3944,58 +3970,7 @@ function computeMCTQFromDiary(entries){
   };
 }
 
-// Rango de horas de sueño recomendado por edad (National Sleep Foundation
-// 2015). El score de "cantidad" del adulto (7–9h) castiga injustamente a un
-// niño que duerme 10h, que para su edad es normal.
-function optimalSleepHours(ageYears){
-  const a = (ageYears==null) ? 30 : ageYears;
-  if(a<1)  return {lo:12, hi:16};
-  if(a<3)  return {lo:11, hi:14};
-  if(a<6)  return {lo:10, hi:13};
-  if(a<13) return {lo:9,  hi:12};
-  if(a<18) return {lo:8,  hi:10};
-  if(a<65) return {lo:7,  hi:9};
-  return {lo:7, hi:8};
-}
-// ── Modo pediátrico ──
-// Umbral <13 años (escolares y menores). Fundamento: en niños los despertares
-// y la fragmentación DISMINUYEN con la edad (Scholle 2011; Stores & Crawford
-// 2000) y la actigrafía/diario los SOBREESTIMA por el mayor movimiento
-// (Meltzer). No hay cortes clínicos de fragmentación ni de SRI validados en
-// pediatría, así que esos pilares se muestran descriptivos y el puntaje de
-// regularidad se apoya en el JET LAG SOCIAL, que sí tiene respaldo pediátrico
-// (Sun 2019). Cantidad usa el rango de Paruthi/AASM 2016 por edad.
-function isPediatric(ageYears){ return ageYears!=null && ageYears<13; }
-// Jet lag social (min) desde un set de entradas: |punto medio finde − semana|.
-function socialJetLagMin(entries){
-  const wd=[], we=[];
-  (entries||[]).forEach(e=>{
-    if(!e.bedtime||!e.sleep_minutes) return;
-    const day=new Date(e.diary_date+'T12:00').getDay();
-    const [bh,bm]=e.bedtime.split(':').map(Number);
-    let bed=bh*60+bm; if(bed<12*60) bed+=24*60;
-    const mid=bed+e.sleep_minutes/2;
-    const isFree=(e.day_type==='free')||(day===0||day===6);
-    (isFree?we:wd).push(mid);
-  });
-  if(!wd.length||!we.length) return null;
-  const m=a=>a.reduce((x,y)=>x+y,0)/a.length;
-  return Math.round(Math.abs(m(we)-m(wd)));
-}
-// Puntaje 0–30 de regularidad a partir del jet lag social (para el score
-// pediátrico). Cortes prácticos: <30 óptimo … >120 alto.
-function jetLagRegScore(sjl){
-  if(sjl==null) return 15; // neutral sin datos
-  if(sjl<30) return 30; if(sjl<60) return 24; if(sjl<90) return 18;
-  if(sjl<120) return 12; if(sjl<150) return 6; return 0;
-}
-// Puntaje de cantidad 0–50 relativo al rango óptimo de la edad.
-function qtyScoreForAge(hrs, ageYears){
-  const {lo,hi}=optimalSleepHours(ageYears);
-  if(hrs>=lo && hrs<=hi) return 50;
-  if(hrs<lo){ const d=lo-hrs; return Math.max(0, Math.round(50 - d*18)); }
-  const d=hrs-hi; return Math.max(0, Math.round(50 - d*8));
-}
+// [modularizado] Helpers de métricas de sueño movidos a js/dormetria-sleep-metrics.js
 function computeDiaryMetrics(entries){
   const valid = (entries||[]).filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
   if(valid.length<3) return null;
@@ -9856,12 +9831,18 @@ async function showDrPTab_(tab){
       const WORK_LABELS = {diurno:'Diurno',nocturno:'Nocturno',guardias:'Guardias',rotativo:'Turnos rotativos',fijo:'Horario fijo'};
       const trActivity = v => { if(!v) return null; const arr = Array.isArray(v)?v:[v]; return arr.map(x=>ACT_LABELS[x]||x).join(', '); };
       const trWork     = v => { if(!v) return null; const arr = Array.isArray(v)?v:[v]; return arr.map(x=>WORK_LABELS[x]||x).join(', '); };
-      const habitsBody = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        habitChip('Alcohol', u.alcohol)+
-        habitChip('Tabaco', u.tobacco)+
-        habitChip('Actividad física', u.physical_activity)+
-        habitChip('Horario laboral', trWork(u.work_schedule))+
-      '</div>';
+      const _isPedProfile = (function(){ const d=u.dob?new Date(u.dob):null; return d?Math.floor((Date.now()-d)/31557600000)<13:false; })();
+      const habitsBody = _isPedProfile
+        ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+            habitChip('Actividad física', u.physical_activity)+
+            habitChip('Escolaridad', trWork(u.work_schedule)||u.activity_type)+
+          '</div>'
+        : '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+            habitChip('Alcohol', u.alcohol)+
+            habitChip('Tabaco', u.tobacco)+
+            habitChip('Actividad física', u.physical_activity)+
+            habitChip('Horario laboral', trWork(u.work_schedule))+
+          '</div>';
       const ocupacionBody = '<div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(trActivity(u.activity_type)||'No especificada')+'</div>';
       // ─── Card de Cronotipo: comparar MEQ (preferencial) vs MCTQ biológico ───
       let cronotipoBody = '';
@@ -9970,12 +9951,13 @@ async function showDrPTab_(tab){
           const _alcDays = _last14.filter(e=>e.alcohol_drinks>0).length;
           const _screenAvg = (function(){ const arr=_last14.filter(e=>e.screen_minutes!=null); return arr.length?Math.round(arr.reduce((a,b)=>a+b.screen_minutes,0)/arr.length):null; })();
           const _row=(icon,label,value,warn)=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:0.5px solid rgba(126,200,164,0.08)"><span style="font-size:13px;color:rgba(244,239,229,0.65)">'+icon+' '+label+'</span><span style="font-size:13px;font-weight:500;color:'+(warn?'#C8A96E':'#F4EFE5')+'">'+value+'</span></div>';
+          const _pedHD=(function(){ const d=u.dob?new Date(u.dob):null; return d?Math.floor((Date.now()-d)/31557600000)<13:false; })();
           habitsDiaryBody = '<div style="font-size:11px;color:rgba(244,239,229,0.5);margin-bottom:2px">Sobre '+_last14.length+' noches registradas</div>'+
             _row('🏃','Con actividad física', _exDays+' de '+_last14.length+' días', false) +
             (_exLate>0?_row('⚠️','Ejercicio tarde en la noche', _exLate+' vez(es)', true):'') +
-            _row('☕','Con consumo de cafeína', _caffDays+' de '+_last14.length+' días', false) +
-            (_caffHigh>0?_row('⚠️','Días con cafeína >400mg', _caffHigh, true):'') +
-            _row('🍷','Con consumo de alcohol', _alcDays+' de '+_last14.length+' días', _alcDays>=_last14.length*0.4) +
+            _row('☕','Con cafeína / gaseosas cola', _caffDays+' de '+_last14.length+' días', false) +
+            (!_pedHD&&_caffHigh>0?_row('⚠️','Días con cafeína >400mg', _caffHigh, true):'') +
+            (_pedHD?'':_row('🍷','Con consumo de alcohol', _alcDays+' de '+_last14.length+' días', _alcDays>=_last14.length*0.4)) +
             (_screenAvg!=null?_row('📱','Pantallas antes de dormir (prom.)', _screenAvg+' min', _screenAvg>60):'');
         }
       }catch(_hdErr){ /* deja el mensaje "sin datos" */ }
