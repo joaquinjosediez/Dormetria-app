@@ -115,7 +115,12 @@
 /* Filtro de etiquetas en la lista de pacientes */
 .dm-tagfilter-bar{ display:flex;gap:5px;flex-wrap:wrap;padding:0 16px 10px; }
 .dm-tagfilter-bar::-webkit-scrollbar{ display:none; }
-.dm-tagfilter-chip{ cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.55);background:transparent;transition:all .12s;white-space:nowrap;flex-shrink:0; }
+/* Barra de FILTRO por etiqueta: grid de 4 columnas → 7 chips quedan en
+   exactamente 2 filas (4 + 3), prolijo y sin scroll. La barra de "Ordenar"
+   sigue siendo flex normal. */
+#dr-tagfilter-bar{ display:grid;grid-template-columns:repeat(4,1fr);gap:6px; }
+#dr-tagfilter-bar .dm-tagfilter-chip{ justify-content:center; }
+.dm-tagfilter-chip{ cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.55);background:transparent;transition:all .12s;white-space:nowrap;flex-shrink:0;display:flex;align-items:center; }
 .dm-tagfilter-chip.on{ background:rgba(126,200,164,0.16);border-color:#7EC8A4;color:#7EC8A4; }
 .dm-patlist-tags{ display:flex;gap:4px;flex-wrap:wrap;margin-top:3px; }
 .dm-patlist-tag{ font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid currentColor;line-height:1.5; }
