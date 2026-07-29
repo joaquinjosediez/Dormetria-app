@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod22">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod23">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1263,7 +1263,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod22"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod23"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1282,7 +1282,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod22';
+const APP_VERSION='hoy75-mod23';
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -3161,7 +3161,7 @@ async function loadAdminTab(tab){
             <button onclick="adminReject('${d.email}',this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:#fee2e2;color:#991b1b;font-size:13px;font-weight:600;cursor:pointer">✗ Rechazar</button>
           </div></div>`).join('');
     } else if(tab==='doctors'){
-      const docs=await db.get("doctors?select=name,lname,email,specialty,mat,created_at&order=created_at.desc");
+      const docs=await db.get("doctors?select=name,lname,email,specialty,mat,created_at,listed,public_profile,cv_url&order=created_at.desc");
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state">Sin profesionales registrados.</div>';return;}
       const _appList3=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
@@ -3181,7 +3181,11 @@ async function loadAdminTab(tab){
         docs.map(d=>{
           const lastLogin='—';const daysAgo=null;
           const _appList=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-          const badge=_appList[d.email]?'<span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px">✓ En directorio</span>':'<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px">No aprobado</span>';
+          const _pub = d.public_profile===true||d.listed===true||d.listed==='true'||_appList[d.email];
+          const _pend = !_pub && (d.listed==='pending'||d.cv_url);
+          const badge=_pub?'<span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px">✓ En directorio</span>'
+            :_pend?'<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:10px">⏳ Pendiente</span>'
+            :'<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px">No solicitó</span>';
           return `<tr style="border-bottom:1px solid var(--sep-opaque)">
             <td style="padding:8px"><div style="font-weight:600">${d.name} ${d.lname||''}</div><div style="color:var(--label-3);font-size:11px">${d.email}</div></td>
             <td style="padding:8px;color:var(--label-2)">${d.specialty||'—'}</td>
@@ -3242,7 +3246,9 @@ async function loadAdminTab(tab){
         const k=(p.email||'').toLowerCase();
         const act = activityByEmail[k] || {days:new Set(),last:null};
         return {
-          name:((p.name||'')+' '+(p.lname||'')).trim(), email:p.email, dob:p.dob,
+          name:((p.lname||'')?((p.lname||'')+', '+(p.name||'')):((p.name||'')||p.email)).trim(),
+          fname:p.name||'', lname:p.lname||'',
+          email:p.email, dob:p.dob,
           created_at:p.created_at, nDays:act.days.size, last:act.last,
           doctors:(drByPatient[k]||[])
         };
@@ -3290,7 +3296,7 @@ async function loadAdminTab(tab){
       const D30 = NOW - 30*86400000;
       const [allPts, allDrs, diaryRows, evalRows, suggRows] = await Promise.all([
         db.get("patients?select=created_at,email&limit=500").catch(()=>[]),
-        db.get("doctors?select=created_at,email&limit=200").catch(()=>[]),
+        db.get("doctors?select=created_at,email,listed,public_profile,cv_url&limit=200").catch(()=>[]),
         db.get("sleep_diary?select=patient_email,created_at&limit=10000").catch(()=>[]),
         db.get("evaluations?select=patient_email,created_at&limit=10000").catch(()=>[]),
         db.get("doctor_suggestions?select=doctor_email,created_at&limit=5000").catch(()=>[])
@@ -3327,7 +3333,10 @@ async function loadAdminTab(tab){
       }).filter(v=>v!==null && v>0);
       const avgStay = stays.length ? Math.round(stays.reduce((a,b)=>a+b,0)/stays.length) : 0;
       const _appList2=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-      const listedDrs=Object.values(_appList2).filter(Boolean).length;
+      // La verdad sobre "está publicado" vive en la BASE (listed/public_profile),
+      // no en el localStorage de este navegador. Antes el contador decía 0 aunque
+      // el profesional viera "Ya estás en el directorio" en su propio panel.
+      const listedDrs=(allDrs||[]).filter(d=>d.public_profile===true||d.listed===true||d.listed==='true'||_appList2[d.email]).length;
       const _rejList=JSON.parse(localStorage.getItem('dm_rejected_doctors')||'{}');
       // Mismo criterio EXACTO que la pestaña "Pendientes": solo cuentan los que
       // efectivamente solicitaron entrar al directorio (listed/cv_url). Antes
@@ -3451,7 +3460,12 @@ function renderAdminPatientsTable(){
   const rows=(window._admPts||[]).slice();
   if(!rows.length){ if(cont) cont.innerHTML='<div class="empty-state">Sin pacientes registrados.</div>'; return; }
   const mode=window._admSort||'last';
-  const cmpAlpha=(a,b)=>(a.name||a.email).localeCompare(b.name||b.email,'es',{sensitivity:'base'});
+  // Alfabético = por APELLIDO (y luego nombre), como en el listado clínico.
+  const cmpAlpha=(a,b)=>{
+    const ka=((a.lname||'')+' '+(a.fname||'')).trim().toLowerCase()||(a.name||a.email||'').toLowerCase();
+    const kb=((b.lname||'')+' '+(b.fname||'')).trim().toLowerCase()||(b.name||b.email||'').toLowerCase();
+    return ka.localeCompare(kb,'es',{sensitivity:'base'});
+  };
   if(mode==='last')      rows.sort((a,b)=>(b.last||0)-(a.last||0));
   else if(mode==='days') rows.sort((a,b)=>(b.nDays||0)-(a.nDays||0));
   else if(mode==='alpha')rows.sort(cmpAlpha);
@@ -9397,8 +9411,24 @@ async function renderPatientList(filter){
       console.warn('[drprofile] DB timeout, usando datos locales:', timeoutErr.message);
     }
     try{
+      const _sLabel=(sL[dr.specialty]||dr.specialty||'Sin especialidad');
+      const _ro=(l,v)=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.07)"><span style="font-size:13px;color:rgba(255,255,255,0.55)">'+l+'</span><span style="font-size:13px;font-weight:600;color:#fff;text-align:right">'+(v||'—')+'</span></div>';
       cont.innerHTML=`<div style="padding:16px 0">
-        <div class="sec-title" style="margin-bottom:12px">Datos del perfil profesional</div>
+        <div class="sec-title" style="margin-bottom:10px">Adherencia de mis pacientes</div>
+        <div id="dr-adherence-panel" style="margin-bottom:20px"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="sec-title" style="margin:0">Datos del perfil profesional</div>
+          <button onclick="toggleDrProfileEdit(true)" id="dr-edit-toggle" style="background:rgba(126,200,164,0.12);border:1px solid rgba(126,200,164,0.35);color:#7EC8A4;font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
+        </div>
+        <div id="dr-profile-readonly" style="background:rgba(255,255,255,0.05);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+          ${_ro('Nombre',((dr.name||'')+' '+(dr.lname||'')).trim())}
+          ${_ro('Especialidad',_sLabel)}
+          ${_ro('Matrícula',dr.mat)}
+          ${_ro('Institución',dr.inst||dr.institution)}
+          ${_ro('Ciudad / País',[dr.city,dr.country].filter(Boolean).join(' · '))}
+          ${dr.bio?'<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px;line-height:1.45;font-style:italic">'+dr.bio+'</div>':''}
+        </div>
+        <div id="dr-profile-form" style="display:none">
         <div class="form-group"><label class="form-label">Nombre <span style="color:#dc2626">*</span></label>
           <input class="form-input" id="dr-edit-name" value="${dr.name||''}" placeholder="Nombre"></div>
         <div class="form-group"><label class="form-label">Apellido <span style="color:#dc2626">*</span></label>
@@ -9446,10 +9476,15 @@ async function renderPatientList(filter){
             </button>
           </div>
         </div>
-        <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:16px">Guardar cambios</button>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-g" onclick="saveDrProfile()" style="flex:2">Guardar cambios</button>
+          <button onclick="toggleDrProfileEdit(false)" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">Cancelar</button>
+        </div>
+        </div>
       </div>`;
       // Render scales picker after DOM is ready
       setTimeout(()=>renderDrScalesPicker(dr.preferred_scales||[]),50);
+      setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} },60);
     }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
     return;
   }
@@ -9771,7 +9806,7 @@ function renderTagsCardBody(st){
   // Contraste fuerte entre activa/inactiva: la activa es una pastilla SÓLIDA
   // con tilde (antes era apenas un 11% de opacidad, costaba distinguir cuál
   // estaba marcada de un vistazo).
-  return '<div style="display:grid;grid-template-columns:repeat(3,max-content);gap:8px 10px">'+Object.keys(PATHOLOGY_TAGS).map(id=>{
+  return '<div style="display:flex;flex-wrap:wrap;gap:7px">'+Object.keys(PATHOLOGY_TAGS).map(id=>{
     const on=st.resolved.includes(id); const c=PATHOLOGY_TAGS[id];
     const isAuto=st.auto.includes(id);
     const activeStyle='background:'+c.color+';color:'+c.textOn+';border-color:'+c.color+';box-shadow:0 1px 4px '+c.color+'55';
@@ -15654,6 +15689,16 @@ function showPeriodSectionIfFemale(){
   el.style.display = (isFemale && (tracks || fertileDefault)) ? 'block' : 'none';
 }
 
+// Mi perfil: por default se muestra un resumen de solo lectura; los campos
+// editables aparecen solo cuando el profesional toca "Editar".
+function toggleDrProfileEdit(on){
+  const f=document.getElementById('dr-profile-form');
+  const r=document.getElementById('dr-profile-readonly');
+  const b=document.getElementById('dr-edit-toggle');
+  if(f) f.style.display=on?'block':'none';
+  if(r) r.style.display=on?'none':'block';
+  if(b) b.style.display=on?'none':'inline-block';
+}
 async function saveDrProfile(){
   const name=(document.getElementById('dr-edit-name')?.value||'').trim();
   const lname=(document.getElementById('dr-edit-lname')?.value||'').trim();
@@ -15673,6 +15718,7 @@ async function saveDrProfile(){
     // Update local state
     S.user={...S.user,...upd};
     showSuccessBanner('Perfil actualizado');
+    try{ showDrTab_('drprofile'); }catch(_){ toggleDrProfileEdit(false); }
     // Refresh doctor home display
     const drName=document.getElementById('dr-name');
     const title=upd.gender==='Masculino'?'Dr.':upd.gender==='Femenino'?'Dra.':'Dr/a.';
