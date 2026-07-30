@@ -1,0 +1,23 @@
+{
+  "name": "Dormetria — Medicina del Sueño",
+  "short_name": "Dormetria",
+  "description": "Seguimiento clínico del sueño basado en evidencia.",
+  "start_url": "./?src=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f2820",
+  "theme_color": "#1a4a3a",
+  "lang": "es-AR",
+  "categories": ["health", "medical"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Registrar mi noche", "short_name": "Diario", "url": "./?go=diary", "description": "Cargar el diario de sueño de hoy" },
+    { "name": "Test de alerta", "short_name": "Alerta", "url": "./?go=pvt", "description": "Medir el nivel de alerta" }
+  ]
+}

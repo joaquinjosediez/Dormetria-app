@@ -109,7 +109,7 @@
 
 /* Etiquetas clínicas: pill compacta (encabezado, solo lectura) y toggle grande (tarjeta Perfil) */
 .dm-tagpill{ display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;line-height:1.7;white-space:nowrap; }
-.dm-tagtoggle{ cursor:pointer;font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid;transition:transform .1s; }
+.dm-tagtoggle{ cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid;transition:transform .1s;white-space:nowrap;line-height:1.3; }
 .dm-tagtoggle:active{ transform:scale(0.96); }
 
 /* Filtro de etiquetas en la lista de pacientes */

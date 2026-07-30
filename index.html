@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod20">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod23">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1263,7 +1263,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod20"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod23"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1282,7 +1282,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod20';
+const APP_VERSION='hoy75-mod23';
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -2782,7 +2782,23 @@ async function doRegister(){
       const lname=document.getElementById('dreg-lname').value.trim();
       const mat=document.getElementById('dreg-mat').value.trim();
       const inst=document.getElementById('dreg-inst').value.trim();
-      if(!name||!lname||!email){ err.classList.add('show'); return; }
+      // BUG HISTÓRICO: acá se mostraba el cartel de error SIN texto — el
+      // profesional veía un recuadro vacío y no sabía qué faltaba.
+      const missingDr=[];
+      if(!name) missingDr.push('Nombre');
+      if(!lname) missingDr.push('Apellido');
+      if(!email) missingDr.push('Correo electrónico');
+      if(missingDr.length){
+        err.textContent='Faltan completar: '+missingDr.join(', ')+'.';
+        err.classList.add('show');
+        return;
+      }
+      const _specSel=document.getElementById('reg-specialty');
+      if(_specSel && !_specSel.value){
+        err.textContent='Elegí tu especialidad para continuar.';
+        err.classList.add('show');
+        return;
+      }
       const {data: authData, error: authErr} = await supa.auth.signUp({
         email,
         password: pass,
@@ -3145,7 +3161,7 @@ async function loadAdminTab(tab){
             <button onclick="adminReject('${d.email}',this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:#fee2e2;color:#991b1b;font-size:13px;font-weight:600;cursor:pointer">✗ Rechazar</button>
           </div></div>`).join('');
     } else if(tab==='doctors'){
-      const docs=await db.get("doctors?select=name,lname,email,specialty,mat,created_at&order=created_at.desc");
+      const docs=await db.get("doctors?select=name,lname,email,specialty,mat,created_at,listed,public_profile,cv_url&order=created_at.desc");
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state">Sin profesionales registrados.</div>';return;}
       const _appList3=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
@@ -3165,7 +3181,11 @@ async function loadAdminTab(tab){
         docs.map(d=>{
           const lastLogin='—';const daysAgo=null;
           const _appList=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-          const badge=_appList[d.email]?'<span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px">✓ En directorio</span>':'<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px">No aprobado</span>';
+          const _pub = d.public_profile===true||d.listed===true||d.listed==='true'||_appList[d.email];
+          const _pend = !_pub && (d.listed==='pending'||d.cv_url);
+          const badge=_pub?'<span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px">✓ En directorio</span>'
+            :_pend?'<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:10px">⏳ Pendiente</span>'
+            :'<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px">No solicitó</span>';
           return `<tr style="border-bottom:1px solid var(--sep-opaque)">
             <td style="padding:8px"><div style="font-weight:600">${d.name} ${d.lname||''}</div><div style="color:var(--label-3);font-size:11px">${d.email}</div></td>
             <td style="padding:8px;color:var(--label-2)">${d.specialty||'—'}</td>
@@ -3211,6 +3231,32 @@ async function loadAdminTab(tab){
           upsertActivity(r.patient_email, r.created_at, day);
         });
       }catch(e){ console.warn('[admin-patients] activity fetch failed', e); }
+      // Profesional vinculado a cada paciente (para poder ordenar por médico)
+      const drByPatient={};
+      try{
+        const links=await db.get("doctor_patients?select=doctor_email,patient_email&limit=5000").catch(()=>[]);
+        (links||[]).forEach(l=>{
+          const k=(l.patient_email||'').toLowerCase();
+          if(!drByPatient[k]) drByPatient[k]=[];
+          drByPatient[k].push(l.doctor_email);
+        });
+      }catch(_dl){}
+      // Guardar datos en window para poder reordenar sin volver a consultar
+      window._admPts = pts.map(p=>{
+        const k=(p.email||'').toLowerCase();
+        const act = activityByEmail[k] || {days:new Set(),last:null};
+        return {
+          name:((p.lname||'')?((p.lname||'')+', '+(p.name||'')):((p.name||'')||p.email)).trim(),
+          fname:p.name||'', lname:p.lname||'',
+          email:p.email, dob:p.dob,
+          created_at:p.created_at, nDays:act.days.size, last:act.last,
+          doctors:(drByPatient[k]||[])
+        };
+      });
+      window._admSort = window._admSort || 'last';
+      renderAdminPatientsTable();
+      return;
+    } else if(tab==='__never'){
       cont.innerHTML='<div class="sec-title" style="margin-top:10px">Pacientes ('+pts.length+')</div>'+
         '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
         '<thead><tr style="background:var(--bg-secondary)">'+
@@ -3250,7 +3296,7 @@ async function loadAdminTab(tab){
       const D30 = NOW - 30*86400000;
       const [allPts, allDrs, diaryRows, evalRows, suggRows] = await Promise.all([
         db.get("patients?select=created_at,email&limit=500").catch(()=>[]),
-        db.get("doctors?select=created_at,email&limit=200").catch(()=>[]),
+        db.get("doctors?select=created_at,email,listed,public_profile,cv_url&limit=200").catch(()=>[]),
         db.get("sleep_diary?select=patient_email,created_at&limit=10000").catch(()=>[]),
         db.get("evaluations?select=patient_email,created_at&limit=10000").catch(()=>[]),
         db.get("doctor_suggestions?select=doctor_email,created_at&limit=5000").catch(()=>[])
@@ -3287,9 +3333,22 @@ async function loadAdminTab(tab){
       }).filter(v=>v!==null && v>0);
       const avgStay = stays.length ? Math.round(stays.reduce((a,b)=>a+b,0)/stays.length) : 0;
       const _appList2=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-      const listedDrs=Object.values(_appList2).filter(Boolean).length;
+      // La verdad sobre "está publicado" vive en la BASE (listed/public_profile),
+      // no en el localStorage de este navegador. Antes el contador decía 0 aunque
+      // el profesional viera "Ya estás en el directorio" en su propio panel.
+      const listedDrs=(allDrs||[]).filter(d=>d.public_profile===true||d.listed===true||d.listed==='true'||_appList2[d.email]).length;
       const _rejList=JSON.parse(localStorage.getItem('dm_rejected_doctors')||'{}');
-      const pendingDrs=(allDrs||[]).filter(d=>!_appList2[d.email]&&!_rejList[d.email]).length;
+      // Mismo criterio EXACTO que la pestaña "Pendientes": solo cuentan los que
+      // efectivamente solicitaron entrar al directorio (listed/cv_url). Antes
+      // contaba a todo profesional no aprobado y el número no coincidía.
+      const pendingDrs=(allDrs||[]).filter(d=>{
+        const applied = d.listed==='pending' || d.listed===true || d.cv_url;
+        return applied && !_appList2[d.email] && !_rejList[d.email];
+      }).length;
+      const registeredNotListed=(allDrs||[]).filter(d=>{
+        const applied = d.listed==='pending' || d.listed===true || d.cv_url;
+        return !applied && !_appList2[d.email];
+      }).length;
       cont.innerHTML=`<div class="sec-title" style="margin-top:10px">Estadísticas de uso</div>
         <div style="font-size:11px;color:var(--label-3);margin:2px 0 10px">Computado en vivo desde diario y evaluaciones</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
@@ -3301,7 +3360,8 @@ async function loadAdminTab(tab){
             {icon:'📥',label:'Ingresos 7d',val:ingresos7d,sub:'registros + evaluaciones'},
             {icon:'⏱',label:'Permanencia',val:avgStay+' d',sub:'promedio de uso'},
             {icon:'✅',label:'En directorio',val:listedDrs,sub:'profesionales'},
-            {icon:'⏳',label:'Pendientes',val:pendingDrs,sub:'profesionales'},
+            {icon:'⏳',label:'Pendientes',val:pendingDrs,sub:'solicitudes al directorio'},
+            {icon:'📝',label:'Sin solicitar',val:registeredNotListed,sub:'registrados, no pidieron directorio'},
             {icon:'📅',label:'Médicos activos (30d)',val:activeDrs30,sub:'sugerencias enviadas'},
           ].map(s=>`<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;text-align:center;${s.hi?'border:1px solid #86efac':''}">
             <div style="font-size:22px">${s.icon}</div>
@@ -3393,6 +3453,70 @@ function exitPreviewProfile(){
 }
 
 
+// ── Listado de pacientes del admin: ordenable y con más señal ──
+function setAdminSort(mode){ window._admSort=mode; renderAdminPatientsTable(); }
+function renderAdminPatientsTable(){
+  const cont=document.getElementById('admin-content');
+  const rows=(window._admPts||[]).slice();
+  if(!rows.length){ if(cont) cont.innerHTML='<div class="empty-state">Sin pacientes registrados.</div>'; return; }
+  const mode=window._admSort||'last';
+  // Alfabético = por APELLIDO (y luego nombre), como en el listado clínico.
+  const cmpAlpha=(a,b)=>{
+    const ka=((a.lname||'')+' '+(a.fname||'')).trim().toLowerCase()||(a.name||a.email||'').toLowerCase();
+    const kb=((b.lname||'')+' '+(b.fname||'')).trim().toLowerCase()||(b.name||b.email||'').toLowerCase();
+    return ka.localeCompare(kb,'es',{sensitivity:'base'});
+  };
+  if(mode==='last')      rows.sort((a,b)=>(b.last||0)-(a.last||0));
+  else if(mode==='days') rows.sort((a,b)=>(b.nDays||0)-(a.nDays||0));
+  else if(mode==='alpha')rows.sort(cmpAlpha);
+  else if(mode==='doctor')rows.sort((a,b)=>{
+    const da=(a.doctors[0]||'zzz'), db_=(b.doctors[0]||'zzz');
+    const c=da.localeCompare(db_,'es',{sensitivity:'base'});
+    return c!==0?c:cmpAlpha(a,b);
+  });
+  else if(mode==='inactive') rows.sort((a,b)=>(a.last||0)-(b.last||0));
+  const btn=(m,label)=>'<span onclick="setAdminSort(\''+m+'\')" style="cursor:pointer;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px;border:1px solid '+(mode===m?'#1a4a3a':'var(--sep-opaque)')+';background:'+(mode===m?'#dcfce7':'transparent')+';color:'+(mode===m?'#15803d':'var(--label-2)')+'">'+label+'</span>';
+  // Señal de riesgo de abandono
+  const inact30=rows.filter(r=>!r.last||(Date.now()-r.last)>30*86400000).length;
+  const never=rows.filter(r=>!r.last).length;
+  let html='<div class="sec-title" style="margin-top:10px">Pacientes ('+rows.length+')</div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px;align-items:center">'+
+      '<span style="font-size:11px;color:var(--label-3);margin-right:2px">Ordenar:</span>'+
+      btn('last','🕐 Última conexión')+btn('days','📊 Más uso')+btn('alpha','🔤 Alfabético')+
+      btn('doctor','🩺 Profesional')+btn('inactive','⚠️ Más inactivos')+
+    '</div>'+
+    '<div style="font-size:11px;color:var(--label-3);margin-bottom:10px">'+inact30+' sin actividad hace +30 días · '+never+' nunca registraron nada</div>'+
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
+    '<thead><tr style="background:var(--bg-secondary)">'+
+    '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Nombre</th>'+
+    '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Edad</th>'+
+    '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Días activos</th>'+
+    '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Última actividad</th>'+
+    '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Profesional</th>'+
+    '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Registrado</th>'+
+    '</tr></thead><tbody>';
+  html+=rows.map(p=>{
+    const age=p.dob?Math.floor((new Date()-new Date(p.dob))/31557600000):null;
+    let lastStr='Nunca', lastColor='#b91c1c';
+    if(p.last){
+      const d=Math.floor((Date.now()-p.last)/86400000);
+      lastStr = d===0?'Hoy':d===1?'Ayer':d<=60?('hace '+d+' días'):new Date(p.last).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+      lastColor = d<=7?'#15803d':d<=30?'#a16207':'#b91c1c';
+    }
+    const drTxt = p.doctors.length ? p.doctors.map(e=>e.split('@')[0]).join(', ') : '<span style="color:var(--label-3)">Sin vincular</span>';
+    const regDate=p.created_at?new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'—';
+    return '<tr style="border-bottom:1px solid var(--sep-opaque)">'+
+      '<td style="padding:8px"><div style="font-weight:600">'+(p.name||'—')+'</div><div style="color:var(--label-3);font-size:11px">'+p.email+'</div></td>'+
+      '<td style="padding:8px;text-align:center">'+(age!==null?age+' a':'—')+'</td>'+
+      '<td style="padding:8px;text-align:center;color:'+(p.nDays>0?'var(--label)':'var(--label-3)')+';font-weight:'+(p.nDays>0?'600':'400')+'">'+(p.nDays||'—')+'</td>'+
+      '<td style="padding:8px;color:'+lastColor+';font-weight:600">'+lastStr+'</td>'+
+      '<td style="padding:8px;font-size:11px;color:var(--label-2)">'+drTxt+'</td>'+
+      '<td style="padding:8px;color:var(--label-3)">'+regDate+'</td>'+
+    '</tr>';
+  }).join('');
+  html+='</tbody></table></div>';
+  if(cont) cont.innerHTML=html;
+}
 async function adminApprove(email,btn){
   const approved=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
   approved[email]=true;
@@ -6659,6 +6783,62 @@ async function finishScale(){
     }
   }
 }
+// Especialista a recomendar cuando una escala da patológica. Orienta al
+// paciente que se autoevalúa (sin médico) hacia la especialidad correcta.
+function specialistForScale(sc){
+  const id=(sc&&sc.id)||''; const cat=(sc&&sc.cat)||'';
+  // Overrides por escala puntual
+  const byId={
+    stopbang:'un neumonólogo u otorrinolaringólogo especialista en sueño (para descartar apnea del sueño)',
+    sassv:'un neumonólogo u otorrinolaringólogo especialista en sueño (para descartar apnea del sueño)',
+    ess:'un especialista en medicina del sueño (neumonología o neurología); la somnolencia diurna puede deberse a apnea o a otras causas',
+    irls:'un neurólogo (conviene además dosar ferritina para descartar déficit de hierro)',
+    rbdq:'un neurólogo especialista en sueño (los trastornos de conducta del sueño REM requieren evaluación)',
+    pdss:'un neurólogo especialista en sueño',
+    meq:'un especialista en medicina del sueño (posible trastorno del ritmo circadiano)',
+    mctq:'un especialista en medicina del sueño (posible trastorno del ritmo circadiano)',
+    isi:'un especialista en medicina del sueño o psiquiatría (la terapia cognitivo-conductual para el insomnio, TCC-I, es el tratamiento de primera línea)',
+    psqi:'un especialista en medicina del sueño'
+  };
+  if(byId[id]) return byId[id];
+  const byCat={
+    apnea:'un neumonólogo u otorrinolaringólogo especialista en sueño',
+    sleepiness:'un especialista en medicina del sueño (neumonología o neurología)',
+    insomnia:'un especialista en medicina del sueño o psiquiatría (la TCC-I es el tratamiento de primera línea)',
+    sleep:'un especialista en medicina del sueño',
+    mental:'un psiquiatra',
+    trauma:'un psiquiatra',
+    movement:'un neurólogo',
+    parasomnia:'un neurólogo especialista en sueño',
+    neurology:'un neurólogo especialista en sueño',
+    circadian:'un especialista en medicina del sueño',
+    pediatric:'un especialista en sueño pediátrico',
+    fatigue:'tu médico clínico y un especialista en medicina del sueño',
+    qol:'tu médico clínico y un especialista en medicina del sueño'
+  };
+  return byCat[cat]||'un especialista en medicina del sueño';
+}
+// Muestra (o no) el bloque de consulta según la INTERPRETACIÓN clínica real
+// de la escala (color patológico/alerta), no según palabras sueltas del texto.
+function _applyConsultBlock(sc,score){
+  try{
+    const rb=document.getElementById('r-consult-btn'); if(!rb) return;
+    const i=sc.interp(score)||{};
+    const bg=(i.bg||'').toLowerCase();
+    const isPath = /^#(fee|fef2)/.test(bg);                 // rojo → patológico
+    const isWarn = /^#(fef3c7|ffedd5|fef9c3)/.test(bg);     // ámbar → alerta
+    if(!isPath && !isWarn){ rb.style.display='none'; return; }
+    const who=specialistForScale(sc);
+    const msg=document.getElementById('r-consult-msg');
+    if(msg){
+      msg.innerHTML = (isPath
+        ? 'Este resultado sugiere una alteración que conviene evaluar. Te recomendamos consultar con <strong>'+who+'</strong>.'
+        : 'Este resultado amerita seguimiento. Si los síntomas persisten, consultá con <strong>'+who+'</strong>.')+
+        '<br><span style="opacity:0.8">Tocá el botón para ver el directorio de profesionales.</span>';
+    }
+    rb.style.display='block';
+  }catch(_){}
+}
 function showResult(sc,score){
   const i=sc.interp(score);document.getElementById('r-title').textContent=sc.name;
   const prev=S.records.filter(r=>r.scale_id===sc.id);let trend='';
@@ -6728,6 +6908,7 @@ function showResult(sc,score){
         </div>
       </div>`;
     showScreen('result');
+    setTimeout(()=>_applyConsultBlock(sc,score),120);
     return;
   }
   document.getElementById('r-content').innerHTML=`
@@ -6747,8 +6928,8 @@ function showResult(sc,score){
       </div>
     </div>`;
   showScreen('result');
-  // Show consult button if result needs professional attention
-  setTimeout(()=>{ const rb=document.getElementById('r-consult-btn'); if(rb){ const txt=document.getElementById('r-content')?.textContent||''; rb.style.display=(txt.includes('severa')||txt.includes('Severa')||txt.includes('moderado')||txt.includes('Moderado')||txt.includes('alto')||txt.includes('Alto'))?'block':'none'; } },400);
+  // Aviso de consulta según la interpretación clínica real de la escala.
+  setTimeout(()=>_applyConsultBlock(sc,score),120);
 }
 
 // HISTORY
@@ -7998,6 +8179,63 @@ async function editDiaryEntry(id){
         cleanNotes = cleanNotes.replace(/\s*\|\s*🩸Período/,'').replace(/🩸Período\s*\|?\s*/,'').trim();
         setTimeout(()=>{ if(_periodActive){ const pb=document.getElementById('period-btn'),pl=document.getElementById('period-btn-label'),pc=document.getElementById('period-check'); if(pb){pb.style.borderColor='#e11d48';pb.style.background='#fff1f2';} if(pl){pl.style.color='#e11d48';pl.textContent='Período menstrual';} if(pc)pc.textContent='🔴'; } },120);
       }
+      // ── Precarga COMPLETA (bug histórico: estos campos no se cargaban y al
+      //    guardar la edición se sobrescribían vacíos → se perdían los datos) ──
+      // Despertares con hora y duración
+      try{
+        if(e.awakening_detail){
+          const arr = typeof e.awakening_detail==='string' ? JSON.parse(e.awakening_detail) : e.awakening_detail;
+          if(Array.isArray(arr) && arr.length){
+            awakeningList = arr.map(a=>({time:(a.time||'').slice(0,5), duration:a.duration||''}));
+            setYesAwakenings();
+            if(typeof renderAwakenings==='function') renderAwakenings();
+          }
+        }
+      }catch(_aw){}
+      // Siesta (guardada en notes con formato "Siesta: HH:MM (Xmin)")
+      try{
+        const nm=(e.notes||'').match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
+        if(nm){
+          setNap(true);
+          const ns=document.getElementById('d-nap-start'); if(ns) ns.value=nm[1];
+          const nd=document.getElementById('d-nap-dur'); if(nd && nm[2]) nd.value=nm[2];
+          cleanNotes = cleanNotes.replace(/\s*\|?\s*Siestas?: [^|]*/,'').trim();
+        }
+      }catch(_np){}
+      // Ejercicio
+      const exM=document.getElementById('d-exercise-mins');
+      if(exM && e.exercise_mins!=null){
+        const opts=[0,15,30,45,75,105];
+        const cl=opts.reduce((a,b)=>Math.abs(b-e.exercise_mins)<Math.abs(a-e.exercise_mins)?b:a);
+        exM.value=String(cl);
+      }
+      const exT=document.getElementById('d-exercise-time');
+      if(exT && e.exercise_time) exT.value=e.exercise_time;
+      // Pantallas
+      const scrEl=document.getElementById('d-screen');
+      if(scrEl && e.screen_minutes!=null) scrEl.value=e.screen_minutes;
+      // Cafeína y alcohol (se guardan como totales; se recrean como un ítem
+      // "ya registrado" para que el paciente pueda verlo, ajustarlo o borrarlo)
+      try{
+        if(e.coffee_cups>0){
+          caffItems=[{label:'Registrado previamente', mg:e.coffee_cups}];
+          if(typeof renderCaffItems==='function') renderCaffItems();
+        }
+        if(e.alcohol_drinks>0){
+          alcItems=[{label:'Registrado previamente', ua:e.alcohol_drinks}];
+          if(typeof renderAlcItems==='function') renderAlcItems();
+        }
+      }catch(_ca){}
+      // Medicación
+      try{
+        if(e.medications && e.medications!=='[]' && e.medications!==''){
+          const meds = typeof e.medications==='string' ? JSON.parse(e.medications) : e.medications;
+          if(Array.isArray(meds) && meds.length){
+            _medModalMeds = meds.map(m=>({name:m.name||(typeof m==='string'?m:''), dose:m.dose||''})).filter(m=>m.name);
+            if(typeof renderMedList==='function') renderMedList();
+          }
+        }
+      }catch(_md){}
       const notesEl=document.getElementById('d-notes'); if(notesEl) notesEl.value=cleanNotes;
       // Update save button text
       const saveBtn=document.getElementById('save-diary-btn');
@@ -9173,8 +9411,24 @@ async function renderPatientList(filter){
       console.warn('[drprofile] DB timeout, usando datos locales:', timeoutErr.message);
     }
     try{
+      const _sLabel=(sL[dr.specialty]||dr.specialty||'Sin especialidad');
+      const _ro=(l,v)=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.07)"><span style="font-size:13px;color:rgba(255,255,255,0.55)">'+l+'</span><span style="font-size:13px;font-weight:600;color:#fff;text-align:right">'+(v||'—')+'</span></div>';
       cont.innerHTML=`<div style="padding:16px 0">
-        <div class="sec-title" style="margin-bottom:12px">Datos del perfil profesional</div>
+        <div class="sec-title" style="margin-bottom:10px">Adherencia de mis pacientes</div>
+        <div id="dr-adherence-panel" style="margin-bottom:20px"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="sec-title" style="margin:0">Datos del perfil profesional</div>
+          <button onclick="toggleDrProfileEdit(true)" id="dr-edit-toggle" style="background:rgba(126,200,164,0.12);border:1px solid rgba(126,200,164,0.35);color:#7EC8A4;font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
+        </div>
+        <div id="dr-profile-readonly" style="background:rgba(255,255,255,0.05);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+          ${_ro('Nombre',((dr.name||'')+' '+(dr.lname||'')).trim())}
+          ${_ro('Especialidad',_sLabel)}
+          ${_ro('Matrícula',dr.mat)}
+          ${_ro('Institución',dr.inst||dr.institution)}
+          ${_ro('Ciudad / País',[dr.city,dr.country].filter(Boolean).join(' · '))}
+          ${dr.bio?'<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px;line-height:1.45;font-style:italic">'+dr.bio+'</div>':''}
+        </div>
+        <div id="dr-profile-form" style="display:none">
         <div class="form-group"><label class="form-label">Nombre <span style="color:#dc2626">*</span></label>
           <input class="form-input" id="dr-edit-name" value="${dr.name||''}" placeholder="Nombre"></div>
         <div class="form-group"><label class="form-label">Apellido <span style="color:#dc2626">*</span></label>
@@ -9222,10 +9476,15 @@ async function renderPatientList(filter){
             </button>
           </div>
         </div>
-        <button class="btn btn-g" onclick="saveDrProfile()" style="margin-top:16px">Guardar cambios</button>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-g" onclick="saveDrProfile()" style="flex:2">Guardar cambios</button>
+          <button onclick="toggleDrProfileEdit(false)" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">Cancelar</button>
+        </div>
+        </div>
       </div>`;
       // Render scales picker after DOM is ready
       setTimeout(()=>renderDrScalesPicker(dr.preferred_scales||[]),50);
+      setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} },60);
     }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
     return;
   }
@@ -9356,6 +9615,8 @@ async function renderPatientList(filter){
   </div>`;}
     if(tab==='more'){
       cont.innerHTML=`<div style="padding:0 4px">
+        <div style="margin:6px 0 10px;font-size:12px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.06em">Adherencia de mis pacientes</div>
+        <div id="dr-adherence-panel" style="margin-bottom:18px"><div class="spinner-wrap"><div class="spinner"></div></div></div>
         <div style="margin:6px 0 16px;font-size:12px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.06em">Herramientas clínicas</div>
         <div onclick="openCbtiModule()" style="background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:18px;cursor:pointer;margin-bottom:14px;position:relative">
           <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:8px;letter-spacing:0.06em">PREMIUM</div>
@@ -9379,10 +9640,88 @@ async function renderPatientList(filter){
           </div>
         </div>
       </div>`;
+      setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} }, 60);
     }
     if(tab==='profile'){
     tab='drprofile';  // redirect directly
   }
+}
+
+// ── Adherencia de los pacientes del profesional ──
+// Responde a la pregunta operativa: ¿quién dejó de registrar y a quién le
+// falta completar datos? Permite mandar un "toque" por WhatsApp o mail.
+async function renderDoctorAdherence(){
+  const el=document.getElementById('dr-adherence-panel');
+  if(!el || !S.user) return;
+  try{
+    const ck='dm_dr_pts_'+S.user.email;
+    let emails=[]; try{ emails=JSON.parse(localStorage.getItem(ck)||'[]'); }catch(_){}
+    if(!emails.length){
+      try{
+        const links=await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&select=patient_email').catch(()=>[]);
+        emails=(links||[]).map(l=>l.patient_email);
+      }catch(_){}
+    }
+    if(!emails.length){ el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,0.5)">Todavía no tenés pacientes vinculados.</div>'; return; }
+    const inList='('+emails.map(e=>encodeURIComponent(e)).join(',')+')';
+    const [pats, diary, evals] = await Promise.all([
+      db.get('patients?email=in.'+inList+'&select=email,name,lname,phone,dob,height_cm,weight_kg').catch(()=>[]),
+      db.get('sleep_diary?patient_email=in.'+inList+'&select=patient_email,created_at,diary_date&limit=5000').catch(()=>[]),
+      db.get('evaluations?patient_email=in.'+inList+'&select=patient_email,created_at&limit=5000').catch(()=>[])
+    ]);
+    const info={};
+    emails.forEach(e=>{ info[e.toLowerCase()]={last:null,nDiary:0,d7:0,d30:0,nEval:0}; });
+    const NOW=Date.now();
+    (diary||[]).forEach(r=>{
+      const k=(r.patient_email||'').toLowerCase(); if(!info[k]) return;
+      const t=new Date(r.created_at||r.diary_date).getTime();
+      info[k].nDiary++;
+      if(NOW-t<=7*86400000) info[k].d7++;
+      if(NOW-t<=30*86400000) info[k].d30++;
+      if(!info[k].last||t>info[k].last) info[k].last=t;
+    });
+    (evals||[]).forEach(r=>{
+      const k=(r.patient_email||'').toLowerCase(); if(!info[k]) return;
+      const t=new Date(r.created_at).getTime();
+      info[k].nEval++;
+      if(!info[k].last||t>info[k].last) info[k].last=t;
+    });
+    const rows=(pats||[]).map(p=>{
+      const k=(p.email||'').toLowerCase();
+      const i=info[k]||{last:null,nDiary:0,d7:0,d30:0,nEval:0};
+      const daysSince = i.last? Math.floor((NOW-i.last)/86400000) : null;
+      const faltaDatos = (!p.dob||!p.height_cm||!p.weight_kg);
+      return {name:((p.name||'')+' '+(p.lname||'')).trim()||p.email, email:p.email, phone:p.phone||'',
+              daysSince, d7:i.d7, d30:i.d30, nDiary:i.nDiary, faltaDatos};
+    }).sort((a,b)=>{
+      const da=a.daysSince==null?9999:a.daysSince, db_=b.daysSince==null?9999:b.daysSince;
+      return db_-da; // los más abandonados primero
+    });
+    const alDia=rows.filter(r=>r.daysSince!=null&&r.daysSince<=3).length;
+    const tibios=rows.filter(r=>r.daysSince!=null&&r.daysSince>3&&r.daysSince<=14).length;
+    const perdidos=rows.filter(r=>r.daysSince==null||r.daysSince>14).length;
+    const drFirst=(S.user.name||'tu profesional').split(' ')[0];
+    const card=(n,l,c)=>'<div style="flex:1;background:rgba(255,255,255,0.06);border-radius:12px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:'+c+'">'+n+'</div><div style="font-size:10px;color:rgba(255,255,255,0.6);line-height:1.25;margin-top:2px">'+l+'</div></div>';
+    let html='<div style="display:flex;gap:8px;margin-bottom:12px">'+
+      card(alDia,'Al día<br>(≤3 días)','#7EC8A4')+card(tibios,'Aflojando<br>(4–14 días)','#C8A96E')+card(perdidos,'Sin registrar<br>(+14 días)','#fca5a5')+
+      '</div>';
+    html+=rows.map(r=>{
+      const estado = r.daysSince==null?'Nunca registró':r.daysSince===0?'Hoy':r.daysSince===1?'Ayer':'hace '+r.daysSince+' días';
+      const col = r.daysSince==null?'#fca5a5':r.daysSince<=3?'#7EC8A4':r.daysSince<=14?'#C8A96E':'#fca5a5';
+      const msg='¡Hola '+(r.name.split(' ')[0])+'! Soy '+drFirst+'. Te escribo para recordarte que completes tu diario de sueño en Dormetria — con registros constantes puedo ver mucho mejor cómo venís y ajustar lo que haga falta. ¡Gracias!';
+      const tel=(r.phone||'').replace(/[^0-9]/g,'');
+      const wa = tel? '<a href="https://wa.me/'+tel+'?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" style="text-decoration:none;background:#25D366;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">💬 Recordar</a>'
+                   : '<span style="font-size:10px;color:rgba(255,255,255,0.35);padding:5px 8px">sin tel.</span>';
+      const mail='<a href="mailto:'+r.email+'?subject='+encodeURIComponent('Tu diario de sueño en Dormetria')+'&body='+encodeURIComponent(msg)+'" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">✉️ Mail</a>';
+      return '<div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:10px 12px;margin-bottom:7px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
+          '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.name+'</div>'+
+          '<div style="font-size:11px;color:'+col+';margin-top:2px">'+estado+' · '+r.d30+' registros en 30 días'+(r.faltaDatos?' · <span style="color:#C8A96E">datos incompletos</span>':'')+'</div></div>'+
+          '<div style="display:flex;gap:5px;flex-shrink:0">'+wa+mail+'</div>'+
+        '</div></div>';
+    }).join('');
+    el.innerHTML=html;
+  }catch(e){ el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">No se pudo calcular la adherencia.</div>'; }
 }
 async function linkPatient(){
   const code=document.getElementById('link-code').value.trim().toUpperCase();
@@ -9467,7 +9806,7 @@ function renderTagsCardBody(st){
   // Contraste fuerte entre activa/inactiva: la activa es una pastilla SÓLIDA
   // con tilde (antes era apenas un 11% de opacidad, costaba distinguir cuál
   // estaba marcada de un vistazo).
-  return '<div style="display:grid;grid-template-columns:repeat(3,max-content);gap:8px 10px">'+Object.keys(PATHOLOGY_TAGS).map(id=>{
+  return '<div style="display:flex;flex-wrap:wrap;gap:7px">'+Object.keys(PATHOLOGY_TAGS).map(id=>{
     const on=st.resolved.includes(id); const c=PATHOLOGY_TAGS[id];
     const isAuto=st.auto.includes(id);
     const activeStyle='background:'+c.color+';color:'+c.textOn+';border-color:'+c.color+';box-shadow:0 1px 4px '+c.color+'55';
@@ -15350,6 +15689,16 @@ function showPeriodSectionIfFemale(){
   el.style.display = (isFemale && (tracks || fertileDefault)) ? 'block' : 'none';
 }
 
+// Mi perfil: por default se muestra un resumen de solo lectura; los campos
+// editables aparecen solo cuando el profesional toca "Editar".
+function toggleDrProfileEdit(on){
+  const f=document.getElementById('dr-profile-form');
+  const r=document.getElementById('dr-profile-readonly');
+  const b=document.getElementById('dr-edit-toggle');
+  if(f) f.style.display=on?'block':'none';
+  if(r) r.style.display=on?'none':'block';
+  if(b) b.style.display=on?'none':'inline-block';
+}
 async function saveDrProfile(){
   const name=(document.getElementById('dr-edit-name')?.value||'').trim();
   const lname=(document.getElementById('dr-edit-lname')?.value||'').trim();
@@ -15369,6 +15718,7 @@ async function saveDrProfile(){
     // Update local state
     S.user={...S.user,...upd};
     showSuccessBanner('Perfil actualizado');
+    try{ showDrTab_('drprofile'); }catch(_){ toggleDrProfileEdit(false); }
     // Refresh doctor home display
     const drName=document.getElementById('dr-name');
     const title=upd.gender==='Masculino'?'Dr.':upd.gender==='Femenino'?'Dra.':'Dr/a.';
@@ -17440,8 +17790,9 @@ function dmReplayTour(tourId){
   </div>
   <div class="scroll" id="r-content"></div>
   <div id="r-consult-btn" style="display:none;padding:12px 16px">
+    <div id="r-consult-msg" style="font-size:13px;line-height:1.5;color:var(--label);background:var(--bg-secondary);border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:3px solid #C8A96E"></div>
     <button class="btn" onclick="showConsultDir()" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:15px">
-      🩺 Consultar un profesional de sueño
+      🩺 Ver directorio de especialistas
     </button>
   </div>
 </div>
