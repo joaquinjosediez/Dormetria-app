@@ -2,7 +2,7 @@
 // Hace la app instalable (PWA) y prepara el canal de notificaciones push.
 // Estrategia de caché: "network first" para el HTML (así el paciente siempre
 // recibe la última versión al publicar cambios) y "cache first" para estáticos.
-const CACHE = 'dormetria-v1';
+const CACHE = 'dormetria-v2';
 const SHELL = ['./', './index.html', './css/styles.css', './js/dormetria-sleep-metrics.js', './manifest.json'];
 
 self.addEventListener('install', (ev) => {

@@ -118,8 +118,26 @@
 /* Barra de FILTRO por etiqueta: grid de 4 columnas → 7 chips quedan en
    exactamente 2 filas (4 + 3), prolijo y sin scroll. La barra de "Ordenar"
    sigue siendo flex normal. */
-#dr-tagfilter-bar{ display:grid;grid-template-columns:repeat(4,1fr);gap:6px; }
-#dr-tagfilter-bar .dm-tagfilter-chip{ justify-content:center; }
+/* minmax(0,1fr) permite que las columnas se achiquen: con repeat(4,1fr) el
+   contenido más largo ("Cronodisrupción") empujaba el ancho y "SPI" quedaba
+   cortado fuera del panel. */
+/* Los 7 chips en 2 filas parejas: 4 arriba + 3 abajo, todos del mismo ancho.
+   minmax(0,1fr) evita que "Cronodisrupción" empuje el ancho y corte "SPI". */
+#dr-tagfilter-bar{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;
+  box-sizing:border-box;
+}
+#dr-tagfilter-bar .dm-tagfilter-chip{
+  justify-content:center;font-size:9px;padding:4px 3px;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.1px;
+}
+#dr-tagfilter-bar .dm-tagdot{ width:5px;height:5px;margin-right:2px;flex-shrink:0; }
+/* Filtros fijos: al bajar por el listado de pacientes siguen visibles. */
+.dm-filters-sticky{
+  position:sticky;top:0;z-index:5;
+  background:#0f2820;
+  box-shadow:0 4px 10px -6px rgba(0,0,0,0.6);
+}
 .dm-tagfilter-chip{ cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.55);background:transparent;transition:all .12s;white-space:nowrap;flex-shrink:0;display:flex;align-items:center; }
 .dm-tagfilter-chip.on{ background:rgba(126,200,164,0.16);border-color:#7EC8A4;color:#7EC8A4; }
 .dm-patlist-tags{ display:flex;gap:4px;flex-wrap:wrap;margin-top:3px; }
