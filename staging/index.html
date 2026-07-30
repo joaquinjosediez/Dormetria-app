@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod25">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod26">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -494,6 +494,22 @@
     <!-- Fecha -->
     <div id="home-meta" style="font-size:12px;color:rgba(255,255,255,0.35);text-transform:capitalize;margin-bottom:-4px"></div>
 
+    <!-- Instalar la app + activar recordatorios (arriba de todo: es la acción
+         que habilita los recordatorios; se oculta sola una vez instalada) -->
+    <div id="dm-install-card" style="display:none;background:linear-gradient(135deg,rgba(200,169,110,0.2),rgba(200,169,110,0.07));border:1px solid rgba(200,169,110,0.45);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:24px;flex-shrink:0">📲</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:700;color:#fff;line-height:1.3">Instalá Dormetria en tu teléfono</div>
+          <div style="font-size:11.5px;color:rgba(255,255,255,0.72);margin-top:3px;line-height:1.4">Ícono propio, abre más rápido y podés recibir recordatorios para completar el diario.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onclick="dmInstallApp()" style="flex:1;background:#C8A96E;border:none;border-radius:10px;padding:10px;color:#0F2820;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Cómo instalarla</button>
+        <button onclick="dmEnableNotifications(this)" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;color:#fff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font)">🔔 Recordatorios</button>
+      </div>
+    </div>
+
     <!-- 1) ¿Cómo usar Dormetria? — aparece solo si el paciente no la cerró aún -->
     <div id="home-howto-card" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:16px;cursor:pointer" onclick="openHowToUse(true)">
       <div style="display:flex;align-items:center;gap:12px">
@@ -571,20 +587,6 @@
     <!-- Accesos rápidos (test de alerta, etc.) — arriba de Mi especialista -->
     <div id="home-quick" style="display:none"></div>
 
-    <!-- Instalar la app + activar recordatorios (se oculta si ya está instalada) -->
-    <div id="dm-install-card" style="display:none;background:linear-gradient(135deg,rgba(200,169,110,0.18),rgba(200,169,110,0.06));border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="font-size:24px;flex-shrink:0">📲</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13.5px;font-weight:700;color:#fff;line-height:1.3">Instalá Dormetria en tu teléfono</div>
-          <div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:3px;line-height:1.4">Ícono propio, abre más rápido y te podemos recordar completar el diario.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button onclick="dmInstallApp()" style="flex:1;background:#C8A96E;border:none;border-radius:10px;padding:9px;color:#0F2820;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Instalar</button>
-        <button onclick="dmEnableNotifications(this)" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:9px;color:#fff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font)">🔔 Recordatorios</button>
-      </div>
-    </div>
 
     <!-- Código profesional -->
     <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showPatientCode()">
@@ -1278,7 +1280,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod25"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod26"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1297,7 +1299,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod25';
+const APP_VERSION='hoy75-mod26';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -5060,19 +5062,31 @@ function pickScaleOfDay(user, records){
     const sc = eligible.find(s => s.id === id && !latest[id]);
     if(sc) return sc;
   }
-  //   3. CUALQUIER escala nunca hecha antes que repetir una ya respondida
+  //   3. REEVALUACIÓN de una escala que dio PATOLÓGICA y ya cumplió el mes:
+  //      tiene prioridad sobre proponer una escala nueva — ver la evolución de
+  //      un resultado alterado importa más que sumar un cuestionario más.
+  const isPatho = sc => {
+    const last = latest[sc.id];
+    if(!last) return false;
+    const interp = sc.interp ? sc.interp(last.score) : null;
+    return !!(interp && interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg));
+  };
+  const pathoDue = eligible.filter(sc => latest[sc.id] && isPatho(sc))
+    .sort((a,b)=> new Date(latest[a.id].created_at) - new Date(latest[b.id].created_at));
+  if(pathoDue.length){
+    const sc = Object.create(pathoDue[0]);
+    sc._isReeval = true;
+    sc._lastDate = latest[pathoDue[0].id].created_at;
+    sc._wasPatho = true;
+    return sc;
+  }
+  //   4. Escalas nunca hechas
   const neverDone = eligible.filter(sc => !latest[sc.id]);
   if(neverDone.length){
     const doy = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
     return neverDone[doy % neverDone.length];
   }
-  //   4. Reevaluación mensual: primero las que dieron resultado patológico,
-  //      después el resto; siempre la más antigua primero, de a UNA.
-  const isPatho = sc => {
-    const last = latest[sc.id];
-    const interp = sc.interp ? sc.interp(last.score) : null;
-    return !!(interp && interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg));
-  };
+  //   5. Reevaluación del resto, la más antigua primero, de a UNA.
   const stale = eligible.slice().sort((a,b) => {
     const pa=isPatho(a)?0:1, pb=isPatho(b)?0:1;
     if(pa!==pb) return pa-pb;
@@ -5730,7 +5744,8 @@ async function showHome(){
   try{ loadPatientEducation(); }catch(_){}
   try{ maybePromptDoctorLink(); }catch(_){}
   try{ maybePromptProfileCompletion(); }catch(_){}
-  try{ maybePromptReevalScales(); }catch(_){}
+  // (El recordatorio de repetir una escala ya no va como banner suelto: pasa a
+  //  ocupar la tarjeta "Escala del día", con su etiqueta de reevaluación.)
   try{ renderHomeQuickActions(); }catch(_){}
   try{ updateInstallUI(); }catch(_){}
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
@@ -5888,13 +5903,16 @@ async function showHome(){
   if(scaleSubEl&&todayScale){
     if(todayScale._isReeval){
       const _ld=new Date(todayScale._lastDate).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
-      scaleSubEl.textContent='Reevaluación mensual — la completaste el '+_ld+', veamos cómo evolucionó';
+      const _dd=Math.floor((Date.now()-new Date(todayScale._lastDate))/86400000);
+      scaleSubEl.textContent= todayScale._wasPatho
+        ? 'Hace '+_dd+' días dio un resultado a seguir. Repetirla muestra si hubo mejoría.'
+        : 'Reevaluación mensual — la completaste el '+_ld+', veamos cómo evolucionó';
     } else {
       scaleSubEl.textContent=todayScale.desc||'';
     }
   }
   const scaleTitleEl=document.querySelector('#home-scale-card > div:first-child');
-  if(scaleTitleEl&&todayScale) scaleTitleEl.textContent = todayScale._isReeval ? 'Reevaluación del mes' : 'Escala del día';
+  if(scaleTitleEl&&todayScale) scaleTitleEl.textContent = todayScale._isReeval ? (todayScale._wasPatho?'🔁 Repetir para ver evolución':'Reevaluación del mes') : 'Escala del día';
   const scaleCard=document.getElementById('home-scale-card');
   if(scaleCard) scaleCard.style.display = todayScale ? '' : 'none';
   S._todayScaleId=todayScale ? todayScale.id : null;
