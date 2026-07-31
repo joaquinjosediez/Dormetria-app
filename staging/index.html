@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod29">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod31">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1291,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod29"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod31"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1310,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod29';
+const APP_VERSION='hoy75-mod31';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -8454,8 +8454,9 @@ function showDiaryNew(){
       <div style="font-size:11px;color:var(--label-3);margin-top:6px;line-height:1.4">Si tu día no fue lo esperado para esta fecha, tocá el otro botón. Mejora el cálculo de jet lag social y deuda de sueño.</div>
     </div>
     <input type="hidden" id="d-daytype" value="">
-    <div class="sec-title" style="margin-top:4px">Al acostarse <span style="color:#dc2626">*</span></div>
-    <div class="form-row" style="margin-bottom:14px">
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Al acostarse <span style="color:#dc2626">*</span></div>
+    <div class="form-row" style="margin-bottom:0">
       <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
       <div class="form-group">
         <label class="form-label">¿Cuánto tardé en dormirme? <span style="color:#dc2626">*</span></label>
@@ -8470,12 +8471,15 @@ function showDiaryNew(){
         </select>
       </div>
     </div>
-    <div class="sec-title" style="margin-top:4px">Al despertar <span style="color:#dc2626">*</span></div>
-    <div class="form-row" style="margin-bottom:14px">
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Al despertar <span style="color:#dc2626">*</span></div>
+    <div class="form-row" style="margin-bottom:0">
       <div class="form-group"><label class="form-label">Me desperté ☀️<span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">Cuando abriste los ojos</span></label><input class="form-input" type="time" id="d-wake" onchange="updateAwakeInBed()"></div>
       <div class="form-group"><label class="form-label">Salí de la cama ⏰<span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">Si fue al toque, misma hora</span></label><input class="form-input" type="time" id="d-getup" onchange="updateAwakeInBed()"></div>
     </div>
-    <div id="awake-in-bed-hint" style="font-size:12px;color:var(--label-2);margin:-6px 0 12px;display:none"></div>
+    <div id="awake-in-bed-hint" style="font-size:11.5px;color:rgba(244,239,229,0.6);margin:8px 0 0;display:none"></div>
+    </div>
 
 <div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Medicación (opcional)</div>
     <div id="same-meds-banner" style="display:none"></div>
@@ -8486,20 +8490,24 @@ function showDiaryNew(){
     <button type="button" id="med-toggle-btn" onclick="toggleMedPicker()" style="background:none;border:1.5px dashed var(--sep-opaque);border-radius:10px;padding:9px 14px;color:#1a4a3a;font-size:14px;cursor:pointer;font-family:var(--font);width:100%;text-align:left;margin-bottom:14px">+ Agregar medicamento</button>
 
 
-        <div class="sec-title" style="margin-top:8px">Despertares <span style="color:#dc2626">*</span></div>
+    <div class="dm-diary-block">
+        <div class="sec-title" style="margin-top:0">Despertares <span style="color:#dc2626">*</span></div>
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <button id="awk-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNoAwakenings()">No me desperté</button>
       <button id="awk-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setYesAwakenings()">Me desperté</button>
     </div>
     <div id="awakening-section" style="display:none"><div id="awakening-list"></div><button class="btn btn-s" style="width:auto;padding:8px 14px;font-size:13px;margin-bottom:12px" onclick="addAwakening()">+ Agregar despertar</button></div>
-    <div class="sec-title">Siesta</div>
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Siesta</div>
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <button id="nap-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(false)">No dormí siesta</button>
       <button id="nap-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(true)">Dormí siesta</button>
     </div>
     <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div></div>
-        <div class="divider"></div>
-    <div class="sec-title">Calidad del sueño</div>
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Calidad del sueño</div>
     <div class="emoji-row">
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy mal</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="2">😕<div style="font-size:9px;color:var(--ink3);margin-top:2px">Mal</div></button>
@@ -8507,8 +8515,9 @@ function showDiaryNew(){
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="4">🙂<div style="font-size:9px;color:var(--ink3);margin-top:2px">Bien</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="5">😊<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy bien</div></button>
     </div><input type="hidden" id="d-qual" value="">
-    <div class="divider"></div>
-    <div class="sec-title">Al despertar</div>
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Cómo te sentiste</div>
     <label class="form-label">Estado de ánimo</label>
     <div class="emoji-row">
       <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="1">😫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy bajo</div></button>
@@ -8525,8 +8534,9 @@ function showDiaryNew(){
       <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="4">⚡⚡<div style="font-size:9px;color:var(--ink3);margin-top:2px">Buena</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="5">🔥<div style="font-size:9px;color:var(--ink3);margin-top:2px">Mucha</div></button>
     </div><input type="hidden" id="d-energy" value="">
-    <div class="divider"></div>
-    <div class="sec-title">Actividad física 🏃</div>
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Actividad física 🏃</div>
     <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
       <div style="flex:1">
         <label class="form-label">Duración</label>
@@ -8551,9 +8561,10 @@ function showDiaryNew(){
       </div>
     </div>
         <div class="sec-title">Pantallas antes de dormir 📱</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><input class="form-input" type="number" id="d-screen" min="0" value="0" style="max-width:90px"><span style="font-size:13px;color:var(--ink3)">minutos</span></div>
-    <div class="divider"></div>
-    <div class="sec-title">Cafeína del día ☕</div>
+    <div style="display:flex;align-items:center;gap:10px"><input class="form-input" type="number" id="d-screen" min="0" value="0" style="max-width:90px"><span style="font-size:13px;color:rgba(244,239,229,0.55)">minutos</span></div>
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Cafeína del día ☕</div>
     <div id="caffeine-items"></div>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <select class="form-select" id="d-caff-type" style="flex:1" onchange="updateCaffPreview()">
@@ -8584,9 +8595,11 @@ function showDiaryNew(){
         <span id="period-check" style="font-size:14px">⬜</span>
       </button>
     </div>
-    <div class="sec-title">Notas (opcional)</div>
-<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Notas adicionales</div>
-    <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..." style="margin-bottom:14px"></textarea>
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Notas (opcional)</div>
+    <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..."></textarea>
+    </div>
 
     <button class="btn btn-g" onclick="saveDiary()" id="save-diary-btn" style="margin-bottom:28px">Guardar registro</button>
     <div style="margin-top:24px;padding-bottom:8px">
@@ -9346,7 +9359,24 @@ async function showDrTab_(tab){
   // Vista escritorio: exponer el tab activo para dar layout CSS específico
   // por pestaña (un grid global rompía Perfil/Estudios, que tienen otra estructura).
   try{ const _c=document.getElementById('drp-content'); if(_c) _c.dataset.tab=tab; }catch(_){}
-  const cont=document.getElementById('dr-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
+  let cont=document.getElementById('dr-content');
+  // En escritorio, todo lo que no sea el listado de pacientes se muestra en el
+  // panel ancho de la derecha: en la barra de 360px no se puede leer nada.
+  try{
+    const _isDesk=document.body.classList.contains('dr-desktop');
+    const _side=document.getElementById('dr-metrics-desktop');
+    if(_isDesk && _side && tab!=='patients'){
+      document.body.classList.add('dr-metrics-view');
+      _side.innerHTML='<div style="padding:22px 26px;max-width:980px;margin:0 auto"><div id="dr-content-side"></div></div>';
+      const _sideCont=document.getElementById('dr-content-side');
+      if(_sideCont) cont=_sideCont;
+      const _left=document.getElementById('dr-content');
+      if(_left) _left.innerHTML='<div style="padding:18px 6px;font-size:12.5px;color:rgba(255,255,255,0.45);line-height:1.5">Se está mostrando en el panel de la derecha →</div>';
+    } else {
+      document.body.classList.remove('dr-metrics-view');
+    }
+  }catch(_){}
+  cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   if(tab==='patients'){
     try{
       // PRIMARY: read from localStorage cache (bypasses RLS)
@@ -9396,7 +9426,7 @@ async function showDrTab_(tab){
       window._drToggleArchive = toggleArchive;
       let currentView = 'active'; // 'active' | 'archived'
       let _tagFilter = null; // null=todas, o id de PATHOLOGY_TAGS
-      let _sortMode = 'name'; // 'name' | 'priority' — prioridad = pacientes con hallazgos primero
+
 function formatPatientName(u){
   if(!u) return '';
   // Detectar perfil infantil por sufijo +<nombre>@child (creado en registerChildProfile)
@@ -9442,20 +9472,9 @@ async function renderPatientList(filter){
           const lb=((b.lname||'')+' '+(b.name||'')).trim().toLowerCase();
           return la.localeCompare(lb,'es',{sensitivity:'base'});
         };
-        if(_sortMode==='priority'){
-          // Prioridad clínica: pacientes con etiquetas detectadas (SAHOS/Insomnio/
-          // SPI/Parasomnia) primero, más etiquetas arriba, después orden alfabético.
-          // Es la forma más directa de mostrar que el procesamiento automático de
-          // escalas se traduce en algo accionable para la práctica del médico.
-          filtered.sort((a,b)=>{
-            const na=(a.tags&&a.tags.resolved&&a.tags.resolved.length)||0;
-            const nb=(b.tags&&b.tags.resolved&&b.tags.resolved.length)||0;
-            if(na!==nb) return nb-na;
-            return _alphaCmp(a,b);
-          });
-        } else {
-          filtered.sort(_alphaCmp);
-        }
+        // Siempre alfabético por apellido: la organización por patología ya la
+        // da el filtro de etiquetas de arriba (no hacían falta dos criterios).
+        filtered.sort(_alphaCmp);
         const rows=filtered.map(u=>{
           if(!u)return'';
           const init=u.name&&u.name[0]?(u.name[0]+(u.lname||'a')[0]).toUpperCase():'?';
@@ -9497,25 +9516,20 @@ async function renderPatientList(filter){
         </div>
         <div id="dr-patient-count" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.55)">Pacientes vinculados (${validPts.length})</div>
       </div>
-      <div class="dm-filters-sticky">
-      <div class="dm-tagfilter-bar" id="dr-tagfilter-bar">
-        <span class="dm-tagfilter-chip${_tagFilter?'':' on'}" data-tagid="" onclick="window._drSetTagFilter(null)">Todas</span>
-        ${Object.keys(PATHOLOGY_TAGS).map(id=>{const t=PATHOLOGY_TAGS[id];const on=_tagFilter===id;return '<span class="dm-tagfilter-chip'+(on?' on':'')+'" data-tagid="'+id+'" data-tagcolor="'+t.color+'" style="'+(on?('background:'+t.color+'22;border-color:'+t.color+';color:'+t.color):'')+'" onclick="window._drSetTagFilter(\''+id+'\')"><span class="dm-tagdot" style="background:'+t.color+'"></span>'+t.label+'</span>';}).join('')}
-      </div>
-      <div class="dm-tagfilter-bar" style="padding-top:0;margin-top:-4px">
-        <span style="font-size:11px;color:rgba(255,255,255,0.4);align-self:center;margin-right:2px">Ordenar:</span>
-        <span class="dm-tagfilter-chip${_sortMode==='name'?' on':''}" data-sortmode="name" onclick="window._drSetSortMode('name')">🔤 Nombre</span>
-        <span class="dm-tagfilter-chip${_sortMode==='priority'?' on':''}" data-sortmode="priority" onclick="window._drSetSortMode('priority')">⚠️ Prioridad clínica</span>
-      </div>
+      <div class="dm-filters-sticky" id="dr-tagfilter-bar">
+        ${(function(){
+          const ids=Object.keys(PATHOLOGY_TAGS);
+          const chip=(id)=>{
+            if(id===null){ return '<span class="dm-tagfilter-chip'+(_tagFilter?'':' on')+'" data-tagid="" onclick="window._drSetTagFilter(null)">Todas</span>'; }
+            const t=PATHOLOGY_TAGS[id]; const on=_tagFilter===id;
+            return '<span class="dm-tagfilter-chip'+(on?' on':'')+'" data-tagid="'+id+'" data-tagcolor="'+t.color+'" style="'+(on?('background:'+t.color+'22;border-color:'+t.color+';color:'+t.color):'')+'" onclick="window._drSetTagFilter(\''+id+'\')"><span class="dm-tagdot" style="background:'+t.color+'"></span>'+t.label+'</span>';
+          };
+          const fila1=[null].concat(ids.slice(0,3)).map(chip).join('');
+          const fila2=ids.slice(3).map(chip).join('');
+          return '<div class="dm-filterrow">'+fila1+'</div><div class="dm-filterrow">'+fila2+'</div>';
+        })()}
       </div>
       <div id="dr-patient-list"></div>`;
-      window._drSetSortMode = (mode)=>{
-        _sortMode = mode;
-        document.querySelectorAll('[data-sortmode]').forEach(chip=>{
-          chip.classList.toggle('on', chip.dataset.sortmode===mode);
-        });
-        renderPatientList((document.getElementById('dr-patient-search')||{}).value||'');
-      };
       window._drSetTagFilter = (id)=>{
         _tagFilter = (_tagFilter===id) ? null : id;
         document.querySelectorAll('#dr-tagfilter-bar .dm-tagfilter-chip').forEach(chip=>{
@@ -9761,22 +9775,10 @@ async function renderPatientList(filter){
       '<div id="dr-adherence-panel"><div class="spinner-wrap"><div class="spinner"></div></div></div>'+
       '<div class="sec-title" style="margin:22px 0 8px">Cómo me califican mis pacientes</div>'+
       '<div id="dr-ratings-panel"><div class="spinner-wrap"><div class="spinner"></div></div></div>';
-    const _big=document.getElementById('dr-metrics-desktop');
-    const _isDesk=document.body.classList.contains('dr-desktop');
-    if(_isDesk && _big){
-      // En escritorio las métricas van al panel grande de la derecha, no a la
-      // barra angosta de pacientes (ahí no se pueden leer).
-      document.body.classList.add('dr-metrics-view');
-      _big.innerHTML='<div style="padding:22px 26px;max-width:900px;margin:0 auto">'+_body+'</div>';
-      cont.innerHTML='<div style="padding:18px 4px;font-size:13px;color:rgba(255,255,255,0.55);line-height:1.5">📊 Las métricas se están mostrando en el panel de la derecha.</div>';
-    } else {
-      document.body.classList.remove('dr-metrics-view');
-      cont.innerHTML='<div style="padding-top:12px">'+_body+'</div>';
-    }
+    cont.innerHTML='<div style="padding-top:4px">'+_body+'</div>';
     setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} try{ renderDoctorRatings(); }catch(_){} },60);
     return;
   }
-  document.body.classList.remove('dr-metrics-view');
   if(tab==='link'){cont.innerHTML=`<div style="padding-top:18px">
     <div style="background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:16px;padding:20px">
       <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:6px">🔗 Vincular paciente</div>
@@ -9822,6 +9824,17 @@ async function renderPatientList(filter){
 // Responde a la pregunta operativa: ¿quién dejó de registrar y a quién le
 // falta completar datos? Permite mandar un "toque" por WhatsApp o mail.
 function setDrAdhSort(m){ window._drAdhSort=m; try{ renderDoctorAdherence(); }catch(_){} }
+// Marcar/desmarcar el alta de un paciente (queda en este dispositivo).
+function drToggleAlta(email){
+  if(!S.user||!email) return;
+  const k='dm_dr_alta_'+(S.user.email||'').toLowerCase();
+  let m={}; try{ m=JSON.parse(localStorage.getItem(k)||'{}'); }catch(_){}
+  const e=email.toLowerCase();
+  if(m[e]) delete m[e]; else m[e]=Date.now();
+  try{ localStorage.setItem(k, JSON.stringify(m)); }catch(_){}
+  toast(m[e]?'Paciente marcado de alta':'Paciente reactivado');
+  try{ renderDoctorAdherence(); }catch(_){}
+}
 // Calificaciones que los pacientes le dejaron al profesional.
 async function renderDoctorRatings(){
   const el=document.getElementById('dr-ratings-panel');
@@ -9860,18 +9873,20 @@ async function renderDoctorAdherence(){
     }
     if(!emails.length){ el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,0.5)">Todavía no tenés pacientes vinculados.</div>'; return; }
     const inList='('+emails.map(e=>encodeURIComponent(e)).join(',')+')';
-    const [pats, diary, evals] = await Promise.all([
+    const [pats, diary, evals, suggs] = await Promise.all([
       db.get('patients?email=in.'+inList+'&select=email,name,lname,phone,dob,height_cm,weight_kg').catch(()=>[]),
-      db.get('sleep_diary?patient_email=in.'+inList+'&select=patient_email,created_at,diary_date&limit=5000').catch(()=>[]),
-      db.get('evaluations?patient_email=in.'+inList+'&select=patient_email,created_at&limit=5000').catch(()=>[])
+      db.get('sleep_diary?patient_email=in.'+inList+'&select=patient_email,created_at,diary_date,sleep_minutes,awakenings,sleep_latency_mins,bedtime,wake_time,day_type&limit=8000').catch(()=>[]),
+      db.get('evaluations?patient_email=in.'+inList+'&select=patient_email,created_at,scale_id,score,max_score&limit=8000').catch(()=>[]),
+      db.get('doctor_suggestions?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&select=patient_email,scale_id,created_at&limit=3000').catch(()=>[])
     ]);
     const info={};
-    emails.forEach(e=>{ info[e.toLowerCase()]={last:null,nDiary:0,d7:0,d30:0,nEval:0}; });
+    emails.forEach(e=>{ info[e.toLowerCase()]={last:null,nDiary:0,d7:0,d30:0,nEval:0,rows:[],evalsByScale:{},sugg:new Set()}; });
     const NOW=Date.now();
     (diary||[]).forEach(r=>{
       const k=(r.patient_email||'').toLowerCase(); if(!info[k]) return;
       const t=new Date(r.created_at||r.diary_date).getTime();
       info[k].nDiary++;
+      info[k].rows.push(r);
       if(NOW-t<=7*86400000) info[k].d7++;
       if(NOW-t<=30*86400000) info[k].d30++;
       if(!info[k].last||t>info[k].last) info[k].last=t;
@@ -9880,17 +9895,43 @@ async function renderDoctorAdherence(){
       const k=(r.patient_email||'').toLowerCase(); if(!info[k]) return;
       const t=new Date(r.created_at).getTime();
       info[k].nEval++;
+      (info[k].evalsByScale[r.scale_id]=info[k].evalsByScale[r.scale_id]||[]).push(r);
       if(!info[k].last||t>info[k].last) info[k].last=t;
     });
+    (suggs||[]).forEach(s=>{
+      const k=(s.patient_email||'').toLowerCase(); if(!info[k]) return;
+      info[k].sugg.add(s.scale_id);
+    });
+    // Estado clínico: mejoría (score 14 días vs 14 previos), alta y abandono.
+    const _altaKey='dm_dr_alta_'+(S.user.email||'').toLowerCase();
+    let _altas={}; try{ _altas=JSON.parse(localStorage.getItem(_altaKey)||'{}'); }catch(_){}
     const rows=(pats||[]).map(p=>{
       const k=(p.email||'').toLowerCase();
       const i=info[k]||{last:null,nDiary:0,d7:0,d30:0,nEval:0};
       const daysSince = i.last? Math.floor((NOW-i.last)/86400000) : null;
       const faltaDatos = (!p.dob||!p.height_cm||!p.weight_kg);
+      // Evolución del score: últimas 14 noches vs las 14 anteriores
+      let delta=null;
+      try{
+        const ord=(i.rows||[]).slice().sort((a,b)=>String(b.diary_date).localeCompare(String(a.diary_date)));
+        const now14=ord.slice(0,14), prev14=ord.slice(14,28);
+        if(now14.length>=5 && prev14.length>=5){
+          const _age=p.dob?Math.floor((Date.now()-new Date(p.dob))/31557600000):null;
+          const a=calcSleepScore(now14,_age), b=calcSleepScore(prev14,_age);
+          if(a&&b) delta=a.total-b.total;
+        }
+      }catch(_){}
+      // Escalas: pedidas por el profesional vs efectivamente respondidas
+      const pedidas=Array.from(i.sugg||[]);
+      const respondidas=pedidas.filter(sid=>(i.evalsByScale[sid]||[]).length>0).length;
+      // Escalas repetidas al menos dos veces (permiten ver evolución)
+      const conEvolucion=Object.keys(i.evalsByScale||{}).filter(sid=>(i.evalsByScale[sid]||[]).length>=2).length;
+      const alta = !!_altas[(p.email||'').toLowerCase()];
       return {name:((p.lname||'')?((p.lname||'')+', '+(p.name||'')):((p.name||'')||p.email)).trim(),
               lname:p.lname||'', fname:p.name||'',
               email:p.email, phone:p.phone||'',
-              daysSince, d7:i.d7, d30:i.d30, nDiary:i.nDiary, nEval:i.nEval, faltaDatos};
+              daysSince, d7:i.d7, d30:i.d30, nDiary:i.nDiary, nEval:i.nEval, faltaDatos,
+              delta, pedidas:pedidas.length, respondidas, conEvolucion, alta};
     });
     const mode=window._drAdhSort||'abandono';
     const cmpAp=(a,b)=>((a.lname||a.fname||a.email).toLowerCase()).localeCompare((b.lname||b.fname||b.email).toLowerCase(),'es',{sensitivity:'base'});
@@ -9899,6 +9940,8 @@ async function renderDoctorAdherence(){
     else if(mode==='uso') rows.sort((a,b)=>(b.d30-a.d30)||(b.nDiary-a.nDiary));
     else if(mode==='alfa') rows.sort(cmpAp);
     else if(mode==='incompletos') rows.sort((a,b)=>(b.faltaDatos?1:0)-(a.faltaDatos?1:0)||cmpAp(a,b));
+    else if(mode==='empeorando') rows.sort((a,b)=>((a.delta==null?999:a.delta)-(b.delta==null?999:b.delta)));
+    else if(mode==='escalas') rows.sort((a,b)=>((a.pedidas-a.respondidas)<(b.pedidas-b.respondidas)?1:-1));
     const alDia=rows.filter(r=>r.daysSince!=null&&r.daysSince<=3).length;
     const tibios=rows.filter(r=>r.daysSince!=null&&r.daysSince>3&&r.daysSince<=14).length;
     const perdidos=rows.filter(r=>r.daysSince==null||r.daysSince>14).length;
@@ -9910,21 +9953,38 @@ async function renderDoctorAdherence(){
       '</div>'+
       '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;align-items:center">'+
         '<span style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-right:2px">Ordenar:</span>'+
-        sbtn('abandono','⚠️ Más abandonados')+sbtn('reciente','🕐 Más recientes')+sbtn('uso','📊 Más uso')+sbtn('alfa','🔤 Apellido')+sbtn('incompletos','📝 Datos incompletos')+
+        sbtn('abandono','⚠️ Más abandonados')+sbtn('empeorando','↘ Empeorando')+sbtn('escalas','📋 Escalas pendientes')+sbtn('uso','📊 Más uso')+sbtn('alfa','🔤 Apellido')+sbtn('incompletos','📝 Datos incompletos')+
       '</div>';
+    const pill=(txt,bg,fg)=>'<span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:99px;background:'+bg+';color:'+fg+';white-space:nowrap">'+txt+'</span>';
     html+=rows.map(r=>{
       const estado = r.daysSince==null?'Nunca registró':r.daysSince===0?'Hoy':r.daysSince===1?'Ayer':'hace '+r.daysSince+' días';
       const col = r.daysSince==null?'#fca5a5':r.daysSince<=3?'#7EC8A4':r.daysSince<=14?'#C8A96E':'#fca5a5';
-      const msg='¡Hola '+(r.name.split(' ')[0])+'! Soy '+drFirst+'. Te escribo para recordarte que completes tu diario de sueño en Dormetria — con registros constantes puedo ver mucho mejor cómo venís y ajustar lo que haga falta. ¡Gracias!';
+      const msg='¡Hola '+(r.fname||r.name.split(',')[0])+'! Soy '+drFirst+'. Te escribo para recordarte que completes tu diario de sueño en Dormetria — con registros constantes puedo ver mucho mejor cómo venís y ajustar lo que haga falta. ¡Gracias!';
       const tel=(r.phone||'').replace(/[^0-9]/g,'');
       const wa = tel? '<a href="https://wa.me/'+tel+'?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" style="text-decoration:none;background:#25D366;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">💬 Recordar</a>'
                    : '<span style="font-size:10px;color:rgba(255,255,255,0.35);padding:5px 8px">sin tel.</span>';
       const mail='<a href="mailto:'+r.email+'?subject='+encodeURIComponent('Tu diario de sueño en Dormetria')+'&body='+encodeURIComponent(msg)+'" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">✉️ Mail</a>';
-      return '<div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:10px 12px;margin-bottom:7px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
-          '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.name+'</div>'+
-          '<div style="font-size:11px;color:'+col+';margin-top:2px">'+estado+' · '+r.d30+' registros en 30 días'+(r.faltaDatos?' · <span style="color:#C8A96E">datos incompletos</span>':'')+'</div></div>'+
-          '<div style="display:flex;gap:5px;flex-shrink:0">'+wa+mail+'</div>'+
+      // Señales clínicas accionables
+      const chips=[];
+      if(r.alta) chips.push(pill('✓ Alta','rgba(126,200,164,0.2)','#7EC8A4'));
+      else if(r.daysSince!=null && r.daysSince>30) chips.push(pill('⚠ Posible abandono','rgba(239,68,68,0.18)','#fca5a5'));
+      if(r.delta!=null){
+        if(r.delta>=5) chips.push(pill('↗ Mejorando +'+r.delta,'rgba(34,197,94,0.18)','#86efac'));
+        else if(r.delta<=-5) chips.push(pill('↘ Empeorando '+r.delta,'rgba(239,68,68,0.18)','#fca5a5'));
+        else chips.push(pill('≈ Estable','rgba(255,255,255,0.1)','rgba(255,255,255,0.7)'));
+      }
+      if(r.pedidas>0) chips.push(pill('Escalas '+r.respondidas+'/'+r.pedidas, r.respondidas>=r.pedidas?'rgba(34,197,94,0.16)':'rgba(200,169,110,0.2)', r.respondidas>=r.pedidas?'#86efac':'#C8A96E'));
+      if(r.conEvolucion>0) chips.push(pill(r.conEvolucion+' con evolución','rgba(255,255,255,0.08)','rgba(255,255,255,0.6)'));
+      if(r.faltaDatos) chips.push(pill('Datos incompletos','rgba(200,169,110,0.18)','#C8A96E'));
+      const altaBtn='<button onclick="drToggleAlta(\''+r.email+'\')" title="Marcar alta / reactivar" style="background:none;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.6);font-size:10.5px;font-weight:600;padding:5px 9px;border-radius:8px;cursor:pointer;font-family:var(--font)">'+(r.alta?'↻ Reactivar':'✓ Alta')+'</button>';
+      return '<div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:10px 12px;margin-bottom:7px;'+(r.alta?'opacity:0.72':'')+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:13.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.name+'</div>'+
+            '<div style="font-size:11px;color:'+col+';margin-top:2px">'+estado+' · '+r.d30+' registros en 30 días · '+r.nEval+' escalas</div>'+
+            (chips.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'+chips.join('')+'</div>':'')+
+          '</div>'+
+          '<div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">'+wa+mail+altaBtn+'</div>'+
         '</div></div>';
     }).join('');
     el.innerHTML=html;

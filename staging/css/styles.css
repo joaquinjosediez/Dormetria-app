@@ -121,17 +121,15 @@
 /* minmax(0,1fr) permite que las columnas se achiquen: con repeat(4,1fr) el
    contenido más largo ("Cronodisrupción") empujaba el ancho y "SPI" quedaba
    cortado fuera del panel. */
-/* Los 7 chips en 2 filas parejas: 4 arriba + 3 abajo, todos del mismo ancho.
-   minmax(0,1fr) evita que "Cronodisrupción" empuje el ancho y corte "SPI". */
-#dr-tagfilter-bar{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;
-  box-sizing:border-box;
-}
-#dr-tagfilter-bar .dm-tagfilter-chip{
-  justify-content:center;font-size:9px;padding:4px 3px;min-width:0;
+/* Filtros en dos filas que ocupan el MISMO ancho: 4 chips arriba y 3 abajo,
+   cada uno repartiéndose su fila (flex:1). Así ambas filas quedan parejas. */
+#dr-tagfilter-bar{ padding:0 16px 10px;box-sizing:border-box; }
+.dm-filterrow{ display:flex;gap:4px;margin-bottom:4px; }
+.dm-filterrow .dm-tagfilter-chip{
+  flex:1;justify-content:center;font-size:9px;padding:5px 3px;min-width:0;
   overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.1px;
 }
-#dr-tagfilter-bar .dm-tagdot{ width:5px;height:5px;margin-right:2px;flex-shrink:0; }
+.dm-filterrow .dm-tagdot{ width:5px;height:5px;margin-right:2px;flex-shrink:0; }
 /* Filtros fijos: al bajar por el listado de pacientes siguen visibles. */
 .dm-filters-sticky{
   position:sticky;top:0;z-index:5;
@@ -341,6 +339,8 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
     height:100vh;overflow-y:auto;background:#0f2820;
   }
   body.dr-desktop.dr-metrics-view #dr-desktop-placeholder{ display:none !important; }
+  /* La ficha del paciente no debe quedar por encima del panel de métricas. */
+  body.dr-desktop.dr-metrics-view #screen-doctor-patient{ display:none !important; }
   body.dr-desktop:not(.dr-has-patient) #dr-desktop-placeholder{
     display:flex;grid-column:2;grid-row:1;
     align-items:center;justify-content:center;text-align:center;
@@ -833,6 +833,69 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 }
 .emoji-btn:active{transform:scale(0.95);}
 .emoji-btn.sel{background:#eef8f5;box-shadow:inset 0 0 0 2px #1a4a3a;}
+
+/* ── DIARIO DE SUEÑO: estética unificada (verde oscuro, tarjetas parejas) ──
+   Antes el formulario heredaba el estilo claro genérico y desentonaba con el
+   resto de la app. Acá se alinea con la identidad de la plataforma. */
+#screen-diary-new .scroll{ background:#1a2e23; }
+#screen-diary-new #diary-form-content{ padding:16px 16px 90px !important; }
+#screen-diary-new .sec-title{
+  color:rgba(244,239,229,0.55);font-size:10.5px;letter-spacing:0.09em;
+  margin:18px 0 8px;padding:0;
+}
+#screen-diary-new .form-group{ margin-bottom:12px; }
+#screen-diary-new .form-label{
+  color:rgba(244,239,229,0.5);font-size:9.5px;letter-spacing:0.07em;margin-bottom:5px;
+}
+#screen-diary-new .form-input,
+#screen-diary-new .form-select{
+  background:rgba(255,255,255,0.07);
+  color:#F4EFE5;
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.14);
+  border-radius:12px;
+  font-size:16px;
+  padding:12px 14px;
+}
+#screen-diary-new .form-input:focus,
+#screen-diary-new .form-select:focus{
+  box-shadow:inset 0 0 0 1.5px #7EC8A4;
+}
+#screen-diary-new .form-input[type="time"],
+#screen-diary-new .form-input[type="date"]{ color-scheme:dark; }
+#screen-diary-new .form-row{ gap:10px; }
+#screen-diary-new .emoji-row{ gap:6px; }
+#screen-diary-new .emoji-btn{
+  background:rgba(255,255,255,0.07);
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.14);
+  border-radius:12px;padding:10px 4px;font-size:20px;
+}
+#screen-diary-new .emoji-btn div{ color:rgba(244,239,229,0.5) !important; }
+#screen-diary-new .emoji-btn.sel{
+  background:#7EC8A4;box-shadow:inset 0 0 0 1.5px #7EC8A4;
+}
+#screen-diary-new .emoji-btn.sel div{ color:#0F2820 !important; }
+#screen-diary-new .opt{
+  background:rgba(255,255,255,0.07);
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.14);
+  color:#F4EFE5;border:none;border-radius:12px;
+}
+#screen-diary-new .opt.sel{ background:#7EC8A4;color:#0F2820;box-shadow:inset 0 0 0 1.5px #7EC8A4; }
+#screen-diary-new .divider{ border-color:rgba(126,200,164,0.12); }
+#screen-diary-new .btn-g{
+  background:#7EC8A4;color:#0F2820;font-weight:600;border-radius:12px;
+}
+#screen-diary-new .btn-s{
+  background:rgba(255,255,255,0.08);color:#F4EFE5;
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);border-radius:12px;
+}
+/* Tarjeta contenedora por bloque: agrupa y alinea como en la demo */
+.dm-diary-block{
+  background:rgba(255,255,255,0.045);
+  border:1px solid rgba(126,200,164,0.1);
+  border-radius:16px;
+  padding:13px 14px;
+  margin-bottom:12px;
+}
 
 /* ── PVT ── */
 .pvt-arena{
