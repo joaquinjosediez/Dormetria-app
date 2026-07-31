@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod23">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod27">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -375,7 +375,12 @@
     </div>
     <div id="login-form">
       <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="login-email" placeholder="tucorreo@email.com"></div>
-      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="login-pass" placeholder="••••••••"><div class="err" id="login-error">Correo o contraseña incorrectos</div></div>
+      <div class="form-group"><label class="form-label">Contraseña</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="login-pass" placeholder="••••••••" style="padding-right:44px">
+          <button type="button" onclick="dmTogglePass('login-pass',this)" aria-label="Mostrar u ocultar contraseña" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:0.65">👁</button>
+        </div>
+        <div class="err" id="login-error">Correo o contraseña incorrectos</div></div>
       <button class="btn btn-g" onclick="doLogin()" id="login-btn">Ingresar</button>
       <div style="text-align:center;margin-top:10px"><span onclick="showForgotPasswordPrompt()" style="cursor:pointer;color:rgba(255,255,255,0.55);font-size:12px;text-decoration:underline">¿Olvidaste tu contraseña?</span></div>
       <div class="toggle-link" id="reg-toggle">¿Primera vez? <span onclick="showRegister()">Crear cuenta</span></div>
@@ -439,7 +444,12 @@
         <div class="form-group"><label class="form-label">Institución (opcional)</label><input class="form-input" id="dreg-inst" placeholder="Hospital Austral"></div>
       </div>
       <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="reg-email" placeholder="tucorreo@email.com"></div>
-      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"><div class="err" id="reg-error">Completá todos los campos</div></div>
+      <div class="form-group"><label class="form-label">Contraseña</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="reg-pass" placeholder="Mínimo 8 caracteres" style="padding-right:44px">
+          <button type="button" onclick="dmTogglePass('reg-pass',this)" aria-label="Mostrar u ocultar contraseña" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:0.65">👁</button>
+        </div>
+        <div class="err" id="reg-error">Completá todos los campos</div></div>
       <div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.07);border-radius:10px;border:1px solid rgba(255,255,255,0.1)">
         <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Términos <span style="color:#FF3B30">*</span></div>
         <div style="display:flex;flex-direction:column;gap:7px">
@@ -465,7 +475,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Nueva contraseña</label>
-      <input class="form-input" type="password" id="sp-pass1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      <div style="position:relative"><input class="form-input" type="password" id="sp-pass1" placeholder="Mínimo 8 caracteres" autocomplete="new-password" style="padding-right:44px"><button type="button" onclick="dmTogglePass('sp-pass1',this)" aria-label="Mostrar u ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:0.65">👁</button></div>
     </div>
     <div class="form-group">
       <label class="form-label">Confirmar contraseña</label>
@@ -493,6 +503,22 @@
 
     <!-- Fecha -->
     <div id="home-meta" style="font-size:12px;color:rgba(255,255,255,0.35);text-transform:capitalize;margin-bottom:-4px"></div>
+
+    <!-- Instalar la app + activar recordatorios (arriba de todo: es la acción
+         que habilita los recordatorios; se oculta sola una vez instalada) -->
+    <div id="dm-install-card" style="display:none;background:linear-gradient(135deg,rgba(200,169,110,0.2),rgba(200,169,110,0.07));border:1px solid rgba(200,169,110,0.45);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:24px;flex-shrink:0">📲</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:700;color:#fff;line-height:1.3">Instalá Dormetria en tu teléfono</div>
+          <div style="font-size:11.5px;color:rgba(255,255,255,0.72);margin-top:3px;line-height:1.4">Ícono propio, abre más rápido y podés recibir recordatorios para completar el diario.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onclick="dmInstallApp()" style="flex:1;background:#C8A96E;border:none;border-radius:10px;padding:10px;color:#0F2820;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Cómo instalarla</button>
+        <button onclick="dmEnableNotifications(this)" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;color:#fff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font)">🔔 Recordatorios</button>
+      </div>
+    </div>
 
     <!-- 1) ¿Cómo usar Dormetria? — aparece solo si el paciente no la cerró aún -->
     <div id="home-howto-card" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:16px;cursor:pointer" onclick="openHowToUse(true)">
@@ -570,6 +596,7 @@
 
     <!-- Accesos rápidos (test de alerta, etc.) — arriba de Mi especialista -->
     <div id="home-quick" style="display:none"></div>
+
 
     <!-- Código profesional -->
     <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showPatientCode()">
@@ -1017,9 +1044,9 @@
       <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v42.0c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
       <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:9px;border-radius:8px;padding:1px 5px;margin-left:2px"></span></span>
     </button>
-    <button class="bnav" id="drnav-link" onclick="showDrTab('link',this)" style="color:rgba(255,255,255,0.5)">
-      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg></div>
-      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Vincular</span>
+    <button class="bnav" id="drnav-metrics" onclick="showDrTab('metrics',this)" style="color:rgba(255,255,255,0.5)">
+      <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,0.5)">Métricas</span>
     </button>
     <button class="bnav" id="drnav-profile" onclick="showDrTab('profile',this)" style="color:rgba(255,255,255,0.5)">
       <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
@@ -1263,7 +1290,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod23"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod27"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1282,7 +1309,86 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod23';
+const APP_VERSION='hoy75-mod27';
+// ─── PWA: registro del service worker e instalación ───
+// La app pasa a ser instalable (ícono propio, pantalla completa) y queda
+// preparada para recibir notificaciones push cuando exista el servidor.
+(function(){
+  if('serviceWorker' in navigator && location.protocol==='https:'){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(e=>console.log('[PWA] sw:', e.message));
+    });
+  }
+  // Android / escritorio: el navegador ofrece instalar y guardamos el evento
+  window._dmInstallPrompt=null;
+  window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); window._dmInstallPrompt=e; try{ updateInstallUI(); }catch(_){} });
+})();
+function isStandalonePWA(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+}
+function isIOSDevice(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+function updateInstallUI(){
+  const el=document.getElementById('dm-install-card');
+  if(!el) return;
+  el.style.display = isStandalonePWA() ? 'none' : 'block';
+}
+// Instalar: en Android/escritorio dispara el prompt nativo; en iPhone explica
+// el paso manual (Apple no permite instalar por código).
+function dmInstallApp(){
+  if(window._dmInstallPrompt){
+    window._dmInstallPrompt.prompt();
+    window._dmInstallPrompt.userChoice.then(()=>{ window._dmInstallPrompt=null; setTimeout(updateInstallUI,800); });
+    return;
+  }
+  showIOSInstallGuide();
+}
+function showIOSInstallGuide(){
+  const ios=isIOSDevice();
+  const old=document.getElementById('dm-install-modal'); if(old) old.remove();
+  const wrap=document.createElement('div');
+  wrap.id='dm-install-modal';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+  wrap.onclick=e=>{ if(e.target===wrap) wrap.remove(); };
+  const step=(n,txt)=>'<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px"><div style="width:22px;height:22px;border-radius:50%;background:#1a4a3a;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+n+'</div><div style="font-size:13.5px;color:#10231c;line-height:1.5">'+txt+'</div></div>';
+  wrap.innerHTML='<div style="background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:86vh;overflow-y:auto;padding:22px 20px 26px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
+      '<div style="font-size:17px;font-weight:700;color:#10231c">📲 Instalar Dormetria</div>'+
+      '<button onclick="document.getElementById(\'dm-install-modal\').remove()" style="background:none;border:none;font-size:22px;color:#9CA3AF;cursor:pointer">✕</button>'+
+    '</div>'+
+    '<div style="font-size:13px;color:#4b5563;margin-bottom:16px;line-height:1.5">Instalar la app te permite abrirla desde un ícono propio y <strong>recibir recordatorios</strong> para completar el diario.</div>'+
+    (ios
+      ? '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#9a3412;line-height:1.5">En iPhone las notificaciones <strong>solo funcionan si agregás la app a la pantalla de inicio</strong>. Es un paso manual que pide Apple, se hace una sola vez.</div>'+
+        step(1,'Tocá el botón <strong>Compartir</strong> ⬆️ en la barra de Safari (abajo al centro).')+
+        step(2,'Deslizá y elegí <strong>“Agregar a inicio”</strong> (Add to Home Screen).')+
+        step(3,'Confirmá con <strong>Agregar</strong>. Va a aparecer el ícono de Dormetria en tu pantalla.')+
+        step(4,'Abrí la app <strong>desde ese ícono</strong> y aceptá las notificaciones cuando te las pida.')+
+        '<div style="font-size:11.5px;color:#6b7280;margin-top:10px;line-height:1.5">⚠️ Importante: tiene que ser desde <strong>Safari</strong>. Si estás usando Chrome u otro navegador en iPhone, abrí primero dormetria.com en Safari.</div>'
+      : step(1,'Tocá el botón de instalar de tu navegador (o el menú ⋮ → “Instalar aplicación”).')+
+        step(2,'Confirmá la instalación.')+
+        step(3,'Abrí Dormetria desde el ícono nuevo y aceptá las notificaciones.')
+    )+
+    '<button onclick="document.getElementById(\'dm-install-modal\').remove()" style="width:100%;margin-top:16px;padding:13px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Entendido</button>'+
+  '</div>';
+  document.body.appendChild(wrap);
+}
+// Pide permiso de notificaciones (solo tiene efecto real si está instalada en iOS)
+async function dmEnableNotifications(btn){
+  try{
+    if(!('Notification' in window)){ toast('Este navegador no soporta notificaciones'); return; }
+    if(isIOSDevice() && !isStandalonePWA()){ showIOSInstallGuide(); return; }
+    const p=await Notification.requestPermission();
+    if(p==='granted'){
+      toast('✓ Notificaciones activadas');
+      try{ new Notification('Dormetria', {body:'Listo. Te vamos a recordar completar tu diario.', icon:'icon-192.png'}); }catch(_){}
+      if(btn) btn.textContent='✓ Notificaciones activadas';
+    } else {
+      toast('No se activaron. Podés habilitarlas desde los ajustes del navegador.');
+    }
+  }catch(e){ toast('No se pudo activar: '+(e&&e.message||'')); }
+}
+
 // ─── Aviso de conexión perdida: antes la app quedaba en spinners mudos ───
 window.addEventListener('offline',()=>{
   if(document.getElementById('dm-offline-banner')) return;
@@ -2606,6 +2712,13 @@ function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase();}
 
 function showRegister(){document.getElementById('login-form').style.display='none';document.getElementById('register-form').style.display='block';document.getElementById('p-reg').style.display=S.role==='patient'?'block':'none';document.getElementById('d-reg').style.display=S.role==='doctor'?'block':'none';}
 function showLogin(){document.getElementById('register-form').style.display='none';document.getElementById('login-form').style.display='block';document.getElementById('login-error').classList.remove('show');}
+// Mostrar/ocultar contraseña (pedido: poder verificar lo que se tipea)
+function dmTogglePass(inputId, btn){
+  const el=document.getElementById(inputId); if(!el) return;
+  const showing = el.type==='text';
+  el.type = showing ? 'password' : 'text';
+  if(btn){ btn.textContent = showing ? '👁' : '🙈'; btn.style.opacity = showing ? '0.65' : '1'; }
+}
 async function doLogin(){
   const email=document.getElementById('login-email').value.trim().toLowerCase();
   const pass=document.getElementById('login-pass').value;
@@ -2622,11 +2735,17 @@ async function doLogin(){
     // Auth con Supabase (bcrypt automático, RLS aplicado a partir de acá)
     const {data, error} = await supa.auth.signInWithPassword({email, password: pass});
     if(error){
-      errEl.textContent = error.message.includes('Email not confirmed')
-        ? 'Tenés que confirmar tu email primero. Revisá tu casilla.'
-        : error.message.includes('Invalid')
-          ? 'Correo o contraseña incorrectos.'
-          : 'Error: '+error.message;
+      console.error('[LOGIN] Supabase:', error.status, error.message, error);
+      const m = (error.message||'');
+      errEl.textContent = m.includes('Email not confirmed')
+        ? 'Tenés que confirmar tu email primero. Revisá tu casilla (y la carpeta de spam).'
+        : /rate limit|too many/i.test(m)
+          ? 'Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.'
+        : /failed to fetch|network/i.test(m)
+          ? 'No se pudo conectar con el servidor. Revisá tu conexión y volvé a intentar.'
+        : m.includes('Invalid')
+          ? 'Correo o contraseña incorrectos. Si no estás seguro, usá "¿Olvidaste tu contraseña?".'
+          : 'Error al ingresar: '+m;
       errEl.classList.add('show');
       return;
     }
@@ -4966,19 +5085,31 @@ function pickScaleOfDay(user, records){
     const sc = eligible.find(s => s.id === id && !latest[id]);
     if(sc) return sc;
   }
-  //   3. CUALQUIER escala nunca hecha antes que repetir una ya respondida
+  //   3. REEVALUACIÓN de una escala que dio PATOLÓGICA y ya cumplió el mes:
+  //      tiene prioridad sobre proponer una escala nueva — ver la evolución de
+  //      un resultado alterado importa más que sumar un cuestionario más.
+  const isPatho = sc => {
+    const last = latest[sc.id];
+    if(!last) return false;
+    const interp = sc.interp ? sc.interp(last.score) : null;
+    return !!(interp && interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg));
+  };
+  const pathoDue = eligible.filter(sc => latest[sc.id] && isPatho(sc))
+    .sort((a,b)=> new Date(latest[a.id].created_at) - new Date(latest[b.id].created_at));
+  if(pathoDue.length){
+    const sc = Object.create(pathoDue[0]);
+    sc._isReeval = true;
+    sc._lastDate = latest[pathoDue[0].id].created_at;
+    sc._wasPatho = true;
+    return sc;
+  }
+  //   4. Escalas nunca hechas
   const neverDone = eligible.filter(sc => !latest[sc.id]);
   if(neverDone.length){
     const doy = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
     return neverDone[doy % neverDone.length];
   }
-  //   4. Reevaluación mensual: primero las que dieron resultado patológico,
-  //      después el resto; siempre la más antigua primero, de a UNA.
-  const isPatho = sc => {
-    const last = latest[sc.id];
-    const interp = sc.interp ? sc.interp(last.score) : null;
-    return !!(interp && interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg));
-  };
+  //   5. Reevaluación del resto, la más antigua primero, de a UNA.
   const stale = eligible.slice().sort((a,b) => {
     const pa=isPatho(a)?0:1, pb=isPatho(b)?0:1;
     if(pa!==pb) return pa-pb;
@@ -5215,7 +5346,7 @@ async function copyPatientSummaryToClipboard(encodedEmail){
       if(l1.length) L.push('  '+l1.join(' · '));
       const l2=[];
       if(metrics.avgBed != null) l2.push('acostarse '+metrics.fmtClock(metrics.avgBed));
-      if(metrics.avgWake != null) l2.push('levantarse '+metrics.fmtClock(metrics.avgWake));
+      if(metrics.avgWake != null) l2.push('despertar '+metrics.fmtClock(metrics.avgWake));
       if(metrics.socialJetLag != null) l2.push('jet lag social '+metrics.socialJetLag+' min');
       if(metrics.under7Pct > 30) l2.push(metrics.under7Pct+'% noches <7h');
       if(l2.length) L.push('  '+l2.join(' · '));
@@ -5636,8 +5767,10 @@ async function showHome(){
   try{ loadPatientEducation(); }catch(_){}
   try{ maybePromptDoctorLink(); }catch(_){}
   try{ maybePromptProfileCompletion(); }catch(_){}
-  try{ maybePromptReevalScales(); }catch(_){}
+  // (El recordatorio de repetir una escala ya no va como banner suelto: pasa a
+  //  ocupar la tarjeta "Escala del día", con su etiqueta de reevaluación.)
   try{ renderHomeQuickActions(); }catch(_){}
+  try{ updateInstallUI(); }catch(_){}
   if("Notification"in window&&Notification.permission==="default") Notification.requestPermission().then(p=>{if(p==="granted")scheduleDiaryReminder();});
 
   const hr=new Date().getHours();
@@ -5793,13 +5926,16 @@ async function showHome(){
   if(scaleSubEl&&todayScale){
     if(todayScale._isReeval){
       const _ld=new Date(todayScale._lastDate).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
-      scaleSubEl.textContent='Reevaluación mensual — la completaste el '+_ld+', veamos cómo evolucionó';
+      const _dd=Math.floor((Date.now()-new Date(todayScale._lastDate))/86400000);
+      scaleSubEl.textContent= todayScale._wasPatho
+        ? 'Hace '+_dd+' días dio un resultado a seguir. Repetirla muestra si hubo mejoría.'
+        : 'Reevaluación mensual — la completaste el '+_ld+', veamos cómo evolucionó';
     } else {
       scaleSubEl.textContent=todayScale.desc||'';
     }
   }
   const scaleTitleEl=document.querySelector('#home-scale-card > div:first-child');
-  if(scaleTitleEl&&todayScale) scaleTitleEl.textContent = todayScale._isReeval ? 'Reevaluación del mes' : 'Escala del día';
+  if(scaleTitleEl&&todayScale) scaleTitleEl.textContent = todayScale._isReeval ? (todayScale._wasPatho?'🔁 Repetir para ver evolución':'Reevaluación del mes') : 'Escala del día';
   const scaleCard=document.getElementById('home-scale-card');
   if(scaleCard) scaleCard.style.display = todayScale ? '' : 'none';
   S._todayScaleId=todayScale ? todayScale.id : null;
@@ -7855,11 +7991,15 @@ async function showDiaryTab_(tab){
                       cx.fillStyle='rgba(255,255,255,0.72)';
                       cx.fillRect(lx1+1, _g.y-_g.h/2, Math.max(2,lx2-lx1-1), _g.h);
                     }
-                    if(r.getUpOff!=null && r.wakeOff!=null && r.getUpOff>r.wakeOff && (r.getUpOff-r.wakeOff)<6){
+                    if(r.getUpOff!=null && r.wakeOff!=null && r.getUpOff>r.wakeOff && (r.getUpOff-r.wakeOff)<=3){
+                      // Tiempo en cama ya despierto/a: barra MÁS FINA y tenue,
+                      // para que no se lea como sueño. Tolerancia 3 h (antes 6 h,
+                      // que con un dato mal cargado estiraba la fila y parecía
+                      // que el paciente dormía hasta el mediodía).
                       const ux1=xS.getPixelForValue(r.wakeOff);
-                      const ux2=xS.getPixelForValue(Math.min(r.getUpOff,24));
-                      cx.fillStyle='rgba(26,74,58,0.22)';
-                      cx.fillRect(ux1+1, _g.y-_g.h/2, Math.max(2,ux2-ux1-1), _g.h);
+                      const ux2=xS.getPixelForValue(r.getUpOff);
+                      cx.fillStyle='rgba(26,74,58,0.18)';
+                      cx.fillRect(ux1+1, _g.y-_g.h*0.22, Math.max(2,ux2-ux1-1), _g.h*0.44);
                     }
                     if(r.exercise){
                       const hOfDay=EX_HOUR_P2[r.exerciseTime];
@@ -9343,6 +9483,7 @@ async function renderPatientList(filter){
         </div>
         <div id="dr-patient-count" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.55)">Pacientes vinculados (${validPts.length})</div>
       </div>
+      <div class="dm-filters-sticky">
       <div class="dm-tagfilter-bar" id="dr-tagfilter-bar">
         <span class="dm-tagfilter-chip${_tagFilter?'':' on'}" data-tagid="" onclick="window._drSetTagFilter(null)">Todas</span>
         ${Object.keys(PATHOLOGY_TAGS).map(id=>{const t=PATHOLOGY_TAGS[id];const on=_tagFilter===id;return '<span class="dm-tagfilter-chip'+(on?' on':'')+'" data-tagid="'+id+'" data-tagcolor="'+t.color+'" style="'+(on?('background:'+t.color+'22;border-color:'+t.color+';color:'+t.color):'')+'" onclick="window._drSetTagFilter(\''+id+'\')"><span class="dm-tagdot" style="background:'+t.color+'"></span>'+t.label+'</span>';}).join('')}
@@ -9351,6 +9492,7 @@ async function renderPatientList(filter){
         <span style="font-size:11px;color:rgba(255,255,255,0.4);align-self:center;margin-right:2px">Ordenar:</span>
         <span class="dm-tagfilter-chip${_sortMode==='name'?' on':''}" data-sortmode="name" onclick="window._drSetSortMode('name')">🔤 Nombre</span>
         <span class="dm-tagfilter-chip${_sortMode==='priority'?' on':''}" data-sortmode="priority" onclick="window._drSetSortMode('priority')">⚠️ Prioridad clínica</span>
+      </div>
       </div>
       <div id="dr-patient-list"></div>`;
       window._drSetSortMode = (mode)=>{
@@ -9414,8 +9556,6 @@ async function renderPatientList(filter){
       const _sLabel=(sL[dr.specialty]||dr.specialty||'Sin especialidad');
       const _ro=(l,v)=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.07)"><span style="font-size:13px;color:rgba(255,255,255,0.55)">'+l+'</span><span style="font-size:13px;font-weight:600;color:#fff;text-align:right">'+(v||'—')+'</span></div>';
       cont.innerHTML=`<div style="padding:16px 0">
-        <div class="sec-title" style="margin-bottom:10px">Adherencia de mis pacientes</div>
-        <div id="dr-adherence-panel" style="margin-bottom:20px"><div class="spinner-wrap"><div class="spinner"></div></div></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div class="sec-title" style="margin:0">Datos del perfil profesional</div>
           <button onclick="toggleDrProfileEdit(true)" id="dr-edit-toggle" style="background:rgba(126,200,164,0.12);border:1px solid rgba(126,200,164,0.35);color:#7EC8A4;font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
@@ -9484,7 +9624,6 @@ async function renderPatientList(filter){
       </div>`;
       // Render scales picker after DOM is ready
       setTimeout(()=>renderDrScalesPicker(dr.preferred_scales||[]),50);
-      setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} },60);
     }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
     return;
   }
@@ -9603,6 +9742,14 @@ async function renderPatientList(filter){
       if(alerts&&alerts.length) buildAlertCards(alerts, document.getElementById('alerts-card-container'));
     }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||'')+'</div>';}
   }
+  if(tab==='metrics'){
+    cont.innerHTML='<div style="padding-top:12px"><div class="sec-title" style="margin-bottom:10px">Adherencia de mis pacientes</div>'+
+      '<div id="dr-adherence-panel"><div class="spinner-wrap"><div class="spinner"></div></div></div>'+
+      '<div class="sec-title" style="margin:20px 0 8px">Cómo me califican mis pacientes</div>'+
+      '<div id="dr-ratings-panel"><div class="spinner-wrap"><div class="spinner"></div></div></div></div>';
+    setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} try{ renderDoctorRatings(); }catch(_){} },60);
+    return;
+  }
   if(tab==='link'){cont.innerHTML=`<div style="padding-top:18px">
     <div style="background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:16px;padding:20px">
       <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:6px">🔗 Vincular paciente</div>
@@ -9615,8 +9762,6 @@ async function renderPatientList(filter){
   </div>`;}
     if(tab==='more'){
       cont.innerHTML=`<div style="padding:0 4px">
-        <div style="margin:6px 0 10px;font-size:12px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.06em">Adherencia de mis pacientes</div>
-        <div id="dr-adherence-panel" style="margin-bottom:18px"><div class="spinner-wrap"><div class="spinner"></div></div></div>
         <div style="margin:6px 0 16px;font-size:12px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.06em">Herramientas clínicas</div>
         <div onclick="openCbtiModule()" style="background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:18px;cursor:pointer;margin-bottom:14px;position:relative">
           <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:8px;letter-spacing:0.06em">PREMIUM</div>
@@ -9640,7 +9785,6 @@ async function renderPatientList(filter){
           </div>
         </div>
       </div>`;
-      setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} }, 60);
     }
     if(tab==='profile'){
     tab='drprofile';  // redirect directly
@@ -9650,6 +9794,31 @@ async function renderPatientList(filter){
 // ── Adherencia de los pacientes del profesional ──
 // Responde a la pregunta operativa: ¿quién dejó de registrar y a quién le
 // falta completar datos? Permite mandar un "toque" por WhatsApp o mail.
+function setDrAdhSort(m){ window._drAdhSort=m; try{ renderDoctorAdherence(); }catch(_){} }
+// Calificaciones que los pacientes le dejaron al profesional.
+async function renderDoctorRatings(){
+  const el=document.getElementById('dr-ratings-panel');
+  if(!el||!S.user) return;
+  try{
+    const rows=await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&select=patient_email,rating,comment').catch(()=>[]);
+    const rated=(rows||[]).filter(r=>r.rating);
+    if(!rated.length){
+      el.innerHTML='<div style="font-size:12.5px;color:rgba(255,255,255,0.5);line-height:1.5">Todavía no recibiste calificaciones. Tus pacientes pueden calificarte desde <strong>Mi especialista</strong> en su app.</div>';
+      return;
+    }
+    const avg=(rated.reduce((a,b)=>a+(b.rating||0),0)/rated.length);
+    const stars=n=>'★★★★★'.slice(0,Math.round(n))+'☆☆☆☆☆'.slice(0,5-Math.round(n));
+    el.innerHTML='<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-bottom:10px;text-align:center">'+
+        '<div style="font-size:26px;font-weight:700;color:#C8A96E">'+avg.toFixed(1)+'</div>'+
+        '<div style="font-size:16px;color:#C8A96E;letter-spacing:2px">'+stars(avg)+'</div>'+
+        '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:3px">'+rated.length+' calificación(es)</div></div>'+
+      rated.filter(r=>r.comment&&r.comment.trim()).map(r=>
+        '<div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:9px 12px;margin-bottom:6px">'+
+        '<div style="font-size:12px;color:#C8A96E">'+stars(r.rating)+'</div>'+
+        '<div style="font-size:12.5px;color:rgba(255,255,255,0.8);margin-top:3px;line-height:1.45;font-style:italic">"'+String(r.comment).replace(/</g,'&lt;')+'"</div></div>'
+      ).join('');
+  }catch(e){ el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.45)">No se pudieron cargar las calificaciones.</div>'; }
+}
 async function renderDoctorAdherence(){
   const el=document.getElementById('dr-adherence-panel');
   if(!el || !S.user) return;
@@ -9691,19 +9860,30 @@ async function renderDoctorAdherence(){
       const i=info[k]||{last:null,nDiary:0,d7:0,d30:0,nEval:0};
       const daysSince = i.last? Math.floor((NOW-i.last)/86400000) : null;
       const faltaDatos = (!p.dob||!p.height_cm||!p.weight_kg);
-      return {name:((p.name||'')+' '+(p.lname||'')).trim()||p.email, email:p.email, phone:p.phone||'',
-              daysSince, d7:i.d7, d30:i.d30, nDiary:i.nDiary, faltaDatos};
-    }).sort((a,b)=>{
-      const da=a.daysSince==null?9999:a.daysSince, db_=b.daysSince==null?9999:b.daysSince;
-      return db_-da; // los más abandonados primero
+      return {name:((p.lname||'')?((p.lname||'')+', '+(p.name||'')):((p.name||'')||p.email)).trim(),
+              lname:p.lname||'', fname:p.name||'',
+              email:p.email, phone:p.phone||'',
+              daysSince, d7:i.d7, d30:i.d30, nDiary:i.nDiary, nEval:i.nEval, faltaDatos};
     });
+    const mode=window._drAdhSort||'abandono';
+    const cmpAp=(a,b)=>((a.lname||a.fname||a.email).toLowerCase()).localeCompare((b.lname||b.fname||b.email).toLowerCase(),'es',{sensitivity:'base'});
+    if(mode==='abandono') rows.sort((a,b)=>((a.daysSince==null?9999:a.daysSince)<(b.daysSince==null?9999:b.daysSince)?1:-1));
+    else if(mode==='reciente') rows.sort((a,b)=>((a.daysSince==null?9999:a.daysSince)-(b.daysSince==null?9999:b.daysSince)));
+    else if(mode==='uso') rows.sort((a,b)=>(b.d30-a.d30)||(b.nDiary-a.nDiary));
+    else if(mode==='alfa') rows.sort(cmpAp);
+    else if(mode==='incompletos') rows.sort((a,b)=>(b.faltaDatos?1:0)-(a.faltaDatos?1:0)||cmpAp(a,b));
     const alDia=rows.filter(r=>r.daysSince!=null&&r.daysSince<=3).length;
     const tibios=rows.filter(r=>r.daysSince!=null&&r.daysSince>3&&r.daysSince<=14).length;
     const perdidos=rows.filter(r=>r.daysSince==null||r.daysSince>14).length;
     const drFirst=(S.user.name||'tu profesional').split(' ')[0];
     const card=(n,l,c)=>'<div style="flex:1;background:rgba(255,255,255,0.06);border-radius:12px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:'+c+'">'+n+'</div><div style="font-size:10px;color:rgba(255,255,255,0.6);line-height:1.25;margin-top:2px">'+l+'</div></div>';
+    const sbtn=(m,l)=>'<span onclick="setDrAdhSort(\''+m+'\')" style="cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;white-space:nowrap;border:1px solid '+(mode===m?'#7EC8A4':'rgba(255,255,255,0.18)')+';background:'+(mode===m?'rgba(126,200,164,0.16)':'transparent')+';color:'+(mode===m?'#7EC8A4':'rgba(255,255,255,0.55)')+'">'+l+'</span>';
     let html='<div style="display:flex;gap:8px;margin-bottom:12px">'+
       card(alDia,'Al día<br>(≤3 días)','#7EC8A4')+card(tibios,'Aflojando<br>(4–14 días)','#C8A96E')+card(perdidos,'Sin registrar<br>(+14 días)','#fca5a5')+
+      '</div>'+
+      '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;align-items:center">'+
+        '<span style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-right:2px">Ordenar:</span>'+
+        sbtn('abandono','⚠️ Más abandonados')+sbtn('reciente','🕐 Más recientes')+sbtn('uso','📊 Más uso')+sbtn('alfa','🔤 Apellido')+sbtn('incompletos','📝 Datos incompletos')+
       '</div>';
     html+=rows.map(r=>{
       const estado = r.daysSince==null?'Nunca registró':r.daysSince===0?'Hoy':r.daysSince===1?'Ayer':'hace '+r.daysSince+' días';
@@ -10464,7 +10644,7 @@ async function showDrPTab_(tab){
           .sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
-        const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,Math.min(w>s?w:w+24,24)];});
+        const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,(w>s?w:w+24)];});
         const drPeriodNights=sorted.filter(e=>/🩸Período/.test(e.notes||'')).length;
         const drSleepColors=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc');
         const drSleepBorders=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a');
@@ -10575,6 +10755,19 @@ async function showDrPTab_(tab){
                       const durMin = Math.round((e - s) * 60);
                       const dh = Math.floor(durMin/60), dm = durMin % 60;
                       const durStr = (dh>0?dh+'h ':'') + String(dm).padStart(2,'0') + 'm';
+                      let extra='';
+                      try{
+                        if(ctx.datasetIndex===0){
+                          const _row=(sorted||[])[ctx.dataIndex];
+                          if(_row){
+                            const _tst=_row.sleep_minutes||0;
+                            const _th=Math.floor(_tst/60), _tm=_tst%60;
+                            extra=' · en cama '+durStr+' · dormido '+(_th>0?_th+'h ':'')+String(_tm).padStart(2,'0')+'m';
+                            if(_row.get_up_time) extra+=' · se levantó '+String(_row.get_up_time).slice(0,5);
+                            return 'Acostarse '+fmt(s)+' → despertar '+fmt(e)+extra;
+                          }
+                        }
+                      }catch(_){}
                       return ctx.dataset.label + ': ' + fmt(s) + ' → ' + fmt(e) + ' · ' + durStr;
                     }
                   }
@@ -10718,11 +10911,15 @@ async function showDrPTab_(tab){
                       cx.fillRect(lx1+1, _g.y-_g.h/2, Math.max(2,lx2-lx1-1), _g.h);
                     }
                     // Despertar final → levantarse: prolongación tenue del otro lado
-                    if(r.getUpOff!=null && r.wakeOff!=null && r.getUpOff>r.wakeOff && (r.getUpOff-r.wakeOff)<6){
+                    if(r.getUpOff!=null && r.wakeOff!=null && r.getUpOff>r.wakeOff && (r.getUpOff-r.wakeOff)<=3){
+                      // Tiempo en cama ya despierto/a: barra MÁS FINA y tenue,
+                      // para que no se lea como sueño. Tolerancia 3 h (antes 6 h,
+                      // que con un dato mal cargado estiraba la fila y parecía
+                      // que el paciente dormía hasta el mediodía).
                       const ux1=xS.getPixelForValue(r.wakeOff);
-                      const ux2=xS.getPixelForValue(Math.min(r.getUpOff,24));
-                      cx.fillStyle='rgba(26,74,58,0.22)';
-                      cx.fillRect(ux1+1, _g.y-_g.h/2, Math.max(2,ux2-ux1-1), _g.h);
+                      const ux2=xS.getPixelForValue(r.getUpOff);
+                      cx.fillStyle='rgba(26,74,58,0.18)';
+                      cx.fillRect(ux1+1, _g.y-_g.h*0.22, Math.max(2,ux2-ux1-1), _g.h*0.44);
                     }
                     if(layers.exercise && r.exercise){
                       const hOfDay=EX_HOUR[r.exerciseTime];

@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod26">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod27">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -375,7 +375,12 @@
     </div>
     <div id="login-form">
       <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="login-email" placeholder="tucorreo@email.com"></div>
-      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="login-pass" placeholder="••••••••"><div class="err" id="login-error">Correo o contraseña incorrectos</div></div>
+      <div class="form-group"><label class="form-label">Contraseña</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="login-pass" placeholder="••••••••" style="padding-right:44px">
+          <button type="button" onclick="dmTogglePass('login-pass',this)" aria-label="Mostrar u ocultar contraseña" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:0.65">👁</button>
+        </div>
+        <div class="err" id="login-error">Correo o contraseña incorrectos</div></div>
       <button class="btn btn-g" onclick="doLogin()" id="login-btn">Ingresar</button>
       <div style="text-align:center;margin-top:10px"><span onclick="showForgotPasswordPrompt()" style="cursor:pointer;color:rgba(255,255,255,0.55);font-size:12px;text-decoration:underline">¿Olvidaste tu contraseña?</span></div>
       <div class="toggle-link" id="reg-toggle">¿Primera vez? <span onclick="showRegister()">Crear cuenta</span></div>
@@ -439,7 +444,12 @@
         <div class="form-group"><label class="form-label">Institución (opcional)</label><input class="form-input" id="dreg-inst" placeholder="Hospital Austral"></div>
       </div>
       <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="reg-email" placeholder="tucorreo@email.com"></div>
-      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"><div class="err" id="reg-error">Completá todos los campos</div></div>
+      <div class="form-group"><label class="form-label">Contraseña</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="reg-pass" placeholder="Mínimo 8 caracteres" style="padding-right:44px">
+          <button type="button" onclick="dmTogglePass('reg-pass',this)" aria-label="Mostrar u ocultar contraseña" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:0.65">👁</button>
+        </div>
+        <div class="err" id="reg-error">Completá todos los campos</div></div>
       <div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.07);border-radius:10px;border:1px solid rgba(255,255,255,0.1)">
         <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Términos <span style="color:#FF3B30">*</span></div>
         <div style="display:flex;flex-direction:column;gap:7px">
@@ -465,7 +475,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Nueva contraseña</label>
-      <input class="form-input" type="password" id="sp-pass1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      <div style="position:relative"><input class="form-input" type="password" id="sp-pass1" placeholder="Mínimo 8 caracteres" autocomplete="new-password" style="padding-right:44px"><button type="button" onclick="dmTogglePass('sp-pass1',this)" aria-label="Mostrar u ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:0.65">👁</button></div>
     </div>
     <div class="form-group">
       <label class="form-label">Confirmar contraseña</label>
@@ -1280,7 +1290,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod26"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod27"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1299,7 +1309,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod26';
+const APP_VERSION='hoy75-mod27';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -2702,6 +2712,13 @@ function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase();}
 
 function showRegister(){document.getElementById('login-form').style.display='none';document.getElementById('register-form').style.display='block';document.getElementById('p-reg').style.display=S.role==='patient'?'block':'none';document.getElementById('d-reg').style.display=S.role==='doctor'?'block':'none';}
 function showLogin(){document.getElementById('register-form').style.display='none';document.getElementById('login-form').style.display='block';document.getElementById('login-error').classList.remove('show');}
+// Mostrar/ocultar contraseña (pedido: poder verificar lo que se tipea)
+function dmTogglePass(inputId, btn){
+  const el=document.getElementById(inputId); if(!el) return;
+  const showing = el.type==='text';
+  el.type = showing ? 'password' : 'text';
+  if(btn){ btn.textContent = showing ? '👁' : '🙈'; btn.style.opacity = showing ? '0.65' : '1'; }
+}
 async function doLogin(){
   const email=document.getElementById('login-email').value.trim().toLowerCase();
   const pass=document.getElementById('login-pass').value;
@@ -2718,11 +2735,17 @@ async function doLogin(){
     // Auth con Supabase (bcrypt automático, RLS aplicado a partir de acá)
     const {data, error} = await supa.auth.signInWithPassword({email, password: pass});
     if(error){
-      errEl.textContent = error.message.includes('Email not confirmed')
-        ? 'Tenés que confirmar tu email primero. Revisá tu casilla.'
-        : error.message.includes('Invalid')
-          ? 'Correo o contraseña incorrectos.'
-          : 'Error: '+error.message;
+      console.error('[LOGIN] Supabase:', error.status, error.message, error);
+      const m = (error.message||'');
+      errEl.textContent = m.includes('Email not confirmed')
+        ? 'Tenés que confirmar tu email primero. Revisá tu casilla (y la carpeta de spam).'
+        : /rate limit|too many/i.test(m)
+          ? 'Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.'
+        : /failed to fetch|network/i.test(m)
+          ? 'No se pudo conectar con el servidor. Revisá tu conexión y volvé a intentar.'
+        : m.includes('Invalid')
+          ? 'Correo o contraseña incorrectos. Si no estás seguro, usá "¿Olvidaste tu contraseña?".'
+          : 'Error al ingresar: '+m;
       errEl.classList.add('show');
       return;
     }
