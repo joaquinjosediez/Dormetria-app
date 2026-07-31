@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod27">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod28">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -29,6 +29,7 @@
 <div id="toast"></div>
 <div id="app">
 <div id="dr-desktop-placeholder">Seleccioná un paciente de la lista para ver su ficha</div>
+<div id="dr-metrics-desktop"></div>
 
 <!-- LOGIN -->
 <div id="screen-landing" class="screen active" style="position:relative;z-index:1">
@@ -1290,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod27"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod28"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1309,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod27';
+const APP_VERSION='hoy75-mod28';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -1325,6 +1326,10 @@ const APP_VERSION='hoy75-mod27';
 })();
 function isStandalonePWA(){
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+}
+function isSafariDesktop(){
+  const ua=navigator.userAgent;
+  return /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR/.test(ua) && !/iPad|iPhone|iPod/.test(ua);
 }
 function isIOSDevice(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
@@ -1365,9 +1370,13 @@ function showIOSInstallGuide(){
         step(3,'Confirmá con <strong>Agregar</strong>. Va a aparecer el ícono de Dormetria en tu pantalla.')+
         step(4,'Abrí la app <strong>desde ese ícono</strong> y aceptá las notificaciones cuando te las pida.')+
         '<div style="font-size:11.5px;color:#6b7280;margin-top:10px;line-height:1.5">⚠️ Importante: tiene que ser desde <strong>Safari</strong>. Si estás usando Chrome u otro navegador en iPhone, abrí primero dormetria.com en Safari.</div>'
-      : step(1,'Tocá el botón de instalar de tu navegador (o el menú ⋮ → “Instalar aplicación”).')+
-        step(2,'Confirmá la instalación.')+
-        step(3,'Abrí Dormetria desde el ícono nuevo y aceptá las notificaciones.')
+      : (isSafariDesktop()
+          ? step(1,'Tocá el botón <strong>Compartir</strong> <span style="display:inline-block;vertical-align:-3px"><svg width="13" height="15" viewBox="0 0 24 28" fill="none" stroke="#1a4a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3"/><path d="M7 8l5-5 5 5"/><path d="M4 13v9a2 2 0 002 2h12a2 2 0 002-2v-9"/></svg></span> en la barra de Safari (arriba a la derecha).')+
+            step(2,'Elegí <strong>“Agregar al Dock”</strong> (Add to Dock).')+
+            step(3,'Abrí Dormetria desde el ícono del Dock y <strong>activá las notificaciones</strong> cuando te las pida.')
+          : step(1,'Tocá el botón de instalar de tu navegador (o el menú ⋮ → “Instalar aplicación”).')+
+            step(2,'Confirmá la instalación.')+
+            step(3,'Abrí Dormetria desde el ícono nuevo y aceptá las notificaciones.'))
     )+
     '<button onclick="document.getElementById(\'dm-install-modal\').remove()" style="width:100%;margin-top:16px;padding:13px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Entendido</button>'+
   '</div>';
@@ -1378,11 +1387,16 @@ async function dmEnableNotifications(btn){
   try{
     if(!('Notification' in window)){ toast('Este navegador no soporta notificaciones'); return; }
     if(isIOSDevice() && !isStandalonePWA()){ showIOSInstallGuide(); return; }
+    if(Notification.permission==='granted'){
+      // Ya autorizadas: llevamos directo a elegir el horario del recordatorio.
+      if(typeof showReminderSettings==='function'){ showReminderSettings('diary'); return; }
+    }
     const p=await Notification.requestPermission();
     if(p==='granted'){
       toast('✓ Notificaciones activadas');
       try{ new Notification('Dormetria', {body:'Listo. Te vamos a recordar completar tu diario.', icon:'icon-192.png'}); }catch(_){}
-      if(btn) btn.textContent='✓ Notificaciones activadas';
+      if(btn) btn.textContent='✓ Activadas — elegir horario';
+      if(typeof showReminderSettings==='function') setTimeout(()=>showReminderSettings('diary'),600);
     } else {
       toast('No se activaron. Podés habilitarlas desde los ajustes del navegador.');
     }
@@ -9743,13 +9757,26 @@ async function renderPatientList(filter){
     }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||'')+'</div>';}
   }
   if(tab==='metrics'){
-    cont.innerHTML='<div style="padding-top:12px"><div class="sec-title" style="margin-bottom:10px">Adherencia de mis pacientes</div>'+
+    const _body='<div class="sec-title" style="margin-bottom:10px">Adherencia de mis pacientes</div>'+
       '<div id="dr-adherence-panel"><div class="spinner-wrap"><div class="spinner"></div></div></div>'+
-      '<div class="sec-title" style="margin:20px 0 8px">Cómo me califican mis pacientes</div>'+
-      '<div id="dr-ratings-panel"><div class="spinner-wrap"><div class="spinner"></div></div></div></div>';
+      '<div class="sec-title" style="margin:22px 0 8px">Cómo me califican mis pacientes</div>'+
+      '<div id="dr-ratings-panel"><div class="spinner-wrap"><div class="spinner"></div></div></div>';
+    const _big=document.getElementById('dr-metrics-desktop');
+    const _isDesk=document.body.classList.contains('dr-desktop');
+    if(_isDesk && _big){
+      // En escritorio las métricas van al panel grande de la derecha, no a la
+      // barra angosta de pacientes (ahí no se pueden leer).
+      document.body.classList.add('dr-metrics-view');
+      _big.innerHTML='<div style="padding:22px 26px;max-width:900px;margin:0 auto">'+_body+'</div>';
+      cont.innerHTML='<div style="padding:18px 4px;font-size:13px;color:rgba(255,255,255,0.55);line-height:1.5">📊 Las métricas se están mostrando en el panel de la derecha.</div>';
+    } else {
+      document.body.classList.remove('dr-metrics-view');
+      cont.innerHTML='<div style="padding-top:12px">'+_body+'</div>';
+    }
     setTimeout(()=>{ try{ renderDoctorAdherence(); }catch(_){} try{ renderDoctorRatings(); }catch(_){} },60);
     return;
   }
+  document.body.classList.remove('dr-metrics-view');
   if(tab==='link'){cont.innerHTML=`<div style="padding-top:18px">
     <div style="background:rgba(126,200,164,0.1);border:1px solid rgba(126,200,164,0.25);border-radius:16px;padding:20px">
       <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:6px">🔗 Vincular paciente</div>
@@ -17612,7 +17639,7 @@ const DM_TOURS = {
       {
         target: '#home-edu-card',
         title: '📚 Material de tu profesional',
-        body: 'Cuando tu profesional te comparta material educativo (artículos, técnicas de higiene, ejercicios), va a aparecer acá. Si aún no tenés profesional vinculado, esta sección se completa cuando escanees el QR de tu médico.',
+        body: 'Cuando tu profesional te comparta material educativo (artículos, técnicas de higiene, ejercicios), va a aparecer acá. Si aún no tenés profesional vinculado, entrá a "Mi especialista": ahí está tu código personal de 6 caracteres para pasarle a tu médico.',
         placement: 'top',
         padding: 10,
         waitFor: () => {

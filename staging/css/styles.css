@@ -334,6 +334,13 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   }
   body.dr-desktop.dr-has-patient #screen-doctor-patient{ display:flex !important; }
   /* Placeholder cuando todavía no se eligió un paciente. */
+  /* Métricas del profesional: ocupan el panel grande de la derecha. */
+  #dr-metrics-desktop{ display:none; }
+  body.dr-desktop.dr-metrics-view #dr-metrics-desktop{
+    display:block;grid-column:2;grid-row:1;
+    height:100vh;overflow-y:auto;background:#0f2820;
+  }
+  body.dr-desktop.dr-metrics-view #dr-desktop-placeholder{ display:none !important; }
   body.dr-desktop:not(.dr-has-patient) #dr-desktop-placeholder{
     display:flex;grid-column:2;grid-row:1;
     align-items:center;justify-content:center;text-align:center;
