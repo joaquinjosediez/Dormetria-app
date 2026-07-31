@@ -896,6 +896,30 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   padding:13px 14px;
   margin-bottom:12px;
 }
+/* Textos que venían oscuros por tokens inline (--ink/--label-3/etc.): se
+   fuerzan a claro para que se lean sobre el fondo verde. */
+#screen-diary-new [style*="color:var(--ink)"],
+#screen-diary-new [style*="color:var(--ink3)"],
+#screen-diary-new [style*="color:var(--ink4)"],
+#screen-diary-new [style*="color:var(--label)"],
+#screen-diary-new [style*="color:var(--label-2)"],
+#screen-diary-new [style*="color:var(--label-3)"],
+#screen-diary-new [style*="color:var(--g800)"],
+#screen-diary-new [style*="color:#666"],
+#screen-diary-new [style*="color:#888"]{ color:rgba(244,239,229,0.62) !important; }
+/* Botones de tipo de día: legibles y con la estética de la app. */
+#screen-diary-new #d-daytype-work,
+#screen-diary-new #d-daytype-free{
+  color:#F4EFE5 !important;border:1px solid rgba(126,200,164,0.25) !important;
+  background:rgba(255,255,255,0.06) !important;border-radius:12px !important;
+}
+#screen-diary-new #d-daytype-work.sel,
+#screen-diary-new #d-daytype-free.sel{
+  background:#1a4a3a !important;color:#fff !important;border-color:#7EC8A4 !important;
+}
+#screen-diary-new #d-daytype-auto-badge{
+  background:rgba(126,200,164,0.16) !important;color:#7EC8A4 !important;
+}
 
 /* ── PVT ── */
 .pvt-arena{

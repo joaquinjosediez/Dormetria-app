@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod31">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod32">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1291,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod31"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod32"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1310,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod31';
+const APP_VERSION='hoy75-mod32';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -3708,7 +3708,9 @@ async function renderLinkedDoctors(){
               <span style="font-size:15px;font-weight:700;color:#fff">${title} ${d.name||''} ${d.lname||''}</span>
             </div>
             <div style="font-size:13px;color:rgba(255,255,255,0.6)">${spec}${d.city?' · '+d.city:''}</div>
-            ${link.rating?`<div style="font-size:11px;color:#fbbf24;margin-top:2px">${'★'.repeat(link.rating)}${'☆'.repeat(5-link.rating)}</div>`:''}
+            ${link.rating
+              ? `<div style="font-size:12px;color:#fbbf24;margin-top:3px">${'★'.repeat(link.rating)}${'☆'.repeat(5-link.rating)} <span style="color:rgba(255,255,255,0.4);font-size:10px">· tocá para editar</span></div>`
+              : `<div style="font-size:11.5px;color:#7EC8A4;margin-top:3px" onclick="event.stopPropagation();showRateDoctorModal('${(d.email||'').replace(/'/g,"'")}','${((title+' '+(d.name||'')+(d.lname?' '+d.lname:'')).trim()).replace(/'/g,"'")}')">⭐ Calificar a tu profesional ›</div>`}
           </div>
           <div style="color:rgba(255,255,255,0.3);font-size:18px">›</div>
         </div>`;
@@ -9588,13 +9590,20 @@ async function renderPatientList(filter){
           <div class="sec-title" style="margin:0">Datos del perfil profesional</div>
           <button onclick="toggleDrProfileEdit(true)" id="dr-edit-toggle" style="background:rgba(126,200,164,0.12);border:1px solid rgba(126,200,164,0.35);color:#7EC8A4;font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
         </div>
-        <div id="dr-profile-readonly" style="background:rgba(255,255,255,0.05);border-radius:12px;padding:12px 14px;margin-bottom:16px">
-          ${_ro('Nombre',((dr.name||'')+' '+(dr.lname||'')).trim())}
-          ${_ro('Especialidad',_sLabel)}
-          ${_ro('Matrícula',dr.mat)}
-          ${_ro('Institución',dr.inst||dr.institution)}
-          ${_ro('Ciudad / País',[dr.city,dr.country].filter(Boolean).join(' · '))}
-          ${dr.bio?'<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px;line-height:1.45;font-style:italic">'+dr.bio+'</div>':''}
+        <div id="dr-profile-readonly" style="margin-bottom:16px">
+          <div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:16px 16px 14px;display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
+            <div style="width:52px;height:52px;border-radius:50%;background:#1a4a3a;border:2px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600;color:#F4EFE5;flex-shrink:0">${((dr.name||'?')[0]||'')+((dr.lname||'')[0]||'')}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:16px;font-weight:600;color:#fff">${(dr.gender==='Femenino'?'Dra. ':'Dr. ')+((dr.name||'')+' '+(dr.lname||'')).trim()}</div>
+              <div style="font-size:12.5px;color:#7EC8A4;margin-top:2px">${_sLabel}${dr.mat?' · '+dr.mat:''}</div>
+              <div style="font-size:11.5px;color:rgba(255,255,255,0.5);margin-top:2px">${[dr.inst||dr.institution,dr.city,dr.country].filter(Boolean).join(' · ')||'—'}</div>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:13px 15px">
+            <div class="sec-title" style="margin:0 0 6px">Reseña profesional <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6">· la ve el paciente</span></div>
+            <div style="font-size:12.5px;color:rgba(255,255,255,0.75);line-height:1.55">${dr.bio?dr.bio.replace(/</g,'&lt;'):'<span style="opacity:0.55;font-style:italic">Todavía no cargaste una reseña. Tocá Editar y contá en pocas líneas tu enfoque — es lo primero que ve un paciente que te encuentra en el directorio.</span>'}</div>
+          </div>
+          <div id="dr-myratings" style="margin-top:12px"></div>
         </div>
         <div id="dr-profile-form" style="display:none">
         <div class="form-group"><label class="form-label">Nombre <span style="color:#dc2626">*</span></label>
@@ -9652,6 +9661,7 @@ async function renderPatientList(filter){
       </div>`;
       // Render scales picker after DOM is ready
       setTimeout(()=>renderDrScalesPicker(dr.preferred_scales||[]),50);
+      setTimeout(()=>{ try{ renderDoctorRatings('dr-myratings'); }catch(_){} },60);
     }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar perfil</div>';}
     return;
   }
@@ -9836,8 +9846,8 @@ function drToggleAlta(email){
   try{ renderDoctorAdherence(); }catch(_){}
 }
 // Calificaciones que los pacientes le dejaron al profesional.
-async function renderDoctorRatings(){
-  const el=document.getElementById('dr-ratings-panel');
+async function renderDoctorRatings(containerId){
+  const el=document.getElementById(containerId||'dr-ratings-panel');
   if(!el||!S.user) return;
   try{
     const rows=await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&select=patient_email,rating,comment').catch(()=>[]);
@@ -17197,6 +17207,35 @@ const CBTI_PATIENT_CONTENT = {
   M6_4: 'Vamos a definir cuándo se considera que terminamos el tratamiento, y plan de seguimiento a 3-6 meses para sostener los logros.'
 };
 
+// ── Motor de ventana de sueño (restricción) para TCC-I autoguiado ──
+// A partir del diario: calcula el tiempo dormido promedio y la eficiencia, y
+// propone una ventana de sueño consolidada + la regla semanal de ajuste
+// (titración): eficiencia ≥90% amplía la ventana, <85% la recorta. Es el
+// mecanismo central de la restricción de sueño (SleepioRx / Spielman).
+function computeSleepWindow(entries){
+  const valid=(entries||[]).filter(e=>e.bedtime&&e.wake_time&&e.sleep_minutes&&e.sleep_minutes>=60&&!(e.notes&&String(e.notes).startsWith('Importado')));
+  if(valid.length<5) return {error:'few_nights', n:valid.length};
+  const last=valid.slice(0,14);
+  const avgTST=Math.round(last.reduce((a,e)=>a+(e.sleep_minutes||0),0)/last.length);
+  const tib=last.map(e=>{const [bh,bm]=e.bedtime.split(':').map(Number);let b=bh*60+bm;if(b<12*60)b+=1440;const [wh,wm]=e.wake_time.split(':').map(Number);let w=wh*60+wm; if(w<=(b%1440)) w+=1440; return (w-(b%1440)); });
+  const avgTIB=Math.round(tib.reduce((a,b)=>a+b,0)/tib.length);
+  const eff=avgTIB>0?Math.round(avgTST/avgTIB*100):0;
+  // Ventana prescrita = tiempo dormido promedio, con piso de seguridad de 5h.
+  const windowMin=Math.max(300, avgTST);
+  // Hora de despertar objetivo: el promedio real de las últimas noches.
+  const wakeMins=last.map(e=>{const [wh,wm]=e.wake_time.split(':').map(Number);return wh*60+wm;});
+  const avgWake=Math.round(wakeMins.reduce((a,b)=>a+b,0)/wakeMins.length);
+  const bedTarget=((avgWake - windowMin)%1440+1440)%1440;
+  const fmt=m=>{const h=Math.floor(((m%1440)+1440)%1440/60), mm=Math.round(((m%1440)+1440)%1440%60);return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0');};
+  const fmtDur=m=>{const h=Math.floor(m/60), mm=m%60;return (h>0?h+' h ':'')+String(mm).padStart(2,'0')+' m';};
+  // Regla de titración semanal
+  let titr;
+  if(eff>=90) titr={dir:'+', txt:'Tu eficiencia es alta: la próxima semana podés adelantar la hora de acostarte 15 minutos.'};
+  else if(eff<85) titr={dir:'-', txt:'Tu eficiencia está baja: mantené (o recortá 15 min) la ventana esta semana para consolidar el sueño.'};
+  else titr={dir:'=', txt:'Buen punto de partida: sostené esta ventana una semana más antes de ampliarla.'};
+  return {n:last.length, avgTST, avgTIB, eff, windowMin, bedTarget, wakeTarget:avgWake,
+          fmt, fmtDur, titr};
+}
 async function openPatientCbtiView(){
   showScreen('patient-tcci');
   const cont = document.getElementById('patient-tcci-content');
@@ -17207,7 +17246,45 @@ async function openPatientCbtiView(){
     // Buscar todos los médicos que activaron CBT-I para este paciente
     const active = await db.get('cbti_patients?patient_email=ilike.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email').catch(()=>[]);
     if(!active || !active.length){
-      cont.innerHTML = '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,0.6)"><div style="font-size:36px;margin-bottom:10px">🌿</div>Tu profesional aún no activó un protocolo TCC-I para vos.<br><br><span style="font-size:12px">Cuando lo haga, vas a poder ver el contenido del tratamiento acá.</span></div>';
+      // Sin protocolo del profesional → ofrecer la vía AUTOGUIADA basada en el
+      // diario (restricción de sueño). El paciente puede empezar solo.
+      let sw=null;
+      try{
+        const _d = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(patEmail)+'&order=diary_date.desc&limit=30&select=bedtime,wake_time,sleep_minutes,notes,diary_date').catch(()=>[]);
+        sw = computeSleepWindow(_d||[]);
+      }catch(_){}
+      let html='<div style="background:linear-gradient(135deg,rgba(126,200,164,0.14),rgba(200,169,110,0.08));border:1px solid rgba(200,169,110,0.4);border-radius:16px;padding:18px;margin-bottom:16px">'+
+        '<div style="font-size:34px;margin-bottom:6px">🌿</div>'+
+        '<div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:4px">Programa autoguiado para dormir mejor</div>'+
+        '<div style="font-size:12.5px;color:rgba(255,255,255,0.72);line-height:1.55">Terapia cognitivo-conductual para el insomnio (TCC-I), el tratamiento de primera línea. Podés seguirlo por tu cuenta a partir de tu diario, o pedirle a un profesional que te acompañe.</div>'+
+      '</div>';
+      if(!sw || sw.error){
+        html+='<div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:16px;text-align:center;color:rgba(255,255,255,0.7);font-size:13px;line-height:1.6">📔 Para calcular tu <strong>ventana de sueño</strong> personalizada necesitamos al menos <strong>5 noches</strong> registradas en el diario'+(sw&&sw.n?' (tenés '+sw.n+')':'')+'.<br><br>Registrá tu sueño unos días y volvé — la restricción de sueño arranca desde tus datos reales.</div>'+
+          '<button onclick="navTo(\'diary\')" style="width:100%;margin-top:12px;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">Registrar mi noche</button>';
+      } else {
+        const effCol = sw.eff>=85?'#7EC8A4':sw.eff>=80?'#C8A96E':'#fca5a5';
+        html+='<div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:16px;margin-bottom:14px">'+
+          '<div class="sec-title" style="margin:0 0 10px;color:rgba(244,239,229,0.55)">Tu ventana de sueño recomendada</div>'+
+          '<div style="display:flex;gap:10px;margin-bottom:12px">'+
+            '<div style="flex:1;background:rgba(126,200,164,0.1);border-radius:12px;padding:11px;text-align:center"><div style="font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:.06em">ACOSTARSE</div><div style="font-size:22px;font-weight:700;color:#fff">'+sw.fmt(sw.bedTarget)+'</div></div>'+
+            '<div style="flex:1;background:rgba(126,200,164,0.1);border-radius:12px;padding:11px;text-align:center"><div style="font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:.06em">LEVANTARSE</div><div style="font-size:22px;font-weight:700;color:#fff">'+sw.fmt(sw.wakeTarget)+'</div></div>'+
+          '</div>'+
+          '<div style="display:flex;gap:10px;font-size:11.5px;color:rgba(255,255,255,0.7)">'+
+            '<div style="flex:1">Dormís en promedio <b style="color:#fff">'+sw.fmtDur(sw.avgTST)+'</b></div>'+
+            '<div style="flex:1">Eficiencia <b style="color:'+effCol+'">'+sw.eff+'%</b></div>'+
+          '</div>'+
+          '<div style="background:rgba(200,169,110,0.12);border-left:3px solid #C8A96E;border-radius:6px;padding:10px 12px;margin-top:12px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.5">'+sw.titr.txt+'</div>'+
+        '</div>';
+        html+='<div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:14px 15px;font-size:12.5px;color:rgba(255,255,255,0.72);line-height:1.6">'+
+          '<div style="font-weight:600;color:#fff;margin-bottom:6px">Cómo aplicarla esta semana</div>'+
+          '1. Acostate <b>solo</b> a la hora indicada, aunque tengas sueño antes.<br>'+
+          '2. Levantate a la hora fija <b>todos los días</b>, incluidos los fines de semana.<br>'+
+          '3. Si no dormís en ~20 min, levantate y volvé cuando tengas sueño (control de estímulos).<br>'+
+          '4. Nada de siestas. Seguí registrando: en 7 días recalculamos la ventana.'+
+        '</div>'+
+        '<div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-top:12px;line-height:1.5">Herramienta de apoyo, no reemplaza la consulta. Si tenés apnea, trabajás en turnos rotativos o hay somnolencia peligrosa, consultá antes de restringir el sueño.</div>';
+      }
+      cont.innerHTML=html;
       return;
     }
     const drEmail = active[0].doctor_email; // si hay varios, mostramos el primero
@@ -17293,17 +17370,15 @@ async function checkPatientTcciCard(){
       card.style.display='block';
       return;
     }
+    card.style.display='block'; // siempre visible: si no hay protocolo del médico, ofrece la vía autoguiada
+    const pctEl = document.getElementById('patient-tcci-progress');
     if(active && active.length){
-      card.style.display='block';
       const drEmail = active[0].doctor_email;
       const prog = await db.get('cbti_progress?doctor_email=ilike.'+encodeURIComponent(drEmail)+'&patient_email=ilike.'+encodeURIComponent(patEmail)+'&completed=eq.true&select=item_id').catch(()=>[]);
       const done = (prog||[]).length;
-      const pctEl = document.getElementById('patient-tcci-progress');
       if(pctEl) pctEl.textContent = done+' de '+CBTI_TOTAL_ITEMS+' temas desbloqueados';
-      console.log('[checkPatientTcciCard] ✓ card visible · doctor:', drEmail, '· items desbloqueados:', done);
     } else {
-      card.style.display='none';
-      console.log('[checkPatientTcciCard] sin TCC-I activo para', patEmail, '— card oculta');
+      if(pctEl) pctEl.textContent = 'Empezá el programa autoguiado desde tu diario';
     }
   }catch(e){ console.warn('[checkPatientTcciCard] error:', e); }
 }
