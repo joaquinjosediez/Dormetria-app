@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod33">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod34">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1291,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod33"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod34"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1310,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod33';
+const APP_VERSION='hoy75-mod34';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -1464,6 +1464,24 @@ const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 let supa = null;
 function initSupabase(){
   if(supa) return supa;
+  // Capturar los parametros del link de mail ANTES de que el SDK canjee y LIMPIE
+  // la URL (detectSessionInUrl hace history.replaceState y borra ?code=). Sin esto,
+  // en una pestana nueva no queda ninguna pista de que es un link de recuperacion,
+  // y tryAutoLogin mete al usuario a la app sin dejarlo cambiar la contrasena.
+  try{
+    if(typeof window._dmLinkCaptured === 'undefined'){
+      const _low=(window.location.href||'').toLowerCase();
+      const _hash=(window.location.hash||'').toLowerCase();
+      const _qs=new URLSearchParams(window.location.search||'');
+      const _tm=/type=(recovery|invite|signup|magiclink)/.exec(_low);
+      window._dmLinkHasCode = !!_qs.get('code') || /access_token=/.test(_hash);
+      window._dmLinkType = _tm ? _tm[1] : null;
+      window._dmIsAuthLink = (window._dmLinkHasCode && window._dmLinkType !== 'magiclink')
+                             || ['recovery','invite','signup'].indexOf(window._dmLinkType) >= 0;
+      window._dmLinkCaptured = true;
+      console.log('[AUTH-CAPTURE] hasCode=', window._dmLinkHasCode, 'type=', window._dmLinkType, 'isAuthLink=', window._dmIsAuthLink);
+    }
+  }catch(_){}
   if(typeof window.supabase==='undefined' || !window.supabase.createClient){
     console.error('[AUTH] SDK Supabase no cargó — la app no podrá autenticar');
     return null;
@@ -14787,27 +14805,22 @@ async function tryAutoLogin(){
     // esta función ganaba la carrera y entraba directo a la app, dejando al
     // usuario adentro pero sin poder cambiar la contraseña.
     try{
-      const _u=(window.location.href||'').toLowerCase();
-      const _intent=sessionStorage.getItem('dm_auth_intent');
-      // Si ya estamos en (o vamos a) la pantalla de nueva contraseña, no auto-login.
+      // Si ya estamos en (o vamos a) la pantalla de nueva contrasena, no auto-login.
       if(window._dmInPasswordFlow || window._dmForcePasswordScreen){
-        console.log('[AUTO] pantalla de contraseña activa — no auto-login'); return;
+        console.log('[AUTO] pantalla de contrasena activa - no auto-login'); return;
       }
-      // Recovery/invite explícito por URL o intención.
-      if(_intent==='recovery'||_intent==='invite'||_intent==='signup'||
-         /type=(recovery|invite)/.test(_u)){
-        console.log('[AUTO] flujo de recovery/invite en curso — no auto-login');
+      // Si venimos de CUALQUIER link de auth (recovery/invite/signup, o ?code= sin
+      // tipo), NO auto-logueamos: handleAuthRedirect debe mostrar la pantalla de
+      // nueva contrasena. Usamos la captura hecha en initSupabase (antes de que el
+      // SDK limpiara la URL), no window.location (que ya puede estar limpia).
+      if(window._dmIsAuthLink){
+        console.log('[AUTO] link de auth (', window._dmLinkType||'code', ') - no auto-login, delego en handleAuthRedirect');
         return;
       }
-      // PKCE: el link del mail trae ?code= sin type. Como el mail abre en otra
-      // pestaña, la intención guardada no está. Esperamos a que el evento de auth
-      // decida (PASSWORD_RECOVERY) antes de auto-loguear.
-      if(/[?&]code=/.test(_u)){
-        console.log('[AUTO] hay ?code= — espero al evento de auth antes de decidir');
-        await new Promise(r=>setTimeout(r,2200));
-        if(window._dmInPasswordFlow || window._dmForcePasswordScreen){
-          console.log('[AUTO] tras esperar: pantalla de contraseña activa — no auto-login'); return;
-        }
+      const _intent=sessionStorage.getItem('dm_auth_intent');
+      if(_intent==='recovery'||_intent==='invite'||_intent==='signup'){
+        console.log('[AUTO] flujo de recovery/invite en curso - no auto-login');
+        return;
       }
     }catch(_){}
     // Timeout 6s para evitar que la app quede trabada
@@ -14872,17 +14885,13 @@ function handleAuthRedirect(){
   // cuando el SDK dispare el evento de sesión, sepamos qué pantalla mostrar.
   let intent = null;
   try{
-    const hash = (window.location.hash || '').toLowerCase();
-    const search = (window.location.search || '').toLowerCase();
-    const qs = new URLSearchParams(window.location.search);
-    const hasCode = !!qs.get('code');            // PKCE
-    // El tipo puede venir en el hash (#type=recovery) o en la query (?type=recovery,
-    // que es lo que ponemos en redirectTo). Buscamos en ambos.
-    const typeMatch = /type=(recovery|invite|signup|magiclink)/.exec(hash + '&' + search);
-    if(typeMatch){
-      intent = typeMatch[1];
+    // Usamos la captura de initSupabase (hecha ANTES de que el SDK limpiara la URL).
+    const hasCode = !!window._dmLinkHasCode;
+    const capType = window._dmLinkType;
+    if(capType && capType !== 'magiclink'){
+      intent = capType;
     } else if(hasCode){
-      // PKCE sin tipo explícito: usar la marca local o asumir recovery.
+      // ?code= sin tipo: usar la marca local o asumir recovery.
       intent = sessionStorage.getItem('dm_auth_intent') || 'recovery';
     }
     if(intent){ sessionStorage.setItem('dm_auth_intent', intent); }
@@ -14914,8 +14923,7 @@ function handleAuthRedirect(){
 
   // Fallback: si hay token en la URL pero el evento no llegó (timing), chequear la
   // sesión y actuar según la intención. SIN forzar 'invite' como antes.
-  const qs2 = new URLSearchParams(window.location.search);
-  const hasToken = !!qs2.get('code') || /access_token|type=recovery|type=invite/.test((window.location.hash||'').toLowerCase());
+  const hasToken = !!window._dmIsAuthLink;
   if(hasToken){
     setTimeout(async ()=>{
       try{
