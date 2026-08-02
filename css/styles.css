@@ -369,6 +369,13 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   .dr-tb-menu-name{ font-size:13px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
   .dr-tb-menu-sub{ font-size:11px;color:rgba(244,239,229,0.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
   .dr-tb-menu{ min-width:230px; }
+  .dr-tb-actions{ display:flex;align-items:center;gap:2px;flex-shrink:0; }
+  .dr-tb-icon{
+    display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
+    border-radius:8px;background:none;border:none;cursor:pointer;color:rgba(244,239,229,0.6);
+    transition:background .12s,color .12s;
+  }
+  .dr-tb-icon:hover{ background:rgba(255,255,255,0.08);color:#F4EFE5; }
 
   /* Buscador de la lista de pacientes, ahora que la columna es mas angosta. */
   body.dr-desktop #screen-doctor-home{ min-width:0; }
@@ -385,10 +392,17 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
     grid-template-columns:minmax(0,1fr);
   }
   body.dr-desktop:not(.dr-tab-patients) #screen-doctor-home{ display:none !important; }
+  /* !important: mas abajo hay una regla vieja (.dr-metrics-view) con la misma
+     especificidad que fija grid-column:2. Al ganar ella, el grid creaba una
+     COLUMNA IMPLICITA y el panel quedaba pegado a la mitad derecha, con la
+     barra superior cortada a la mitad. */
   body.dr-desktop:not(.dr-tab-patients) #dr-metrics-desktop,
   body.dr-desktop:not(.dr-tab-patients) #screen-doctor-patient,
   body.dr-desktop:not(.dr-tab-patients) #dr-desktop-placeholder{
-    grid-column:1 / -1;
+    grid-column:1 / -1 !important;
+  }
+  body.dr-desktop:not(.dr-tab-patients) #app{
+    grid-template-columns:minmax(0,1fr) !important;
   }
   /* El panel ancho respira mejor centrado cuando ocupa toda la pantalla. */
   body.dr-desktop:not(.dr-tab-patients) #dr-metrics-desktop > div{

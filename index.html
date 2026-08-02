@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod38">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod39">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1291,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod38"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod39"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1310,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod38';
+const APP_VERSION='hoy75-mod39';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -9396,6 +9396,11 @@ function dmBuildDoctorTopbar(){
         '<button class="dr-tb-tab" data-tab="metrics" onclick="dmTopbarGo(\'metrics\')">'+ic('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z')+'Métricas</button>'+
         '<button class="dr-tb-tab" data-tab="more" onclick="dmTopbarGo(\'more\')"><span style="font-size:15px;line-height:1">🌿</span>TCC-I</button>'+
       '</div>'+
+      '<div class="dr-tb-actions">'+
+        '<button class="dr-tb-icon" title="Cómo se usa" aria-label="Cómo se usa" onclick="dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'</button>'+
+        '<button class="dr-tb-icon" title="Ayudanos a mejorar" aria-label="Ayudanos a mejorar" onclick="showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'</button>'+
+        '<button class="dr-tb-icon" id="dr-tb-admin-quick" style="display:none" title="Panel Admin" aria-label="Panel Admin" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'</button>'+
+      '</div>'+
       '<div class="dr-tb-me" id="dr-tb-me">'+
         '<button class="dr-tb-me-btn" onclick="dmTopbarToggleMenu(event)" aria-label="Tu cuenta">'+
           '<span class="dr-tb-avatar" id="dr-tb-avatar">··</span>'+
@@ -9468,6 +9473,8 @@ function dmSyncTopbarMenu(){
       const src=document.getElementById(pair[0]), dst=document.getElementById(pair[1]);
       if(src&&dst) dst.style.display=(src.style.display==='none')?'none':'flex';
     });
+    const aq=document.getElementById('dr-tb-admin-quick'), aSrc=document.getElementById('admin-btn');
+    if(aq&&aSrc) aq.style.display=(aSrc.style.display==='none')?'none':'inline-flex';
     // Si ya está en el directorio, el botón lo dice igual que antes.
     const dirSrc=document.getElementById('dir-register-btn'), dirDst=document.getElementById('dr-tb-dir');
     if(dirSrc&&dirDst){
@@ -9854,8 +9861,17 @@ async function renderPatientList(filter){
         }catch(_){}
       }
       if(cachedPts.length){
+        // ANTES: un await por paciente dentro de un for → con 28 pacientes eran
+        // 28 viajes al servidor EN SERIE (de ahí la demora de varios segundos).
+        // AHORA: una sola consulta con patient_email=in.(...) y agrupado en memoria.
+        let allRecs=[];
+        try{
+          allRecs = await db.get('evaluations?patient_email=in.('+cachedPts.map(e=>encodeURIComponent(e)).join(',')+')&order=created_at.desc&select=*') || [];
+        }catch(_){ allRecs=[]; }
+        const byPatient={};
+        allRecs.forEach(r=>{ (byPatient[r.patient_email]=byPatient[r.patient_email]||[]).push(r); });
         for(const pEmail of cachedPts){
-          const pRecs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(pEmail)}&order=created_at.desc&select=*`).catch(()=>[]);
+          const pRecs=byPatient[pEmail]||[];
           const last={};(pRecs||[]).forEach(r=>{if(!last[r.scale_id])last[r.scale_id]=r;});
           Object.values(last).forEach(r=>{
             const sc=SCALES.find(s=>s.id===r.scale_id);if(!sc)return;
@@ -9989,6 +10005,50 @@ async function renderPatientList(filter){
 // Responde a la pregunta operativa: ¿quién dejó de registrar y a quién le
 // falta completar datos? Permite mandar un "toque" por WhatsApp o mail.
 function setDrAdhSort(m){ window._drAdhSort=m; try{ renderDoctorAdherence(); }catch(_){} }
+
+// Graficos del panel de metricas del profesional. Chart.js ya esta cargado
+// para el actograma; reutilizamos la misma libreria.
+function drRenderAdhCharts(){
+  const D=window._drAdhCharts; if(!D || typeof Chart==='undefined') return;
+  window._drCh=window._drCh||{};
+  const kill=function(k){ try{ if(window._drCh[k]) window._drCh[k].destroy(); }catch(_){} };
+  const legend={ labels:{ color:'rgba(244,239,229,0.72)', font:{size:10.5}, boxWidth:9, boxHeight:9, padding:8 } };
+  const mk=function(id,cfg,key){
+    const cv=document.getElementById(id); if(!cv) return;
+    kill(key); window._drCh[key]=new Chart(cv.getContext('2d'), cfg);
+  };
+  mk('drChAdh',{ type:'doughnut',
+    data:{ labels:['Al día','Aflojando','Sin registrar'],
+      datasets:[{ data:D.adherencia, backgroundColor:['#7EC8A4','#C8A96E','#fca5a5'], borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:Object.assign({position:'bottom'},legend) } }
+  },'adh');
+  mk('drChEvo',{ type:'doughnut',
+    data:{ labels:['Mejorando','Estable','Empeorando','Sin datos'],
+      datasets:[{ data:D.evolucion, backgroundColor:['#7EC8A4','rgba(255,255,255,0.28)','#fca5a5','rgba(255,255,255,0.12)'], borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:Object.assign({position:'bottom'},legend) } }
+  },'evo');
+  mk('drChEsc',{ type:'bar',
+    data:{ labels:['Escalas'],
+      datasets:[
+        { label:'Respondidas', data:[D.escalas[0]], backgroundColor:'#7EC8A4', borderRadius:5 },
+        { label:'Pendientes',  data:[D.escalas[1]], backgroundColor:'#C8A96E', borderRadius:5 }
+      ] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      scales:{ x:{ stacked:true, ticks:{color:'rgba(244,239,229,0.5)',font:{size:10}}, grid:{color:'rgba(255,255,255,0.06)'} },
+               y:{ stacked:true, ticks:{display:false}, grid:{display:false} } },
+      plugins:{ legend:Object.assign({position:'bottom'},legend) } }
+  },'esc');
+  mk('drChUso',{ type:'bar',
+    data:{ labels:D.topUso.labels,
+      datasets:[{ label:'Registros', data:D.topUso.data, backgroundColor:'#7EC8A4', borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      scales:{ x:{ ticks:{color:'rgba(244,239,229,0.5)',font:{size:10},precision:0}, grid:{color:'rgba(255,255,255,0.06)'} },
+               y:{ ticks:{color:'rgba(244,239,229,0.72)',font:{size:10}}, grid:{display:false} } },
+      plugins:{ legend:{display:false} } }
+  },'uso');
+}
 // Marcar/desmarcar el alta de un paciente (queda en este dispositivo).
 function drToggleAlta(email){
   if(!S.user||!email) return;
@@ -10113,8 +10173,32 @@ async function renderDoctorAdherence(){
     const drFirst=(S.user.name||'tu profesional').split(' ')[0];
     const card=(n,l,c)=>'<div style="flex:1;background:rgba(255,255,255,0.06);border-radius:12px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:'+c+'">'+n+'</div><div style="font-size:10px;color:rgba(255,255,255,0.6);line-height:1.25;margin-top:2px">'+l+'</div></div>';
     const sbtn=(m,l)=>'<span onclick="setDrAdhSort(\''+m+'\')" style="cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;white-space:nowrap;border:1px solid '+(mode===m?'#7EC8A4':'rgba(255,255,255,0.18)')+';background:'+(mode===m?'rgba(126,200,164,0.16)':'transparent')+';color:'+(mode===m?'#7EC8A4':'rgba(255,255,255,0.55)')+'">'+l+'</span>';
+    // ── Panel de graficos: la vista global no puede ser solo un listado ──
+    const nMejor=rows.filter(r=>r.delta!=null&&r.delta>=3).length;
+    const nPeor=rows.filter(r=>r.delta!=null&&r.delta<=-3).length;
+    const nEstable=rows.filter(r=>r.delta!=null&&r.delta>-3&&r.delta<3).length;
+    const nSinDato=rows.length-nMejor-nPeor-nEstable;
+    const totalPedidas=rows.reduce((s,r)=>s+(r.pedidas||0),0);
+    const totalRespond=rows.reduce((s,r)=>s+(r.respondidas||0),0);
+    const topUso=rows.slice().sort((a,b)=>(b.d30-a.d30)).filter(r=>r.d30>0).slice(0,8);
+    window._drAdhCharts={
+      adherencia:[alDia,tibios,perdidos],
+      evolucion:[nMejor,nEstable,nPeor,nSinDato],
+      escalas:[totalRespond, Math.max(0,totalPedidas-totalRespond)],
+      topUso:{labels:topUso.map(r=>(r.lname||r.fname||r.email).slice(0,14)), data:topUso.map(r=>r.d30)},
+      totalPacientes:rows.length
+    };
+    const chartBox=(t,id,extra)=>'<div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 13px;min-width:0">'+
+      '<div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase">'+t+'</div>'+
+      '<div style="position:relative;height:'+(extra||150)+'px"><canvas id="'+id+'"></canvas></div></div>';
     let html='<div style="display:flex;gap:8px;margin-bottom:12px">'+
       card(alDia,'Al día<br>(≤3 días)','#7EC8A4')+card(tibios,'Aflojando<br>(4–14 días)','#C8A96E')+card(perdidos,'Sin registrar<br>(+14 días)','#fca5a5')+
+      '</div>'+
+      '<div class="dm-adh-charts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-bottom:14px">'+
+        chartBox('Adherencia','drChAdh')+
+        chartBox('Evolución del score','drChEvo')+
+        chartBox('Escalas pedidas vs respondidas','drChEsc')+
+        chartBox('Registros en 30 días · top','drChUso',190)+
       '</div>'+
       '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;align-items:center">'+
         '<span style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-right:2px">Ordenar:</span>'+
@@ -10153,6 +10237,7 @@ async function renderDoctorAdherence(){
         '</div></div>';
     }).join('');
     el.innerHTML=html;
+    setTimeout(function(){ try{ drRenderAdhCharts(); }catch(_){} }, 40);
   }catch(e){ el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">No se pudo calcular la adherencia.</div>'; }
 }
 async function linkPatient(){
