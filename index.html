@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod37">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod38">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1291,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod37"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod38"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1310,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod37';
+const APP_VERSION='hoy75-mod38';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -1493,7 +1493,12 @@ function initSupabase(){
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce'
+      // 'implicit' en vez de 'pkce': PKCE guarda un "verificador" en el
+      // navegador que PIDIO el reset, asi que si el mail se abre en otro
+      // navegador (o en la app instalada) el canje falla y Supabase termina
+      // usando una sesion vieja -> "Password update requires reauthentication".
+      // Con implicit el token viaja en el hash y se valida solo, en cualquier lado.
+      flowType: 'implicit'
     }
   });
   // Escuchar cambios de auth (login, logout, refresh) para refrescar UI
@@ -9310,7 +9315,11 @@ async function pvtFinish(){
 // DOCTOR
 async function showDoctorHome(){const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
   try{ dmBuildDoctorTopbar(); }catch(_){}
-  setTimeout(()=>{ try{ dmSyncTopbarBadge(); }catch(_){} }, 1200);
+  // Sin esto, en el primer render el CSS no sabe que la pestaña activa es
+  // Pacientes y esconde la columna izquierda con el listado.
+  try{ if(!document.body.classList.contains('dr-metrics-view')) document.body.classList.add('dr-tab-patients'); }catch(_){}
+  setTimeout(()=>{ try{ dmSyncTopbarBadge(); dmSyncTopbarMenu(); }catch(_){} }, 1200);
+  setTimeout(()=>{ try{ dmSyncTopbarMenu(); }catch(_){} }, 2500);
   setTimeout(()=>{ try{ if(!document.body.classList.contains('dr-has-patient')) dmMaybeAutoStartTour('doctor_home'); }catch(_){} }, 900);
   // Merge localStorage profile data into S.user, then refresh from DB
   if(S.user){
@@ -9387,15 +9396,20 @@ function dmBuildDoctorTopbar(){
         '<button class="dr-tb-tab" data-tab="metrics" onclick="dmTopbarGo(\'metrics\')">'+ic('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z')+'Métricas</button>'+
         '<button class="dr-tb-tab" data-tab="more" onclick="dmTopbarGo(\'more\')"><span style="font-size:15px;line-height:1">🌿</span>TCC-I</button>'+
       '</div>'+
-      '<button class="dr-tb-link" id="dr-tb-vincular" onclick="dmTopbarGo(\'link\')">'+ic('M12 4v16m8-8H4')+'Vincular</button>'+
       '<div class="dr-tb-me" id="dr-tb-me">'+
         '<button class="dr-tb-me-btn" onclick="dmTopbarToggleMenu(event)" aria-label="Tu cuenta">'+
           '<span class="dr-tb-avatar" id="dr-tb-avatar">··</span>'+
           '<span style="color:rgba(244,239,229,.5);font-size:10px">▾</span>'+
         '</button>'+
         '<div class="dr-tb-menu">'+
+          '<div class="dr-tb-menu-head"><div class="dr-tb-menu-name" id="dr-tb-menu-name">—</div><div class="dr-tb-menu-sub" id="dr-tb-menu-sub">Panel profesional</div></div>'+
           '<button onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
+          '<button id="dr-tb-dir" onclick="dmTopbarCloseMenu();showDrRegisterForm()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio de profesionales</button>'+
+          '<button id="dr-tb-adminsetup" style="display:none" onclick="dmTopbarCloseMenu();showAdminSetup()">'+ic('M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z')+'Activar acceso admin</button>'+
+          '<button id="dr-tb-admin" style="display:none" onclick="dmTopbarCloseMenu();showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Panel Admin</button>'+
+          '<hr>'+
           '<button onclick="dmTopbarCloseMenu();dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo se usa</button>'+
+          '<button onclick="dmTopbarCloseMenu();showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'Ayudanos a mejorar</button>'+
           '<hr>'+
           '<button class="danger" onclick="doLogout()">'+ic('M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1')+'Salir</button>'+
         '</div>'+
@@ -9416,6 +9430,7 @@ function dmBuildDoctorTopbar(){
       const av=document.getElementById('dr-tb-avatar');
       if(av&&ini) av.textContent=ini.toUpperCase();
     }catch(_){}
+    dmSyncTopbarMenu();
     // Cerrar el menú al hacer click afuera
     document.addEventListener('click', function(e){
       const me=document.getElementById('dr-tb-me');
@@ -9436,6 +9451,30 @@ function dmTopbarToggleMenu(e){
 function dmTopbarCloseMenu(){
   const me=document.getElementById('dr-tb-me');
   if(me) me.classList.remove('open');
+}
+// Refleja en el menú del avatar lo que antes vivía en la columna izquierda:
+// nombre/matrícula del profesional y los accesos de admin/directorio, que se
+// muestran u ocultan segun el mismo criterio que los botones originales.
+function dmSyncTopbarMenu(){
+  try{
+    const nm=document.getElementById('dr-tb-menu-name');
+    const sb=document.getElementById('dr-tb-menu-sub');
+    const srcName=document.getElementById('dr-name');
+    const srcMeta=document.getElementById('dr-meta');
+    if(nm && srcName) nm.textContent=(srcName.textContent||'').trim()||'—';
+    if(sb && srcMeta) sb.textContent=(srcMeta.textContent||'').trim()||'Panel profesional';
+    // Espejar visibilidad de los botones originales
+    [['admin-setup-btn','dr-tb-adminsetup'],['admin-btn','dr-tb-admin']].forEach(function(pair){
+      const src=document.getElementById(pair[0]), dst=document.getElementById(pair[1]);
+      if(src&&dst) dst.style.display=(src.style.display==='none')?'none':'flex';
+    });
+    // Si ya está en el directorio, el botón lo dice igual que antes.
+    const dirSrc=document.getElementById('dir-register-btn'), dirDst=document.getElementById('dr-tb-dir');
+    if(dirSrc&&dirDst){
+      const t=(dirSrc.textContent||'');
+      if(/Ya estás|Ya estas/i.test(t)) dirDst.lastChild.textContent='Ya estás en el directorio';
+    }
+  }catch(_){}
 }
 // El badge de alertas se calcula para la bottomnav; lo reflejamos arriba.
 function dmSyncTopbarBadge(){
@@ -9472,6 +9511,9 @@ async function showDrTab_(tab){
   // Vista escritorio: exponer el tab activo para dar layout CSS específico
   // por pestaña (un grid global rompía Perfil/Estudios, que tienen otra estructura).
   try{ const _c=document.getElementById('drp-content'); if(_c) _c.dataset.tab=tab; }catch(_){}
+  // La columna izquierda (listado + buscador + etiquetas) SOLO tiene sentido en
+  // la pestaña Pacientes. En el resto, el contenido usa todo el ancho.
+  try{ document.body.classList.toggle('dr-tab-patients', tab==='patients'); }catch(_){}
   let cont=document.getElementById('dr-content');
   // En escritorio, todo lo que no sea el listado de pacientes se muestra en el
   // panel ancho de la derecha: en la barra de 360px no se puede leer nada.

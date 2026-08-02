@@ -365,8 +365,35 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   .dr-tb-menu button:hover{ background:rgba(255,255,255,0.08); }
   .dr-tb-menu .danger{ color:#ffb3b3; }
   .dr-tb-menu hr{ border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 6px; }
+  .dr-tb-menu-head{ padding:9px 11px 8px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px; }
+  .dr-tb-menu-name{ font-size:13px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .dr-tb-menu-sub{ font-size:11px;color:rgba(244,239,229,0.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .dr-tb-menu{ min-width:230px; }
+
   /* Buscador de la lista de pacientes, ahora que la columna es mas angosta. */
   body.dr-desktop #screen-doctor-home{ min-width:0; }
+
+  /* ── El bloque del profesional (nombre, directorio, admin, como se usa,
+        ayudanos a mejorar) vive ahora en la barra superior y en el menu del
+        avatar. En escritorio no se repite en la columna izquierda. ── */
+  body.dr-desktop #dr-panel-hero,
+  body.dr-desktop .dm-panel-compact{ display:none !important; }
+
+  /* ── La columna izquierda SOLO existe en la pestaña Pacientes ──
+        En Alertas / Metricas / TCC-I / Mi perfil el contenido usa todo el ancho. */
+  body.dr-desktop:not(.dr-tab-patients) #app{
+    grid-template-columns:minmax(0,1fr);
+  }
+  body.dr-desktop:not(.dr-tab-patients) #screen-doctor-home{ display:none !important; }
+  body.dr-desktop:not(.dr-tab-patients) #dr-metrics-desktop,
+  body.dr-desktop:not(.dr-tab-patients) #screen-doctor-patient,
+  body.dr-desktop:not(.dr-tab-patients) #dr-desktop-placeholder{
+    grid-column:1 / -1;
+  }
+  /* El panel ancho respira mejor centrado cuando ocupa toda la pantalla. */
+  body.dr-desktop:not(.dr-tab-patients) #dr-metrics-desktop > div{
+    max-width:1180px;
+  }
   /* Lista de pacientes: columna izquierda, SIEMPRE visible (aunque no sea la
      pantalla activa), con su propio scroll. */
   body.dr-desktop #screen-doctor-home{
