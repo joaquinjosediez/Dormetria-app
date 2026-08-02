@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod36">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod37">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -480,7 +480,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Confirmar contraseña</label>
-      <input class="form-input" type="password" id="sp-pass2" placeholder="Repetí la contraseña" autocomplete="new-password">
+      <div style="position:relative"><input class="form-input" type="password" id="sp-pass2" placeholder="Repetí la contraseña" autocomplete="new-password" style="padding-right:44px"><button type="button" onclick="dmTogglePass('sp-pass2',this)" aria-label="Mostrar u ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:0.65">👁</button></div>
       <div class="err" id="sp-error">Las contraseñas no coinciden</div>
     </div>
     <button class="btn btn-g" onclick="submitNewPassword()" id="sp-btn">Guardar contraseña</button>
@@ -1291,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod36"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod37"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1310,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod36';
+const APP_VERSION='hoy75-mod37';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -1475,8 +1475,10 @@ function initSupabase(){
       const _qs=new URLSearchParams(window.location.search||'');
       const _tm=/type=(recovery|invite|signup|magiclink)/.exec(_low);
       window._dmLinkHasCode = !!_qs.get('code') || /access_token=/.test(_hash);
+      window._dmLinkTokenHash = _qs.get('token_hash') || null;
       window._dmLinkType = _tm ? _tm[1] : null;
       window._dmIsAuthLink = (window._dmLinkHasCode && window._dmLinkType !== 'magiclink')
+                             || !!window._dmLinkTokenHash
                              || ['recovery','invite','signup'].indexOf(window._dmLinkType) >= 0;
       window._dmLinkCaptured = true;
       console.log('[AUTH-CAPTURE] hasCode=', window._dmLinkHasCode, 'type=', window._dmLinkType, 'isAuthLink=', window._dmIsAuthLink);
@@ -14989,6 +14991,34 @@ function handleAuthRedirect(){
     console.log('[AUTH-REDIRECT] intent detectado=', intent, 'hasCode=', hasCode);
   }catch(e){ console.warn('[AUTH-REDIRECT] parse url:', e); }
 
+  // ── Camino robusto: token_hash + verifyOtp ──
+  // A diferencia de ?code= (PKCE), token_hash NO necesita el verificador
+  // guardado en el navegador que pidio el reset. Funciona aunque el mail se
+  // abra en otro navegador, en otra pestana o dentro de la PWA. Requiere que
+  // la plantilla de mail de Supabase use {{ .TokenHash }} (ver docs del panel).
+  if(window._dmLinkTokenHash){
+    (async function(){
+      try{
+        const th = window._dmLinkTokenHash;
+        const tp = (window._dmLinkType && window._dmLinkType!=='magiclink') ? window._dmLinkType : 'recovery';
+        console.log('[AUTH-REDIRECT] verifyOtp token_hash type=', tp);
+        // Sesion vieja del navegador: la descartamos para que no gane.
+        try{ await supa.auth.signOut({scope:'local'}); }catch(_){}
+        const { error } = await supa.auth.verifyOtp({ token_hash: th, type: tp });
+        if(error){
+          console.warn('[AUTH-REDIRECT] verifyOtp falló:', error.message);
+          showSetPasswordScreen(tp==='invite'?'invite':'recovery');
+          const e2=document.getElementById('sp-error');
+          if(e2){ e2.textContent='Este enlace ya venció o fue usado. Pedí uno nuevo desde "Olvidé mi contraseña".'; e2.classList.add('show'); }
+          return;
+        }
+        sessionStorage.removeItem('dm_auth_intent');
+        showSetPasswordScreen(tp==='invite'?'invite':'recovery');
+      }catch(e){ console.warn('[AUTH-REDIRECT] token_hash:', e.message); }
+    })();
+    return;
+  }
+
   // El SDK dispara eventos cuando canjea el token de la URL.
   supa.auth.onAuthStateChange((event, session) => {
     console.log('[AUTH-REDIRECT] event=', event, 'session=', !!session, 'intent=', sessionStorage.getItem('dm_auth_intent'));
@@ -15091,7 +15121,18 @@ async function submitNewPassword(){
     if(!supa){ initSupabase(); }
     const {data, error} = await supa.auth.updateUser({password: p1, data: {must_change_password: false}});
     if(error){
-      err.textContent = 'Error: '+error.message;
+      const msg = String(error.message||'');
+      if(/reauthentication|reauthenticate|not authorized|session/i.test(msg)){
+        // La sesion activa no es la del link (el canje del enlace fallo y quedo
+        // una sesion vieja del navegador). Reintentar desde cero es lo unico
+        // que resuelve: cerramos sesion y pedimos un enlace nuevo.
+        err.innerHTML = 'Este enlace no pudo validarse en este navegador. Cerrá sesión y pedí un enlace nuevo, y <strong>abrilo en el mismo navegador</strong> donde lo pediste.';
+        err.classList.add('show');
+        try{ await supa.auth.signOut({scope:'local'}); }catch(_){}
+        window._dmInPasswordFlow = false; window._dmForcePasswordScreen = false;
+        return;
+      }
+      err.textContent = 'Error: '+msg;
       err.classList.add('show'); return;
     }
     // Contraseña cambiada: liberar el bloqueo de auto-login.
