@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod34">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod36">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1291,7 +1291,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod34"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod36"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1310,7 +1310,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod34';
+const APP_VERSION='hoy75-mod36';
 // ─── PWA: registro del service worker e instalación ───
 // La app pasa a ser instalable (ícono propio, pantalla completa) y queda
 // preparada para recibir notificaciones push cuando exista el servidor.
@@ -9307,6 +9307,8 @@ async function pvtFinish(){
 
 // DOCTOR
 async function showDoctorHome(){const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
+  try{ dmBuildDoctorTopbar(); }catch(_){}
+  setTimeout(()=>{ try{ dmSyncTopbarBadge(); }catch(_){} }, 1200);
   setTimeout(()=>{ try{ if(!document.body.classList.contains('dr-has-patient')) dmMaybeAutoStartTour('doctor_home'); }catch(_){} }, 900);
   // Merge localStorage profile data into S.user, then refresh from DB
   if(S.user){
@@ -9354,8 +9356,96 @@ function showDrTab(tab,el){
     const b=document.getElementById('drnav-'+t);
     if(b){b.style.color=t===tab?'#fff':'rgba(255,255,255,0.5)';const lbl=b.querySelector('.bnav-lbl');if(lbl&&lbl.childNodes[0])lbl.childNodes[0].textContent=lbl.childNodes[0].textContent;}
   });
+  // Espejar el estado activo en la barra superior de escritorio.
+  try{
+    document.querySelectorAll('#dr-topbar-desktop .dr-tb-tab').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab')===tab);
+    });
+  }catch(_){}
   // Translate 'profile' → 'drprofile' so the handler in showDrTab_ matches
   showDrTab_(tab==='profile' ? 'drprofile' : tab);
+}
+
+// ─── Barra superior del panel profesional (solo escritorio) ──────────────
+// En pantalla grande la bottomnav quedaba escondida abajo a la izquierda,
+// desaprovechando todo el ancho. Esta barra la reemplaza: pestañas siempre
+// visibles, "Vincular" como acción permanente y el perfil bajo el avatar.
+function dmBuildDoctorTopbar(){
+  try{
+    if(document.getElementById('dr-topbar-desktop')) return;
+    const app=document.getElementById('app'); if(!app) return;
+    const ic=function(d){ return '<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="'+d+'"/></svg>'; };
+    const tb=document.createElement('div');
+    tb.id='dr-topbar-desktop';
+    tb.innerHTML=
+      '<div class="dr-tb-brand"><div data-dm-logo data-dm-h="20" data-dm-fill="#F4EFE5" style="display:inline-block;line-height:0"></div></div>'+
+      '<div class="dr-tb-tabs">'+
+        '<button class="dr-tb-tab active" data-tab="patients" onclick="dmTopbarGo(\'patients\')">'+ic('M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z')+'Pacientes</button>'+
+        '<button class="dr-tb-tab" data-tab="alerts" onclick="dmTopbarGo(\'alerts\')">'+ic('M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9')+'Alertas <span class="dr-tb-badge" id="dr-tb-alert-badge" style="display:none"></span></button>'+
+        '<button class="dr-tb-tab" data-tab="metrics" onclick="dmTopbarGo(\'metrics\')">'+ic('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z')+'Métricas</button>'+
+        '<button class="dr-tb-tab" data-tab="more" onclick="dmTopbarGo(\'more\')"><span style="font-size:15px;line-height:1">🌿</span>TCC-I</button>'+
+      '</div>'+
+      '<button class="dr-tb-link" id="dr-tb-vincular" onclick="dmTopbarGo(\'link\')">'+ic('M12 4v16m8-8H4')+'Vincular</button>'+
+      '<div class="dr-tb-me" id="dr-tb-me">'+
+        '<button class="dr-tb-me-btn" onclick="dmTopbarToggleMenu(event)" aria-label="Tu cuenta">'+
+          '<span class="dr-tb-avatar" id="dr-tb-avatar">··</span>'+
+          '<span style="color:rgba(244,239,229,.5);font-size:10px">▾</span>'+
+        '</button>'+
+        '<div class="dr-tb-menu">'+
+          '<button onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
+          '<button onclick="dmTopbarCloseMenu();dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo se usa</button>'+
+          '<hr>'+
+          '<button class="danger" onclick="doLogout()">'+ic('M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1')+'Salir</button>'+
+        '</div>'+
+      '</div>';
+    app.insertBefore(tb, app.firstChild);
+    try{
+      tb.querySelectorAll('[data-dm-logo]').forEach(function(el){
+        const hh = parseInt(el.getAttribute('data-dm-h')) || 20;
+        const ff = el.getAttribute('data-dm-fill') || '#fff';
+        el.innerHTML = dormetriaLogo({height:hh, fill:ff});
+      });
+    }catch(_){}
+    // Iniciales del profesional en el avatar
+    try{
+      const n=(S.user&&(S.user.name||S.user.full_name||S.user.email))||'';
+      const parts=String(n).replace(/@.*/,'').trim().split(/[\s._-]+/).filter(Boolean);
+      const ini=(parts[0]||'').charAt(0)+((parts[1]||'').charAt(0)||'');
+      const av=document.getElementById('dr-tb-avatar');
+      if(av&&ini) av.textContent=ini.toUpperCase();
+    }catch(_){}
+    // Cerrar el menú al hacer click afuera
+    document.addEventListener('click', function(e){
+      const me=document.getElementById('dr-tb-me');
+      if(me && !me.contains(e.target)) me.classList.remove('open');
+    });
+    dmSyncTopbarBadge();
+  }catch(e){ console.warn('[TOPBAR]', e.message); }
+}
+function dmTopbarGo(tab){
+  dmTopbarCloseMenu();
+  showDrTab(tab, document.getElementById('drnav-'+(tab==='metrics'?'metrics':tab)));
+}
+function dmTopbarToggleMenu(e){
+  if(e){ e.stopPropagation(); }
+  const me=document.getElementById('dr-tb-me');
+  if(me) me.classList.toggle('open');
+}
+function dmTopbarCloseMenu(){
+  const me=document.getElementById('dr-tb-me');
+  if(me) me.classList.remove('open');
+}
+// El badge de alertas se calcula para la bottomnav; lo reflejamos arriba.
+function dmSyncTopbarBadge(){
+  try{
+    const src=document.getElementById('alert-badge');
+    const dst=document.getElementById('dr-tb-alert-badge');
+    if(!src||!dst) return;
+    const txt=(src.textContent||'').trim();
+    const visible = txt && src.style.display!=='none';
+    dst.textContent=txt;
+    dst.style.display = visible ? 'inline-block' : 'none';
+  }catch(_){}
 }
 
 // ─── Gestión de alertas: marcar visto / restablecer ────────────────────
@@ -9699,6 +9789,7 @@ async function renderPatientList(filter){
         // Hide badge
         const badge=document.getElementById('alert-badge');
         if(badge) badge.style.display='none';
+        try{ dmSyncTopbarBadge(); }catch(_){}
       }
       // Also load pathological scale results from all linked patients
       const cacheKey='dm_dr_pts_'+S.user.email;
@@ -17746,7 +17837,36 @@ function _dmTourPositionStep(el, step){
   tooltip.style.transform = 'none';
 }
 
+// Devuelve el boton de navegacion VISIBLE para una pestana: en escritorio la
+// barra superior, en movil la bottomnav. Sin esto el tour apuntaba a elementos
+// con display:none y el foco quedaba en la nada.
+function dmTourNav(tab){
+  try{
+    const top=document.querySelector('#dr-topbar-desktop .dr-tb-tab[data-tab="'+tab+'"]');
+    if(top && top.offsetParent!==null) return top;
+  }catch(_){}
+  return document.getElementById('drnav-'+tab);
+}
+function dmTourVincularBtn(){
+  const top=document.getElementById('dr-tb-vincular');
+  if(top && top.offsetParent!==null) return top;
+  return document.getElementById('dr-btn-vincular');
+}
+// La barra superior esta arriba: el globo va abajo. La bottomnav, al reves.
+function dmAdjustDoctorTourPlacement(){
+  try{
+    const tb=document.getElementById('dr-topbar-desktop');
+    const isTop = !!(tb && tb.offsetParent!==null);
+    const steps=(DM_TOURS['doctor_home']||{}).steps||[];
+    steps.forEach(function(s){
+      if(s.placement==='center') return;
+      s.placement = isTop ? 'bottom' : 'top';
+    });
+  }catch(_){}
+}
+
 async function dmStartTour(tourId){
+  if(tourId==='doctor_home'){ try{ dmAdjustDoctorTourPlacement(); }catch(_){} }
   const tour = DM_TOURS[tourId];
   if(!tour || !tour.steps || !tour.steps.length){
     console.warn('[dmTour] tour desconocido o vacío:', tourId);
@@ -17961,12 +18081,14 @@ const DM_TOURS = {
   // Tour del PROFESIONAL — primera vez en el panel
   'doctor_home': {
     steps: [
-      { target:null, title:'👋 Bienvenido/a a tu panel', body:'En 5 pasos te muestro cómo está organizado el panel profesional. Se hace en menos de un minuto y podés reverlo desde <strong>Más → Cómo se usa</strong>.', placement:'center' },
-      { target:'#drnav-patients', title:'👥 Tus pacientes', body:'Acá está el listado de tus pacientes vinculados, ordenado por apellido. Las <strong>franjas de color</strong> a la izquierda indican la patología detectada. Tocá uno para ver su ficha: perfil, diario, escalas, actograma y métricas.', placement:'top', padding:6 },
-      { target:'#drnav-alerts', title:'🔔 Alertas', body:'Los resultados de escalas que caen en rango patológico aparecen acá, agrupados por paciente, con un botón para contactarlo por WhatsApp o mail. Es lo primero que conviene revisar cada día.', placement:'top', padding:6 },
-      { target:'#drnav-metrics', title:'📊 Métricas', body:'El semáforo de adherencia: quién registra, quién aflojó y quién abandonó, con la evolución de cada uno y cuántas escalas respondió de las que pediste. También ves las calificaciones que te dejan tus pacientes.', placement:'top', padding:6 },
-      { target:'#dr-btn-vincular', title:'➕ Vincular un paciente', body:'Cuando un paciente crea su cuenta, te comparte un <strong>código de 6 caracteres</strong>. Lo pegás desde este botón "+ Vincular" y queda conectado a tu panel.', placement:'bottom', padding:6, waitFor:()=>document.getElementById('dr-btn-vincular'), waitTimeout:1000 },
-      { target:null, title:'✨ Listo', body:'Eso es lo esencial. Completá tu perfil (Mi perfil) para aparecer en el directorio y que te encuentren pacientes que buscan un especialista en sueño.', placement:'center' }
+      { target:null, title:'\ud83d\udc4b Bienvenido/a a tu panel', body:'Te muestro el recorrido en el orden en que vas a usarlo: <strong>1)</strong> cargás tus datos, <strong>2)</strong> vincul\u00e1s pacientes, <strong>3)</strong> trabaj\u00e1s con cada uno. Menos de un minuto, y pod\u00e9s reverlo desde <strong>TCC-I \u2192 C\u00f3mo se usa</strong>.', placement:'center' },
+      { target:()=>dmTourNav('profile'), title:'1\ufe0f\u20e3 Primero: tu perfil', body:'Ac\u00e1 carg\u00e1s tus datos profesionales: especialidad, matr\u00edcula, lugar de atenci\u00f3n y una rese\u00f1a. <strong>Complet\u00e1 esto antes que nada</strong>: es lo que ven tus pacientes cuando te vinculan, y lo que te hace aparecer en el directorio para que te encuentren.', placement:'top', padding:6 },
+      { target:()=>dmTourVincularBtn(), title:'2\ufe0f\u20e3 Despu\u00e9s: vincul\u00e1 pacientes', body:'Tu paciente crea su cuenta solo y desde su app obtiene un <strong>c\u00f3digo de 6 caracteres</strong>. Te lo comparte, lo peg\u00e1s en \u201c+ Vincular\u201d y queda conectado a tu panel. No necesit\u00e1s cargarle nada vos.', placement:'bottom', padding:6, waitFor:()=>dmTourVincularBtn(), waitTimeout:1000 },
+      { target:()=>dmTourNav('patients'), title:'3\ufe0f\u20e3 Tu listado de pacientes', body:'Ac\u00e1 aparecen todos, ordenados por apellido, con la edad a la derecha. Las <strong>franjas de color</strong> a la izquierda marcan la patolog\u00eda. Toc\u00e1 cualquiera para abrir su ficha.', placement:'top', padding:6 },
+      { target:()=>dmTourNav('patients'), title:'\ud83d\udccb Qu\u00e9 ves de cada paciente', body:'Dentro de la ficha ten\u00e9s todo lo que registr\u00f3: <strong>perfil cl\u00ednico</strong>, <strong>diario de sue\u00f1o</strong>, <strong>actograma</strong>, <strong>escalas</strong> (pod\u00e9s pedirle las que necesites) y el <strong>score con sus pilares</strong>. Desde ah\u00ed tambi\u00e9n manej\u00e1s el m\u00f3dulo TCC-I.', placement:'top', padding:6 },
+      { target:()=>dmTourNav('alerts'), title:'\ud83d\udd14 Alertas: tu revisi\u00f3n diaria', body:'Cuando una escala cae en rango patol\u00f3gico, aparece ac\u00e1 agrupada por paciente, con un bot\u00f3n para contactarlo por WhatsApp o mail. Es lo primero que conviene mirar cada d\u00eda.', placement:'top', padding:6 },
+      { target:()=>dmTourNav('metrics'), title:'\ud83d\udcca M\u00e9tricas: la vista global', body:'El sem\u00e1foro de adherencia de toda tu cartera: qui\u00e9n registra, qui\u00e9n afloj\u00f3, qui\u00e9n abandon\u00f3, si mejora o empeora, y cu\u00e1ntas escalas respondi\u00f3 de las que pediste. Tambi\u00e9n ves las calificaciones que te dejan.', placement:'top', padding:6 },
+      { target:null, title:'\u2728 Listo', body:'Ese es el circuito completo. Si te qued\u00f3 alguna duda, pod\u00e9s volver a ver este recorrido cuando quieras desde <strong>TCC-I \u2192 C\u00f3mo se usa</strong>.', placement:'center' }
     ]
   }
 };

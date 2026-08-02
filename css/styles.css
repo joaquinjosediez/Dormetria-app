@@ -313,36 +313,86 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   body.dr-desktop #app{
     max-width:none;width:100%;
     display:grid;
-    grid-template-columns:360px minmax(0,1fr);
-    grid-template-rows:100vh;
+    grid-template-columns:300px minmax(0,1fr);
+    /* Fila 1: barra superior de navegacion. Fila 2: lista + panel. */
+    grid-template-rows:52px minmax(0,calc(100vh - 52px));
     align-items:stretch;
   }
+  /* ── BARRA SUPERIOR DEL PANEL PROFESIONAL (solo escritorio) ──
+     Reemplaza la bottomnav, que en pantalla grande quedaba escondida abajo
+     a la izquierda. La inyecta dmBuildDoctorTopbar() una sola vez. */
+  body.dr-desktop #dr-topbar-desktop{
+    display:flex;grid-column:1 / -1;grid-row:1;
+    align-items:center;gap:16px;padding:0 14px;
+    background:#16352a;border-bottom:1px solid rgba(255,255,255,0.09);
+  }
+  /* En movil la barra superior no existe y manda la bottomnav de siempre. */
+  #dr-topbar-desktop{ display:none; }
+  body.dr-desktop #dr-bottomnav{ display:none !important; }
+  /* El topbar viejo de la columna izquierda (logo + Salir) es redundante:
+     ambos viven ahora en la barra superior. */
+  body.dr-desktop #screen-doctor-home > .topbar{ display:none; }
+  .dr-tb-brand{ display:flex;align-items:center;gap:7px;padding-right:14px;border-right:1px solid rgba(255,255,255,0.1);flex-shrink:0; }
+  .dr-tb-tabs{ display:flex;gap:3px;flex:1;min-width:0; }
+  .dr-tb-tab{
+    display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;
+    background:none;border:none;cursor:pointer;font-family:var(--font);
+    font-size:13px;color:rgba(244,239,229,0.6);white-space:nowrap;transition:background .12s,color .12s;
+  }
+  .dr-tb-tab:hover{ background:rgba(255,255,255,0.06);color:rgba(244,239,229,0.85); }
+  .dr-tb-tab.active{ background:#1a4a3a;color:#fff; }
+  .dr-tb-tab svg{ flex-shrink:0; }
+  .dr-tb-badge{ background:#FF3B30;color:#fff;font-size:10px;border-radius:8px;padding:1px 5px;font-weight:600; }
+  .dr-tb-link{
+    display:flex;align-items:center;gap:6px;background:#1a4a3a;border:none;border-radius:7px;
+    padding:7px 12px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:var(--font);white-space:nowrap;flex-shrink:0;transition:background .12s;
+  }
+  .dr-tb-link:hover{ background:#236049; }
+  .dr-tb-me{ position:relative;flex-shrink:0;padding-left:12px;border-left:1px solid rgba(255,255,255,0.1); }
+  .dr-tb-me-btn{ display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:2px;font-family:var(--font); }
+  .dr-tb-avatar{ width:28px;height:28px;border-radius:50%;background:#C8A96E;color:#0f2820;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0; }
+  .dr-tb-menu{
+    display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:190px;z-index:400;
+    background:#1a2e23;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:5px;
+    box-shadow:0 12px 32px rgba(0,0,0,0.45);
+  }
+  .dr-tb-me.open .dr-tb-menu{ display:block; }
+  .dr-tb-menu button{
+    display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;cursor:pointer;
+    padding:9px 11px;border-radius:7px;color:#F4EFE5;font-size:13px;text-align:left;font-family:var(--font);
+  }
+  .dr-tb-menu button:hover{ background:rgba(255,255,255,0.08); }
+  .dr-tb-menu .danger{ color:#ffb3b3; }
+  .dr-tb-menu hr{ border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 6px; }
+  /* Buscador de la lista de pacientes, ahora que la columna es mas angosta. */
+  body.dr-desktop #screen-doctor-home{ min-width:0; }
   /* Lista de pacientes: columna izquierda, SIEMPRE visible (aunque no sea la
      pantalla activa), con su propio scroll. */
   body.dr-desktop #screen-doctor-home{
     display:flex !important;
-    grid-column:1;grid-row:1;
+    grid-column:1;grid-row:2;
     border-right:1px solid rgba(126,200,164,0.16);
-    height:100vh;overflow:hidden;
+    height:100%;overflow:hidden;
   }
   /* Detalle del paciente: columna derecha. */
   body.dr-desktop #screen-doctor-patient{
-    grid-column:2;grid-row:1;
-    height:100vh;overflow:hidden;
+    grid-column:2;grid-row:2;
+    height:100%;overflow:hidden;
   }
   body.dr-desktop.dr-has-patient #screen-doctor-patient{ display:flex !important; }
   /* Placeholder cuando todavía no se eligió un paciente. */
   /* Métricas del profesional: ocupan el panel grande de la derecha. */
   #dr-metrics-desktop{ display:none; }
   body.dr-desktop.dr-metrics-view #dr-metrics-desktop{
-    display:block;grid-column:2;grid-row:1;
-    height:100vh;overflow-y:auto;background:#0f2820;
+    display:block;grid-column:2;grid-row:2;
+    height:100%;overflow-y:auto;background:#0f2820;
   }
   body.dr-desktop.dr-metrics-view #dr-desktop-placeholder{ display:none !important; }
   /* La ficha del paciente no debe quedar por encima del panel de métricas. */
   body.dr-desktop.dr-metrics-view #screen-doctor-patient{ display:none !important; }
   body.dr-desktop:not(.dr-has-patient) #dr-desktop-placeholder{
-    display:flex;grid-column:2;grid-row:1;
+    display:flex;grid-column:2;grid-row:2;
     align-items:center;justify-content:center;text-align:center;
     color:rgba(244,239,229,0.35);font-size:15px;padding:40px;
     background:#0f2820;
