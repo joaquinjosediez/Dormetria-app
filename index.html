@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod52">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod53">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1306,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod52"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod53"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod52';
+const APP_VERSION='hoy75-mod53';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2971,6 +2971,79 @@ async function doLogin(){
     setBtn('login-btn',false,'Ingresar');
   }
 }
+// ─── CAMBIO DE CONTRASEÑA DESDE EL PERFIL ────────────────────────────
+// Sin mails ni links: se pide la contraseña actual, se revalida contra
+// Supabase y recién ahí se actualiza. Reautenticar es lo que impide que
+// alguien con la sesión abierta en un dispositivo ajeno la cambie.
+function dmOpenChangePassword(){
+  const old=document.getElementById('dm-chpass'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-chpass';
+  w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.62);z-index:10001;display:flex;align-items:center;justify-content:center;padding:18px';
+  w.onclick=function(e){ if(e.target===w) w.remove(); };
+  const inp='width:100%;background:#fff;border:1px solid #d8d4cb;border-radius:11px;padding:12px 44px 12px 12px;font-size:15px;font-family:var(--font);color:#10231c;box-sizing:border-box';
+  const ojo='position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;opacity:.6';
+  w.innerHTML=
+    '<div style="background:#F4EFE5;border-radius:20px;padding:22px 20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)">'+
+      '<div style="font-size:17px;font-weight:700;color:#10231c;margin-bottom:4px">Cambiar contraseña</div>'+
+      '<div style="font-size:12.5px;color:#5c6b64;margin-bottom:16px;line-height:1.5">Necesitamos la actual para confirmar que sos vos.</div>'+
+      '<label style="font-size:10.5px;letter-spacing:.06em;color:#5c6b64;display:block;margin-bottom:4px">CONTRASEÑA ACTUAL</label>'+
+      '<div style="position:relative;margin-bottom:12px"><input id="chp-old" type="password" autocomplete="current-password" style="'+inp+'">'+
+        '<button type="button" aria-label="Mostrar" onclick="dmTogglePass(\'chp-old\',this)" style="'+ojo+'">👁</button></div>'+
+      '<label style="font-size:10.5px;letter-spacing:.06em;color:#5c6b64;display:block;margin-bottom:4px">NUEVA CONTRASEÑA</label>'+
+      '<div style="position:relative;margin-bottom:12px"><input id="chp-new" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" style="'+inp+'">'+
+        '<button type="button" aria-label="Mostrar" onclick="dmTogglePass(\'chp-new\',this)" style="'+ojo+'">👁</button></div>'+
+      '<label style="font-size:10.5px;letter-spacing:.06em;color:#5c6b64;display:block;margin-bottom:4px">REPETIR LA NUEVA</label>'+
+      '<div style="position:relative"><input id="chp-new2" type="password" autocomplete="new-password" style="'+inp+'">'+
+        '<button type="button" aria-label="Mostrar" onclick="dmTogglePass(\'chp-new2\',this)" style="'+ojo+'">👁</button></div>'+
+      '<div id="chp-err" style="display:none;color:#b91c1c;font-size:12.5px;margin-top:10px;line-height:1.45"></div>'+
+      '<div style="display:flex;gap:8px;margin-top:18px">'+
+        '<button id="chp-btn" onclick="dmSubmitChangePassword()" style="flex:2;background:#1a4a3a;border:none;border-radius:11px;padding:13px;color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Cambiar contraseña</button>'+
+        '<button onclick="document.getElementById(\'dm-chpass\').remove()" style="flex:1;background:rgba(0,0,0,.06);border:1px solid #d8d4cb;border-radius:11px;padding:13px;color:#10231c;font-size:14px;cursor:pointer;font-family:var(--font)">Cancelar</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(w);
+  setTimeout(function(){ const f=document.getElementById('chp-old'); if(f) f.focus(); }, 80);
+}
+async function dmSubmitChangePassword(){
+  const err=document.getElementById('chp-err');
+  const mostrar=function(t){ if(err){ err.textContent=t; err.style.display='block'; } };
+  const vieja=(document.getElementById('chp-old')?.value)||'';
+  const nueva=(document.getElementById('chp-new')?.value)||'';
+  const nueva2=(document.getElementById('chp-new2')?.value)||'';
+  if(err) err.style.display='none';
+  if(!vieja) return mostrar('Escribí tu contraseña actual.');
+  if(nueva.length<8) return mostrar('La nueva contraseña debe tener al menos 8 caracteres.');
+  if(nueva!==nueva2) return mostrar('Las dos contraseñas nuevas no coinciden.');
+  if(nueva===vieja) return mostrar('La nueva contraseña es igual a la actual.');
+  const btn=document.getElementById('chp-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Cambiando…'; }
+  try{
+    if(!supa){ initSupabase(); }
+    const email=(S.user&&S.user.email)||'';
+    // 1) Revalidar la contraseña actual
+    const {error:e1}=await supa.auth.signInWithPassword({ email, password: vieja });
+    if(e1){
+      mostrar('La contraseña actual no es correcta.');
+      return;
+    }
+    // 2) Cambiarla
+    const {error:e2}=await supa.auth.updateUser({ password: nueva });
+    if(e2){
+      mostrar(dmAuthErrorMsg(e2,'updatePassword'));
+      return;
+    }
+    const w=document.getElementById('dm-chpass'); if(w) w.remove();
+    toast('Contraseña actualizada ✓');
+  }catch(e){
+    mostrar('No se pudo cambiar: '+((e&&e.message)||'intentá de nuevo'));
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='Cambiar contraseña'; }
+  }
+}
+
+async function dmOpenChangePassword_placeholder(){}
+
 // Traduce el error de Supabase a algo que el paciente pueda accionar. El
 // mensaje puede venir vacío ("{}") cuando falla el envío del mail de
 // confirmación: sin esto, la persona ve un error sin ninguna pista.
@@ -7569,6 +7642,11 @@ function renderProfileView(){
         <div style="margin-left:auto;color:rgba(255,255,255,0.2);font-size:16px">›</div>
       </div>
 
+      <div onclick="dmOpenChangePassword()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:11px 16px;display:flex;align-items:center;cursor:pointer;margin-bottom:10px">
+        <div style="font-size:13px;color:rgba(255,255,255,0.72)">🔑 Cambiar mi contraseña</div>
+        <div style="margin-left:auto;color:rgba(255,255,255,0.2);font-size:16px">›</div>
+      </div>
+
       <button onclick="doLogout()" style="width:100%;padding:13px;border:1px solid rgba(255,80,80,0.22);background:rgba(255,80,80,0.05);border-radius:12px;color:rgba(255,120,120,0.8);font-size:14px;font-weight:500;cursor:pointer;font-family:-apple-system,sans-serif;margin-top:2px;">
         Cerrar sesión
       </button>
@@ -10101,7 +10179,11 @@ async function renderPatientList(filter){
             </button>
           </div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:16px">
+        <div onclick="dmOpenChangePassword()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 15px;display:flex;align-items:center;cursor:pointer;margin-top:16px">
+          <div style="font-size:13.5px;color:rgba(255,255,255,0.78)">🔑 Cambiar mi contraseña</div>
+          <div style="margin-left:auto;color:rgba(255,255,255,0.28);font-size:16px">›</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn btn-g" onclick="saveDrProfile()" style="flex:2">Guardar cambios</button>
           <button onclick="toggleDrProfileEdit(false)" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">Cancelar</button>
         </div>
