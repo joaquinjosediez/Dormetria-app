@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod51">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod52">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1306,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod51"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod52"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod51';
+const APP_VERSION='hoy75-mod52';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -8920,6 +8920,19 @@ async function saveDiary(){
   const meds=getMedications();
   const napStart=document.getElementById('d-nap-start')?.value||null;
   const napDur=parseInt(document.getElementById('d-nap-dur')?.value)||null;
+  // Estos dos valores se leían y NUNCA se escribían: la siesta que cargaba el
+  // paciente se perdía entera. Se guardan con el mismo formato que el diario
+  // infantil ("Siestas: [{start,end}]") para que parseChildNaps los lea.
+  let napTxt=null;
+  if(napStart){
+    let fin=napStart;
+    if(napDur){
+      const [sh,sm]=napStart.split(':').map(Number);
+      const t=(sh*60+sm+napDur)%1440;
+      fin=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+    }
+    napTxt='Siestas: '+JSON.stringify([{start:napStart, end:fin}]);
+  }
   // Awakenings (calculados ANTES de sleepMins para descontar WASO de TST)
   const awakList=awakeningList||[];
   const wasoMins=awakList.reduce((a,b)=>a+(parseInt(b.duration)||0),0)||null;
@@ -8954,6 +8967,28 @@ async function saveDiary(){
   // ningún paciente tuvo jamás registrado el alcohol ni la cafeína.
   const caffTotal=caffItems.reduce((a,b)=>a+(parseFloat(b.mg)||0),0)||null;
   const alcTotal=(Math.round(alcItems.reduce((a,b)=>a+(parseFloat(b.ua)||0),0)*10)/10)||null;
+  // Red de seguridad: compara lo que la persona completó contra lo que
+  // efectivamente viaja al servidor. Si algo se llenó y llega vacío, queda
+  // registrado en la consola con nombre y valor. Así un error de tipeo en un
+  // nombre de propiedad —como el que hizo perder alcohol y cafeína durante
+  // meses— deja rastro en vez de fallar en silencio.
+  const _cargado = {
+    'hora de acostarse': bed, 'hora de despertar': wake, 'hora de levantarse': getup,
+    'latencia': latency, 'calidad': quality, 'ánimo': mood, 'energía': energy,
+    'ejercicio (min)': exerciseMins, 'pantallas (min)': screenMins,
+    'cafeína (items)': (caffItems&&caffItems.length)||0,
+    'alcohol (items)': (alcItems&&alcItems.length)||0,
+    'siesta': napStart, 'medicación': (meds&&meds.length)||0,
+    'despertares': awakList.length
+  };
+  const _mapa = {
+    'hora de acostarse':'bedtime','hora de despertar':'wake_time','hora de levantarse':'get_up_time',
+    'latencia':'sleep_latency_mins','calidad':'sleep_quality','ánimo':'mood','energía':'energy',
+    'ejercicio (min)':'exercise_mins','pantallas (min)':'screen_minutes',
+    'cafeína (items)':'coffee_cups','alcohol (items)':'alcohol_drinks',
+    'siesta':'notes','medicación':'medications','despertares':'awakenings'
+  };
+
   const payload={
     patient_email:S.user.email,
     diary_date:date,
@@ -8977,8 +9012,25 @@ async function saveDiary(){
     coffee_cups:caffTotal,
     alcohol_drinks:alcTotal,
     medications:meds,
-    notes:(_periodActive ? (notes? notes+' | 🩸Período' : '🩸Período') : notes),
+    notes:[notes, napTxt, (_periodActive?'🩸Período':'')].filter(Boolean).join(' | ') || null,
   };
+  try{
+    const perdidos=[];
+    Object.keys(_cargado).forEach(function(k){
+      const v=_cargado[k];
+      const lleno = (v!==null && v!==undefined && v!=='' && v!==0);
+      if(!lleno) return;
+      const destino=payload[_mapa[k]];
+      const llego = (destino!==null && destino!==undefined && destino!=='' && destino!==0);
+      if(!llego) perdidos.push(k+' (cargado: '+v+' → '+_mapa[k]+': '+destino+')');
+    });
+    if(perdidos.length){
+      console.error('[DIARIO] Datos cargados que NO se están guardando:', perdidos);
+    } else {
+      console.log('[DIARIO] verificación OK — todo lo cargado viaja al servidor');
+    }
+  }catch(_e){ console.warn('[DIARIO] verificación:', _e); }
+
   // ── Chequeos de plausibilidad ANTES de guardar ──
   // Caso real: pacientes que confunden AM/PM y cargan noches de 16h, o 12h
   // de pantallas seguidas. Se pregunta, no se bloquea.
