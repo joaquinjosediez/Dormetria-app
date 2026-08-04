@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod47">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod51">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1306,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod47"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod51"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod47';
+const APP_VERSION='hoy75-mod51';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2971,6 +2971,26 @@ async function doLogin(){
     setBtn('login-btn',false,'Ingresar');
   }
 }
+// Traduce el error de Supabase a algo que el paciente pueda accionar. El
+// mensaje puede venir vacío ("{}") cuando falla el envío del mail de
+// confirmación: sin esto, la persona ve un error sin ninguna pista.
+function dmAuthErrorMsg(e, contexto){
+  try{ console.error('[AUTH-ERR]', contexto, e, JSON.stringify(e)); }catch(_){}
+  const m = String((e && (e.message || e.msg || e.error_description)) || '').trim();
+  const st = e && (e.status || e.statusCode);
+  if(/already registered|already been registered|User already/i.test(m))
+    return 'Este correo ya está registrado. Probá ingresar o usar "Olvidé mi contraseña".';
+  if(/rate limit|too many/i.test(m) || st===429)
+    return 'Demasiados intentos en poco tiempo. Esperá unos minutos y probá de nuevo.';
+  if(/sending (confirmation|email)|smtp|email.*(failed|error)/i.test(m) || st===500 || m==='' || m==='{}')
+    return 'No pudimos completar el registro: falló el envío del correo de verificación. Escribinos y te damos de alta a mano.';
+  if(/password/i.test(m) && /short|least/i.test(m))
+    return 'La contraseña es demasiado corta: usá al menos 8 caracteres.';
+  if(/invalid.*email|email.*invalid/i.test(m))
+    return 'Revisá el correo: parece tener un error de tipeo.';
+  return 'No se pudo crear la cuenta ('+(m||'error '+(st||'desconocido'))+'). Probá de nuevo en un momento.';
+}
+
 async function doRegister(){
   const email=document.getElementById('reg-email').value.trim().toLowerCase();
   const pass=document.getElementById('reg-pass').value;
@@ -3011,9 +3031,7 @@ async function doRegister(){
         }
       });
       if(authErr){
-        err.textContent = authErr.message.includes('already registered')
-          ? 'Este correo ya está registrado. ¿Querés ingresar?'
-          : 'Error al crear cuenta: '+authErr.message;
+        err.textContent = dmAuthErrorMsg(authErr, 'signUp');
         err.classList.add('show');
         return;
       }
@@ -3073,9 +3091,7 @@ async function doRegister(){
         }
       });
       if(authErr){
-        err.textContent = authErr.message.includes('already registered')
-          ? 'Este correo ya está registrado. ¿Querés ingresar?'
-          : 'Error al crear cuenta: '+authErr.message;
+        err.textContent = dmAuthErrorMsg(authErr, 'signUp');
         err.classList.add('show');
         return;
       }
@@ -8933,8 +8949,11 @@ async function saveDiary(){
     sleepMins=mins;
   }
   // Caffeine & alcohol
-  const caffTotal=caffItems.reduce((a,b)=>a+(parseInt(b.qty)||0),0)||null;
-  const alcTotal=alcItems.reduce((a,b)=>a+(parseFloat(b.qty)||0),0)||null;
+  // Los ítems se guardan como {label, mg} y {label, ua}. Antes esta suma leía
+  // b.qty —una propiedad que NUNCA existió— así que daba 0 y se guardaba null:
+  // ningún paciente tuvo jamás registrado el alcohol ni la cafeína.
+  const caffTotal=caffItems.reduce((a,b)=>a+(parseFloat(b.mg)||0),0)||null;
+  const alcTotal=(Math.round(alcItems.reduce((a,b)=>a+(parseFloat(b.ua)||0),0)*10)/10)||null;
   const payload={
     patient_email:S.user.email,
     diary_date:date,
@@ -12277,10 +12296,20 @@ async function sendScaleSuggestion(){
   if(!patEmail){ toast('Error: paciente no encontrado'); return; }
   
   setBtn('suggest-btn', true);
-  let sent = 0;
+  let sent = 0, yaEstaban = 0;
   const patEmailNorm = patEmail.trim().toLowerCase();
+  // Escalas que YA tiene pendientes: sin este chequeo, cada envío insertaba
+  // una fila nueva y al paciente le aparecía la misma escala repetida.
+  let pendientes = new Set();
+  try{
+    const prev = await db.get('doctor_suggestions?patient_email=ilike.'+encodeURIComponent(patEmailNorm)+
+                              '&completed=eq.false&select=scale_id');
+    (prev||[]).forEach(r=>pendientes.add(String(r.scale_id)));
+  }catch(_){}
   for(const cb of checkboxes){
     const scaleId = cb.value;
+    if(pendientes.has(String(scaleId))){ yaEstaban++; continue; }
+    pendientes.add(String(scaleId));
     const sc = SCALES.find(s=>s.id===scaleId);
     try{
       const r = await fetch(SU+'/rest/v1/doctor_suggestions', {
@@ -12314,8 +12343,15 @@ async function sendScaleSuggestion(){
     }catch(e){ console.error('Suggest fetch error:', e.message); }
   }
   setBtn('suggest-btn',false,'Enviar sugerencias seleccionadas');
+  if(sent===0 && yaEstaban>0){
+    showSuccessBanner('Ya estaba'+(yaEstaban>1?'n':'')+' pendiente'+(yaEstaban>1?'s':'')+
+      ': el paciente todavía no la'+(yaEstaban>1?'s':'')+' completó. No se duplicaron.');
+    setBtn('suggest-btn', false, 'Enviar sugerencias seleccionadas');
+    return;
+  }
   if(sent>0){
-    showSuccessBanner(sent+' sugerencia'+(sent>1?'s':'')+' enviada'+(sent>1?'s':'')+' al paciente ✓');
+    showSuccessBanner(sent+' sugerencia'+(sent>1?'s':'')+' enviada'+(sent>1?'s':'')+' al paciente ✓'+
+      (yaEstaban>0 ? ' · '+yaEstaban+' ya estaba'+(yaEstaban>1?'n':'')+' pendiente'+(yaEstaban>1?'s':'') : ''));
     // Recolectar nombres de escalas enviadas para el mail
     const sentScaleNames = Array.from(checkboxes).map(cb=>{
       const sc = SCALES.find(s=>s.id===cb.value);
@@ -12344,6 +12380,17 @@ async function loadDoctorSuggestions(){
       'doctor_suggestions?patient_email=ilike.'+encodeURIComponent(patEmail)+
       '&completed=eq.false&select=*'
     );
+    // Los duplicados que ya quedaron en la base se colapsan acá: una fila por
+    // escala, la más reciente. Así el paciente deja de ver la misma repetida.
+    if(Array.isArray(suggestions)){
+      const porEscala = new Map();
+      suggestions.forEach(s=>{
+        const k = String(s.scale_id);
+        const prev = porEscala.get(k);
+        if(!prev || new Date(s.created_at||0) > new Date(prev.created_at||0)) porEscala.set(k, s);
+      });
+      suggestions = Array.from(porEscala.values());
+    }
   }catch(err){
     errMsg = err.message || String(err);
     console.error('[loadDoctorSuggestions] DB ERROR:', err);
@@ -15783,6 +15830,12 @@ async function exportDoctorPDF(){
 
 
 let _activeReminderModal = null;
+// Horarios disponibles para recordatorios. TIENEN que coincidir con los
+// segmentos creados en OneSignal: el plan gratuito permite solo 2 segmentos
+// propios, así que ofrecemos 09 y 11 — ambos con el paciente ya despierto.
+// Si algún día se amplía el plan, se agregan horas acá Y su segmento allá.
+const DM_REMINDER_HOURS = [9, 11];
+
 function showReminderSettings(type){
   if(_activeReminderModal){ _activeReminderModal.remove(); _activeReminderModal=null; }
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -15793,7 +15846,13 @@ function showReminderSettings(type){
     : 'Te enviamos un recordatorio para hacer el test de alerta en el horario que configures.';
   // Get stored setting
   const key = 'reminder_' + type;
-  const stored = JSON.parse(localStorage.getItem(key) || '{"enabled":false,"hour":8}');
+  const stored = JSON.parse(localStorage.getItem(key) || '{"enabled":false,"hour":9}');
+  // Quien haya guardado un horario que ya no existe (p.ej. 08) queda apuntado
+  // a un segmento inexistente: lo movemos al disponible más cercano.
+  if(DM_REMINDER_HOURS.indexOf(Number(stored.hour)) === -1){
+    stored.hour = DM_REMINDER_HOURS.reduce((a,b)=>
+      Math.abs(b-Number(stored.hour)) < Math.abs(a-Number(stored.hour)) ? b : a);
+  }
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;display:flex;align-items:flex-end;justify-content:center';
   modal.innerHTML = `
@@ -15811,7 +15870,9 @@ function showReminderSettings(type){
       </div>
       <div id="rem-time-row" style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);${stored.enabled?'':'opacity:0.4;pointer-events:none'}">
         <span style="font-size:15px;font-weight:500">Hora del recordatorio</span>
-        <input type="time" id="rem-hour" value="${String(stored.hour).padStart(2,'0')}:00" style="font-size:15px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;background:var(--bg);color:var(--ink)">
+        <select id="rem-hour" style="font-size:15px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;background:var(--bg);color:var(--ink);font-family:var(--font)">
+          ${DM_REMINDER_HOURS.map(hh=>'<option value="'+String(hh).padStart(2,'0')+':00"'+(Number(stored.hour)===hh?' selected':'')+'>'+String(hh).padStart(2,'0')+':00</option>').join('')}
+        </select>
       </div>
       <div style="margin-top:8px;font-size:11px;color:var(--label-3)">
         ${isIOS ? '⚠️ En iOS, los recordatorios funcionan mientras la app esté abierta o en el dock. Para recordatorios confiables, activá las notificaciones de Safari en Ajustes.' : 'Los recordatorios se activan cuando abrís la app.'}
@@ -15843,6 +15904,11 @@ async function saveReminderSettings(type){
   const hour = parseInt(timeVal.split(':')[0]);
   const key = 'reminder_' + type;
   localStorage.setItem(key, JSON.stringify({enabled, hour}));
+  // Espejo en las preferencias que lee dmSyncPushTags → etiqueta reminder_hour.
+  if(type === 'diary'){
+    try{ saveReminderPref(enabled, String(hour).padStart(2,'0')+':00'); }catch(_){}
+  }
+  try{ if(window._dmOneSignal) dmSyncPushTags(); }catch(_){}
   document.querySelector('[style*="fixed"][style*="rgba"]')?.remove();
   if(enabled){
     if('Notification' in window && Notification.permission !== 'granted'){
@@ -18481,6 +18547,10 @@ function dmAdjustDoctorTourPlacement(){
 
 async function dmStartTour(tourId){
   if(tourId==='doctor_home'){ try{ dmAdjustDoctorTourPlacement(); }catch(_){} }
+  // Se marca como visto APENAS arranca, no al terminarlo. Antes, si la
+  // persona recargaba o navegaba a otra pantalla sin cerrarlo con el botón,
+  // no quedaba registro y el tour volvía a aparecer en cada visita.
+  try{ localStorage.setItem('dm_tour_seen_' + tourId, '1'); }catch(_){}
   const tour = DM_TOURS[tourId];
   if(!tour || !tour.steps || !tour.steps.length){
     console.warn('[dmTour] tour desconocido o vacío:', tourId);
