@@ -2,7 +2,7 @@
 // Hace la app instalable (PWA) y prepara el canal de notificaciones push.
 // Estrategia de caché: "network first" para el HTML (así el paciente siempre
 // recibe la última versión al publicar cambios) y "cache first" para estáticos.
-const CACHE = 'dormetria-v1';
+const CACHE = 'dormetria-v3';
 const SHELL = ['./', './index.html', './css/styles.css', './js/dormetria-sleep-metrics.js', './manifest.json'];
 
 self.addEventListener('install', (ev) => {
@@ -30,7 +30,10 @@ self.addEventListener('fetch', (ev) => {
   const isDoc = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
   if (isDoc) {
     ev.respondWith(
-      fetch(req).then((res) => {
+      // {cache:'reload'} es la clave: sin esto, fetch() se sirve de la caché
+      // HTTP del navegador y el "network first" nunca ve la versión publicada.
+      // Ese era el motivo de que el teléfono siguiera mostrando una versión vieja.
+      fetch(req, { cache: 'reload' }).then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         return res;

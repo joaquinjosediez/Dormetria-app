@@ -253,6 +253,11 @@
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;font-family:var(--font);background:var(--bg-primary);color:var(--label);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+/* El lienzo de la página (html) queda VERDE, no gris claro. Con el body en
+   position:fixed y 100dvh, cuando la barra de Safari se retrae aparece una
+   franja del lienzo sin cubrir: con --bg-primary (#F2F2F7) se veía como una
+   línea blanca abajo. */
+html{background:#0F2820;}
 
 #app{max-width:430px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#0f2820;overflow:hidden;position:relative;}
 
