@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod44">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod45">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1306,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod44"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod45"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod44';
+const APP_VERSION='hoy75-mod45';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -1333,7 +1333,7 @@ const APP_VERSION='hoy75-mod44';
 // al de OneSignal lo montamos bajo /push/onesignal/ y conviven sin pisarse.
 // Poné acá el App ID que te da OneSignal (Settings → Keys & IDs). Mientras
 // esté vacío, todo el bloque no hace nada y la app funciona igual que antes.
-const ONESIGNAL_APP_ID = '';
+const ONESIGNAL_APP_ID = '53980618-ff09-4477-94b0-445e5ec18050';
 
 (function(){
   if(!ONESIGNAL_APP_ID) { console.log('[PUSH] OneSignal sin App ID — desactivado'); return; }
@@ -1345,15 +1345,14 @@ const ONESIGNAL_APP_ID = '';
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function(OneSignal){
     try{
+      // El permiso lo pedimos NOSOTROS desde el botón, con contexto: el pop-up
+      // automático apenas entra la persona se rechaza casi siempre y después
+      // el navegador no vuelve a preguntar nunca.
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         serviceWorkerPath: 'push/onesignal/OneSignalSDKWorker.js',
         serviceWorkerParam: { scope: '/push/onesignal/' },
-        // El permiso lo pedimos NOSOTROS desde el botón, con contexto.
-        // El pop-up automático apenas entra la persona se rechaza casi siempre.
-        autoResume: true,
-        notifyButton: { enable: false },
-        promptOptions: { slidedown: { prompts: [] } }
+        autoResume: true
       });
       window._dmOneSignal = OneSignal;
       console.log('[PUSH] OneSignal listo');
