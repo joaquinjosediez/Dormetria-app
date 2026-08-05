@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod55">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod56">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1306,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod55"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod56"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod55';
+const APP_VERSION='hoy75-mod56';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -18280,7 +18280,7 @@ const DM_TCCI_PROGRAMA = [
     objetivo:'Fijar la ventana de sueño y la hora de levantarte, y entender por qué achicar el tiempo en cama mejora el sueño.',
     contenido:'El insomnio se sostiene solo: dormís mal, entonces pasás más tiempo en la cama para compensar, y ese exceso de tiempo despierto en la cama fragmenta todavía más el sueño. La restricción de sueño rompe ese círculo. No vas a dormir menos: vas a pasar menos tiempo en cama sin dormir, y eso concentra el sueño y lo hace más profundo.\n\nLa primera semana suele ser la más dura. Es esperable sentir más cansancio los primeros días: es la señal de que la presión de sueño está subiendo, que es exactamente lo que buscamos.',
     tareas:['Respetar la hora de levantarte todos los días, incluidos sábados y domingos','No acostarte antes de la hora indicada, aunque tengas sueño','Registrar el diario cada mañana','Sin siestas'],
-    libre:true
+    libre:false
   },
   {
     n:2, titulo:'Control de estímulos',
@@ -18346,7 +18346,7 @@ function dmTcciEmpezar(){
 }
 function dmTcciAbrirSemana(n){
   const s=DM_TCCI_PROGRAMA.find(x=>x.n===n); if(!s) return;
-  if(!s.libre && !dmTcciTieneAcceso()){ dmTcciMostrarSuscripcion(); return; }
+  if(!s.libre && !dmTcciTieneAcceso()){ window._dmTcciSemanaIntento=n; dmTcciMostrarSuscripcion(); return; }
   const old=document.getElementById('dm-tcci-sem'); if(old) old.remove();
   const w=document.createElement('div');
   w.id='dm-tcci-sem';
@@ -18374,31 +18374,74 @@ function dmTcciAbrirSemana(n){
     '</div>';
   document.body.appendChild(w);
 }
+// Precios a sondear. Están acá arriba a propósito: cambiás estos números y
+// cambia la encuesta entera, sin tocar nada más.
+const DM_TCCI_PRECIOS = [
+  { id:'a', txt:'Hasta $15.000' },
+  { id:'b', txt:'Entre $15.000 y $30.000' },
+  { id:'c', txt:'Entre $30.000 y $50.000' },
+  { id:'d', txt:'Más de $50.000' },
+  { id:'no', txt:'No pagaría por esto' }
+];
+
 function dmTcciMostrarSuscripcion(){
   const old=document.getElementById('dm-tcci-pay'); if(old) old.remove();
   const w=document.createElement('div');
   w.id='dm-tcci-pay';
-  w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:10003;display:flex;align-items:center;justify-content:center;padding:18px';
+  w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:10003;display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto';
   w.onclick=function(e){ if(e.target===w) w.remove(); };
   w.innerHTML=
-    '<div style="background:linear-gradient(150deg,#1F4738,#0F2820);border:1px solid rgba(200,169,110,.5);border-radius:20px;padding:24px 22px;max-width:400px;width:100%">'+
-      '<div style="font-size:30px;margin-bottom:8px">🌿</div>'+
-      '<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px">Programa completo</div>'+
-      '<div style="font-size:13px;color:rgba(255,255,255,.72);line-height:1.6;margin-bottom:16px">Tu ventana de sueño y la primera semana son sin costo. Las cinco semanas restantes —control de estímulos, ajustes, trabajo cognitivo, relajación y prevención de recaídas— son parte del programa completo.</div>'+
-      '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:13px 14px;font-size:12.5px;color:rgba(255,255,255,.8);line-height:1.6;margin-bottom:16px">Todavía no está abierto el pago. Dejanos tu interés y te avisamos cuando lo habilitemos, con condición preferencial por haber estado en la beta.</div>'+
-      '<button onclick="dmTcciAnotarme()" style="width:100%;background:#C8A96E;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Avisame cuando esté</button>'+
+    '<div id="dm-tcci-pay-box" style="background:linear-gradient(150deg,#1F4738,#0F2820);border:1px solid rgba(200,169,110,.5);border-radius:20px;padding:24px 22px;max-width:420px;width:100%;margin:auto">'+
+      '<div style="display:inline-block;font-size:9.5px;letter-spacing:.09em;font-weight:700;background:rgba(200,169,110,.22);color:#C8A96E;border-radius:99px;padding:4px 10px;margin-bottom:12px">PREMIUM · PRÓXIMAMENTE</div>'+
+      '<div style="font-size:19px;font-weight:700;color:#fff;margin-bottom:8px">Programa TCC-I de 6 semanas</div>'+
+      '<div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:14px">'+
+        'Restricción de sueño con tu ventana calculada, control de estímulos, trabajo sobre los pensamientos que te desvelan, técnicas para bajar la activación y un plan de recaídas. '+
+        'Es el tratamiento que las guías internacionales recomiendan <b>antes que la medicación</b> para el insomnio.</div>'+
+      '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:12px 14px;font-size:12.5px;color:rgba(255,255,255,.78);line-height:1.55;margin-bottom:16px">'+
+        'Va a ser una <b>función paga</b>. Todavía no está abierta: si te interesa, avisanos y te contactamos cuando la habilitemos, con condición preferencial por haber estado en la beta.</div>'+
+      '<button onclick="dmTcciPasoInteres()" style="width:100%;background:#C8A96E;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Me interesaría</button>'+
       '<button onclick="document.getElementById(\'dm-tcci-pay\').remove()" style="width:100%;background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;margin-top:10px;cursor:pointer;font-family:var(--font)">Ahora no</button>'+
     '</div>';
   document.body.appendChild(w);
 }
-async function dmTcciAnotarme(){
-  try{
-    await db.post('tcci_interes',{patient_email:(S.user&&S.user.email)||'', created_at:new Date().toISOString()},'').catch(function(){});
-  }catch(_){}
-  try{ localStorage.setItem('dm_tcci_interes','1'); }catch(_){}
-  const w=document.getElementById('dm-tcci-pay'); if(w) w.remove();
-  toast('Anotado ✓ Te avisamos cuando esté disponible');
+
+// Segundo paso: recién después de que dijo que le interesa se pregunta el
+// precio. Preguntarlo antes espanta; preguntarlo después mide disposición
+// real sobre quienes ya se mostraron interesados, que es el dato que sirve.
+function dmTcciPasoInteres(){
+  const box=document.getElementById('dm-tcci-pay-box'); if(!box) return;
+  box.innerHTML=
+    '<div style="font-size:26px;margin-bottom:8px">🌿</div>'+
+    '<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px">Anotado. Una última cosa.</div>'+
+    '<div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:16px">'+
+      'Nos ayuda a definir el precio: ¿cuánto te parecería razonable pagar, <b>una sola vez</b>, por las seis semanas completas?</div>'+
+    DM_TCCI_PRECIOS.map(function(p){
+      return '<button onclick="dmTcciGuardarInteres(\''+p.id+'\')" style="width:100%;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:12px 14px;color:#fff;font-size:13.5px;margin-bottom:8px;cursor:pointer;font-family:var(--font)">'+p.txt+'</button>';
+    }).join('')+
+    '<button onclick="dmTcciGuardarInteres(\'skip\')" style="width:100%;background:none;border:none;color:rgba(255,255,255,.45);font-size:12.5px;margin-top:6px;cursor:pointer;font-family:var(--font)">Prefiero no responder</button>';
 }
+
+async function dmTcciGuardarInteres(precio){
+  const email=(S.user&&S.user.email)||'';
+  try{ localStorage.setItem('dm_tcci_interes', JSON.stringify({precio:precio, fecha:new Date().toISOString()})); }catch(_){}
+  try{
+    await db.post('tcci_interes',{
+      patient_email: email,
+      precio_elegido: precio,
+      semana_bloqueada: (window._dmTcciSemanaIntento||null),
+      created_at: new Date().toISOString()
+    },'').catch(function(){});
+  }catch(_){}
+  const box=document.getElementById('dm-tcci-pay-box');
+  if(box){
+    box.innerHTML='<div style="text-align:center;padding:10px 0">'+
+      '<div style="font-size:34px;margin-bottom:10px">✓</div>'+
+      '<div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:6px">Listo, gracias</div>'+
+      '<div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:18px">Te vamos a escribir cuando el programa esté disponible.</div>'+
+      '<button onclick="document.getElementById(\'dm-tcci-pay\').remove()" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px;color:#fff;font-size:14px;cursor:pointer;font-family:var(--font)">Cerrar</button></div>';
+  }
+}
+
 function dmTcciRenderPrograma(){
   const actual=dmTcciSemanaActual();
   const empezado=(function(){ try{ return !!localStorage.getItem('dm_tcci_inicio'); }catch(_){ return false; } })();
@@ -18407,7 +18450,7 @@ function dmTcciRenderPrograma(){
     '<div class="sec-title" style="margin:0 0 4px;color:rgba(244,239,229,0.55)">Programa de 6 semanas</div>'+
     '<div style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.55;margin-bottom:12px">'+
       (empezado ? 'Vas por la semana '+actual+'. Cada semana se desbloquea sola a los 7 días.'
-                : 'Terapia cognitivo-conductual para el insomnio, paso a paso. La semana 1 es sin costo.')+'</div>';
+                : 'Terapia cognitivo-conductual para el insomnio, paso a paso. Función premium — tu ventana de sueño de arriba es sin costo.')+'</div>';
   if(!empezado){
     html+='<button onclick="dmTcciEmpezar()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:12px">Empezar el programa</button>';
   }
@@ -18420,7 +18463,7 @@ function dmTcciRenderPrograma(){
     let estado='';
     if(bloqueadaPorPago) estado='<span style="font-size:10px;background:rgba(200,169,110,.2);color:#C8A96E;border-radius:99px;padding:2px 8px;font-weight:700">Programa completo</span>';
     else if(bloqueadaPorTiempo) estado='<span style="font-size:10.5px;color:rgba(255,255,255,.4)">en '+((s.n-actual)*7)+' días</span>';
-    else if(!empezado && s.libre) estado='<span style="font-size:10px;background:rgba(126,200,164,.2);color:#7EC8A4;border-radius:99px;padding:2px 8px;font-weight:700">Sin costo</span>';
+    else if(!empezado) estado='<span style="font-size:10px;background:rgba(200,169,110,.2);color:#C8A96E;border-radius:99px;padding:2px 8px;font-weight:700">Premium</span>';
     else if(activa) estado='<span style="color:#7EC8A4;font-size:16px">›</span>';
     html+='<div onclick="'+(bloqueadaPorTiempo?'':'dmTcciAbrirSemana('+s.n+')')+'" style="background:rgba(255,255,255,.04);border:1px solid '+borde+';border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+(bloqueadaPorTiempo?'opacity:.45':'cursor:pointer')+'">'+
       '<div style="width:26px;height:26px;border-radius:50%;background:'+(activa?'#1a4a3a':'rgba(255,255,255,.08)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(activa?'#fff':'rgba(255,255,255,.45)')+';flex-shrink:0">'+s.n+'</div>'+
