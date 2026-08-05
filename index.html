@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod54">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod55">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1306,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod54"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod55"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod54';
+const APP_VERSION='hoy75-mod55';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -18263,6 +18263,175 @@ async function saveCbtiWindow(){
   }finally{ setBtn('cbti-win-save', false, 'Guardar ventana'); }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// PROGRAMA TCC-I AUTOGUIADO · 6 semanas
+// Estructura según las guías de primera línea (AASM 2021, ESRS 2023): los
+// componentes con evidencia son restricción de sueño, control de estímulos,
+// reestructuración cognitiva, relajación y prevención de recaídas. La higiene
+// del sueño sola NO es tratamiento: va como apoyo, nunca como núcleo.
+//
+// MODELO DE ACCESO: la ventana de sueño calculada es GRATUITA (es la prueba
+// de que el cálculo sirve). El acompañamiento semana a semana es de pago.
+// Todo el control pasa por dmTcciTieneAcceso(): cuando exista el cobro real,
+// se cambia ahí y en ningún otro lado.
+const DM_TCCI_PROGRAMA = [
+  {
+    n:1, titulo:'Tu punto de partida',
+    objetivo:'Fijar la ventana de sueño y la hora de levantarte, y entender por qué achicar el tiempo en cama mejora el sueño.',
+    contenido:'El insomnio se sostiene solo: dormís mal, entonces pasás más tiempo en la cama para compensar, y ese exceso de tiempo despierto en la cama fragmenta todavía más el sueño. La restricción de sueño rompe ese círculo. No vas a dormir menos: vas a pasar menos tiempo en cama sin dormir, y eso concentra el sueño y lo hace más profundo.\n\nLa primera semana suele ser la más dura. Es esperable sentir más cansancio los primeros días: es la señal de que la presión de sueño está subiendo, que es exactamente lo que buscamos.',
+    tareas:['Respetar la hora de levantarte todos los días, incluidos sábados y domingos','No acostarte antes de la hora indicada, aunque tengas sueño','Registrar el diario cada mañana','Sin siestas'],
+    libre:true
+  },
+  {
+    n:2, titulo:'Control de estímulos',
+    objetivo:'Que tu cama vuelva a asociarse con dormir y no con estar despierto/a dando vueltas.',
+    contenido:'Si pasás horas despierto/a en la cama, tu cerebro aprende que la cama es un lugar de vigilia. El control de estímulos revierte ese aprendizaje.\n\nLa regla es simple y difícil: si no te dormís en unos veinte minutos —o si te despertás y no volvés a dormirte—, levantate. Andá a otro ambiente, con luz tenue, hacé algo tranquilo y aburrido, y volvé a la cama recién cuando tengas sueño de verdad. Puede que tengas que hacerlo tres o cuatro veces la primera noche. Se reduce rápido.',
+    tareas:['Levantarte de la cama si no dormís en ~20 minutos','Usar la cama solo para dormir y para el sexo','Nada de pantallas ni trabajo en la cama','Mantener la ventana de la semana pasada'],
+    libre:false
+  },
+  {
+    n:3, titulo:'Primer ajuste de la ventana',
+    objetivo:'Ampliar o sostener la ventana según tu eficiencia real de las últimas dos semanas.',
+    contenido:'Con dos semanas de registro ya tenemos datos para ajustar. La regla de titración es la que usan los protocolos: si tu eficiencia de sueño supera el 90%, se adelanta la hora de acostarse 15 minutos. Si está entre 85 y 90, se sostiene una semana más. Si está por debajo de 85, se recorta.\n\nLa hora de levantarte no se mueve. Es el ancla del ritmo circadiano y moverla desarma todo lo anterior.',
+    tareas:['Revisar tu eficiencia en la app','Aplicar el ajuste que corresponda','Sostener el control de estímulos','Seguir sin siestas'],
+    libre:false
+  },
+  {
+    n:4, titulo:'Los pensamientos sobre dormir',
+    objetivo:'Identificar las creencias que aumentan la activación al acostarte y ponerlas a prueba.',
+    contenido:'"Si no duermo ocho horas mañana no funciono." "Ya perdí la capacidad de dormir." "Si no me duermo ya, mañana es un desastre." Estos pensamientos no son inocentes: activan el sistema de alerta justo cuando necesitás lo contrario, y convierten la cama en un lugar de examen.\n\nEl trabajo no es "pensar en positivo" sino contrastar la creencia con tus propios datos. Tenés semanas de registro: mirá qué pasó realmente los días después de una mala noche. Casi siempre la catástrofe anticipada no ocurrió.',
+    tareas:['Anotar el pensamiento que aparece cuando no podés dormir','Buscar en tu diario un día que lo contradiga','Practicar el horario de preocupaciones: 15 minutos a la tarde para anotar lo pendiente'],
+    libre:false
+  },
+  {
+    n:5, titulo:'Bajar la activación',
+    objetivo:'Reducir el estado de alerta físico y mental en las horas previas a acostarte.',
+    contenido:'El sueño no se fuerza: se permite. Cuanto más te esforzás por dormir, más se activa el sistema que lo impide. Esa es la paradoja central del insomnio.\n\nLo que sí se puede entrenar es bajar la activación previa: respiración lenta con exhalación más larga que la inhalación, relajación muscular progresiva, y una rutina de descenso de treinta a sesenta minutos con luz baja. No son técnicas para dormirte: son para llegar a la cama menos activado/a.',
+    tareas:['Practicar respiración lenta 5 minutos antes de acostarte','Armar una rutina de descenso con luz tenue','Sacar los relojes de la vista: mirar la hora de noche aumenta la activación'],
+    libre:false
+  },
+  {
+    n:6, titulo:'Sostenerlo en el tiempo',
+    objetivo:'Consolidar lo que funcionó y tener un plan para las recaídas, que van a ocurrir.',
+    contenido:'Vas a volver a tener malas noches. Eso no es una recaída: es cómo duerme la gente. La recaída aparece cuando, ante unas noches malas, se vuelve a los viejos hábitos —quedarse más tiempo en cama, dormir siestas, adelantar la hora de acostarse—.\n\nEl plan es concreto: si tenés tres malas noches seguidas, volvé a aplicar la ventana de la semana 1 durante siete días. Casi siempre alcanza.',
+    tareas:['Escribir tus tres reglas innegociables','Definir tu señal de alarma y tu plan de rescate','Seguir registrando, aunque sea unos días por mes'],
+    libre:false
+  }
+];
+
+// Punto único de control del acceso al programa pago. Hoy devuelve false para
+// todos salvo que exista la marca local; cuando esté el cobro, se reemplaza
+// por la consulta real de suscripción.
+function dmTcciTieneAcceso(){
+  try{
+    if(localStorage.getItem('dm_tcci_acceso')==='1') return true;
+    // Paciente con protocolo activo de un profesional: el acompañamiento lo da
+    // el profesional, así que no corresponde cobrarle el autoguiado.
+    if(window._dmTcciConProfesional) return true;
+  }catch(_){}
+  return false;
+}
+function dmTcciSemanaActual(){
+  try{
+    const ini=localStorage.getItem('dm_tcci_inicio');
+    if(!ini) return 1;
+    const dias=Math.floor((Date.now()-new Date(ini).getTime())/86400000);
+    return Math.max(1, Math.min(DM_TCCI_PROGRAMA.length, Math.floor(dias/7)+1));
+  }catch(_){ return 1; }
+}
+function dmTcciEmpezar(){
+  try{ if(!localStorage.getItem('dm_tcci_inicio')) localStorage.setItem('dm_tcci_inicio', new Date().toISOString()); }catch(_){}
+  toast('Programa iniciado ✓');
+  openPatientCbtiView();
+}
+function dmTcciAbrirSemana(n){
+  const s=DM_TCCI_PROGRAMA.find(x=>x.n===n); if(!s) return;
+  if(!s.libre && !dmTcciTieneAcceso()){ dmTcciMostrarSuscripcion(); return; }
+  const old=document.getElementById('dm-tcci-sem'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-tcci-sem';
+  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,0.92);z-index:10002;overflow-y:auto;padding:0';
+  w.innerHTML=
+    '<div style="max-width:620px;margin:0 auto;padding:20px 18px 40px">'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">'+
+        '<button onclick="document.getElementById(\'dm-tcci-sem\').remove()" style="background:rgba(255,255,255,.1);border:none;border-radius:10px;width:36px;height:36px;color:#fff;font-size:18px;cursor:pointer">←</button>'+
+        '<div><div style="font-size:10px;letter-spacing:.1em;color:#C8A96E;font-weight:700">SEMANA '+s.n+' DE '+DM_TCCI_PROGRAMA.length+'</div>'+
+        '<div style="font-size:19px;font-weight:700;color:#fff">'+s.titulo+'</div></div>'+
+      '</div>'+
+      '<div style="background:rgba(126,200,164,.1);border-left:3px solid #7EC8A4;border-radius:8px;padding:12px 14px;margin-bottom:16px">'+
+        '<div style="font-size:10px;letter-spacing:.07em;color:#7EC8A4;font-weight:700;margin-bottom:4px">OBJETIVO</div>'+
+        '<div style="font-size:13.5px;color:rgba(255,255,255,.88);line-height:1.55">'+s.objetivo+'</div></div>'+
+      '<div style="font-size:14px;color:rgba(255,255,255,.82);line-height:1.7;white-space:pre-line;margin-bottom:18px">'+s.contenido+'</div>'+
+      '<div style="background:rgba(255,255,255,.05);border-radius:14px;padding:14px 16px">'+
+        '<div style="font-size:10px;letter-spacing:.07em;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:10px">TU TAREA ESTA SEMANA</div>'+
+        s.tareas.map(function(t,i){
+          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0'+(i<s.tareas.length-1?';border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
+            '<span style="color:#7EC8A4;font-size:14px;line-height:1.5">✓</span>'+
+            '<span style="flex:1;font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.55">'+t+'</span></div>';
+        }).join('')+
+      '</div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.38);text-align:center;margin-top:18px;line-height:1.5">Programa de apoyo basado en TCC-I. No reemplaza la consulta. Si tenés apnea del sueño, trabajás en turnos rotativos o tenés somnolencia peligrosa al volante, consultá antes de restringir el sueño.</div>'+
+    '</div>';
+  document.body.appendChild(w);
+}
+function dmTcciMostrarSuscripcion(){
+  const old=document.getElementById('dm-tcci-pay'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-tcci-pay';
+  w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:10003;display:flex;align-items:center;justify-content:center;padding:18px';
+  w.onclick=function(e){ if(e.target===w) w.remove(); };
+  w.innerHTML=
+    '<div style="background:linear-gradient(150deg,#1F4738,#0F2820);border:1px solid rgba(200,169,110,.5);border-radius:20px;padding:24px 22px;max-width:400px;width:100%">'+
+      '<div style="font-size:30px;margin-bottom:8px">🌿</div>'+
+      '<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px">Programa completo</div>'+
+      '<div style="font-size:13px;color:rgba(255,255,255,.72);line-height:1.6;margin-bottom:16px">Tu ventana de sueño y la primera semana son sin costo. Las cinco semanas restantes —control de estímulos, ajustes, trabajo cognitivo, relajación y prevención de recaídas— son parte del programa completo.</div>'+
+      '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:13px 14px;font-size:12.5px;color:rgba(255,255,255,.8);line-height:1.6;margin-bottom:16px">Todavía no está abierto el pago. Dejanos tu interés y te avisamos cuando lo habilitemos, con condición preferencial por haber estado en la beta.</div>'+
+      '<button onclick="dmTcciAnotarme()" style="width:100%;background:#C8A96E;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Avisame cuando esté</button>'+
+      '<button onclick="document.getElementById(\'dm-tcci-pay\').remove()" style="width:100%;background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;margin-top:10px;cursor:pointer;font-family:var(--font)">Ahora no</button>'+
+    '</div>';
+  document.body.appendChild(w);
+}
+async function dmTcciAnotarme(){
+  try{
+    await db.post('tcci_interes',{patient_email:(S.user&&S.user.email)||'', created_at:new Date().toISOString()},'').catch(function(){});
+  }catch(_){}
+  try{ localStorage.setItem('dm_tcci_interes','1'); }catch(_){}
+  const w=document.getElementById('dm-tcci-pay'); if(w) w.remove();
+  toast('Anotado ✓ Te avisamos cuando esté disponible');
+}
+function dmTcciRenderPrograma(){
+  const actual=dmTcciSemanaActual();
+  const empezado=(function(){ try{ return !!localStorage.getItem('dm_tcci_inicio'); }catch(_){ return false; } })();
+  const acceso=dmTcciTieneAcceso();
+  let html='<div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:16px;margin-top:14px">'+
+    '<div class="sec-title" style="margin:0 0 4px;color:rgba(244,239,229,0.55)">Programa de 6 semanas</div>'+
+    '<div style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.55;margin-bottom:12px">'+
+      (empezado ? 'Vas por la semana '+actual+'. Cada semana se desbloquea sola a los 7 días.'
+                : 'Terapia cognitivo-conductual para el insomnio, paso a paso. La semana 1 es sin costo.')+'</div>';
+  if(!empezado){
+    html+='<button onclick="dmTcciEmpezar()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:12px">Empezar el programa</button>';
+  }
+  DM_TCCI_PROGRAMA.forEach(function(s){
+    const disponible = empezado && s.n<=actual;
+    const bloqueadaPorPago = !s.libre && !acceso;
+    const bloqueadaPorTiempo = empezado && s.n>actual;
+    const activa = disponible && !bloqueadaPorPago;
+    const borde = activa ? 'rgba(126,200,164,.35)' : 'rgba(255,255,255,.1)';
+    let estado='';
+    if(bloqueadaPorPago) estado='<span style="font-size:10px;background:rgba(200,169,110,.2);color:#C8A96E;border-radius:99px;padding:2px 8px;font-weight:700">Programa completo</span>';
+    else if(bloqueadaPorTiempo) estado='<span style="font-size:10.5px;color:rgba(255,255,255,.4)">en '+((s.n-actual)*7)+' días</span>';
+    else if(!empezado && s.libre) estado='<span style="font-size:10px;background:rgba(126,200,164,.2);color:#7EC8A4;border-radius:99px;padding:2px 8px;font-weight:700">Sin costo</span>';
+    else if(activa) estado='<span style="color:#7EC8A4;font-size:16px">›</span>';
+    html+='<div onclick="'+(bloqueadaPorTiempo?'':'dmTcciAbrirSemana('+s.n+')')+'" style="background:rgba(255,255,255,.04);border:1px solid '+borde+';border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+(bloqueadaPorTiempo?'opacity:.45':'cursor:pointer')+'">'+
+      '<div style="width:26px;height:26px;border-radius:50%;background:'+(activa?'#1a4a3a':'rgba(255,255,255,.08)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(activa?'#fff':'rgba(255,255,255,.45)')+';flex-shrink:0">'+s.n+'</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:'+(activa?'#fff':'rgba(255,255,255,.6)')+'">'+s.titulo+'</div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.objetivo+'</div></div>'+
+      '<div style="flex-shrink:0">'+estado+'</div></div>';
+  });
+  html+='</div>';
+  return html;
+}
+
 async function openPatientCbtiView(){
   showScreen('patient-tcci');
   const cont = document.getElementById('patient-tcci-content');
@@ -18313,9 +18482,12 @@ async function openPatientCbtiView(){
         '</div>'+
         '<div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-top:12px;line-height:1.5">Herramienta de apoyo, no reemplaza la consulta. Si tenés apnea, trabajás en turnos rotativos o hay somnolencia peligrosa, consultá antes de restringir el sueño.</div>';
       }
+      // El programa de 6 semanas va SIEMPRE, haya o no ventana calculada.
+      try{ html += dmTcciRenderPrograma(); }catch(_e){ console.warn('[TCCI programa]', _e); }
       cont.innerHTML=html;
       return;
     }
+    window._dmTcciConProfesional = true;
     const drEmail = active[0].doctor_email; // si hay varios, mostramos el primero
     // Cargar progreso
     const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=ilike.'+encodeURIComponent(patEmail)+'&select=item_id,completed,completed_at,notes').catch(()=>[]);
