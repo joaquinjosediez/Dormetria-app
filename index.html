@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod57">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod58">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -533,21 +533,6 @@
       </div>
     </div>
 
-    <!-- 1b) TCC-I — el tratamiento de primera linea para el insomnio.
-         Vivia solo dentro de "Mas" y quedaba invisible; ahora tiene lugar
-         propio en el Inicio. checkPatientTcciCard() rellena el subtitulo. -->
-    <div id="home-tcci-card" onclick="openPatientCbtiView()" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:15px 16px;cursor:pointer;position:relative">
-      <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:.04em">PROGRAMA</div>
-      <div style="display:flex;align-items:center;gap:13px">
-        <div style="font-size:28px;line-height:1;flex-shrink:0">🌿</div>
-        <div style="flex:1;min-width:0;padding-right:70px">
-          <div style="font-size:14.5px;font-weight:700;color:#fff;line-height:1.3">Programa para dormir mejor</div>
-          <div id="home-tcci-sub" style="font-size:11.5px;color:rgba(255,255,255,0.72);margin-top:3px;line-height:1.4">Terapia cognitivo-conductual guiada, paso a paso.</div>
-        </div>
-        <div style="color:#C8A96E;font-size:20px;flex-shrink:0">›</div>
-      </div>
-    </div>
-
     <!-- 2) Dato curioso del sueño -->
     <div id="home-fact-card" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px">
       <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Dato del día</div>
@@ -575,6 +560,20 @@
           <div id="home-scale-sub" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px"></div>
         </div>
         <div style="background:rgba(126,200,164,0.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:#7ec8a4">Completar →</div>
+      </div>
+    </div>
+
+    <!-- 4b) TCC-I — debajo de la escala del día, no arriba de todo:
+         la acción principal del inicio es el diario, no el programa. -->
+    <div id="home-tcci-card" onclick="openPatientCbtiView()" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:15px 16px;cursor:pointer;position:relative">
+      <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:.04em">PROGRAMA</div>
+      <div style="display:flex;align-items:center;gap:13px">
+        <div style="font-size:28px;line-height:1;flex-shrink:0">🌿</div>
+        <div style="flex:1;min-width:0;padding-right:70px">
+          <div style="font-size:14.5px;font-weight:700;color:#fff;line-height:1.3">Programa para dormir mejor</div>
+          <div id="home-tcci-sub" style="font-size:11.5px;color:rgba(255,255,255,0.72);margin-top:3px;line-height:1.4">Terapia cognitivo-conductual guiada, paso a paso.</div>
+        </div>
+        <div style="color:#C8A96E;font-size:20px;flex-shrink:0">›</div>
       </div>
     </div>
 
@@ -1306,7 +1305,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod57"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod58"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1324,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod57';
+const APP_VERSION='hoy75-mod58';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -1745,97 +1744,6 @@ function toast(msg,dur=3000){
 
 
 const SCALES=[
-// ═══════════════════════════════════════════════════════════════════════
-// ACTIVACIÓN PRE-SUEÑO Y COGNICIONES — MOLDES SIN ÍTEMS (staging)
-// Agregadas el 2026-08. Todas con qs:[] → NO aparecen en el catálogo hasta
-// que se peguen los ítems verbatim de una versión validada en español.
-// Estado de derechos verificado al agregarlas (revisar antes de activar):
-//   · GSES  — Broomfield & Espie 2005. Publicada íntegra en la literatura;
-//             los autores la difunden para uso clínico y de investigación.
-//             Existe validación en portugués (Marques 2016) y en persa.
-//             FALTA: versión validada en español.
-//   · PSAS-C — adaptación infantil (Gregory 2008) de la PSAS (Nicassio 1985).
-//             16 ítems, 2 subescalas (cognitiva/somática), 8+8, rango 16–80.
-//             FALTA: ítems de la adaptación infantil + versión en español.
-//   · DBAS-C10 — derivada de la DBAS de Morin, que es material CON COPYRIGHT.
-//             Requiere autorización expresa. 3 factores: consecuencias
-//             inmediatas (1,6,7,9), a largo plazo (2,3,5,8), control (4,10).
-//   · APSQ  — Tang & Harvey 2004, 10 ítems. Uso académico habitual.
-//   · ASWS  — LeBourgeois 2005, adolescentes. Uso con permiso del autor.
-// ═══════════════════════════════════════════════════════════════════════
-{
-  id:'gses',
-  name:'Esfuerzo por dormir (GSES)',
-  cat:'insomnia',
-  icon:'🌀', bg:'#eef2ff', max:14,
-  desc:'Cuánto esfuerzo consciente ponés en dormirte — el intento de controlar el sueño lo empeora',
-  ref:'Broomfield NM, Espie CA. (2005). Towards a valid, reliable measure of sleep effort. J Sleep Res, 14(4), 401–407.',
-  note:'7 ítems, respuesta 0 (nada) / 1 (en parte) / 2 (mucho), rango 0–14. Mayor puntaje = más esfuerzo por dormir. PENDIENTE: pegar los ítems de una versión validada en español; los publicados están en inglés y portugués.',
-  disabled:true,
-  qs:[],
-  interp:function(s){ return null; }
-},
-{
-  id:'psasc',
-  name:'Activación pre-sueño infantil (PSAS-C)',
-  cat:'insomnia',
-  icon:'⚡', bg:'#fef3c7', max:80,
-  desc:'Activación cognitiva y somática al momento de acostarse, en niños de 8 a 14 años',
-  ref:'Gregory AM, Willis TA, Wiggs L, Harvey AG. (2008). Presleep arousal and sleep disturbances in children. Sleep, 31(12), 1745–1747.',
-  note:'16 ítems (8 cognitivos + 8 somáticos), Likert 1–5, rango 16–80. PENDIENTE: ítems de la adaptación infantil y su versión en español.',
-  disabled:true,
-  qs:[],
-  interp:function(s){ return null; }
-},
-{
-  id:'dbasc10',
-  name:'Creencias sobre el sueño · niños (DBAS-C10)',
-  cat:'insomnia',
-  icon:'💭', bg:'#f3e8ff', max:100,
-  desc:'Creencias y actitudes disfuncionales sobre el sueño en población infantil',
-  ref:'Gregory AM, Cox J, Crawford MR, Holland J, Harvey AG. (2009). Dysfunctional beliefs and attitudes about sleep in children. J Sleep Res, 18(4), 422–426.',
-  note:'ATENCIÓN: deriva de la DBAS de Morin, material con copyright. Requiere autorización escrita antes de usarla. 3 factores: consecuencias inmediatas, consecuencias a largo plazo, necesidad de control.',
-  disabled:true,
-  qs:[],
-  interp:function(s){ return null; }
-},
-{
-  id:'apsq',
-  name:'Preocupación por el sueño (APSQ)',
-  cat:'insomnia',
-  icon:'🌊', bg:'#e0f2fe', max:100,
-  desc:'Preocupación y rumiación específicas sobre el sueño, en adolescentes y adultos',
-  ref:'Tang NKY, Harvey AG. (2004). Correcting distorted perception of sleep in insomnia. Behav Res Ther, 42(1), 27–39.',
-  note:'10 ítems. PENDIENTE: ítems verbatim y versión en español.',
-  disabled:true,
-  qs:[],
-  interp:function(s){ return null; }
-},
-{
-  id:'asws',
-  name:'Sueño-vigilia adolescente (ASWS)',
-  cat:'insomnia',
-  icon:'🌗', bg:'#ecfdf5', max:100,
-  desc:'Conductas de sueño en adolescentes: acostarse, iniciar, mantener y despertar',
-  ref:'LeBourgeois MK, Giannotti F, Cortesi F, Wolfson AR, Harsh J. (2005). The relationship between reported sleep quality and sleep hygiene in Italian and American adolescents. Pediatrics, 115(1 Suppl), 257–265.',
-  note:'PENDIENTE: ítems verbatim (uso con permiso del autor) y versión en español.',
-  disabled:true,
-  qs:[],
-  interp:function(s){ return null; }
-},
-// ═══════════════════════════════════════════════════════════════════════
-// MOLDES PENDIENTES DE LICENCIA — NO ACTIVAR SIN AUTORIZACIÓN ESCRITA
-// ═══════════════════════════════════════════════════════════════════════
-// Ambas escalas tienen `qs:[]`, por lo que quedan AUTOMÁTICAMENTE OCULTAS del
-// catálogo (ver el guard `!sc.qs||!sc.qs.length` en el render de escalas).
-// Para activarlas:
-//   1. Obtener autorización escrita de los autores.
-//   2. Pegar los ítems VERBATIM del instrumento original en `qs`.
-//   3. Verificar que los cortes de `interp()` correspondan a la fuente.
-//   4. Quitar `disabled:true`.
-// NO redactar los ítems de memoria ni parafrasearlos: una escala con ítems
-// aproximados no es esa escala, sus cortes normativos no aplican, y los datos
-// recolectados no sirven para investigación ni para decisión clínica.
 {
   id:'cctq',
   name:'Cronotipo infantil (CCTQ · M/E)',
@@ -18606,6 +18514,10 @@ async function openPatientCbtiView(){
       });
       html += '</div></div>';
     });
+    // El programa de 6 semanas va también acá: antes solo se renderizaba en la
+    // rama autoguiada, así que un paciente con protocolo de su profesional
+    // nunca lo veía.
+    try{ html += dmTcciRenderPrograma(); }catch(_e){ console.warn('[TCCI programa]', _e); }
     cont.innerHTML = html;
   }catch(err){
     console.error('[patient-tcci] error:', err);
