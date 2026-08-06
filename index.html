@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod59">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod60">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1305,7 +1305,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod59"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod60"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1324,7 +1324,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod59';
+const APP_VERSION='hoy75-mod60';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -17482,6 +17482,14 @@ const CBTI_PROTOCOL = {
 const CBTI_TOTAL_ITEMS = CBTI_PROTOCOL.modules.reduce((n,m)=>n+m.items.length,0);
 let CBTI_STATE = { patientEmail:null, patientName:null, progress:{}, cbtiPatients:[] };
 
+// Filtra el listado del módulo TCC-I por apellido o nombre.
+function dmCbtiFiltrar(q){
+  const t=String(q||'').trim().toLowerCase();
+  document.querySelectorAll('[data-cbti-nombre]').forEach(function(el){
+    el.style.display = (!t || el.getAttribute('data-cbti-nombre').indexOf(t)>=0) ? '' : 'none';
+  });
+}
+
 async function openCbtiModule(){
   showScreen('cbti-list');
   const cont = document.getElementById('cbti-list-content');
@@ -17509,17 +17517,24 @@ async function openCbtiModule(){
     }
     const progressByPatient = {};
     (progressData||[]).forEach(r=>{ progressByPatient[r.patient_email] = (progressByPatient[r.patient_email]||0)+1; });
-    // Ordenar: primero los que están en CBT-I, luego el resto
-    const inCbti = patients.filter(p=>CBTI_STATE.cbtiPatients.includes(p.email));
-    const notInCbti = patients.filter(p=>!CBTI_STATE.cbtiPatients.includes(p.email));
-    let html = '';
+    // Orden alfabético por APELLIDO dentro de cada grupo (antes venían en el
+    // orden que devolvía la base, que no es ninguno).
+    const cmpAp = (a,b)=>String((a.lname||a.name||a.email)).toLowerCase()
+      .localeCompare(String((b.lname||b.name||b.email)).toLowerCase(), 'es', {sensitivity:'base'});
+    const inCbti = patients.filter(p=>CBTI_STATE.cbtiPatients.includes(p.email)).sort(cmpAp);
+    const notInCbti = patients.filter(p=>!CBTI_STATE.cbtiPatients.includes(p.email)).sort(cmpAp);
+    let html = '<div style="position:sticky;top:0;z-index:5;background:#0F2820;padding:2px 0 12px">'+
+      '<input id="cbti-buscar" type="search" placeholder="🔍 Buscar por apellido…" oninput="dmCbtiFiltrar(this.value)" '+
+      'style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);border-radius:11px;padding:11px 13px;color:#fff;font-size:14px;font-family:var(--font);box-sizing:border-box"></div>';
     if(inCbti.length){
       html += '<div style="font-size:11px;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;font-weight:700">En tratamiento TCC-I</div>';
       html += inCbti.map(p=>{
         const done = progressByPatient[p.email]||0;
         const pct = Math.round(done/CBTI_TOTAL_ITEMS*100);
-        const full = p.name + (p.lname?' '+p.lname:'');
-        return '<div onclick="openCbtiProtocol(\''+p.email+'\',\''+full.replace(/\\/g,"\\\\").replace(/'/g,"\\\'")+'\')" style="background:rgba(126,200,164,0.08);border:1px solid #7ec8a4;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'+
+        // "Apellido, Nombre": con "Nombre Apellido" el orden alfabético por
+        // apellido parecía desordenado a simple vista.
+        const full = (p.lname? p.lname+', '+(p.name||'') : (p.name||p.email));
+        return '<div data-cbti-nombre="'+((p.lname||'')+' '+(p.name||'')).toLowerCase()+'" onclick="openCbtiProtocol(\''+p.email+'\',\''+full.replace(/\\/g,"\\\\").replace(/'/g,"\\\'")+'\')" style="background:rgba(126,200,164,0.08);border:1px solid #7ec8a4;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'+
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:15px;font-weight:600;color:#fff">'+full+'</div><div style="font-size:13px;color:#7ec8a4;font-weight:700">'+done+'/'+CBTI_TOTAL_ITEMS+'</div></div>'+
           '<div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ec8a4,#C8A96E)"></div></div>'+
           '<div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:6px">'+pct+'% del protocolo</div>'+
@@ -17529,9 +17544,10 @@ async function openCbtiModule(){
     html += '<div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px;font-weight:700">Pacientes vinculados</div>';
     html += '<div style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:14px;line-height:1.5">Marcá los pacientes con los que estés trabajando un protocolo TCC-I (CBT-I).</div>';
     html += (notInCbti.length?notInCbti:patients.filter(p=>!CBTI_STATE.cbtiPatients.includes(p.email))).map(p=>{
-      const full = p.name + (p.lname?' '+p.lname:'');
-      return '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'+
-        '<div style="font-size:14px;color:#fff;font-weight:500">'+full+'</div>'+
+      const full = (p.lname? p.lname+', '+(p.name||'') : (p.name||p.email));
+      const etiqueta = (p.lname? p.lname+', '+(p.name||'') : (p.name||p.email));
+      return '<div data-cbti-nombre="'+((p.lname||'')+' '+(p.name||'')).toLowerCase()+'" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'+
+        '<div style="font-size:14px;color:#fff;font-weight:500">'+etiqueta+'</div>'+
         '<button onclick="toggleCbtiPatient(\''+p.email+'\',\''+full.replace(/\\/g,"\\\\").replace(/'/g,"\\\'")+'\',true)" style="background:#1a4a3a;border:1px solid #7ec8a4;border-radius:8px;padding:6px 12px;color:#7ec8a4;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Activar TCC-I</button>'+
         '</div>';
     }).join('');
@@ -18184,44 +18200,44 @@ async function saveCbtiWindow(){
 // se cambia ahí y en ningún otro lado.
 const DM_TCCI_PROGRAMA = [
   {
-    n:1, titulo:'Menos tiempo en la cama, mejor sueño',
+    n:1, titulo:'Restricción de sueño', subtitulo:'Menos tiempo en la cama, mejor sueño',
     objetivo:'Fijar tu horario de sueño y entender por qué achicar el tiempo en cama, aunque suene al revés, es lo que mejor funciona.',
-    contenido:'Cuando dormís mal, lo natural es compensar: acostarse antes, levantarse más tarde, quedarse un rato más "por las dudas". Es lo que haría cualquiera. Y es justo lo que mantiene el problema.\n\nPensalo así: el sueño funciona como el hambre. Si picoteás todo el día, no llegás con hambre a la cena. Si pasás diez horas en la cama para dormir seis, esas cuatro horas de más son picoteo: gastás las ganas de dormir dando vueltas, y el sueño que queda se reparte fino y se despierta fácil.\n\nLo que vamos a hacer es lo contrario. Vas a pasar en la cama aproximadamente el tiempo que realmente dormís, ni más. No vas a dormir menos que ahora: vas a estar menos tiempo despierto en la cama. Ese sueño más concentrado es más profundo y se corta menos.\n\nTe lo decimos de frente: la primera semana suele ser la más dura. Es normal sentirse más cansado los primeros días. Ese cansancio no es un problema, es la señal de que se está acumulando el sueño que después vas a aprovechar mejor.',
+    contenido:'A esto se lo llama <b>restricción de sueño</b>, y el nombre engaña: no vas a dormir menos, vas a estar menos tiempo despierto en la cama.\n\nCuando dormís mal, lo natural es compensar: acostarse antes, levantarse más tarde, quedarse un rato más "por las dudas". Es lo que haría cualquiera. Y es justo lo que mantiene el problema.\n\nPensalo así: el sueño funciona como el hambre. Si picoteás todo el día, no llegás con hambre a la cena. Si pasás diez horas en la cama para dormir seis, esas cuatro horas de más son picoteo: gastás las ganas de dormir dando vueltas, y el sueño que queda se reparte fino y se despierta fácil.\n\nLo que vamos a hacer es lo contrario. Vas a pasar en la cama aproximadamente el tiempo que realmente dormís, ni más. No vas a dormir menos que ahora: vas a estar menos tiempo despierto en la cama. Ese sueño más concentrado es más profundo y se corta menos.\n\nTe lo decimos de frente: la primera semana suele ser la más dura. Es normal sentirse más cansado los primeros días. Ese cansancio no es un problema, es la señal de que se está acumulando el sueño que después vas a aprovechar mejor.',
     tareas:['Levantarte siempre a la misma hora, también sábados y domingos','No acostarte antes de la hora indicada, aunque tengas sueño en el sillón','Completar el diario cada mañana, apenas te levantás','No dormir siestas durante esta etapa'],
     libre:false
   },
   {
-    n:2, titulo:'Que la cama vuelva a significar dormir',
+    n:2, titulo:'Control de estímulos', subtitulo:'Que la cama vuelva a significar dormir',
     objetivo:'Cortar la asociación entre la cama y estar despierto dando vueltas.',
-    contenido:'Si pasaste meses acostado sin poder dormir, tu cerebro aprendió algo: que la cama es el lugar donde uno se queda despierto pensando. No es una idea que tengas conscientemente; es un reflejo, como cuando se te hace agua la boca al ver comida.\n\nLa buena noticia es que ese aprendizaje se puede revertir, y se revierte con una regla simple de decir y difícil de sostener: si no te dormís en unos veinte minutos, levantate.\n\nNo mires el reloj para contarlos —eso te activa más—; usá tu propia sensación. Si sentís que estás dando vueltas, salí de la cama. Andá a otro ambiente, con la luz lo más baja posible, y hacé algo tranquilo y más bien aburrido: leer algo liviano, doblar ropa, escuchar algo suave. Nada de pantallas brillantes, trabajo ni noticias. Volvés a la cama recién cuando sentís sueño de verdad, no cuando te aburriste.\n\nPuede que la primera noche tengas que levantarte tres o cuatro veces. Es esperable y baja rápido: para la mayoría, en menos de una semana ya son una o ninguna.',
+    contenido:'El <b>control de estímulos</b> trabaja sobre algo que aprendiste sin darte cuenta.\n\nSi pasaste meses acostado sin poder dormir, tu cerebro aprendió algo: que la cama es el lugar donde uno se queda despierto pensando. No es una idea que tengas conscientemente; es un reflejo, como cuando se te hace agua la boca al ver comida.\n\nLa buena noticia es que ese aprendizaje se puede revertir, y se revierte con una regla simple de decir y difícil de sostener: si no te dormís en unos veinte minutos, levantate.\n\nNo mires el reloj para contarlos —eso te activa más—; usá tu propia sensación. Si sentís que estás dando vueltas, salí de la cama. Andá a otro ambiente, con la luz lo más baja posible, y hacé algo tranquilo y más bien aburrido: leer algo liviano, doblar ropa, escuchar algo suave. Nada de pantallas brillantes, trabajo ni noticias. Volvés a la cama recién cuando sentís sueño de verdad, no cuando te aburriste.\n\nPuede que la primera noche tengas que levantarte tres o cuatro veces. Es esperable y baja rápido: para la mayoría, en menos de una semana ya son una o ninguna.',
     tareas:['Levantarte de la cama cuando sientas que estás dando vueltas','Usar la cama solamente para dormir y para el sexo','No mirar el teléfono ni trabajar en la cama','Mantener el mismo horario de la semana pasada'],
     libre:false
   },
   {
-    n:3, titulo:'Ajustamos tu horario',
+    n:3, titulo:'Titulación de la ventana', subtitulo:'Ajustamos tu horario con tus propios datos',
     objetivo:'Ampliar o mantener tu tiempo en cama según cómo dormiste estas dos semanas.',
-    contenido:'Ya tenés dos semanas de registro, así que podemos ajustar con tus datos y no a ojo.\n\nLo que miramos se llama eficiencia de sueño, y es una cuenta simple: del tiempo que pasaste en la cama, qué porcentaje dormiste realmente. Si estuviste siete horas acostado y dormiste seis, tu eficiencia es del 86%. La app ya te la calcula.\n\nLa regla del ajuste:\n\n· Si tu eficiencia superó el 90%, estás durmiendo casi todo el tiempo que estás acostado. Podés adelantar quince minutos la hora de acostarte.\n· Si quedó entre 85 y 90, vas bien pero todavía no. Sostené el mismo horario una semana más.\n· Si quedó por debajo de 85, conviene recortar quince minutos más para volver a concentrar el sueño.\n\nUna sola cosa no se toca: la hora de levantarte. Es el ancla de todo el sistema. Si la movés, el reloj interno se desordena y perdés lo ganado. Los ajustes se hacen siempre corriendo la hora de acostarse.',
+    contenido:'La <b>titulación</b> es simplemente ir ajustando la dosis de a poco hasta encontrar la justa. Acá la dosis es tu tiempo en cama.\n\nYa tenés dos semanas de registro, así que podemos ajustar con tus datos y no a ojo.\n\nLo que miramos se llama eficiencia de sueño, y es una cuenta simple: del tiempo que pasaste en la cama, qué porcentaje dormiste realmente. Si estuviste siete horas acostado y dormiste seis, tu eficiencia es del 86%. La app ya te la calcula.\n\nLa regla del ajuste:\n\n· Si tu eficiencia superó el 90%, estás durmiendo casi todo el tiempo que estás acostado. Podés adelantar quince minutos la hora de acostarte.\n· Si quedó entre 85 y 90, vas bien pero todavía no. Sostené el mismo horario una semana más.\n· Si quedó por debajo de 85, conviene recortar quince minutos más para volver a concentrar el sueño.\n\nUna sola cosa no se toca: la hora de levantarte. Es el ancla de todo el sistema. Si la movés, el reloj interno se desordena y perdés lo ganado. Los ajustes se hacen siempre corriendo la hora de acostarse.',
     tareas:['Mirar tu eficiencia de sueño en la app','Aplicar el ajuste que te corresponda','Seguir levantándote de la cama si estás dando vueltas','Mantener la hora de levantarte sin moverla'],
     libre:false
   },
   {
-    n:4, titulo:'Los pensamientos que no te dejan dormir',
+    n:4, titulo:'Reestructuración cognitiva', subtitulo:'Los pensamientos que no te dejan dormir',
     objetivo:'Reconocer las ideas que te activan al acostarte y ponerlas a prueba con tus propios datos.',
-    contenido:'"Si no duermo ocho horas, mañana no funciono." "Ya perdí la capacidad de dormir." "Si no me duermo ahora, mañana es un desastre."\n\nEstos pensamientos parecen inofensivos, pero hacen algo muy concreto: te ponen en alerta justo cuando necesitás lo contrario. Convierten la cama en un examen que tenés que aprobar, y nadie se duerme rindiendo un examen.\n\nEl trabajo no es repetirse cosas positivas —eso no funciona y además no te lo creés—. Es contrastar la idea con lo que realmente pasó. Y para eso tenés algo que casi nadie tiene: semanas de registro.\n\nBuscá en tu diario una noche que dormiste mal. Ahora acordate de ese día siguiente. ¿Fue el desastre que anticipabas? Casi siempre la respuesta es que fue un día regular, cansador, pero que funcionaste. La catástrofe que temés a las tres de la mañana rara vez ocurre, y tus propios datos lo demuestran.\n\nOtra cosa que ayuda: si te acostás con la cabeza llena de pendientes, reservá quince minutos a la tarde para anotarlos en papel. No para resolverlos, solo para sacarlos de la cabeza. Suena menor y cambia bastante.',
+    contenido:'La <b>reestructuración cognitiva</b> suena complicado y es esto: revisar si lo que pensás sobre tu sueño es verdad.\n\n"Si no duermo ocho horas, mañana no funciono." "Ya perdí la capacidad de dormir." "Si no me duermo ahora, mañana es un desastre."\n\nEstos pensamientos parecen inofensivos, pero hacen algo muy concreto: te ponen en alerta justo cuando necesitás lo contrario. Convierten la cama en un examen que tenés que aprobar, y nadie se duerme rindiendo un examen.\n\nEl trabajo no es repetirse cosas positivas —eso no funciona y además no te lo creés—. Es contrastar la idea con lo que realmente pasó. Y para eso tenés algo que casi nadie tiene: semanas de registro.\n\nBuscá en tu diario una noche que dormiste mal. Ahora acordate de ese día siguiente. ¿Fue el desastre que anticipabas? Casi siempre la respuesta es que fue un día regular, cansador, pero que funcionaste. La catástrofe que temés a las tres de la mañana rara vez ocurre, y tus propios datos lo demuestran.\n\nOtra cosa que ayuda: si te acostás con la cabeza llena de pendientes, reservá quince minutos a la tarde para anotarlos en papel. No para resolverlos, solo para sacarlos de la cabeza. Suena menor y cambia bastante.',
     tareas:['Anotar qué pensamiento aparece cuando no podés dormir','Buscar en tu diario un día que lo contradiga','Reservar quince minutos a la tarde para anotar lo pendiente'],
     libre:false
   },
   {
-    n:5, titulo:'Bajar las revoluciones',
+    n:5, titulo:'Técnicas de desactivación', subtitulo:'Bajar las revoluciones antes de acostarte',
     objetivo:'Llegar a la cama menos activado, en cuerpo y en cabeza.',
-    contenido:'Hay una paradoja en el centro del insomnio: cuanto más te esforzás por dormir, menos dormís. El sueño no es algo que se hace, es algo que pasa cuando dejás de interferir. Es como intentar tragar a propósito o quedarse dormido a las órdenes: el esfuerzo mismo lo impide.\n\nAsí que no vamos a entrenarte para dormir. Vamos a bajar el nivel de activación con el que llegás a la cama, que es otra cosa.\n\nLo que sirve, en orden de facilidad:\n\n· Respiración lenta. Inhalá contando cuatro y exhalá contando seis u ocho. La exhalación larga es la que baja el pulso. Cinco minutos alcanzan.\n· Relajación muscular progresiva. Tensás un grupo de músculos cinco segundos y soltás, subiendo desde los pies. Le da a la cabeza algo concreto en qué ocuparse.\n· Media hora de descenso antes de acostarte, con luz baja, sin pantallas brillantes y sin conversaciones ni contenidos que te activen.\n\nY una recomendación que parece menor: sacá el reloj de la vista. Mirar la hora de noche no aporta nada y te hace calcular cuánto te queda, que es exactamente la clase de cuenta que te desvela.',
+    contenido:'Las <b>técnicas de desactivación</b> no sirven para dormirte: sirven para llegar a la cama con el cuerpo y la cabeza menos acelerados.\n\nHay una paradoja en el centro del insomnio: cuanto más te esforzás por dormir, menos dormís. El sueño no es algo que se hace, es algo que pasa cuando dejás de interferir. Es como intentar tragar a propósito o quedarse dormido a las órdenes: el esfuerzo mismo lo impide.\n\nAsí que no vamos a entrenarte para dormir. Vamos a bajar el nivel de activación con el que llegás a la cama, que es otra cosa.\n\nLo que sirve, en orden de facilidad:\n\n· Respiración lenta. Inhalá contando cuatro y exhalá contando seis u ocho. La exhalación larga es la que baja el pulso. Cinco minutos alcanzan.\n· Relajación muscular progresiva. Tensás un grupo de músculos cinco segundos y soltás, subiendo desde los pies. Le da a la cabeza algo concreto en qué ocuparse.\n· Media hora de descenso antes de acostarte, con luz baja, sin pantallas brillantes y sin conversaciones ni contenidos que te activen.\n\nY una recomendación que parece menor: sacá el reloj de la vista. Mirar la hora de noche no aporta nada y te hace calcular cuánto te queda, que es exactamente la clase de cuenta que te desvela.',
     tareas:['Practicar respiración lenta cinco minutos antes de acostarte','Armar una rutina de descenso de treinta minutos con luz baja','Sacar el reloj y el teléfono de donde puedas ver la hora'],
     libre:false
   },
   {
-    n:6, titulo:'Que dure en el tiempo',
+    n:6, titulo:'Prevención de recaídas', subtitulo:'Que lo logrado dure en el tiempo',
     objetivo:'Consolidar lo que te funcionó y tener listo un plan para cuando vuelvan las malas noches.',
-    contenido:'Vas a volver a dormir mal alguna noche. No es una recaída: es cómo duerme todo el mundo. Un viaje, un problema, una gripe, y aparecen dos o tres noches malas. Eso le pasa también a quien nunca tuvo insomnio.\n\nLa recaída de verdad es otra cosa, y empieza siempre igual: ante unas noches malas, se vuelve a los viejos hábitos. Quedarse más tiempo en la cama para recuperar, dormir una siesta, adelantar la hora de acostarse. En una semana el problema está instalado otra vez.\n\nPor eso conviene tener el plan escrito de antemano, cuando estás bien y podés pensar con claridad:\n\n· Tus tres reglas innegociables. Casi siempre son: hora fija de levantarse, no quedarse en la cama sin dormir, y no compensar con siestas.\n· Tu señal de alarma. Por ejemplo, tres malas noches seguidas.\n· Tu plan de rescate. Volver al horario de la semana 1 durante siete días. En la mayoría de los casos, alcanza.\n\nSeguí registrando aunque sea unos días por mes. Es la forma de darte cuenta temprano, cuando todavía es fácil de corregir.',
+    contenido:'La <b>prevención de recaídas</b> es la parte que casi nadie hace y la que decide si esto dura seis meses o seis años.\n\nVas a volver a dormir mal alguna noche. No es una recaída: es cómo duerme todo el mundo. Un viaje, un problema, una gripe, y aparecen dos o tres noches malas. Eso le pasa también a quien nunca tuvo insomnio.\n\nLa recaída de verdad es otra cosa, y empieza siempre igual: ante unas noches malas, se vuelve a los viejos hábitos. Quedarse más tiempo en la cama para recuperar, dormir una siesta, adelantar la hora de acostarse. En una semana el problema está instalado otra vez.\n\nPor eso conviene tener el plan escrito de antemano, cuando estás bien y podés pensar con claridad:\n\n· Tus tres reglas innegociables. Casi siempre son: hora fija de levantarse, no quedarse en la cama sin dormir, y no compensar con siestas.\n· Tu señal de alarma. Por ejemplo, tres malas noches seguidas.\n· Tu plan de rescate. Volver al horario de la semana 1 durante siete días. En la mayoría de los casos, alcanza.\n\nSeguí registrando aunque sea unos días por mes. Es la forma de darte cuenta temprano, cuando todavía es fácil de corregir.',
     tareas:['Escribir tus tres reglas innegociables','Definir tu señal de alarma y tu plan de rescate','Seguir registrando al menos unos días por mes'],
     libre:false
   }
@@ -18260,7 +18276,8 @@ function dmTcciAbrirSemana(n){
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">'+
         '<button onclick="document.getElementById(\'dm-tcci-sem\').remove()" style="background:rgba(255,255,255,.1);border:none;border-radius:10px;width:36px;height:36px;color:#fff;font-size:18px;cursor:pointer">←</button>'+
         '<div><div style="font-size:10px;letter-spacing:.1em;color:#C8A96E;font-weight:700">SEMANA '+s.n+' DE '+DM_TCCI_PROGRAMA.length+'</div>'+
-        '<div style="font-size:19px;font-weight:700;color:#fff">'+s.titulo+'</div></div>'+
+        '<div style="font-size:19px;font-weight:700;color:#fff">'+s.titulo+'</div>'+
+        (s.subtitulo?'<div style="font-size:12.5px;color:rgba(255,255,255,.6);margin-top:2px">'+s.subtitulo+'</div>':'')+'</div>'+
       '</div>'+
       '<div style="background:rgba(126,200,164,.1);border-left:3px solid #7EC8A4;border-radius:8px;padding:12px 14px;margin-bottom:16px">'+
         '<div style="font-size:10px;letter-spacing:.07em;color:#7EC8A4;font-weight:700;margin-bottom:4px">OBJETIVO</div>'+
@@ -18274,22 +18291,27 @@ function dmTcciAbrirSemana(n){
             '<span style="flex:1;font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.55">'+t+'</span></div>';
         }).join('')+
       '</div>'+
-      '<div style="font-size:11px;color:rgba(255,255,255,.38);text-align:center;margin-top:18px;line-height:1.5">Programa de apoyo basado en TCC-I. No reemplaza la consulta. Si tenés apnea del sueño, trabajás en turnos rotativos o tenés somnolencia peligrosa al volante, consultá antes de restringir el sueño.</div>'+
+      '<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.28);border-radius:12px;padding:12px 14px;margin-top:18px">'+
+        '<div style="font-size:11.5px;color:#C8A96E;font-weight:700;letter-spacing:.05em;margin-bottom:5px">CON ACOMPAÑAMIENTO FUNCIONA MEJOR</div>'+
+        '<div style="font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.55">Este programa sigue la misma estructura que los tratamientos digitales aprobados por agencias regulatorias, que se indican <b>como complemento</b> de la atención profesional, no en reemplazo. Un profesional formado en TCC-I ajusta el ritmo a tu caso, resuelve las dudas del camino y acelera bastante los resultados. Si podés, buscá acompañamiento: te va a rendir más.</div>'+
+        '<button onclick="document.getElementById(\'dm-tcci-sem\').remove();showPatientCode()" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px;color:#fff;font-size:12.5px;margin-top:10px;cursor:pointer;font-family:var(--font)">Vincular un profesional</button>'+
+      '</div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.38);text-align:center;margin-top:14px;line-height:1.5">No reemplaza la consulta médica. Si tenés apnea del sueño, trabajás en turnos rotativos o tenés somnolencia peligrosa al volante, consultá antes de restringir el sueño.</div>'+
     '</div>';
   document.body.appendChild(w);
 }
 // Precios a sondear. Están acá arriba a propósito: cambiás estos números y
 // cambia la encuesta entera, sin tocar nada más.
-// Rangos anclados a una referencia que la gente conoce: una sesión de
-// psicología particular en Argentina ronda los $25.000–$50.000 (FePRA 2026).
-// Preguntar "cuánto pagarías" en abstracto da números sin sentido; comparar
-// contra algo conocido da una respuesta que sirve.
+// Rangos anclados a la referencia real del rubro: una consulta ESPECIALIZADA
+// en sueño en Argentina ronda los $50.000–$80.000 (bastante más que una
+// sesión de psicología general). Seis semanas de tratamiento equivalen a
+// cinco o seis consultas, o sea $250.000–$480.000 de terapia presencial.
 const DM_TCCI_PRECIOS = [
-  { id:'a',  txt:'Menos de $20.000' },
-  { id:'b',  txt:'$20.000 a $40.000',   nota:'menos que una sesión' },
-  { id:'c',  txt:'$40.000 a $70.000',   nota:'como una sesión' },
-  { id:'d',  txt:'$70.000 a $120.000',  nota:'como dos sesiones' },
-  { id:'e',  txt:'Más de $120.000' },
+  { id:'a',  txt:'Menos de $30.000' },
+  { id:'b',  txt:'$30.000 a $60.000',   nota:'menos que una consulta' },
+  { id:'c',  txt:'$60.000 a $100.000',  nota:'como una consulta' },
+  { id:'d',  txt:'$100.000 a $180.000', nota:'como dos consultas' },
+  { id:'e',  txt:'Más de $180.000' },
   { id:'no', txt:'No pagaría por esto' }
 ];
 
@@ -18324,7 +18346,7 @@ function dmTcciPasoInteres(){
     '<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px">Anotado. Una última cosa.</div>'+
     '<div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:16px">'+
       'Nos ayuda a definir el precio: ¿cuánto te parecería razonable pagar, <b>una sola vez</b>, por las seis semanas completas?<br>'+
-      '<span style="font-size:11.5px;color:rgba(255,255,255,.5)">Como referencia, una sesión de psicología particular ronda los $25.000 a $50.000.</span></div>'+
+      '<span style="font-size:11.5px;color:rgba(255,255,255,.5)">Como referencia: una consulta con especialista en sueño ronda los $50.000 a $80.000, y el tratamiento completo suele llevar cinco o seis.</span></div>'+
     DM_TCCI_PRECIOS.map(function(p){
       return '<button onclick="dmTcciGuardarInteres(\''+p.id+'\')" style="width:100%;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:11px 14px;color:#fff;font-size:13.5px;margin-bottom:7px;cursor:pointer;font-family:var(--font)">'+
         p.txt+(p.nota?'<span style="color:rgba(255,255,255,.45);font-size:11.5px"> · '+p.nota+'</span>':'')+'</button>';
@@ -18379,7 +18401,7 @@ function dmTcciRenderPrograma(){
     html+='<div onclick="'+(bloqueadaPorTiempo?'':'dmTcciAbrirSemana('+s.n+')')+'" style="background:rgba(255,255,255,.04);border:1px solid '+borde+';border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+(bloqueadaPorTiempo?'opacity:.45':'cursor:pointer')+'">'+
       '<div style="width:26px;height:26px;border-radius:50%;background:'+(activa?'#1a4a3a':'rgba(255,255,255,.08)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(activa?'#fff':'rgba(255,255,255,.45)')+';flex-shrink:0">'+s.n+'</div>'+
       '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:'+(activa?'#fff':'rgba(255,255,255,.6)')+'">'+s.titulo+'</div>'+
-      '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.objetivo+'</div></div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(s.subtitulo||s.objetivo)+'</div></div>'+
       '<div style="flex-shrink:0">'+estado+'</div></div>';
   });
   html+='</div>';
