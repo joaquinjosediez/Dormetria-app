@@ -682,6 +682,22 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 .bar-f{height:100%;border-radius:2px;}
 .chev{color:var(--label-3);font-size:20px;flex-shrink:0;font-weight:300;}
 
+/* ══ RED DE SEGURIDAD DE CONTRASTE ═══════════════════════════════════
+   Dos clases de error visual se repetían por toda la app y las dos vienen
+   de valores por defecto del navegador, no de decisiones nuestras:
+
+   1. Un <button> sin `color` propio se pinta de AZUL del sistema en iOS.
+      Que herede el color de su contenedor elimina el problema de raíz.
+   2. Una caja con fondo claro dentro de una pantalla oscura hereda el
+      texto blanco y queda ilegible. La clase .caja-clara le devuelve
+      texto oscuro a ella y a todo lo que tenga adentro.
+   ═══════════════════════════════════════════════════════════════════ */
+button{ color: inherit; }
+input, select, textarea{ color: inherit; }
+
+.caja-clara, .caja-clara *{ color:#10231c; }
+.caja-clara .form-label, .caja-clara label{ color:#5c6b64; }
+
 /* ── BOTTOM TAB BAR ── */
 .bottomnav{
   display:none;
@@ -958,7 +974,15 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 }
 #screen-diary-new .form-input[type="time"],
 #screen-diary-new .form-input[type="date"]{ color-scheme:dark; }
-#screen-diary-new .form-row{ gap:10px; }
+/* Alineación de las dos columnas: cuando una etiqueta ocupa dos líneas y la
+   otra una, los campos quedaban a distinta altura y con distinto ancho.
+   Con align-items:end los inputs se apoyan en la misma línea de base, y con
+   width:100% ocupan exactamente su celda. */
+#screen-diary-new .form-row{ gap:10px; align-items:end; }
+#screen-diary-new .form-row > .form-group{ display:flex;flex-direction:column;justify-content:flex-end;min-width:0; }
+#screen-diary-new .form-row .form-input,
+#screen-diary-new .form-row .form-select{ width:100%; box-sizing:border-box; }
+#screen-diary-new .form-row .form-label{ min-height:2.4em; display:flex; align-items:flex-end; }
 #screen-diary-new .emoji-row{ gap:6px; }
 #screen-diary-new .emoji-btn{
   background:rgba(255,255,255,0.07);
@@ -993,16 +1017,39 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   margin-bottom:12px;
 }
 /* Textos que venían oscuros por tokens inline (--ink/--label-3/etc.): se
-   fuerzan a claro para que se lean sobre el fondo verde. */
-#screen-diary-new [style*="color:var(--ink)"],
-#screen-diary-new [style*="color:var(--ink3)"],
-#screen-diary-new [style*="color:var(--ink4)"],
-#screen-diary-new [style*="color:var(--label)"],
-#screen-diary-new [style*="color:var(--label-2)"],
-#screen-diary-new [style*="color:var(--label-3)"],
-#screen-diary-new [style*="color:var(--g800)"],
-#screen-diary-new [style*="color:#666"],
-#screen-diary-new [style*="color:#888"]{ color:rgba(244,239,229,0.62) !important; }
+   fuerzan a claro para que se lean sobre el fondo verde.
+   ── CUIDADO ──
+   Esta regla aclaraba TODO, incluidos los textos que están dentro de cajas
+   de fondo CLARO (el aviso de "campos obligatorios", la fila de despertares,
+   los avisos ámbar). Ahí quedaba claro sobre claro, ilegible. Por eso ahora
+   se excluyen los descendientes de cualquier contenedor con fondo claro. */
+#screen-diary-new [style*="color:var(--ink)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--ink3)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--ink4)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--label)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--label-2)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--label-3)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--g800)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:#666"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:#888"]:not(.sobre-claro *):not(.sobre-claro){
+  color:rgba(244,239,229,0.62) !important;
+}
+/* Cajas de fondo claro dentro del diario: el texto vuelve a ser oscuro. */
+#screen-diary-new .sobre-claro,
+#screen-diary-new .sobre-claro *{ color:#10231c !important; }
+#screen-diary-new .sobre-claro .form-input,
+#screen-diary-new .sobre-claro .form-select{
+  background:#fff !important; color:#10231c !important;
+  border:1px solid #d4cfc4 !important; color-scheme:light !important;
+}
+#screen-diary-new .sobre-claro label{ color:#5c6b64 !important; }
+
+/* Botones sin color propio: en iOS el navegador los pinta de AZUL por
+   defecto. Pasa en los botones de contexto al dormirse del diario infantil
+   y en cualquier otro <button> con background:none. */
+#screen-diary-new button:not(.sel):not(.opt):not(.emoji-btn){ color:#F4EFE5; }
+#screen-diary-new button[data-ctx]{ color:#F4EFE5 !important; }
+#screen-diary-new button[data-ctx].sel{ color:#0F2820 !important; }
 /* Botones de tipo de día: legibles y con la estética de la app. */
 #screen-diary-new #d-daytype-work,
 #screen-diary-new #d-daytype-free{

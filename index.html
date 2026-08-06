@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod61">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod62">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -302,7 +302,7 @@
       </div>
 
       <!-- Data sensitivity notice -->
-      <div style="background:#fff9ec;border-radius:12px;padding:14px 16px;margin-bottom:14px;border-left:4px solid #FF9500">
+      <div class="caja-clara" style="background:#fff9ec;border-radius:12px;padding:14px 16px;margin-bottom:14px;border-left:4px solid #FF9500">
         <div style="font-size:14px;font-weight:600;color:#92400e;margin-bottom:6px">⚠️ Tus datos son sensibles</div>
         <div style="font-size:13px;color:#78350f;line-height:1.65">Los datos que ingresás (escalas, diario de sueño, estudios, medicación) son datos de salud considerados <strong>datos sensibles</strong> según la Ley 25.326 de Protección de Datos Personales de Argentina. Tenés derecho a acceder, rectificar y eliminar tus datos en cualquier momento.</div>
       </div>
@@ -744,7 +744,7 @@
   <div id="pvt-panel-test" class="scroll" style="padding:20px;flex:1;overflow-y:auto">
 
     <!-- Calibration banner -->
-    <div id="pvt-calib-banner" style="background:#fffbeb;border-radius:12px;padding:12px 14px;margin-bottom:16px;border-left:4px solid #FF9500;cursor:pointer" onclick="showScreen('pvt-calib');updateCalibButton()">
+    <div class="caja-clara" id="pvt-calib-banner" style="background:#fffbeb;border-radius:12px;padding:12px 14px;margin-bottom:16px;border-left:4px solid #FF9500;cursor:pointer" onclick="showScreen('pvt-calib');updateCalibButton()">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:14px;font-weight:600;color:#92400e">⚙️ Calibrá tu dispositivo antes de empezar</div>
@@ -1042,7 +1042,7 @@
       <li style="margin-bottom:4px"><strong>🌿 TCC-I</strong> — módulo de terapia cognitivo-conductual para insomnio con protocolo guiado por sesiones (función premium).</li>
     </ol>
     <div style="font-weight:700;font-size:12px;color:#0F2820;text-transform:uppercase;letter-spacing:0.04em;margin:14px 0 6px">💬 Esto tenés que decirle al paciente</div>
-    <div style="background:#fef9e7;border-left:3px solid #C8A96E;padding:10px 12px;border-radius:6px;margin-bottom:8px">
+    <div class="caja-clara" style="background:#fef9e7;border-left:3px solid #C8A96E;padding:10px 12px;border-radius:6px;margin-bottom:8px">
       <p style="margin:0 0 6px;font-size:12.5px"><strong>1. Para que se descargue la app:</strong> "Andá a <strong>dormetria.com</strong>, registrate como paciente con tu mail. Es gratis."</p>
       <p style="margin:0 0 6px;font-size:12.5px"><strong>2. Para vincularse conmigo:</strong> "Entrá a la pestaña <strong>Mi especialista</strong>. Tu código de 6 caracteres está arriba. Apretá <strong>'Compartir con mi médico por WhatsApp'</strong> y mandámelo."</p>
       <p style="margin:0 0 6px;font-size:12.5px"><strong>3. Para que registre su sueño:</strong> "Cada mañana, abrí Dormetria → <strong>Diario de sueño</strong> → '+ Nuevo'. Registrá hora de acostarte, despertarte, cuánto tardaste en dormirte y los despertares. Es muy rápido."</p>
@@ -1305,7 +1305,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod61"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod62"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1324,7 +1324,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod61';
+const APP_VERSION='hoy75-mod62';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3334,7 +3334,7 @@ function showDrRegisterForm(){
         <input id="dreg-photo" class="form-input" type="url" placeholder="https://... (link a foto profesional)" value="${u.photo_url||''}" style="width:100%;box-sizing:border-box"></div>
       <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Descripción breve (opcional)</label>
         <textarea id="dreg-bio" class="form-input" rows="2" placeholder="Áreas de interés, enfoque, modalidad de atención..." style="width:100%;box-sizing:border-box;resize:none">${u.bio||''}</textarea></div>
-      <div style="background:#fef9e7;border:1px solid #C8A96E;border-radius:10px;padding:12px;margin-top:4px">
+      <div class="caja-clara" style="background:#fef9e7;border:1px solid #C8A96E;border-radius:10px;padding:12px;margin-top:4px">
         <label style="font-size:12px;font-weight:700;color:#0F2820;display:block;margin-bottom:6px">📄 CV breve en PDF <span style="color:#dc2626">*</span></label>
         <div style="font-size:11px;color:#5C6B61;line-height:1.4;margin-bottom:8px">El administrador revisa tu CV antes de aprobar tu perfil público. Subí un PDF de máximo 5 MB con tu formación, especialidad y experiencia. ${u.cv_url?'<br><strong style="color:#1a4a3a">✓ CV ya cargado</strong> · <a href="'+u.cv_url+'" target="_blank" style="color:#1F4738">Ver actual</a> — subí uno nuevo si querés actualizarlo.':''}</div>
         <input id="dreg-cv" type="file" accept="application/pdf" style="width:100%;padding:8px;font-size:13px;background:#fff;border:1px solid #ddd;border-radius:8px;box-sizing:border-box">
@@ -8559,7 +8559,7 @@ function renderAwakenings(){
   const cont=document.getElementById('awakening-list');if(!cont)return;
   if(!awakeningList.length){cont.innerHTML='<div style="font-size:13px;color:var(--ink4);margin-bottom:8px;padding:4px 0">Ningún despertar agregado aún</div>';return;}
   cont.innerHTML=awakeningList.map((a,i)=>`
-    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;padding:10px;background:var(--paper);border-radius:var(--r)">
+    <div class="sobre-claro" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;padding:10px;background:var(--paper);border-radius:var(--r)">
       <div style="flex:1"><label style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Horario</label>
         <input class="form-input" type="time" value="${a.time}" oninput="updateAwakening(${i},'time',this.value)" style="padding:8px 10px;font-size:13px"></div>
       <div style="flex:1"><label style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Duración (min)</label>
@@ -8779,7 +8779,7 @@ function showDiaryNew(){
   // Wake date = today (the date you woke up, not when you went to sleep)
   const n=new Date();const today=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
   document.getElementById('diary-form-content').innerHTML=`
-    <div style="background:var(--g50);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--g800)">Campos con <span style="color:#dc2626;font-weight:600">*</span> son obligatorios</div>
+    <div class="sobre-claro" style="background:var(--g50);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--g800)">Campos con <span style="color:#dc2626;font-weight:600">*</span> son obligatorios</div>
     <div class="form-group"><label class="form-label">Fecha de despertar <span style="color:#dc2626">*</span></label>
       <div style="background:#eef8f5;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:13px;color:#2d6b56;line-height:1.5">💡 Ponés la fecha en que te <strong>despertaste</strong>. Dormiste martes 23:00 → despertaste miércoles 7:00 → ponés <strong>miércoles</strong>.</div>
       <input class="form-input" type="date" id="d-date" value="${today}"></div>
@@ -14743,7 +14743,7 @@ function showChildDiaryNew(){
     </div>`;
 
   document.getElementById('diary-form-content').innerHTML = `
-    <div style="background:var(--g50);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--g800)">Campos con <span style="color:#dc2626;font-weight:600">*</span> son obligatorios</div>
+    <div class="sobre-claro" style="background:var(--g50);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--g800)">Campos con <span style="color:#dc2626;font-weight:600">*</span> son obligatorios</div>
     
     <div class="form-group">
       <label class="form-label">Fecha de despertar <span style="color:#dc2626">*</span></label>
