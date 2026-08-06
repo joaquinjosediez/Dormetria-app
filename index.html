@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod60">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod61">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1305,7 +1305,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod60"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod61"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1324,7 +1324,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod60';
+const APP_VERSION='hoy75-mod61';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4550,7 +4550,24 @@ function computeHabitsImpact(entries){
       onTxt:'con alcohol', offTxt:'sin alcohol' },
     { id:'screens', label:'Pantallas antes de dormir', icon:'📱',
       has:e=>e.screen_minutes!=null, on:e=>Number(e.screen_minutes)>=30,
-      onTxt:'≥30 min de pantalla', offTxt:'poca o ninguna pantalla' }
+      onTxt:'≥30 min de pantalla', offTxt:'poca o ninguna pantalla' },
+    // La siesta se lee de la columna nap_minutes y, para los registros
+    // viejos, del texto que quedó guardado en notes.
+    { id:'nap', label:'Siesta', icon:'😴',
+      // Solo se analizan las noches donde la siesta quedó REGISTRADA (columna
+      // con 0 o valor). Los registros viejos, que solo tienen el texto en
+      // notes cuando hubo siesta, no permiten saber si en los otros días no
+      // hubo o no se preguntó: se excluyen en vez de asumir.
+      has:e=>e.nap_minutes!=null,
+      on:e=>Number(e.nap_minutes)>0,
+      onTxt:'con siesta', offTxt:'sin siesta' },
+    // La menstruación NO es un hábito: es un estado fisiológico. Se analiza
+    // igual porque el efecto sobre el sueño está bien descrito, pero la
+    // tarjeta lo rotula aparte para no sugerir que sea algo "modificable".
+    { id:'period', label:'Días de menstruación', icon:'🩸', fisiologico:true,
+      has:e=>e.has_period!=null || /Período/.test(String(e.notes||'')),
+      on:e=>e.has_period===true || /🩸Período/.test(String(e.notes||'')),
+      onTxt:'con menstruación', offTxt:'resto del ciclo' }
   ];
   // Variables de salida. dirGood indica si SUBIR es mejor (+1) o peor (-1).
   const salidas=[
@@ -4587,7 +4604,7 @@ function computeHabitsImpact(entries){
       veredicto = suma>0?'positivo' : suma<0?'negativo' : 'mixto';
     }
     out.push({ id:hb.id, label:hb.label, icon:hb.icon, onTxt:hb.onTxt, offTxt:hb.offTxt,
-               nOn:on.length, nOff:off.length, efectos, veredicto });
+               fisiologico:!!hb.fisiologico, nOn:on.length, nOff:off.length, efectos, veredicto });
   });
   return { n:E.length, habitos:out };
 }
@@ -4602,20 +4619,22 @@ function renderHabitsImpactHtml(entries){
   };
   const colFor=s=> s>0?'#16a34a' : s<0?'#dc2626' : '#6b7280';
   let html='<div class="dm-card" style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px">'+
-    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Impacto de hábitos '+
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Factores asociados al sueño '+
       '<span style="font-weight:400;color:var(--label-3);font-size:11px">· '+R.n+' noches</span></div>'+
     '<div style="font-size:11px;color:var(--label-3);line-height:1.5;margin-bottom:11px">'+
-      'Compara las noches con y sin cada hábito <em>en este mismo paciente</em>. Es una asociación, no una relación causal: puede haber factores de confusión (por ejemplo, tomar café justamente los días de peor descanso previo).</div>';
+      'Compara las noches con y sin cada factor <em>en este mismo paciente</em>. Es una asociación, no una relación causal: puede haber confusión (por ejemplo, tomar café justamente los días de peor descanso previo, o dormir siesta <em>porque</em> se durmió mal la noche anterior).</div>';
   R.habitos.forEach(hb=>{
     const vCol = hb.veredicto==='positivo'?'#16a34a' : hb.veredicto==='negativo'?'#dc2626' : '#6b7280';
     const vTxt = hb.veredicto==='positivo'?'Asociado a mejor sueño'
                : hb.veredicto==='negativo'?'Asociado a peor sueño'
                : hb.veredicto==='mixto'?'Efecto mixto' : 'Sin diferencia relevante';
+    const etiqueta = hb.fisiologico
+      ? '<span style="font-size:9.5px;background:#eef2ff;color:#4338ca;border-radius:99px;padding:2px 7px;font-weight:600">no modificable</span>' : '';
     html+='<div style="border:1px solid #eceae4;border-radius:11px;padding:10px 12px;margin-bottom:8px">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap">'+
         '<span style="font-size:15px">'+hb.icon+'</span>'+
         '<span style="font-size:12.5px;font-weight:700;color:var(--label)">'+hb.label+'</span>'+
-        '<span style="font-size:10px;font-weight:700;color:'+vCol+';background:'+vCol+'14;border-radius:99px;padding:2px 8px">'+vTxt+'</span>'+
+        '<span style="font-size:10px;font-weight:700;color:'+vCol+';background:'+vCol+'14;border-radius:99px;padding:2px 8px">'+vTxt+'</span>'+etiqueta+
         '<span style="font-size:10px;color:var(--label-3);margin-left:auto">'+hb.nOn+' vs '+hb.nOff+' noches</span>'+
       '</div>';
     hb.efectos.forEach(ef=>{
@@ -9043,6 +9062,7 @@ async function saveDiary(){
     'cafeína (items)': (caffItems&&caffItems.length)||0,
     'alcohol (items)': (alcItems&&alcItems.length)||0,
     'siesta': napStart, 'medicación': (meds&&meds.length)||0,
+    'menstruación': _periodActive?1:0,
     'despertares': awakList.length
   };
   const _mapa = {
@@ -9050,7 +9070,8 @@ async function saveDiary(){
     'latencia':'sleep_latency_mins','calidad':'sleep_quality','ánimo':'mood','energía':'energy',
     'ejercicio (min)':'exercise_mins','pantallas (min)':'screen_minutes',
     'cafeína (items)':'coffee_cups','alcohol (items)':'alcohol_drinks',
-    'siesta':'notes','medicación':'medications','despertares':'awakenings'
+    'siesta':'nap_start','medicación':'medications','despertares':'awakenings',
+    'menstruación':'has_period'
   };
 
   const payload={
@@ -9076,6 +9097,15 @@ async function saveDiary(){
     coffee_cups:caffTotal,
     alcohol_drinks:alcTotal,
     medications:meds,
+    // Siesta y menstruación también en columnas propias: dentro de notes son
+    // texto suelto y no se pueden analizar ni graficar. El texto se conserva
+    // por compatibilidad con los registros ya guardados.
+    // OJO con el 0 vs null: si el paciente marcó "no dormí siesta" hay que
+    // guardar 0, no null. Con null, "sin siesta" es indistinguible de "no se
+    // preguntó" y el análisis descarta esas noches por falta de contraste.
+    nap_minutes: napStart ? (napDur||0) : (hasNap===false ? 0 : null),
+    nap_start: napStart || null,
+    has_period: !!_periodActive,
     notes:[notes, napTxt, (_periodActive?'🩸Período':'')].filter(Boolean).join(' | ') || null,
   };
   try{
