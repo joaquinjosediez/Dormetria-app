@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod71">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod72">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod71"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod72"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod71';
+const APP_VERSION='hoy75-mod72';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -11322,9 +11322,9 @@ async function showDrPTab_(tab){
       const pathsBody = '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:6px">Patologías</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+(paths||'<span style="font-size:12px;color:rgba(244,239,229,0.5);font-style:italic">No registradas</span>')+'</div>'+
         '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:4px">Medicación habitual</div>'+
-        '<div style="font-size:13px;color:'+(u.medications?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medications?'':'font-style:italic')+'">'+escHtml(u.medications||'Sin medicación registrada')+'</div>';+
+        '<div style="font-size:13px;color:'+(u.medications?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medications?'':'font-style:italic')+'">'+escHtml(u.medications||'Sin medicación registrada')+'</div>'+
         '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Antecedentes clínicos</div>'+
-        '<div style="font-size:13px;color:'+(u.medical_history?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medical_history?'':'font-style:italic')+';line-height:1.5">'+escHtml(u.medical_history||'No registrados')+'</div>'
+        '<div style="font-size:13px;color:'+(u.medical_history?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medical_history?'':'font-style:italic')+';line-height:1.5">'+escHtml(u.medical_history||'No registrados')+'</div>';
       const habitChip = (lbl,val) => '<div style="background:rgba(126,200,164,0.06);border-radius:8px;padding:8px 10px"><div style="font-size:10px;color:rgba(244,239,229,0.5);margin-bottom:2px">'+lbl+'</div><div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(val||'—')+'</div></div>';
       // Traductores: codes EN → labels ES (igual que en _mpAct / _mpWork)
       const ACT_LABELS = {child:'Niño/a',teen:'Adolescente',student:'Estudiante',athlete:'Deportista/Atleta',shift:'Trabajo en turnos',night:'Trabajo nocturno',healthcare:'Profesional de salud',office:'Trabajo de oficina',remote:'Trabajo remoto',retired:'Jubilado/a',other:'Otro'};
