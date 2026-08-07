@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod69">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod70">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod69"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod70"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod69';
+const APP_VERSION='hoy75-mod70';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -11655,14 +11655,55 @@ async function showDrPTab_(tab){
           }).filter(i=>i!==null);
           ctxA._weekendRows=drWeekendRows;
           // SIESTAS y DESPERTARES (faltaba en la vista del médico)
-          // Siestas: parsear de notes con formato "Siesta: HH:MM (Xmin)" o desde columna naps si existe
+          // ── Siestas del actograma del PROFESIONAL ──
+          // Este bloque tenía el mismo bug que el del paciente: buscaba en
+          // notes el patrón "Siesta: HH:MM 45min", un formato que la app
+          // nunca guardó. Ahora lee las columnas propias, el JSON de notes
+          // (que puede traer VARIAS siestas: en pediatría son 2 o 3 por día)
+          // y, por último, el formato viejo.
           const drNapBars=sorted.map(e=>{
-            if(!e.notes)return null;
-            const m=(e.notes||'').match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
-            if(!m)return null;
-            const start=toOff(m[1]);
-            const dur=m[2]?parseInt(m[2])/60:0.5;
-            return[start,start+dur];
+            const salidas=[];
+            if(e.nap_start && Number(e.nap_minutes)>0){
+              const st=toOff(e.nap_start.slice(0,5));
+              salidas.push([st, st + Number(e.nap_minutes)/60]);
+            }
+            const mj=(e.notes||'').match(/Siestas: (\[.*?\])(?: \||$)/);
+            if(mj){
+              try{
+                (JSON.parse(mj[1])||[]).forEach(function(nn){
+                  if(!nn || !nn.start) return;
+                  const st=toOff(nn.start);
+                  let fin = nn.end ? toOff(nn.end) : st+0.75;
+                  if(fin<=st) fin=st+0.75;
+                  salidas.push([st, fin]);
+                });
+              }catch(_){}
+            }
+            if(!salidas.length){
+              const m=(e.notes||'').match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
+              if(m){
+                const start=toOff(m[1]);
+                salidas.push([start, start + (m[2]?parseInt(m[2])/60:0.5)]);
+              }
+            }
+            // Chart.js dibuja un solo tramo por fila en este dataset: se toma
+            // la siesta más larga y las demás se suman al conteo aparte.
+            if(!salidas.length) return null;
+            salidas.sort((a,b)=>(b[1]-b[0])-(a[1]-a[0]));
+            return salidas[0];
+          });
+          // Todas las siestas de cada fila, para dibujarlas completas.
+          const drNapExtra=sorted.map(e=>{
+            const mj=(e.notes||'').match(/Siestas: (\[.*?\])(?: \||$)/);
+            if(!mj) return [];
+            try{
+              return (JSON.parse(mj[1])||[]).filter(n=>n&&n.start).map(function(nn){
+                const st=toOff(nn.start);
+                let fin = nn.end ? toOff(nn.end) : st+0.75;
+                if(fin<=st) fin=st+0.75;
+                return [st,fin];
+              }).sort((a,b)=>(b[1]-b[0])-(a[1]-a[0])).slice(1);
+            }catch(_){ return []; }
           });
           // Despertares por fila: desde awakening_detail JSON
           ctxA._awakeningsByRow=sorted.map(e=>{
@@ -11702,6 +11743,8 @@ async function showDrPTab_(tab){
             data:{labels:actoLabels,datasets:[
               {label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false},
               {label:'Siesta',data:drNapBars,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
+              ,{label:'Siesta 2',data:drNapExtra.map(a=>a[0]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
+              ,{label:'Siesta 3',data:drNapExtra.map(a=>a[1]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
             ]},
             options:{
               indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4,right:48}},
