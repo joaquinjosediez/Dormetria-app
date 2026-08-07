@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod62">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod65">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -507,7 +507,8 @@
 
     <!-- Instalar la app + activar recordatorios (arriba de todo: es la acción
          que habilita los recordatorios; se oculta sola una vez instalada) -->
-    <div id="dm-install-card" style="display:none;background:linear-gradient(135deg,rgba(200,169,110,0.2),rgba(200,169,110,0.07));border:1px solid rgba(200,169,110,0.45);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+    <div id="dm-install-card" style="display:none;position:relative;background:linear-gradient(135deg,rgba(200,169,110,0.2),rgba(200,169,110,0.07));border:1px solid rgba(200,169,110,0.45);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+      <button onclick="event.stopPropagation();dmCerrarInstallCard()" aria-label="Cerrar" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,0.45);font-size:17px;line-height:1;cursor:pointer;padding:4px 6px">✕</button>
       <div style="display:flex;align-items:center;gap:12px">
         <div style="font-size:24px;flex-shrink:0" id="dm-install-emoji">📲</div>
         <div style="flex:1;min-width:0">
@@ -1305,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod62"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod65"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1324,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod62';
+const APP_VERSION='hoy75-mod65';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -1404,9 +1405,17 @@ function isSafariDesktop(){
 function isIOSDevice(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
 }
+function dmCerrarInstallCard(){
+  try{ localStorage.setItem('dm_install_card_cerrada','1'); }catch(_){}
+  const el=document.getElementById('dm-install-card');
+  if(el) el.style.display='none';
+  toast('Podés instalarla más adelante desde Más → Instalar');
+}
 function updateInstallUI(){
   const el=document.getElementById('dm-install-card');
   if(!el) return;
+  // Si la persona la cerró, no se la volvemos a mostrar.
+  try{ if(localStorage.getItem('dm_install_card_cerrada')==='1'){ el.style.display='none'; return; } }catch(_){}
   const instalada = isStandalonePWA();
   const permitido = (typeof Notification!=='undefined') && Notification.permission==='granted';
   // Nada que ofrecer solo si YA está instalada y YA aceptó las notificaciones.
@@ -1467,14 +1476,47 @@ function showIOSInstallGuide(){
           ? step(1,'Tocá el botón <strong>Compartir</strong> <span style="display:inline-block;vertical-align:-3px"><svg width="13" height="15" viewBox="0 0 24 28" fill="none" stroke="#1a4a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3"/><path d="M7 8l5-5 5 5"/><path d="M4 13v9a2 2 0 002 2h12a2 2 0 002-2v-9"/></svg></span> en la barra de Safari (arriba a la derecha).')+
             step(2,'Elegí <strong>“Agregar al Dock”</strong> (Add to Dock).')+
             step(3,'Abrí Dormetria desde el ícono del Dock y <strong>activá las notificaciones</strong> cuando te las pida.')
-          : step(1,'Tocá el botón de instalar de tu navegador (o el menú ⋮ → “Instalar aplicación”).')+
-            step(2,'Confirmá la instalación.')+
-            step(3,'Abrí Dormetria desde el ícono nuevo y aceptá las notificaciones.'))
+          : step(1,'Tocá el menú de <strong>tres puntos ⋮</strong> del navegador. En Chrome para Android está <strong>arriba a la derecha</strong>.')+
+            step(2,'Elegí <strong>“Instalar y crear acceso directo”</strong> (según la versión puede decir “Instalar aplicación” o “Agregar a pantalla principal”).')+
+            step(3,'Confirmá con <strong>Instalar</strong>.')+
+            step(4,'Abrí Dormetria desde el ícono nuevo y aceptá las notificaciones cuando te las pida.'))
     )+
     '<button onclick="document.getElementById(\'dm-install-modal\').remove()" style="width:100%;margin-top:16px;padding:13px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Entendido</button>'+
   '</div>';
   document.body.appendChild(wrap);
 }
+// Cuando el navegador ya tiene el permiso BLOQUEADO, volver a pedirlo no
+// hace nada: no vuelve a preguntar nunca. Hay que explicar dónde destrabarlo,
+// porque el usuario no tiene forma de adivinarlo.
+function dmMostrarComoHabilitarNotif(){
+  const ios = isIOSDevice();
+  const old=document.getElementById('dm-notif-ayuda'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-notif-ayuda';
+  w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10005;display:flex;align-items:flex-end;justify-content:center';
+  w.onclick=function(e){ if(e.target===w) w.remove(); };
+  const paso=(n,t)=>'<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">'+
+    '<div style="width:22px;height:22px;border-radius:50%;background:#1a4a3a;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+n+'</div>'+
+    '<div style="font-size:13.5px;color:#10231c;line-height:1.5">'+t+'</div></div>';
+  w.innerHTML='<div style="background:#F4EFE5;border-radius:20px 20px 0 0;padding:22px 20px 34px;width:100%;max-width:480px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+      '<div style="font-size:17px;font-weight:700;color:#10231c">🔔 Activar las notificaciones</div>'+
+      '<button onclick="document.getElementById(\'dm-notif-ayuda\').remove()" style="background:none;border:none;font-size:22px;color:#9CA3AF;cursor:pointer">✕</button></div>'+
+    '<div style="font-size:13px;color:#4b5563;margin-bottom:16px;line-height:1.5">El navegador tiene las notificaciones bloqueadas para este sitio. Como ya las rechazaste una vez, no vuelve a preguntar: hay que habilitarlas a mano.</div>'+
+    (ios
+      ? paso(1,'Abrí <strong>Ajustes</strong> del iPhone.')+
+        paso(2,'Bajá hasta <strong>Dormetria</strong> en la lista de apps (tiene que estar instalada en la pantalla de inicio).')+
+        paso(3,'Entrá en <strong>Notificaciones</strong> y activá <strong>Permitir notificaciones</strong>.')
+      : paso(1,'Tocá el <strong>candado 🔒</strong> o el ícono a la izquierda de la dirección, arriba en el navegador.')+
+        paso(2,'Entrá en <strong>Permisos</strong> o <strong>Configuración del sitio</strong>.')+
+        paso(3,'Buscá <strong>Notificaciones</strong> y cambialo a <strong>Permitir</strong>.')+
+        paso(4,'Volvé a Dormetria y tocá otra vez “Recordatorios”.')
+    )+
+    '<button onclick="document.getElementById(\'dm-notif-ayuda\').remove()" style="width:100%;margin-top:14px;padding:13px;border:none;border-radius:12px;background:#1a4a3a;color:#fff;font-size:14.5px;font-weight:600;cursor:pointer;font-family:var(--font)">Entendido</button>'+
+  '</div>';
+  document.body.appendChild(w);
+}
+
 // Pide permiso de notificaciones (solo tiene efecto real si está instalada en iOS)
 async function dmEnableNotifications(btn){
   try{
@@ -1504,7 +1546,7 @@ async function dmEnableNotifications(btn){
       if(btn) btn.textContent='✓ Activadas — elegir horario';
       if(typeof showReminderSettings==='function') setTimeout(()=>showReminderSettings('diary'),600);
     } else {
-      toast('No se activaron. Podés habilitarlas desde los ajustes del navegador.');
+      dmMostrarComoHabilitarNotif();
     }
   }catch(e){ toast('No se pudo activar: '+(e&&e.message||'')); }
 }
@@ -7755,6 +7797,7 @@ function renderMiPerfilView(card){
    +_mpRow('Fecha de nacimiento',u.dob)
    +_mpRow('Edad',_mpAge(u.dob))
    +_mpRow('Sexo biológico',_mpSex(u.sex))
+   +_mpRow('Nacionalidad',u.nationality||'')
    +_mpRow('Altura',u.height_cm?u.height_cm+' cm':'')
    +_mpRow('Peso',u.weight_kg?u.weight_kg+' kg':'')
    +_mpRow('IMC',_mpImc(u.height_cm,u.weight_kg))
@@ -7788,6 +7831,7 @@ function renderMiPerfilEdit(card){
    +inp('mp-lname','Apellido',u.lname)
    +inp('mp-dob','Fecha de nacimiento',u.dob,'date')
    +sel('mp-sex','Sexo biológico',u.sex,[['','—'],['M','Masculino'],['F','Femenino']])
+   +sel('mp-nationality','Nacionalidad',u.nationality,DM_NACIONALIDADES.map(function(x){return [x,x];}))
    +inp('mp-height','Altura (cm)',u.height_cm,'number')
    +inp('mp-weight','Peso (kg)',u.weight_kg,'number')
    +(function(){
@@ -7818,7 +7862,8 @@ function renderMiPerfilEdit(card){
      +sel('mp-menarche','¿Ya tuviste tu primera menstruación?', u.has_menarche===true?'true':u.has_menarche===false?'false':'', [['','—'],['true','Sí'],['false','No']])
      +sel('mp-menopause','¿Atravesaste la menopausia?', u.has_menopause===true?'true':u.has_menopause===false?'false':'', [['','—'],['true','Sí, ya llegué a la menopausia'],['false','No, aún menstruo']])
    +'</div>'
-   +'<div id="mp-menstrual-wrap" style="margin-bottom:12px;'+((u.sex==='F'||u.sex==='Femenino')?'':'display:none')+'"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:11px 13px"><input id="mp-menstrual" type="checkbox"'+(u.track_menstrual?' checked':'')+' style="width:18px;height:18px;accent-color:#e11d48"><span style="font-size:13px;color:#374151;line-height:1.4">Registrar período menstrual en el diario de sueño<br><span style="font-size:11px;color:#9ca3af">El ciclo influye en el sueño. Si lo activás, vas a poder marcar de forma discreta las noches en que estás menstruando.</span></span></label></div>'
+      +'<div id="mp-menstrual-wrap" style="margin-bottom:12px;'+((u.sex==='F'||u.sex==='Femenino')?'':'display:none')+'"><div style="display:flex;align-items:flex-start;gap:10px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;padding:11px 13px"><span style="font-size:15px;line-height:1.3">🩸</span><span style="font-size:13px;color:#374151;line-height:1.45">En el diario vas a poder marcar las noches en que estás menstruando.<br><span style="font-size:11px;color:#6b7280">El ciclo influye en el sueño, así que ese dato entra en tus métricas. Es opcional noche a noche: solo lo marcás cuando corresponde.</span></span></div></div>'
+   +'<input id="mp-menstrual" type="checkbox" checked style="display:none">'
    +'<div style="display:flex;gap:10px;margin-top:16px"><button onclick="renderMiPerfilView(this.closest(\'[data-mp]\'))" style="flex:1;padding:13px;border:1px solid #d1d5db;border-radius:12px;background:transparent;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button><button onclick="saveMiPerfil(this)" style="flex:1;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Guardar</button></div>';
   // Mostrar/ocultar los campos femeninos según el sexo elegido
   setTimeout(function(){
@@ -7851,6 +7896,7 @@ async function saveMiPerfil(btn){
     lname:(g('mp-lname')&&g('mp-lname').value.trim())||S.user.lname,
     dob:(g('mp-dob')&&g('mp-dob').value)||S.user.dob,
     sex:(g('mp-sex')&&g('mp-sex').value)||null,
+    nationality:(g('mp-nationality')&&g('mp-nationality').value)||null,
     height_cm:parseFloat(g('mp-height')&&g('mp-height').value)||null,
     weight_kg:parseFloat(g('mp-weight')&&g('mp-weight').value)||null,
     phone:phoneFinal,
@@ -8174,12 +8220,38 @@ async function showDiaryTab_(tab){
           const w=timeToOffset(e.wake_time.slice(0,5));
           return[start,Math.min(w>start?w:w+24,24)];
         });
+        // ── BUG HISTÓRICO ──
+        // Esto buscaba en notes el patrón "Siesta: HH:MM NNmin" (singular),
+        // un formato que la app NUNCA guardó: el diario escribe
+        // "Siestas: [{start,end}]" (plural, JSON) y desde mod61 además usa
+        // las columnas nap_start / nap_minutes. Por eso las siestas se
+        // registraban pero jamás aparecían en el actograma.
         const napBarData=sorted.map(e=>{
-          if(!e.notes)return null;
+          // 1) Columnas propias (lo que guarda la app desde mod61)
+          if(e.nap_start && Number(e.nap_minutes)>0){
+            const st=timeToOffset(e.nap_start);
+            return [st, st + Number(e.nap_minutes)/60];
+          }
+          if(!e.notes) return null;
+          // 2) Formato JSON en notes (diario infantil y registros previos)
+          const mj=e.notes.match(/Siestas: (\[.*?\])(?: \||$)/);
+          if(mj){
+            try{
+              const arr=JSON.parse(mj[1]);
+              const n0=Array.isArray(arr)?arr.find(x=>x&&x.start):null;
+              if(n0){
+                const st=timeToOffset(n0.start);
+                let fin = n0.end ? timeToOffset(n0.end) : st+0.75;
+                if(fin<=st) fin=st+0.75;
+                return [st, fin];
+              }
+            }catch(_){}
+          }
+          // 3) Formato viejo por si quedó algo escrito a mano
           const m=e.notes.match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
-          if(!m)return null;
-          const start=timeToOffset(m[1]);const dur=m[2]?parseInt(m[2])/60:0.5;
-          return[start,start+dur];
+          if(!m) return null;
+          const start=timeToOffset(m[1]); const dur=m[2]?parseInt(m[2])/60:0.5;
+          return [start,start+dur];
         });
         // Unificado con computeDiaryMetrics: mismo set de noches y mismo método de promedio
         const _validForAvgP = sorted.filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
@@ -8931,11 +9003,7 @@ function showDiaryNew(){
     <input type="hidden" id="d-alc" value="0">
 
     <div id="period-section" style="display:none;margin-bottom:14px">
-      <button type="button" id="period-btn" onclick="togglePeriod()" style="display:inline-flex;align-items:center;gap:8px;background:var(--bg-secondary);border:1.5px solid var(--sep-opaque);border-radius:20px;padding:8px 14px;cursor:pointer;font-family:var(--font)">
-        <span style="font-size:17px">🩸</span>
-        <span id="period-btn-label" style="font-size:13px;color:var(--label-2);font-weight:500">Marcar período menstrual</span>
-        <span id="period-check" style="font-size:14px">⬜</span>
-      </button>
+      <button type="button" id="period-btn" onclick="togglePeriod()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(225,29,72,0.12);border:1.5px solid rgba(225,29,72,0.45);border-radius:999px;padding:10px 16px;cursor:pointer;font-family:var(--font);width:100%;justify-content:flex-start"><span style="font-size:16px;line-height:1">🩸</span><span id="period-btn-label" style="font-size:13.5px;color:#F4EFE5;font-weight:600">Marcar período menstrual</span><span id="period-check" style="margin-left:auto;font-size:15px;line-height:1">⬜</span></button>
     </div>
     </div>
     <div class="dm-diary-block">
@@ -16717,6 +16785,14 @@ function resetMedModal(){
   renderMedList();
 }
 
+// Nacionalidad del paciente. Importa clínicamente más de lo que parece: la
+// latitud de origen y los hábitos culturales de horario (cena tardía, siesta)
+// influyen en el ritmo circadiano y en lo que se considera "normal" dormir.
+const DM_NACIONALIDADES = ['','Argentina','Uruguaya','Chilena','Paraguaya','Boliviana','Brasileña',
+ 'Peruana','Colombiana','Venezolana','Ecuatoriana','Mexicana','Española','Italiana','Alemana',
+ 'Francesa','Portuguesa','Británica','Estadounidense','Canadiense','China','Japonesa','Coreana',
+ 'India','Rusa','Ucraniana','Siria','Libanesa','Israelí','Sudafricana','Australiana','Otra'];
+
 // ── PERIOD TRACKING ──
 let _periodActive = false;
 
@@ -16725,15 +16801,18 @@ function togglePeriod(){
   const btn = document.getElementById('period-btn');
   const lbl = document.getElementById('period-btn-label');
   const chk = document.getElementById('period-check');
+  // Estaba en blanco con texto claro: invisible hasta tocarlo. Ahora el
+  // estado apagado ya es legible sobre el fondo verde y el encendido se
+  // distingue por relleno lleno, no por cambio de color de texto.
   if(_periodActive){
-    btn.style.borderColor = '#e11d48';
-    btn.style.background = '#fff1f2';
-    if(lbl){ lbl.style.color = '#e11d48'; lbl.textContent='Período menstrual'; }
-    if(chk) chk.textContent = '🔴';
+    btn.style.borderColor = '#fb7185';
+    btn.style.background = 'rgba(225,29,72,0.30)';
+    if(lbl){ lbl.style.color = '#fff'; lbl.textContent='Período menstrual'; }
+    if(chk) chk.textContent = '✅';
   } else {
-    btn.style.borderColor = 'var(--sep-opaque)';
-    btn.style.background = 'var(--bg-secondary)';
-    if(lbl){ lbl.style.color = 'var(--label-2)'; lbl.textContent='Marcar período menstrual'; }
+    btn.style.borderColor = 'rgba(225,29,72,0.45)';
+    btn.style.background = 'rgba(225,29,72,0.12)';
+    if(lbl){ lbl.style.color = '#F4EFE5'; lbl.textContent='Marcar período menstrual'; }
     if(chk) chk.textContent = '⬜';
   }
 }
