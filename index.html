@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod70">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod71">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod70"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod71"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod70';
+const APP_VERSION='hoy75-mod71';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4825,7 +4825,13 @@ function renderHabitsImpactHtml(entries){
   return html;
 }
 
-function renderClinicalMetricsHtml(entries, audience){
+function renderClinicalMetricsHtml(entries, audience, ageYears){
+  // ── Menores de 3 años ──
+  // Varias métricas de este bloque son conceptos de sueño ADULTO y no aplican:
+  // la terapia de restricción de cama no existe en lactantes, la eficiencia
+  // TST/TIB no tiene corte validado a esa edad, y "días laborables vs no
+  // laborables" no significa nada en un bebé. Mostrarlas induce a error.
+  const _bebe = (ageYears!=null && ageYears<3);
   audience = audience || 'patient';
   const m = computeDiaryMetrics(entries);
   if(!m) return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--label-2)">Necesitás al menos 3 registros con horarios completos para ver las métricas clínicas.</div>';
@@ -4865,19 +4871,24 @@ function renderClinicalMetricsHtml(entries, audience){
   if(audience === 'doctor'){
     html += row('Duración promedio de despertares', m.fmtMin(m.avgAwakDur), awakColor, awakSub);
     // Tiempo en cama (TIB) — para sleep restriction therapy
-    if(m.avgTIB != null){
+    if(m.avgTIB != null && !_bebe){
       html += row('Tiempo en cama (TIB)', m.fmtDur(m.avgTIB), null, 'Promedio bedtime → wake_time — base para terapia de restricción de cama');
     }
-    // Eficiencia de sueño (TST/TIB) — umbral clínico ≥85%
-    if(m.sleepEfficiency != null){
+    // Eficiencia de sueño (TST/TIB) — umbral clínico ≥85% (solo adultos/niños grandes)
+    if(m.sleepEfficiency != null && !_bebe){
       const effColor = m.sleepEfficiency>=85?'#14532d':m.sleepEfficiency>=75?'#d97706':'#dc2626';
       html += row('Eficiencia de sueño (TST/TIB)', m.sleepEfficiency+'%', effColor, '≥85% normal · 75-85% subóptima · <75% considerar restricción');
     }
+    if(_bebe && m.sleepEfficiency != null){
+      html += row('Tiempo en cama despierto', m.fmtDur(Math.max(0, (m.avgTIB||0)-(m.avgTotal||0))), null,
+        'En lactantes se informa en crudo: no hay cortes de eficiencia validados a esta edad y la restricción de cama no aplica');
+    }
   }
 
-  html += row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
+  html += (_bebe ? '' :
+    row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
     row('Promedio días no laborables', m.fmtDur(m.avgWe), null, m.nWe+' noches')+
-    row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Más sueño los días libres sugiere insuficiencia entre semana')+
+    row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Más sueño los días libres sugiere insuficiencia entre semana'))+
     row('Jet lag social', sjlStr, sjlColor, 'Desfase del punto medio del sueño entre semana y fin de semana')+
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor);
 
@@ -8476,8 +8487,8 @@ async function showDiaryTab_(tab){
             data:{
               labels:actoLabels,
               datasets:[
-                {label:'Sueño nocturno',data:sleepBarData,backgroundColor:sleepBarColors,borderColor:sleepBarBorders,borderWidth:1,borderRadius:3,borderSkipped:false},
-                {label:'Siesta',data:napBarData,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
+                {label:'Sueño nocturno',grouped:false,data:sleepBarData,backgroundColor:sleepBarColors,borderColor:sleepBarBorders,borderWidth:1,borderRadius:3,borderSkipped:false},
+                {label:'Siesta',data:napBarData,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,grouped:false,borderSkipped:false}
               ]
             },
             options:{
@@ -10161,6 +10172,18 @@ async function showDrTab_(tab){
       // SECONDARY: also try querying doctor_patients (may fail due to RLS)
       try{
         const links=await db.get(`doctor_patients?doctor_email=eq.${encodeURIComponent(S.user.email)}&select=patient_email`);
+        // Si la consulta funcionó, la base MANDA sobre la caché: un paciente
+        // desvinculado seguía apareciendo en el listado (aparecía pero al
+        // tocarlo no pasaba nada, porque ya no existía el vínculo).
+        if(links && Array.isArray(links)){
+          const vivos=new Set(links.map(l=>String(l.patient_email||'').toLowerCase()));
+          const antes=cachedEmails.length;
+          cachedEmails=cachedEmails.filter(e=>vivos.has(String(e).toLowerCase()));
+          if(cachedEmails.length!==antes){
+            try{ localStorage.setItem(cacheKey, JSON.stringify(cachedEmails)); }catch(_){}
+            console.log('[PACIENTES] caché depurada:', antes-cachedEmails.length, 'sin vínculo');
+          }
+        }
         if(links&&links.length){
           links.forEach(l=>{if(l.patient_email&&!cachedEmails.includes(l.patient_email))cachedEmails.push(l.patient_email);});
           localStorage.setItem(cacheKey,JSON.stringify(cachedEmails));
@@ -11564,7 +11587,7 @@ async function showDrPTab_(tab){
         // columna derecha, debajo del actograma, para balancear las alturas.
         const dme=document.getElementById('dr-clinical-metrics');
         if(dme){
-          dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor');
+          dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor', (function(){ const d=S.viewData&&S.viewData.dob; return d?Math.floor((Date.now()-new Date(d))/31557600000):null; })());
           const _regSlot=document.getElementById('dr-reg-slot');
           if(_regSlot && dme.children.length>1) _regSlot.appendChild(dme.children[1]);
           // Impacto de hábitos: solo aparece si el paciente REGISTRA el hábito
@@ -11741,10 +11764,10 @@ async function showDrPTab_(tab){
           (function(){try{if(S.charts['dr-acto'])S.charts['dr-acto'].destroy();}catch(_){}})(),S.charts['dr-acto']=new Chart(ctxA,{
             type:'bar',
             data:{labels:actoLabels,datasets:[
-              {label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,borderSkipped:false},
-              {label:'Siesta',data:drNapBars,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
-              ,{label:'Siesta 2',data:drNapExtra.map(a=>a[0]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
-              ,{label:'Siesta 3',data:drNapExtra.map(a=>a[1]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false}
+              {label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,grouped:false,borderSkipped:false},
+              {label:'Siesta',data:drNapBars,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false,grouped:false}
+              ,{label:'Siesta 2',data:drNapExtra.map(a=>a[0]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false,grouped:false}
+              ,{label:'Siesta 3',data:drNapExtra.map(a=>a[1]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false,grouped:false}
             ]},
             options:{
               indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4,right:48}},
