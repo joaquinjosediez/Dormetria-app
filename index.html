@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod65">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod66">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1306,7 +1306,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod65"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod66"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1325,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod65';
+const APP_VERSION='hoy75-mod66';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5709,7 +5709,7 @@ async function copyPatientSummaryToClipboard(encodedEmail){
       pathologicalRecs.forEach(r => {
         const sc = SCALES.find(s => s.id === r.scale_id);
         const i = sc.interp(r.score);
-        L.push('  - '+sc.name+' '+r.score+'/'+r.max_score+': '+i.l);
+        L.push('  - '+sc.name+' '+dmScoreTxt(r.score,r.max_score,r.scale_id)+': '+i.l);
       });
     }
     // Otras escalas (normales) — listadas breves
@@ -5721,7 +5721,7 @@ async function copyPatientSummaryToClipboard(encodedEmail){
         const sc = SCALES.find(s => s.id === r.scale_id);
         if(!sc) return;
         const i = sc.interp(r.score);
-        L.push('  - '+sc.name+' '+r.score+'/'+r.max_score+': '+(i?i.l:'—'));
+        L.push('  - '+sc.name+' '+dmScoreTxt(r.score,r.max_score,r.scale_id)+': '+(i?i.l:'—'));
       });
     }
     // Diario y métricas
@@ -7770,6 +7770,20 @@ function toggleProfileEdit(){
 
 /* ── MI PERFIL: ver datos cargados + editar (autónomo) ── */
 function _mpRow(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.08)"><span style="font-size:13px;color:#6b7280">'+l+'</span><span style="font-size:14px;color:#10231c;font-weight:500;text-align:right">'+(v||'—')+'</span></div>';}
+// Edad legible: por debajo de 2 años un "0 años" no dice nada. En pediatría
+// del sueño los meses son la unidad relevante (un bebé de 3 meses y uno de
+// 20 no tienen nada que ver).
+function dmEdadTxt(dob){
+  if(!dob) return null;
+  const d=new Date(dob); if(isNaN(d)) return null;
+  const hoy=new Date();
+  let meses=(hoy.getFullYear()-d.getFullYear())*12 + (hoy.getMonth()-d.getMonth());
+  if(hoy.getDate() < d.getDate()) meses--;
+  if(meses < 0) return null;
+  if(meses < 24) return meses===1 ? '1 mes' : meses+' meses';
+  return Math.floor(meses/12)+' años';
+}
+
 function _mpAge(dob){if(!dob)return '—';var d=new Date(dob);if(isNaN(d))return '—';var t=new Date(),a=t.getFullYear()-d.getFullYear(),m=t.getMonth()-d.getMonth();if(m<0||(m===0&&t.getDate()<d.getDate()))a--;return a+' años';}
 function _mpImc(h,w){if(!h||!w)return '—';var m=h/100,v=w/(m*m);if(!isFinite(v))return '—';var c=v<18.5?'bajo peso':v<25?'normal':v<30?'sobrepeso':'obesidad';return v.toFixed(1)+' · '+c;}
 function _mpSex(s){return ({M:'Masculino',F:'Femenino',male:'Masculino',female:'Femenino'})[s]||(s||'—');}
@@ -7797,13 +7811,14 @@ function renderMiPerfilView(card){
    +_mpRow('Fecha de nacimiento',u.dob)
    +_mpRow('Edad',_mpAge(u.dob))
    +_mpRow('Sexo biológico',_mpSex(u.sex))
-   +_mpRow('Nacionalidad',u.nationality||'')
+   +_mpRow('País',u.country||'')
    +_mpRow('Altura',u.height_cm?u.height_cm+' cm':'')
    +_mpRow('Peso',u.weight_kg?u.weight_kg+' kg':'')
    +_mpRow('IMC',_mpImc(u.height_cm,u.weight_kg))
    +_mpRow('WhatsApp / Teléfono',u.phone||'')
    +_mpRow('Patologías',_mpPaths(u.pathologies))
    +_mpRow('Medicación',u.medications)
+   +_mpRow('Antecedentes clínicos',u.medical_history||'')
    +_mpRow('Alcohol',u.alcohol)
    +_mpRow('Tabaco',u.tobacco)
    +_mpRow('Actividad física',u.physical_activity)
@@ -7831,7 +7846,7 @@ function renderMiPerfilEdit(card){
    +inp('mp-lname','Apellido',u.lname)
    +inp('mp-dob','Fecha de nacimiento',u.dob,'date')
    +sel('mp-sex','Sexo biológico',u.sex,[['','—'],['M','Masculino'],['F','Femenino']])
-   +sel('mp-nationality','Nacionalidad',u.nationality,DM_NACIONALIDADES.map(function(x){return [x,x];}))
+   +sel('mp-country','País',u.country,DM_NACIONALIDADES.map(function(x){return [x,x];}))
    +inp('mp-height','Altura (cm)',u.height_cm,'number')
    +inp('mp-weight','Peso (kg)',u.weight_kg,'number')
    +(function(){
@@ -7853,6 +7868,14 @@ function renderMiPerfilEdit(card){
    })()
    +inp('mp-paths','Patologías (separadas por coma)',Array.isArray(u.pathologies)?u.pathologies.join(', '):(u.pathologies||''))
    +inp('mp-meds','Medicación',u.medications)
+   +'<div style="margin-bottom:12px"><label style="font-size:12px;color:#6b7280;display:block;margin-bottom:5px">Antecedentes clínicos</label>'
+   +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px">'
+   + DM_ANTECEDENTES.map(function(a){
+       var puesto=(u.medical_history||'').toLowerCase().indexOf(a.toLowerCase())>=0;
+       return '<button type="button" onclick="dmToggleAntecedente(this,\''+a.replace(/'/g,"")+'\')" style="font-size:12px;padding:6px 11px;border-radius:99px;cursor:pointer;font-family:var(--font);border:1px solid '+(puesto?'#2D6B55':'#d1d5db')+';background:'+(puesto?'#2D6B55':'#fff')+';color:'+(puesto?'#fff':'#374151')+'">'+a+'</button>';
+     }).join('')
+   +'</div>'
+   +'<textarea id="mp-history" rows="2" placeholder="Otros antecedentes, cirugías, alergias…" style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:14px;font-family:var(--font);color:#111;resize:vertical">'+((u.medical_history||'').replace(/</g,'&lt;'))+'</textarea></div>'
    +sel('mp-alcohol','Alcohol',u.alcohol,[['','—'],['nunca','Nunca'],['ocasional','Ocasional'],['frecuente','Frecuente'],['diario','Diario']])
    +sel('mp-tobacco','Tabaco',u.tobacco,[['','—'],['no','No'],['ex','Ex fumador'],['si','Sí']])
    +sel('mp-activity','Actividad física',u.physical_activity,[['','—'],['sedentario','Sedentario'],['leve','Leve'],['moderada','Moderada'],['intensa','Intensa']])
@@ -7896,12 +7919,13 @@ async function saveMiPerfil(btn){
     lname:(g('mp-lname')&&g('mp-lname').value.trim())||S.user.lname,
     dob:(g('mp-dob')&&g('mp-dob').value)||S.user.dob,
     sex:(g('mp-sex')&&g('mp-sex').value)||null,
-    nationality:(g('mp-nationality')&&g('mp-nationality').value)||null,
+    country:(g('mp-country')&&g('mp-country').value)||null,
     height_cm:parseFloat(g('mp-height')&&g('mp-height').value)||null,
     weight_kg:parseFloat(g('mp-weight')&&g('mp-weight').value)||null,
     phone:phoneFinal,
     pathologies:pathsRaw.length?pathsRaw:null,
     medications:(g('mp-meds')&&g('mp-meds').value.trim())||null,
+    medical_history:(g('mp-history')&&g('mp-history').value.trim())||null,
     alcohol:(g('mp-alcohol')&&g('mp-alcohol').value)||null,
     tobacco:(g('mp-tobacco')&&g('mp-tobacco').value)||null,
     physical_activity:(g('mp-activity')&&g('mp-activity').value)||null,
@@ -10594,7 +10618,7 @@ async function renderDoctorAdherence(){
         const ord=(i.rows||[]).slice().sort((a,b)=>String(b.diary_date).localeCompare(String(a.diary_date)));
         const now14=ord.slice(0,14), prev14=ord.slice(14,28);
         if(now14.length>=5 && prev14.length>=5){
-          const _age=p.dob?Math.floor((Date.now()-new Date(p.dob))/31557600000):null;
+          let _age=p.dob?Math.floor((Date.now()-new Date(p.dob))/31557600000):null;
           const a=calcSleepScore(now14,_age), b=calcSleepScore(prev14,_age);
           if(a&&b) delta=a.total-b.total;
         }
@@ -10896,7 +10920,8 @@ async function viewPatient(email){
       const _age=_dob?Math.floor((new Date()-_dob)/31557600000):null;
       const _sexAbbr=u.sex==='Masculino'?'M':u.sex==='Femenino'?'F':'';
       const _imcH=(u.weight_kg&&u.height_cm)?((u.weight_kg/((u.height_cm/100)**2)).toFixed(1)):null;
-      _drpAgeSex.textContent = [(_age!=null?_age+' años':null),_sexAbbr,(_imcH?'IMC '+_imcH:null)].filter(Boolean).join(' · ');
+      const _edadTxt = dmEdadTxt(u.dob) || (_age!=null? _age+' años' : null);
+      _drpAgeSex.textContent = [_edadTxt,_sexAbbr,(_imcH?'IMC '+_imcH:null)].filter(Boolean).join(' · ');
     }catch(_ageErr){ _drpAgeSex.textContent=''; }
   }
   showDrPTab_('profile');
@@ -10990,9 +11015,9 @@ async function showDrPTab_(tab){
           const _delta=r.score-_prev.score;
           const _pd=new Date(_prev.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
           const _arrow=_delta>0?'↗':_delta<0?'↘':'≈';
-          _compareHtml='<div class="dm-compare"><div class="dm-compare-then"><div style="font-size:10px;color:#7a4444">'+_pd+'</div><div style="font-size:13px;font-weight:600">'+_prev.score+'/'+_prev.max_score+'</div></div><div class="dm-compare-arrow">'+_arrow+'</div><div><div style="font-size:10px;color:#7a4444">'+_d+' (actual)</div><div style="font-size:13px;font-weight:700">'+r.score+'/'+r.max_score+'</div></div></div>';
+          _compareHtml='<div class="dm-compare"><div class="dm-compare-then"><div style="font-size:10px;color:#7a4444">'+_pd+'</div><div style="font-size:13px;font-weight:600">'+dmScoreTxt(_prev.score,_prev.max_score,_prev.scale_id)+'</div></div><div class="dm-compare-arrow">'+_arrow+'</div><div><div style="font-size:10px;color:#7a4444">'+_d+' (actual)</div><div style="font-size:13px;font-weight:700">'+dmScoreTxt(r.score,r.max_score,r.scale_id)+'</div></div></div>';
         }
-        kf.push('<div style="background:#fee2e2;border-radius:'+(_prev?'16px':'10px')+';padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+r.score+'/'+r.max_score+')'+(_prev?'':' · '+_d)+_compareHtml+'</div>');
+        kf.push('<div style="background:#fee2e2;border-radius:'+(_prev?'16px':'10px')+';padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+dmScoreTxt(r.score,r.max_score,r.scale_id)+')'+(_prev?'':' · '+_d)+_compareHtml+'</div>');
       });
       // Diary score
       // Resumen: traemos hasta 30 noches para poder comparar últimos 14 vs 14 anteriores.
@@ -11261,9 +11286,13 @@ async function showDrPTab_(tab){
           const _screenAvg = (function(){ const arr=_last14.filter(e=>e.screen_minutes!=null); return arr.length?Math.round(arr.reduce((a,b)=>a+b.screen_minutes,0)/arr.length):null; })();
           const _row=(icon,label,value,warn)=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:0.5px solid rgba(126,200,164,0.08)"><span style="font-size:13px;color:rgba(244,239,229,0.65)">'+icon+' '+label+'</span><span style="font-size:13px;font-weight:500;color:'+(warn?'#C8A96E':'#F4EFE5')+'">'+value+'</span></div>';
           const _pedHD=(function(){ const d=u.dob?new Date(u.dob):null; return d?Math.floor((Date.now()-d)/31557600000)<13:false; })();
+          // Por debajo de 6 años no hay "actividad física" en el sentido del
+          // ítem: los chicos se mueven todo el día pero no hacen ejercicio
+          // formal. Mostrar "0 de 14 días" sugiere sedentarismo y es falso.
+          const _menor6=(function(){ const d=u.dob?new Date(u.dob):null; return d?Math.floor((Date.now()-d)/31557600000)<6:false; })();
           habitsDiaryBody = '<div style="font-size:11px;color:rgba(244,239,229,0.5);margin-bottom:2px">Sobre '+_last14.length+' noches registradas</div>'+
-            _row('🏃','Con actividad física', _exDays+' de '+_last14.length+' días', false) +
-            (_exLate>0?_row('⚠️','Ejercicio tarde en la noche', _exLate+' vez(es)', true):'') +
+            (_menor6?'':_row('🏃','Con actividad física', _exDays+' de '+_last14.length+' días', false)) +
+            (!_menor6&&_exLate>0?_row('⚠️','Ejercicio tarde en la noche', _exLate+' vez(es)', true):'') +
             _row('☕','Con cafeína / gaseosas cola', _caffDays+' de '+_last14.length+' días', false) +
             (!_pedHD&&_caffHigh>0?_row('⚠️','Días con cafeína >400mg', _caffHigh, true):'') +
             (_pedHD?'':_row('🍷','Con consumo de alcohol', _alcDays+' de '+_last14.length+' días', _alcDays>=_last14.length*0.4)) +
@@ -16785,13 +16814,54 @@ function resetMedModal(){
   renderMedList();
 }
 
-// Nacionalidad del paciente. Importa clínicamente más de lo que parece: la
+// Antecedentes clínicos frecuentes que pesan sobre el sueño. Se ofrecen como
+// atajos porque escribir "hipotiroidismo" desde el teléfono a las 8 de la
+// mañana es exactamente lo que hace que nadie complete el campo.
+const DM_ANTECEDENTES = ['Hipertensión','Diabetes','Hipotiroidismo','Obesidad','Asma',
+ 'EPOC','Reflujo','Dolor crónico','Fibromialgia','Migraña','Depresión','Ansiedad',
+ 'Cardiopatía','Anemia','Embarazo','Menopausia','Cáncer','Parkinson','Epilepsia'];
+
+function dmToggleAntecedente(btn, texto){
+  const ta=document.getElementById('mp-history'); if(!ta) return;
+  const actual=ta.value.trim();
+  const partes=actual? actual.split(/\s*,\s*/).filter(Boolean) : [];
+  const idx=partes.findIndex(x=>x.toLowerCase()===texto.toLowerCase());
+  if(idx>=0){
+    partes.splice(idx,1);
+    btn.style.background='#fff'; btn.style.color='#374151'; btn.style.borderColor='#d1d5db';
+  }else{
+    partes.push(texto);
+    btn.style.background='#2D6B55'; btn.style.color='#fff'; btn.style.borderColor='#2D6B55';
+  }
+  ta.value=partes.join(', ');
+}
+
+// País del paciente. Se guarda en la columna `country`, que YA existía
+// (la usa la ficha del profesional). Importa clínicamente más de lo que parece: la
 // latitud de origen y los hábitos culturales de horario (cena tardía, siesta)
 // influyen en el ritmo circadiano y en lo que se considera "normal" dormir.
-const DM_NACIONALIDADES = ['','Argentina','Uruguaya','Chilena','Paraguaya','Boliviana','Brasileña',
- 'Peruana','Colombiana','Venezolana','Ecuatoriana','Mexicana','Española','Italiana','Alemana',
- 'Francesa','Portuguesa','Británica','Estadounidense','Canadiense','China','Japonesa','Coreana',
- 'India','Rusa','Ucraniana','Siria','Libanesa','Israelí','Sudafricana','Australiana','Otra'];
+const DM_NACIONALIDADES = ['','Argentina','Uruguay','Chile','Paraguay','Bolivia','Brasil','Polonia','República Checa','Suiza',
+ 'Perú','Colombia','Venezuela','Ecuador','México','España','Italia','Alemania',
+ 'Francia','Portugal','Reino Unido','Estados Unidos','Canadá','China','Japón','Corea',
+ 'India','Rusia','Ucrania','Siria','Líbano','Israel','Sudáfrica','Australia','Otro'];
+
+// Muestra el puntaje de una escala de forma legible SIEMPRE. El problema:
+// evaluations.max_score puede venir null (registros viejos, cargas por SQL),
+// y el panel mostraba "15/null". Ahora cae a la definición de la escala y,
+// si esa tampoco tiene tope, muestra el puntaje solo con el corte patológico.
+function dmScoreTxt(score, maxScore, scaleId){
+  if(score==null) return '—';
+  const sc = (typeof SCALES!=='undefined') ? SCALES.find(s=>s.id===scaleId) : null;
+  const max = (maxScore!=null && !isNaN(maxScore) && Number(maxScore)>0)
+              ? Number(maxScore)
+              : (sc && sc.max ? Number(sc.max) : null);
+  if(max) return score+'/'+max;
+  // Sin tope: mostramos el corte a partir del cual se considera patológico.
+  const cortes = { psqi:5, ess:10, isi:15, stopbang:5, phq9:10, gad7:10,
+                   irls:15, fss:36, dbas:60, gses:7, psas:32, rbdq:5, sassv_screen:31 };
+  const c = cortes[scaleId];
+  return c ? (score+' <span style="opacity:.65;font-size:.85em">(patológico ≥'+c+')</span>') : String(score);
+}
 
 // ── PERIOD TRACKING ──
 let _periodActive = false;
