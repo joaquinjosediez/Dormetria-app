@@ -2777,7 +2777,7 @@ input, select, textarea{ color: inherit; }
   #dm-logo-svg{width:min(98%,432px);height:auto;overflow:visible;shape-rendering:geometricPrecision;}
   #dm-tagline{font-family:'Instrument Sans',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.28);text-transform:uppercase;margin-top:20px;opacity:0;animation:dmFadeIn 0.6s ease 3.4s forwards;}
   /* BOTTOM: always visible — no opacity animation, no delay */
-  #dm-bottom{width:100%;display:flex;flex-direction:column;align-items:center;opacity:0;animation:dmFadeIn 0.7s ease 3.6s forwards;}
+  #dm-bottom{width:100%;display:flex;flex-direction:column;align-items:center;opacity:0;animation:dmFadeIn 0.5s ease calc(var(--dm-inicio) + 8*var(--dm-paso) + var(--dm-letra)) forwards;}
   #dm-subtitle{font-family:'Instrument Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.42);text-align:center;line-height:1.7;margin-bottom:22px;}
   #dm-btn{width:100%;height:54px;border-radius:27px;background:linear-gradient(135deg,#2d6b4a 0%,#1a4a3a 100%);border:1px solid rgba(126,200,164,0.2);display:flex;align-items:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;pointer-events:auto;}
   #dm-btn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;}
@@ -2785,15 +2785,29 @@ input, select, textarea{ color: inherit; }
   #dm-login{font-family:'Instrument Sans',sans-serif;font-size:12px;color:rgba(255,255,255,0.28);cursor:pointer;}
   #dm-login span{color:#7ec8a4;}
   @keyframes dmFadeIn{from{opacity:0}to{opacity:1}}
-  #ltr-o{opacity:0;animation:dmFadeIn 0.5s ease 0.00s forwards}
-  #ltr-d{opacity:0;animation:dmFadeIn 0.5s ease 2.00s forwards}
-  #ltr-r{opacity:0;animation:dmFadeIn 0.5s ease 2.13s forwards}
-  #ltr-m{opacity:0;animation:dmFadeIn 0.5s ease 2.26s forwards}
-  #ltr-e{opacity:0;animation:dmFadeIn 0.5s ease 2.39s forwards}
-  #ltr-t{opacity:0;animation:dmFadeIn 0.5s ease 2.52s forwards}
-  #ltr-r2{opacity:0;animation:dmFadeIn 0.5s ease 2.65s forwards}
-  #ltr-i{opacity:0;animation:dmFadeIn 0.5s ease 2.78s forwards}
-  #ltr-a{opacity:0;animation:dmFadeIn 0.5s ease 2.91s forwards}
+  /* ── Animación de entrada ──
+     Duraciones en variables: la primera visita usa la versión INTERMEDIA
+     (2,9 s) y a partir de la segunda el body lleva .dm-visto y pasa a la
+     ÁGIL (1,1 s). Una bienvenida se disfruta una vez; el paciente que abre
+     la app todos los días no debería esperarla nunca más. */
+  :root{
+    --dm-moon:.5s;      /* fundido de la luna            */
+    --dm-letra:.4s;     /* fundido de cada letra          */
+    --dm-inicio:.85s;   /* cuándo arranca la primera letra */
+    --dm-paso:.085s;    /* separación entre letras         */
+  }
+  body.dm-visto{
+    --dm-moon:.28s; --dm-letra:.2s; --dm-inicio:.3s; --dm-paso:.04s;
+  }
+  #ltr-o{opacity:0;animation:dmFadeIn var(--dm-moon) ease 0s forwards}
+  #ltr-d{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 0*var(--dm-paso)) forwards}
+  #ltr-r{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 1*var(--dm-paso)) forwards}
+  #ltr-m{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 2*var(--dm-paso)) forwards}
+  #ltr-e{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 3*var(--dm-paso)) forwards}
+  #ltr-t{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 4*var(--dm-paso)) forwards}
+  #ltr-r2{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 5*var(--dm-paso)) forwards}
+  #ltr-i{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 6*var(--dm-paso)) forwards}
+  #ltr-a{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 7*var(--dm-paso)) forwards}
 
 
 

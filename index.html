@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod66">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod67">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -81,6 +81,15 @@
   </div>
 </div>
 
+<script>(function(){
+  // Segunda visita en adelante: animación corta. La marca queda en el
+  // dispositivo, así el colega que ve la demo por primera vez recibe la
+  // versión completa.
+  try{
+    if(localStorage.getItem('dm_intro_vista')==='1') document.body.classList.add('dm-visto');
+    else localStorage.setItem('dm_intro_vista','1');
+  }catch(_){}
+})();</script>
 <script>(function(){
   var c=document.getElementById('dm-stars');if(!c)return;
   var sh=document.createElement('style'),css='';
@@ -1306,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod66"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod67"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1325,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod66';
+const APP_VERSION='hoy75-mod67';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4566,6 +4575,68 @@ function updateClinicalMetrics(entries){
 // HTML reutilizable de métricas (paciente y médico).
 // audience: 'patient' (default) muestra métricas clínicas básicas + variación amigable.
 //           'doctor' agrega bloque técnico con SD, SRI y CPD.
+// ─── ESTADÍSTICA PARA LA COMPARACIÓN DE FACTORES ─────────────────────
+// Hasta acá la comparación era solo descriptiva: diferencia de medias contra
+// un umbral clínico. Eso responde "¿la diferencia es grande?" pero no
+// "¿podría ser azar?". Se agrega t de Welch (no asume varianzas iguales ni
+// grupos del mismo tamaño, que es exactamente nuestro caso) con su p.
+function _tCDF(t, df){
+  // p de dos colas a partir de t, vía función beta incompleta regularizada.
+  const x = df/(df + t*t);
+  return _betainc(x, df/2, 0.5);
+}
+function _betainc(x, a, b){
+  if(x<=0) return 0; if(x>=1) return 1;
+  const lbeta = _lgamma(a)+_lgamma(b)-_lgamma(a+b);
+  const front = Math.exp(Math.log(x)*a + Math.log(1-x)*b - lbeta)/a;
+  // Fracción continua de Lentz
+  let f=1, c=1, d=0;
+  for(let i=0;i<=200;i++){
+    const m=Math.floor(i/2);
+    let num;
+    if(i===0) num=1;
+    else if(i%2===0) num = (m*(b-m)*x)/((a+2*m-1)*(a+2*m));
+    else num = -((a+m)*(a+b+m)*x)/((a+2*m)*(a+2*m+1));
+    d=1+num*d; if(Math.abs(d)<1e-30) d=1e-30; d=1/d;
+    c=1+num/c; if(Math.abs(c)<1e-30) c=1e-30;
+    const cd=c*d; f*=cd;
+    if(Math.abs(1-cd)<1e-10) break;
+  }
+  return front*(f-1);
+}
+function _lgamma(z){
+  const g=[676.5203681218851,-1259.1392167224028,771.32342877765313,
+           -176.61502916214059,12.507343278686905,-0.13857109526572012,
+           9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI/Math.sin(Math.PI*z))-_lgamma(1-z);
+  z-=1; let x=0.99999999999980993;
+  for(let i=0;i<8;i++) x+=g[i]/(z+i+1);
+  const t=z+7.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+// Devuelve {dif, p, d} — diferencia de medias, p bilateral y d de Cohen.
+function dmWelch(a, b){
+  const n1=a.length, n2=b.length;
+  if(n1<3 || n2<3) return null;
+  const m1=a.reduce((x,y)=>x+y,0)/n1, m2=b.reduce((x,y)=>x+y,0)/n2;
+  const v1=a.reduce((x,y)=>x+(y-m1)*(y-m1),0)/(n1-1);
+  const v2=b.reduce((x,y)=>x+(y-m2)*(y-m2),0)/(n2-1);
+  if(v1===0 && v2===0) return {dif:m1-m2, p:1, d:0};
+  const se=Math.sqrt(v1/n1 + v2/n2);
+  if(!(se>0)) return {dif:m1-m2, p:1, d:0};
+  const t=(m1-m2)/se;
+  const df=Math.pow(v1/n1+v2/n2,2) /
+           (Math.pow(v1/n1,2)/(n1-1) + Math.pow(v2/n2,2)/(n2-1));
+  const p=Math.max(0, Math.min(1, _tCDF(Math.abs(t), df)));
+  const sp=Math.sqrt(((n1-1)*v1+(n2-1)*v2)/(n1+n2-2));
+  return {dif:m1-m2, p:p, d: sp>0 ? (m1-m2)/sp : 0, t:t, df:df};
+}
+function dmFmtP(p){
+  if(p==null) return '';
+  if(p<0.001) return 'p<0,001';
+  return 'p=' + p.toFixed(3).replace('.', ',');
+}
+
 // ─── IMPACTO DE HÁBITOS SOBRE EL SUEÑO ───────────────────────────────────
 // Compara las noches CON el hábito contra las noches SIN él, sobre las mismas
 // variables del diario. Es una asociación observacional dentro del propio
@@ -4632,11 +4703,19 @@ function computeHabitsImpact(entries){
       const b=off.map(s.val).filter(v=>v!=null && !isNaN(v)).map(Number);
       if(a.length<4 || b.length<4) return;
       const ma=avg(a), mb=avg(b), diff=ma-mb;
-      // Umbral de relevancia por variable: evita reportar ruido de 2 minutos.
+      // Umbral de relevancia CLÍNICA por variable: evita reportar ruido de 2
+      // minutos aunque sea estadísticamente significativo.
       const minDif = s.id==='tst'?15 : s.id==='lat'?8 : s.id==='awk'?0.4 : 0.4;
+      const st = dmWelch(a, b);
+      // Se marca como efecto solo si la diferencia es clínicamente relevante
+      // Y estadísticamente significativa. Cualquiera de las dos sola alcanza
+      // para confundir: con n grande todo da p<0,05, y con n chico una
+      // diferencia enorme puede ser azar.
       let signo=0;
-      if(Math.abs(diff) >= minDif) signo = (diff>0?1:-1) * s.dirGood; // +1 mejor, -1 peor
-      efectos.push({ id:s.id, label:s.label, unit:s.unit, mOn:ma, mOff:mb, diff, signo });
+      const sig = st && st.p < 0.05;
+      if(Math.abs(diff) >= minDif && sig) signo = (diff>0?1:-1) * s.dirGood;
+      efectos.push({ id:s.id, label:s.label, unit:s.unit, mOn:ma, mOff:mb, diff, signo,
+                     p: st?st.p:null, d: st?st.d:null, nA:a.length, nB:b.length });
     });
     if(!efectos.length) return;
     const netos=efectos.filter(x=>x.signo!==0);
@@ -4664,7 +4743,10 @@ function renderHabitsImpactHtml(entries){
     '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Factores asociados al sueño '+
       '<span style="font-weight:400;color:var(--label-3);font-size:11px">· '+R.n+' noches</span></div>'+
     '<div style="font-size:11px;color:var(--label-3);line-height:1.5;margin-bottom:11px">'+
-      'Compara las noches con y sin cada factor <em>en este mismo paciente</em>. Es una asociación, no una relación causal: puede haber confusión (por ejemplo, tomar café justamente los días de peor descanso previo, o dormir siesta <em>porque</em> se durmió mal la noche anterior).</div>';
+      'Compara las noches con y sin cada factor <em>en este mismo paciente</em>, con <strong>t de Welch</strong> (dos colas, no asume varianzas iguales). Se marca como efecto solo si la diferencia supera el umbral clínico <em>y</em> p&lt;0,05.</div>'+
+    '<div style="font-size:10.5px;color:var(--label-3);line-height:1.45;margin-bottom:11px;padding:7px 9px;background:#f8fafc;border-radius:7px">'+
+      '<strong>Cómo leerlo.</strong> Es una asociación dentro de un solo paciente, no un ensayo: hay confusión posible (tomar café justamente los días de peor descanso previo, o dormir siesta <em>porque</em> se durmió mal). '+
+      'Además se comparan varios factores por varias variables, así que algún p&lt;0,05 aislado es esperable por azar. Sirve para generar hipótesis en consulta, no para concluir causalidad.</div>';
   R.habitos.forEach(hb=>{
     const vCol = hb.veredicto==='positivo'?'#16a34a' : hb.veredicto==='negativo'?'#dc2626' : '#6b7280';
     const vTxt = hb.veredicto==='positivo'?'Asociado a mejor sueño'
@@ -4680,12 +4762,15 @@ function renderHabitsImpactHtml(entries){
         '<span style="font-size:10px;color:var(--label-3);margin-left:auto">'+hb.nOn+' vs '+hb.nOff+' noches</span>'+
       '</div>';
     hb.efectos.forEach(ef=>{
+      const pTxt = ef.p!=null
+        ? '<span style="font-size:10px;color:'+(ef.p<0.05?'#334155':'#9ca3af')+';margin-left:6px;font-variant-numeric:tabular-nums">'+dmFmtP(ef.p)+'</span>'
+        : '';
       html+='<div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-size:11.5px">'+
         '<span style="color:#666">'+ef.label+'</span>'+
         '<span><span style="color:#999;font-size:10.5px">'+
           (ef.id==='awk'||ef.id==='qual'?ef.mOn.toFixed(1):Math.round(ef.mOn))+' vs '+
           (ef.id==='awk'||ef.id==='qual'?ef.mOff.toFixed(1):Math.round(ef.mOff))+'</span> '+
-        '<b style="color:'+colFor(ef.signo)+'">'+fmtDif(ef)+'</b></span></div>';
+        '<b style="color:'+colFor(ef.signo)+'">'+fmtDif(ef)+'</b>'+pTxt+'</span></div>';
     });
     html+='<div style="font-size:10px;color:var(--label-3);margin-top:5px">'+hb.onTxt+' vs '+hb.offTxt+'</div>';
     html+='</div>';
@@ -11158,7 +11243,9 @@ async function showDrPTab_(tab){
       const pathsBody = '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:6px">Patologías</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+(paths||'<span style="font-size:12px;color:rgba(244,239,229,0.5);font-style:italic">No registradas</span>')+'</div>'+
         '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:4px">Medicación habitual</div>'+
-        '<div style="font-size:13px;color:'+(u.medications?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medications?'':'font-style:italic')+'">'+escHtml(u.medications||'Sin medicación registrada')+'</div>';
+        '<div style="font-size:13px;color:'+(u.medications?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medications?'':'font-style:italic')+'">'+escHtml(u.medications||'Sin medicación registrada')+'</div>';+
+        '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin:10px 0 4px">Antecedentes clínicos</div>'+
+        '<div style="font-size:13px;color:'+(u.medical_history?'rgba(244,239,229,0.85)':'rgba(244,239,229,0.5)')+';'+(u.medical_history?'':'font-style:italic')+';line-height:1.5">'+escHtml(u.medical_history||'No registrados')+'</div>'
       const habitChip = (lbl,val) => '<div style="background:rgba(126,200,164,0.06);border-radius:8px;padding:8px 10px"><div style="font-size:10px;color:rgba(244,239,229,0.5);margin-bottom:2px">'+lbl+'</div><div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(val||'—')+'</div></div>';
       // Traductores: codes EN → labels ES (igual que en _mpAct / _mpWork)
       const ACT_LABELS = {child:'Niño/a',teen:'Adolescente',student:'Estudiante',athlete:'Deportista/Atleta',shift:'Trabajo en turnos',night:'Trabajo nocturno',healthcare:'Profesional de salud',office:'Trabajo de oficina',remote:'Trabajo remoto',retired:'Jubilado/a',other:'Otro'};
