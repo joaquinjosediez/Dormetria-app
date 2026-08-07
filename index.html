@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod72">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod73">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod72"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod73"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod72';
+const APP_VERSION='hoy75-mod73';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4607,6 +4607,188 @@ function updateClinicalMetrics(entries){
 // HTML reutilizable de métricas (paciente y médico).
 // audience: 'patient' (default) muestra métricas clínicas básicas + variación amigable.
 //           'doctor' agrega bloque técnico con SD, SRI y CPD.
+// ═══════════════════════════════════════════════════════════════════════
+// LECTURA CLÍNICA DEL DIARIO · patrones, no diagnósticos
+// ═══════════════════════════════════════════════════════════════════════
+// Qué hace: traduce las métricas crudas a patrones reconocibles, mostrando
+// SIEMPRE el criterio aplicado y qué falta para confirmar.
+//
+// Qué NO hace, a propósito: diagnosticar. Los criterios ICSD-3 exigen
+// consecuencias diurnas, frecuencia (≥3 noches/semana) y duración (≥3 meses),
+// y ninguna de las tres sale de un diario. Un patrón acá es una hipótesis
+// para contrastar en la entrevista, no un rótulo.
+//
+// Umbrales usados (los estándar de la literatura de sueño):
+//   · Latencia > 30 min          → dificultad de inicio
+//   · WASO > 30 min              → dificultad de mantenimiento
+//   · Despertar precoz           → ≥30 min antes de la hora deseada
+//   · Jet lag social > 60 min    → desalineación social; >120 min marcada
+//   · Eficiencia < 85%           → subóptima; < 75% candidato a restricción
+//   · SD del punto medio > 60min → irregularidad relevante
+const DM_PATRONES = [
+  {
+    id:'inicio', nombre:'Dificultad de inicio del sueño',
+    criterio:'Latencia media > 30 min en al menos un tercio de las noches',
+    evalua:function(d){
+      if(d.avgLatency==null || d.nLatency<7) return null;
+      const noches = d.latencias.filter(v=>v>30).length;
+      const prop = noches/d.latencias.length;
+      if(d.avgLatency<=30 && prop<0.33) return null;
+      return {
+        valor:'Latencia media '+Math.round(d.avgLatency)+' min · '+noches+' de '+d.latencias.length+' noches por encima de 30',
+        fuerza: (d.avgLatency>45 || prop>=0.5) ? 'marcado' : 'presente',
+        falta:'Confirmar en la entrevista que ocurre ≥3 noches/semana desde hace ≥3 meses y que hay repercusión diurna.',
+        formativo:'Es el fenotipo más asociado a activación cognitiva al acostarse. Responde bien a control de estímulos y a trabajo sobre la preocupación anticipatoria; la restricción de sueño sola suele no alcanzar.'
+      };
+    }
+  },
+  {
+    id:'mantenimiento', nombre:'Dificultad de mantenimiento',
+    criterio:'Tiempo despierto tras el inicio (WASO) > 30 min promedio',
+    evalua:function(d){
+      if(d.avgAwakDur==null || d.nightsWithAwak<5) return null;
+      if(d.avgAwakDur<=30) return null;
+      return {
+        valor:'WASO medio '+Math.round(d.avgAwakDur)+' min · despertares en '+d.nightsWithAwak+' de '+d.n+' noches',
+        fuerza: d.avgAwakDur>60 ? 'marcado' : 'presente',
+        falta:'Descartar causas orgánicas de fragmentación antes de atribuirlo a insomnio: apnea, SPI, nicturia, dolor, reflujo.',
+        formativo:'A diferencia del insomnio de inicio, acá conviene mirar primero lo orgánico. Un WASO alto con ronquido o somnolencia diurna orienta a SAHOS; con síntomas sensitivos en las piernas, a SPI.'
+      };
+    }
+  },
+  {
+    id:'precoz', nombre:'Despertar precoz',
+    criterio:'Se levanta ≥30 min antes de la hora deseada, sin poder volver a dormirse',
+    evalua:function(d){
+      if(d.avgTotal==null || d.avgWake==null) return null;
+      // Clave para NO confundirlo con sueño insuficiente por horario: si el
+      // paciente recupera los días libres, no se despierta antes de lo que
+      // quiere — le falta oportunidad. El despertar precoz se despierta
+      // temprano TAMBIÉN el fin de semana, así que la deuda es chica.
+      if(d.sleepDebt!=null && d.sleepDebt>=45) return null;
+      if(!(d.avgTotal < 6.5*60 && d.avgLatency!=null && d.avgLatency<=25 && (d.avgAwakDur||0)<=30)) return null;
+      return {
+        valor:'Sueño total '+d.fmtDur(d.avgTotal)+' con latencia corta ('+Math.round(d.avgLatency)+' min) y poca fragmentación',
+        fuerza:'presente',
+        falta:'Diferenciar de sueño insuficiente por horario: ¿se despierta antes de lo que querría, o se acuesta tarde?',
+        formativo:'El despertar precoz es el fenotipo más asociado a depresión y a adelanto de fase. Vale la pena una escala de ánimo y mirar la hora de acostarse: si también es temprana, pensar en adelanto circadiano más que en insomnio.'
+      };
+    }
+  },
+  {
+    id:'insuficiente', nombre:'Sueño insuficiente por horario',
+    criterio:'Sueño corto entre semana que se recupera los días libres, sin latencia prolongada',
+    evalua:function(d){
+      if(d.sleepDebt==null || d.nWd<4 || d.nWe<3) return null;
+      if(!(d.sleepDebt>=60 && (d.avgLatency==null || d.avgLatency<=25))) return null;
+      return {
+        valor:'Duerme '+d.fmtDur(Math.abs(d.sleepDebt))+' más los días libres · '+d.fmtDur(d.avgWd)+' entre semana vs '+d.fmtDur(d.avgWe),
+        fuerza: d.sleepDebt>=120 ? 'marcado' : 'presente',
+        falta:'Preguntar si el horario es por elección o por obligación. Si se duerme rápido y recupera el fin de semana, el problema es de oportunidad, no de capacidad.',
+        formativo:'Es el error diagnóstico más frecuente: se trata como insomnio algo que es restricción voluntaria de sueño. La pista es la latencia corta — quien no puede dormir tarda; quien no tiene tiempo, se duerme enseguida.'
+      };
+    }
+  },
+  {
+    id:'circadiano', nombre:'Desalineación circadiana',
+    criterio:'Jet lag social > 60 min entre días laborables y libres',
+    evalua:function(d){
+      if(d.socialJetLag==null || d.nWd<4 || d.nWe<3) return null;
+      if(d.socialJetLag<=60) return null;
+      return {
+        valor:'Jet lag social de '+d.fmtDur(d.socialJetLag)+' entre semana y fin de semana',
+        fuerza: d.socialJetLag>120 ? 'marcado' : 'presente',
+        falta:'Cotejar con el cronotipo (MCTQ o MEQ) para distinguir un desajuste social de un trastorno de fase establecido.',
+        formativo:'El jet lag social se asocia de forma independiente a riesgo metabólico y cardiovascular (Wittmann 2006; Roenneberg 2012). Cuando supera las 2 horas conviene tratarlo como un problema en sí mismo, no como una consecuencia.'
+      };
+    }
+  },
+  {
+    id:'irregular', nombre:'Irregularidad de horarios',
+    criterio:'Desvío estándar del punto medio del sueño > 60 min',
+    evalua:function(d){
+      if(d.sdMidpoint==null || d.n<10) return null;
+      if(d.sdMidpoint<=60) return null;
+      return {
+        valor:'SD del punto medio '+Math.round(d.sdMidpoint)+' min'+(d.sri!=null?' · SRI '+Math.round(d.sri):''),
+        fuerza: d.sdMidpoint>90 ? 'marcado' : 'presente',
+        falta:'Revisar si hay trabajo por turnos, guardias o cuidado nocturno antes de interpretarlo como mala higiene.',
+        formativo:'La irregularidad predice desenlaces de salud con independencia de la duración del sueño (Phillips 2017). Un paciente que duerme 7 horas todos los días a horarios distintos puede estar peor que uno que duerme 6 con horario fijo.'
+      };
+    }
+  },
+  {
+    id:'paradojico', nombre:'Discrepancia percepción–registro',
+    criterio:'Lo que el paciente reporta no acompaña a lo que registra',
+    evalua:function(d){
+      if(d.corrCalidad==null || d.n<14) return null;
+      if(Math.abs(d.corrCalidad)>=0.3) return null;
+      return {
+        valor:'La calidad reportada casi no se relaciona con las horas dormidas (r='+d.corrCalidad.toFixed(2)+') sobre '+d.n+' noches',
+        fuerza:'presente',
+        falta:'Un estudio objetivo (actigrafía o polisomnografía) es lo que permite confirmar una mala percepción del sueño.',
+        formativo:'Cuando la percepción no sigue al registro, hay que pensar en insomnio paradójico o mala percepción del estado de sueño. Es importante porque cambia el abordaje: el trabajo pasa a ser cognitivo, sobre la interpretación, más que sobre el horario.'
+      };
+    }
+  },
+  {
+    id:'eficiencia', nombre:'Eficiencia de sueño baja',
+    criterio:'Menos del 85% del tiempo en cama se pasa durmiendo',
+    evalua:function(d){
+      if(d.sleepEfficiency==null || d.n<7) return null;
+      if(d.sleepEfficiency>=85) return null;
+      return {
+        valor:'Eficiencia '+d.sleepEfficiency+'% · '+d.fmtDur(d.avgTIB)+' en cama para '+d.fmtDur(d.avgTotal)+' de sueño',
+        fuerza: d.sleepEfficiency<75 ? 'marcado' : 'presente',
+        falta:'Verificar que el tiempo en cama no incluya lectura, pantallas o trabajo, que inflan el denominador sin ser intento de dormir.',
+        formativo:'Es el parámetro sobre el que opera la restricción de sueño: por debajo de 85% hay margen para achicar la ventana, y por debajo de 75% suele ser la intervención de mayor rendimiento.'
+      };
+    }
+  }
+];
+
+// Arma los datos que necesitan los patrones a partir de las entradas.
+function dmDatosParaPatrones(entries, m){
+  const val = (entries||[]).filter(e=>e.sleep_minutes>0 && !(e.notes&&String(e.notes).startsWith('Importado')));
+  const lat = val.map(e=>e.sleep_latency_mins).filter(v=>v!=null && !isNaN(v)).map(Number);
+  // Correlación entre calidad reportada y minutos dormidos
+  let corr = null;
+  const pares = val.filter(e=>e.sleep_quality!=null && e.sleep_minutes!=null);
+  if(pares.length>=10){
+    const xs=pares.map(e=>Number(e.sleep_quality)), ys=pares.map(e=>Number(e.sleep_minutes));
+    const mx=xs.reduce((a,b)=>a+b,0)/xs.length, my=ys.reduce((a,b)=>a+b,0)/ys.length;
+    let num=0, dx=0, dy=0;
+    for(let i=0;i<xs.length;i++){ num+=(xs[i]-mx)*(ys[i]-my); dx+=(xs[i]-mx)**2; dy+=(ys[i]-my)**2; }
+    if(dx>0 && dy>0) corr = num/Math.sqrt(dx*dy);
+  }
+  // SD del punto medio
+  let sdMid=null;
+  const mids = val.filter(e=>e.bedtime&&e.wake_time).map(e=>{
+    const [bh,bm]=e.bedtime.split(':').map(Number); let b=bh*60+bm; if(b<12*60) b+=1440;
+    const [wh,wm]=e.wake_time.split(':').map(Number); let w=wh*60+wm; if(w<b%1440) w+=1440;
+    return (b + (w - b%1440)/2) % 1440;
+  });
+  if(mids.length>=7){
+    const mm=mids.reduce((a,b)=>a+b,0)/mids.length;
+    sdMid=Math.sqrt(mids.reduce((a,v)=>a+(v-mm)**2,0)/mids.length);
+  }
+  return Object.assign({}, m, {latencias:lat, corrCalidad:corr, sdMidpoint:sdMid});
+}
+
+// Devuelve los patrones detectados, ordenados por relevancia.
+function dmLecturaClinica(entries, m){
+  if(!m || !m.n || m.n<7) return [];
+  const d = dmDatosParaPatrones(entries, m);
+  const out=[];
+  DM_PATRONES.forEach(function(pt){
+    try{
+      const r = pt.evalua(d);
+      if(r) out.push(Object.assign({id:pt.id, nombre:pt.nombre, criterio:pt.criterio}, r));
+    }catch(_){}
+  });
+  return out.sort(function(a,b){ return (b.fuerza==='marcado'?1:0)-(a.fuerza==='marcado'?1:0); });
+}
+
 // ─── ESTADÍSTICA PARA LA COMPARACIÓN DE FACTORES ─────────────────────
 // Hasta acá la comparación era solo descriptiva: diferencia de medias contra
 // un umbral clínico. Eso responde "¿la diferencia es grande?" pero no
@@ -11244,8 +11426,35 @@ async function showDrPTab_(tab){
           '</div>');
         }
       }
+      // ── Lectura clínica: patrones reconocibles a partir del diario ──
+      let lecturaHtml='';
+      try{
+        const _m = (typeof computeDiaryMetrics==='function') ? computeDiaryMetrics(subj) : null;
+        const _pats = (typeof dmLecturaClinica==='function') ? dmLecturaClinica(subj, _m) : [];
+        if(_pats.length){
+          const chip=(f)=> f==='marcado'
+            ? '<span style="font-size:9.5px;font-weight:700;background:#fee2e2;color:#991b1b;border-radius:99px;padding:2px 8px">MARCADO</span>'
+            : '<span style="font-size:9.5px;font-weight:700;background:#fef3c7;color:#92400e;border-radius:99px;padding:2px 8px">PRESENTE</span>';
+          lecturaHtml =
+            '<div class="sec-title" style="margin-top:10px">Lectura del diario</div>'+
+            '<div style="font-size:11px;color:var(--label-3);line-height:1.5;margin:-4px 0 10px">'+
+              'Patrones compatibles con lo registrado. <strong>No son diagnósticos</strong>: los criterios ICSD-3 exigen frecuencia, duración y repercusión diurna, que se establecen en la entrevista.</div>'+
+            _pats.map(function(pt){
+              return '<div style="background:#fff;border:1px solid #eceae4;border-left:3px solid '+(pt.fuerza==='marcado'?'#dc2626':'#d97706')+';border-radius:0 11px 11px 0;padding:11px 13px;margin-bottom:8px">'+
+                '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">'+
+                  '<span style="font-size:13.5px;font-weight:700;color:var(--label)">'+pt.nombre+'</span>'+chip(pt.fuerza)+'</div>'+
+                '<div style="font-size:12.5px;color:#334155;line-height:1.5;margin-bottom:6px">'+pt.valor+'</div>'+
+                '<div style="font-size:11px;color:var(--label-3);line-height:1.5;margin-bottom:5px"><strong>Criterio aplicado:</strong> '+pt.criterio+'</div>'+
+                '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border-radius:7px;padding:7px 9px;line-height:1.5;margin-bottom:5px"><strong>Falta para confirmar:</strong> '+pt.falta+'</div>'+
+                '<details style="font-size:11.5px;color:#475569"><summary style="cursor:pointer;color:#1a4a3a;font-weight:600;font-size:11px">Por qué importa</summary>'+
+                  '<div style="line-height:1.55;margin-top:5px">'+pt.formativo+'</div></details>'+
+              '</div>';
+            }).join('');
+        }
+      }catch(_e){ console.warn('[lectura clinica]', _e); }
+
       const keyFindings=kf.length?'<div class="sec-title" style="margin-top:10px">Hallazgos principales</div><div class="dm-grid2">'+kf.join('')+'</div>':'';
-      const aHtml=keyFindings+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div><div class="dm-grid2">'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'<span style="float:right;font-size:11px;opacity:0.75">'+(a.created_at?new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'')+'</span></div>';}).join('')+'</div>':'');
+      const aHtml=keyFindings+lecturaHtml+(alerts.length?'<div class="sec-title" style="margin-top:10px">Alertas en escalas</div><div class="dm-grid2">'+alerts.map(a=>{const sc=SCALES.find(s=>s.id===a.scale_id);const i=sc?sc.interp(a.score):{l:'Alerta'};return'<div class="alert-bar">'+(SCALES.find(s=>s.id===a.scale_id)||{name:a.scale_name||a.scale_id}).name+': '+a.score+'/'+(a.max_score||'?')+' - '+i.l+'<span style="float:right;font-size:11px;opacity:0.75">'+(a.created_at?new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'')+'</span></div>';}).join('')+'</div>':'');
       const latest=SCALES.filter(sc=>isScaleVisibleForProfile(sc, S.viewData)).map(sc=>{const scR=(recs||[]).filter(r=>r.scale_id===sc.id);return scR.length?{sc,r:scR[scR.length-1]}:null;}).filter(Boolean);
       // Build a natural-language summary
       const summaryParts=[];
