@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod67">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod68">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod67"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod68"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod67';
+const APP_VERSION='hoy75-mod68';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2561,13 +2561,27 @@ function toggleActoLayer(name, btnEl){
 }
 function timeToOffset(t){if(!t)return null;const p=t.split(':').map(Number);const h=p[0],m=p[1]||0;return(h>=12?h-12:h+12)+m/60;}
 function meanStd(arr){if(!arr||!arr.length)return{mean:0,std:0};const mean=arr.reduce((a,b)=>a+b,0)/arr.length;const variance=arr.reduce((a,b)=>a+(b-mean)*(b-mean),0)/arr.length;return{mean:mean,std:Math.sqrt(variance)};}
-function computePillarScore(e){
-  const mins=e.sleep_minutes||0;
-  let qty=0;
-  if(mins>=420&&mins<=540)qty=50;
-  else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);
-  else if(mins>540&&mins<=600)qty=Math.round(50*(600-mins)/60);
-  else if(mins>=300)qty=Math.round(50*(mins-240)/180);
+function computePillarScore(e, ageYears){
+  // Misma corrección que la versión de la vista del profesional: banda por
+  // edad y siestas incluidas en los menores de 6.
+  let mins = e.sleep_minutes||0;
+  const _ped = (ageYears!=null && ageYears<6);
+  if(_ped && typeof parseChildNaps==='function'){
+    try{
+      mins += parseChildNaps(e).reduce((a,n)=>a+(typeof _napDurationMin==='function'?_napDurationMin(n):0), 0);
+    }catch(_){}
+    if(!parseChildNaps(e).length && e.nap_minutes>0) mins += Number(e.nap_minutes);
+  }
+  let qty;
+  if(typeof qtyScoreForAge==='function'){
+    qty = qtyScoreForAge(mins/60, ageYears);
+  }else{
+    if(mins>=420&&mins<=540)qty=50;
+    else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);
+    else if(mins>540&&mins<=600)qty=Math.round(50*(600-mins)/60);
+    else if(mins>=300)qty=Math.round(50*(mins-240)/180);
+    else qty=0;
+  }
   qty=Math.max(0,Math.min(50,qty));
   const awk=e.awakenings||0;
   const frag=Math.max(0,20-awk*5);
@@ -4219,20 +4233,38 @@ function updatePillarBars(entries){
   const wakeStats=meanStd(wakeOffsets);
   // Computar regularidad UNA SOLA VEZ para todo el período (función unificada).
   const _localRegResult = computeSleepRegularity(sorted);
-  function computePillarScore(e){
-    const mins=e.sleep_minutes||0;
-    let qty=0;
-    if(mins>=420&&mins<=540)qty=50;
-    else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);
-    else if(mins>540&&mins<=600)qty=Math.round(50*(600-mins)/60);
-    else if(mins>=300)qty=Math.round(50*(mins-240)/180);
+  function computePillarScore(e, ageYears){
+    // ── DOS ERRORES QUE ESTO CORRIGE ──
+    // 1. Usaba la banda del ADULTO (7–9 h) para todas las edades. Un bebé de
+    //    8 meses que necesita 12–16 h daba 0% aunque durmiera lo esperable.
+    // 2. Contaba solo el sueño nocturno. En menores de 6 años las siestas son
+    //    parte del sueño de 24 h, no un extra: sin sumarlas la cuenta no cierra.
+    let mins = e.sleep_minutes||0;
+    const _ped = (ageYears!=null && ageYears<6);
+    if(_ped && typeof parseChildNaps==='function'){
+      try{
+        mins += parseChildNaps(e).reduce((a,n)=>a+(typeof _napDurationMin==='function'?_napDurationMin(n):0), 0);
+      }catch(_){}
+      if(!parseChildNaps(e).length && e.nap_minutes>0) mins += Number(e.nap_minutes);
+    }
+    let qty;
+    if(typeof qtyScoreForAge==='function'){
+      qty = qtyScoreForAge(mins/60, ageYears);
+    }else{
+      if(mins>=420&&mins<=540)qty=50;
+      else if(mins>=360&&mins<420)qty=Math.round(50*(mins-300)/120);
+      else if(mins>540&&mins<=600)qty=Math.round(50*(600-mins)/60);
+      else if(mins>=300)qty=Math.round(50*(mins-240)/180);
+      else qty=0;
+    }
     qty=Math.max(0,Math.min(50,qty));
     const awk=e.awakenings||0;
     const frag=Math.max(0,20-awk*5);
     return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
   }
+  const _edadPil=(function(){ const d=(S.viewData&&S.viewData.dob)||(S.user&&S.user.dob); return d?Math.floor((Date.now()-new Date(d))/31557600000):null; })();
   const pillarData=sorted.map(e=>{
-    const p=computePillarScore(e);
+    const p=computePillarScore(e,_edadPil);
     // Usar función unificada (misma para paciente y médico).
     // Score basado en SD del punto medio (NHANES). Período-level.
     return{qty:p.qty_pct,frag:p.frag_pct,reg: _localRegResult.score !== null ? _localRegResult.score : 0};
@@ -7907,7 +7939,7 @@ function renderMiPerfilView(card){
    +_mpRow('Alcohol',u.alcohol)
    +_mpRow('Tabaco',u.tobacco)
    +_mpRow('Actividad física',u.physical_activity)
-   +_mpRow('Actividad principal',_mpAct(u.activity_type))
+   +_mpRow('Ocupación',_mpAct(u.activity_type))
    +_mpRow('Horario laboral',_mpWork(u.work_schedule))
    +((u.sex==='F'||u.sex==='Femenino')?_mpRow('Seguimiento menstrual',u.track_menstrual?'Activado':'Desactivado'):'')
    +'<button onclick="renderMiPerfilEdit(this.closest(\'[data-mp]\'))" style="width:100%;margin-top:18px;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Editar mis datos</button>';
@@ -7932,6 +7964,15 @@ function renderMiPerfilEdit(card){
    +inp('mp-dob','Fecha de nacimiento',u.dob,'date')
    +sel('mp-sex','Sexo biológico',u.sex,[['','—'],['M','Masculino'],['F','Femenino']])
    +sel('mp-country','País',u.country,DM_NACIONALIDADES.map(function(x){return [x,x];}))
+   +'<div style="margin-bottom:12px"><label style="font-size:12px;color:#6b7280;display:block;margin-bottom:5px">Ocupación</label>'
+   +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px">'
+   + DM_OCUPACIONES.map(function(o){
+       var v=(Array.isArray(u.activity_type)?u.activity_type.join(', '):(u.activity_type||''));
+       var puesto=v.toLowerCase().indexOf(o.toLowerCase())>=0;
+       return '<button type="button" onclick="dmSetOcupacion(this,\''+o+'\')" style="font-size:12px;padding:6px 11px;border-radius:99px;cursor:pointer;font-family:var(--font);border:1px solid '+(puesto?'#2D6B55':'#d1d5db')+';background:'+(puesto?'#2D6B55':'#fff')+';color:'+(puesto?'#fff':'#374151')+'">'+o+'</button>';
+     }).join('')
+   +'</div>'
+   +'<input id="mp-occupation" type="text" placeholder="Especificá tu ocupación (ej: enfermera de guardia nocturna)" value="'+((Array.isArray(u.activity_type)?u.activity_type.join(", "):(u.activity_type||"")).replace(/"/g,"&quot;"))+'" style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:14px;font-family:var(--font);color:#111"></div>'
    +inp('mp-height','Altura (cm)',u.height_cm,'number')
    +inp('mp-weight','Peso (kg)',u.weight_kg,'number')
    +(function(){
@@ -8005,6 +8046,7 @@ async function saveMiPerfil(btn){
     dob:(g('mp-dob')&&g('mp-dob').value)||S.user.dob,
     sex:(g('mp-sex')&&g('mp-sex').value)||null,
     country:(g('mp-country')&&g('mp-country').value)||null,
+    activity_type:(g('mp-occupation')&&g('mp-occupation').value.trim())||null,
     height_cm:parseFloat(g('mp-height')&&g('mp-height').value)||null,
     weight_kg:parseFloat(g('mp-weight')&&g('mp-weight').value)||null,
     phone:phoneFinal,
@@ -8656,7 +8698,7 @@ async function showDiaryTab_(tab){
         // La variación NOCHE-A-NOCHE se grafica con CPD (Composite Phase Deviation, Fischer 2016).
         const regResult = computeSleepRegularity(sorted);
         const pillarData=sorted.map((e,i)=>{
-          const p=computePillarScore(e);
+          const p=computePillarScore(e,_edadPil);
           const groupReg = regResult.score !== null ? regResult.score : 0;
           const nightReg = (regResult.cpd_per_night && regResult.cpd_per_night[i] !== undefined)
                            ? regResult.cpd_per_night[i] : groupReg;
@@ -16904,6 +16946,29 @@ function resetMedModal(){
 // Antecedentes clínicos frecuentes que pesan sobre el sueño. Se ofrecen como
 // atajos porque escribir "hipotiroidismo" desde el teléfono a las 8 de la
 // mañana es exactamente lo que hace que nadie complete el campo.
+// Ocupación. Los atajos son las que más pesan sobre el sueño (turnos,
+// nocturno, salud, transporte); el campo de texto queda para especificar,
+// porque "trabajo en turnos" y "enfermera de guardia de noche" no informan
+// lo mismo a la hora de leer un actograma.
+const DM_OCUPACIONES = ['Trabajo diurno','Trabajo nocturno','Turnos rotativos',
+ 'Guardias','Estudiante','Personal de salud','Transporte / conducción',
+ 'Docente','Trabajo remoto','Tareas de cuidado','Jubilado/a','Desempleado/a'];
+
+function dmSetOcupacion(btn, texto){
+  const inp=document.getElementById('mp-occupation'); if(!inp) return;
+  const actual=inp.value.trim();
+  const partes=actual? actual.split(/\s*,\s*/).filter(Boolean) : [];
+  const idx=partes.findIndex(x=>x.toLowerCase()===texto.toLowerCase());
+  if(idx>=0){
+    partes.splice(idx,1);
+    btn.style.background='#fff'; btn.style.color='#374151'; btn.style.borderColor='#d1d5db';
+  }else{
+    partes.unshift(texto);
+    btn.style.background='#2D6B55'; btn.style.color='#fff'; btn.style.borderColor='#2D6B55';
+  }
+  inp.value=partes.join(', ');
+}
+
 const DM_ANTECEDENTES = ['Hipertensión','Diabetes','Hipotiroidismo','Obesidad','Asma',
  'EPOC','Reflujo','Dolor crónico','Fibromialgia','Migraña','Depresión','Ansiedad',
  'Cardiopatía','Anemia','Embarazo','Menopausia','Cáncer','Parkinson','Epilepsia'];
