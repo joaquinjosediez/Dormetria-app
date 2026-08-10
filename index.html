@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod73">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod75">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod73"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod75"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod73';
+const APP_VERSION='hoy75-mod75';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -8097,15 +8097,26 @@ function _mpRow(l,v){return '<div style="display:flex;justify-content:space-betw
 // Edad legible: por debajo de 2 años un "0 años" no dice nada. En pediatría
 // del sueño los meses son la unidad relevante (un bebé de 3 meses y uno de
 // 20 no tienen nada que ver).
-function dmEdadTxt(dob){
+function dmEdadTxt(dob, conFecha){
   if(!dob) return null;
   const d=new Date(dob); if(isNaN(d)) return null;
   const hoy=new Date();
   let meses=(hoy.getFullYear()-d.getFullYear())*12 + (hoy.getMonth()-d.getMonth());
   if(hoy.getDate() < d.getDate()) meses--;
   if(meses < 0) return null;
-  if(meses < 24) return meses===1 ? '1 mes' : meses+' meses';
-  return Math.floor(meses/12)+' años';
+  let txt;
+  if(meses < 24){ txt = (meses===1 ? '1 mes' : meses+' meses'); }
+  else {
+    // Años Y meses: en sueño la diferencia entre 3a 2m y 3a 11m importa,
+    // sobre todo en pediatría, donde las bandas de horas cambian rápido.
+    const a=Math.floor(meses/12), m=meses%12;
+    txt = a+'a' + (m ? ' '+m+'m' : '');
+  }
+  if(conFecha){
+    const p=n=>String(n).padStart(2,'0');
+    txt += ' ('+p(d.getUTCDate())+'/'+p(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()+')';
+  }
+  return txt;
 }
 
 function _mpAge(dob){if(!dob)return '—';var d=new Date(dob);if(isNaN(d))return '—';var t=new Date(),a=t.getFullYear()-d.getFullYear(),m=t.getMonth()-d.getMonth();if(m<0||(m===0&&t.getDate()<d.getDate()))a--;return a+' años';}
@@ -9259,7 +9270,7 @@ function showDiaryNew(){
     <div id="med-inline-picker" style="display:none;background:var(--bg-secondary);border-radius:12px;padding:12px;margin-bottom:8px">
       <div id="med-inline-content"></div>
     </div>
-    <button type="button" id="med-toggle-btn" onclick="toggleMedPicker()" style="background:none;border:1.5px dashed var(--sep-opaque);border-radius:10px;padding:9px 14px;color:#1a4a3a;font-size:14px;cursor:pointer;font-family:var(--font);width:100%;text-align:left;margin-bottom:14px">+ Agregar medicamento</button>
+<button type="button" id="med-toggle-btn" onclick="toggleMedPicker()" style="background:rgba(255,255,255,0.06);border:1.5px dashed rgba(126,200,164,0.45);border-radius:10px;padding:11px;width:100%;color:#F4EFE5;font-size:13.5px;font-weight:500;cursor:pointer;font-family:var(--font)">+ Agregar medicamento</button>
 
 
     <div class="dm-diary-block">
@@ -9289,8 +9300,9 @@ function showDiaryNew(){
     </div><input type="hidden" id="d-qual" value="">
     </div>
     <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Cómo te sentiste</div>
-    <label class="form-label">Estado de ánimo</label>
+    <div class="sec-title" style="margin-top:0">Cómo te sentiste al despertar</div>
+    <div style="font-size:11.5px;color:rgba(244,239,229,0.55);line-height:1.5;margin:-4px 0 10px">Referido al momento de levantarte hoy, no al día de ayer. Así se mide cómo repercutió <em>esta</em> noche.</div>
+    <label class="form-label">Estado de ánimo al despertar</label>
     <div class="emoji-row">
       <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="1">😫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy bajo</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="2">😕<div style="font-size:9px;color:var(--ink3);margin-top:2px">Bajo</div></button>
@@ -9298,7 +9310,7 @@ function showDiaryNew(){
       <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="4">🙂<div style="font-size:9px;color:var(--ink3);margin-top:2px">Bueno</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="5">😊<div style="font-size:9px;color:var(--ink3);margin-top:2px">Excelente</div></button>
     </div><input type="hidden" id="d-mood" value="">
-    <label class="form-label" style="margin-top:14px">Energía durante el día</label>
+    <label class="form-label" style="margin-top:14px">Energía al despertar</label>
     <div class="emoji-row">
       <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="1">🪫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Sin energía</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="2">😴<div style="font-size:9px;color:var(--ink3);margin-top:2px">Poca</div></button>
@@ -9598,7 +9610,16 @@ async function saveDiary(){
     const wasEditing=!!S._editingDiaryId;
     S._editingDiaryId=null;
     showSuccessBanner(wasEditing?'Registro actualizado':'Registro guardado');
+    // Llevar a Gráficos: muchos pacientes no descubren esa pestaña y es donde
+    // está el valor de haber registrado. Ver el resultado también refuerza el
+    // hábito de completar el diario.
     showDiaryHome();
+    setTimeout(function(){
+      try{
+        const t=document.querySelector('#screen-diary .tab[onclick*="graphs"], [onclick*="showDiaryTab_(\'graphs\')"]');
+        if(t) t.click(); else if(typeof showDiaryTab_==='function') showDiaryTab_('graphs');
+      }catch(_){}
+    }, 320);
   }catch(e){
     toast('Error al guardar: '+e.message);
     if(btn) btn.disabled=false;
@@ -11266,7 +11287,7 @@ async function viewPatient(email){
       const _age=_dob?Math.floor((new Date()-_dob)/31557600000):null;
       const _sexAbbr=u.sex==='Masculino'?'M':u.sex==='Femenino'?'F':'';
       const _imcH=(u.weight_kg&&u.height_cm)?((u.weight_kg/((u.height_cm/100)**2)).toFixed(1)):null;
-      const _edadTxt = dmEdadTxt(u.dob) || (_age!=null? _age+' años' : null);
+      const _edadTxt = dmEdadTxt(u.dob, true) || (_age!=null? _age+' años' : null);
       _drpAgeSex.textContent = [_edadTxt,_sexAbbr,(_imcH?'IMC '+_imcH:null)].filter(Boolean).join(' · ');
     }catch(_ageErr){ _drpAgeSex.textContent=''; }
   }
@@ -16303,7 +16324,192 @@ function showForgotPasswordPrompt(){
   });
 }
 
-function exportPatientPDF(){ toast('Exportación PDF no disponible en esta versión'); }
+// ═══════════════════════════════════════════════════════════════════════
+// INFORME PARA LLEVAR AL PROFESIONAL
+// ═══════════════════════════════════════════════════════════════════════
+// Pensado para alguien que NUNCA vio Dormetria y tiene dos minutos:
+//   1. Qué es esto y qué NO es          (dos líneas)
+//   2. Síntesis en una frase            (la conclusión primero)
+//   3. Patrones observados con criterio (por qué se dice eso)
+//   4. Métricas con su valor de referencia AL LADO
+//   5. Escalas con puntaje sobre total y corte
+//   6. Límites explícitos del informe
+// El principio: que cada número se pueda verificar sin confiar en la app.
+async function exportInformeParaProfesional(){
+  try{
+    if(!window.jspdf || !window.jspdf.jsPDF){ toast('El generador de PDF no cargó. Recargá la página.'); return; }
+    const u = S.user;
+    if(!u || !u.email){ toast('Iniciá sesión primero'); return; }
+    toast('Generando informe…');
+
+    const diary = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(u.email)+
+      '&order=diary_date.desc&limit=90&select=*').catch(()=>[]);
+    const recs  = await db.get('evaluations?patient_email=eq.'+encodeURIComponent(u.email)+
+      '&order=created_at.asc&select=*').catch(()=>[]);
+    const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+    const d30=(diary||[]).filter(e=>new Date(e.diary_date)>=cutoff);
+    if(d30.length<5){ toast('Necesitás al menos 5 noches registradas'); return; }
+
+    const edad = u.dob ? Math.floor((Date.now()-new Date(u.dob))/31557600000) : null;
+    const met  = computeDiaryMetrics(d30);
+    const score= calcSleepScore(d30, edad);
+    const pats = (typeof dmLecturaClinica==='function') ? dmLecturaClinica(d30, met) : [];
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=210, H=297, mg=16;
+    let y=0;
+    const fmtD=d=>{const x=new Date(d),p=n=>String(n).padStart(2,'0');return p(x.getDate())+'/'+p(x.getMonth()+1)+'/'+x.getFullYear();};
+    const salto=(alto)=>{ if(y+alto>H-18){ doc.addPage(); y=20; } };
+    const H2=(t)=>{ salto(14); doc.setFillColor(240,247,244); doc.rect(mg,y-4.5,W-mg*2,7.5,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(26,74,58);
+      doc.text(String(t).toUpperCase(),mg+2.5,y); y+=9; };
+    const P=(t,size,color,bold)=>{ doc.setFont('helvetica',bold?'bold':'normal'); doc.setFontSize(size||9);
+      doc.setTextColor.apply(doc,color||[55,65,81]);
+      const ls=doc.splitTextToSize(String(t),W-mg*2);
+      salto(ls.length*(size||9)*0.42+2);
+      doc.text(ls,mg,y); y+=ls.length*(size||9)*0.42+2.5; };
+
+    // ── Encabezado ──
+    doc.setFillColor(26,74,58); doc.rect(0,0,W,26,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+    doc.text('Informe de sueño',mg,13);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text('Registro domiciliario · generado el '+fmtD(new Date()),mg,19);
+    doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(((u.name||'')+' '+(u.lname||'')).trim(),W-mg,13,{align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text([(edad!=null?(edad<2?dmEdadTxt(u.dob):edad+' años'):null),(u.sex||null),(u.country||null)]
+      .filter(Boolean).join(' · '),W-mg,19,{align:'right'});
+    y=34;
+
+    // ── Qué es esto ──
+    doc.setFillColor(254,252,232); doc.setDrawColor(234,179,8); doc.setLineWidth(0.3);
+    doc.roundedRect(mg,y-4,W-mg*2,17,2,2,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(133,77,14);
+    doc.text('QUÉ ES ESTE INFORME',mg+3,y+0.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.6); doc.setTextColor(90,70,20);
+    doc.text(doc.splitTextToSize('Diario de sueño autorreportado por el paciente durante '+d30.length+
+      ' noches, más escalas autoadministradas. NO es una polisomnografía ni una actigrafía: no mide arquitectura del sueño, '+
+      'eventos respiratorios ni movimientos. Los patrones señalados son hipótesis a contrastar con la entrevista clínica.',W-mg*2-6),mg+3,y+5);
+    y+=21;
+
+    // ── Síntesis ──
+    H2('Síntesis');
+    const sintesis=[];
+    if(score && score.total!=null) sintesis.push('Puntaje global de sueño '+score.total+'/100 sobre '+d30.length+' noches.');
+    if(met.avgTotal!=null) sintesis.push('Duerme en promedio '+met.fmtDur(met.avgTotal)+' por noche.');
+    if(pats.length) sintesis.push('Se observan '+pats.length+' patrón(es): '+pats.map(x=>x.nombre.toLowerCase()).join('; ')+'.');
+    else sintesis.push('No se identifican patrones anómalos en el registro.');
+    P(sintesis.join(' '), 9.5, [17,24,39]);
+    y+=2;
+
+    // ── Patrones ──
+    if(pats.length){
+      H2('Patrones observados');
+      pats.forEach(function(pt){
+        salto(26);
+        doc.setDrawColor(pt.fuerza==='marcado'?220:217, pt.fuerza==='marcado'?38:119, pt.fuerza==='marcado'?38:6);
+        doc.setLineWidth(1.2); doc.line(mg,y-3.5,mg,y+13);
+        doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(17,24,39);
+        doc.text(pt.nombre+'  ['+pt.fuerza.toUpperCase()+']',mg+3,y);
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.4); doc.setTextColor(51,65,85);
+        let ls=doc.splitTextToSize(pt.valor,W-mg*2-4); doc.text(ls,mg+3,y+4.5); y+=4.5+ls.length*3.6;
+        doc.setFontSize(7.4); doc.setTextColor(120,130,140);
+        ls=doc.splitTextToSize('Criterio: '+pt.criterio+'  ·  Falta para confirmar: '+pt.falta,W-mg*2-4);
+        doc.text(ls,mg+3,y+1); y+=ls.length*3.1+5;
+      });
+    }
+
+    // ── Métricas con referencia ──
+    H2('Métricas del registro');
+    const filas=[
+      ['Noches registradas', String(d30.length), 'mínimo recomendado: 14'],
+      ['Sueño total promedio', met.avgTotal!=null?met.fmtDur(met.avgTotal):'—',
+        edad!=null&&typeof optimalSleepHours==='function'
+          ? 'esperable a esta edad: '+optimalSleepHours(edad).lo+'–'+optimalSleepHours(edad).hi+' h' : '7–9 h en adultos'],
+      ['Latencia de inicio', met.avgLatency!=null?Math.round(met.avgLatency)+' min':'—', 'normal < 30 min'],
+      ['Tiempo despierto tras dormirse', met.avgAwakDur!=null?Math.round(met.avgAwakDur)+' min':'—', 'normal < 30 min'],
+      ['Tiempo en cama', met.avgTIB!=null?met.fmtDur(met.avgTIB):'—', 'base para restricción de sueño'],
+      ['Eficiencia de sueño', met.sleepEfficiency!=null?met.sleepEfficiency+' %':'—', 'normal ≥ 85 %'],
+      ['Hora media de acostarse', met.avgBed!=null?met.fmtClock(met.avgBed):'—', ''],
+      ['Hora media de despertar', met.avgWake!=null?met.fmtClock(met.avgWake):'—', ''],
+      ['Jet lag social', met.socialJetLag!=null?met.fmtDur(met.socialJetLag):'—', 'relevante > 1 h (Wittmann 2006)'],
+      ['Deuda de sueño (libres − laborables)', met.sleepDebt!=null?met.fmtDur(met.sleepDebt):'—', 'sugiere sueño insuficiente entre semana']
+    ];
+    const CX=[mg+2, mg+78, mg+108];
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.4); doc.setTextColor(120,130,140);
+    salto(8); doc.text('PARÁMETRO',CX[0],y); doc.text('VALOR',CX[1],y); doc.text('REFERENCIA',CX[2],y); y+=1.5;
+    doc.setDrawColor(226,232,240); doc.setLineWidth(0.2); doc.line(mg,y,W-mg,y); y+=4;
+    filas.forEach(function(f,idx){
+      salto(7);
+      if(idx%2===0){ doc.setFillColor(249,250,251); doc.rect(mg,y-3.4,W-mg*2,6,'F'); }
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.4); doc.setTextColor(55,65,81);
+      doc.text(f[0],CX[0],y);
+      doc.setFont('helvetica','bold'); doc.setTextColor(17,24,39); doc.text(f[1],CX[1],y);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.4); doc.setTextColor(130,140,150);
+      doc.text(doc.splitTextToSize(f[2],W-mg-CX[2]-2),CX[2],y);
+      y+=6;
+    });
+    y+=4;
+
+    // ── Escalas ──
+    const byScale={}; (recs||[]).forEach(r=>{ (byScale[r.scale_id]=byScale[r.scale_id]||[]).push(r); });
+    const escalas=[];
+    Object.keys(byScale).forEach(function(sid){
+      const sc=SCALES.find(s=>s.id===sid); if(!sc||!sc.interp) return;
+      const hist=byScale[sid].slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+      const last=hist[hist.length-1];
+      const it=sc.interp(last.score)||{l:'—'};
+      escalas.push([sc.name, last.score+(last.max_score||sc.max?('/'+(last.max_score||sc.max)):''), it.l, fmtD(last.created_at)]);
+    });
+    if(escalas.length){
+      H2('Escalas autoadministradas');
+      const EX=[mg+2, mg+82, mg+108, mg+156];
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.4); doc.setTextColor(120,130,140);
+      salto(8); doc.text('ESCALA',EX[0],y); doc.text('PUNTAJE',EX[1],y); doc.text('INTERPRETACIÓN',EX[2],y); doc.text('FECHA',EX[3],y);
+      y+=1.5; doc.setDrawColor(226,232,240); doc.line(mg,y,W-mg,y); y+=4;
+      escalas.forEach(function(e,idx){
+        salto(7);
+        if(idx%2===0){ doc.setFillColor(249,250,251); doc.rect(mg,y-3.4,W-mg*2,6,'F'); }
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(55,65,81);
+        doc.text(doc.splitTextToSize(e[0],76),EX[0],y);
+        doc.setFont('helvetica','bold'); doc.setTextColor(17,24,39); doc.text(String(e[1]),EX[1],y);
+        doc.setFont('helvetica','normal'); doc.setTextColor(80,90,100); doc.setFontSize(7.8);
+        doc.text(doc.splitTextToSize(e[2],44),EX[2],y);
+        doc.setTextColor(130,140,150); doc.text(e[3],EX[3],y);
+        y+=6;
+      });
+      y+=3;
+    }
+
+    // ── Límites ──
+    H2('Límites de este informe');
+    P('· Los datos son autorreportados: dependen de la percepción y la constancia del paciente.',8.2,[100,110,120]);
+    P('· No reemplaza polisomnografía ni poligrafía respiratoria. No permite descartar apnea del sueño ni movimientos periódicos.',8.2,[100,110,120]);
+    P('· Los patrones señalados no constituyen diagnóstico: los criterios ICSD-3 requieren frecuencia, duración y repercusión diurna, que se establecen en la entrevista.',8.2,[100,110,120]);
+    P('· Las escalas son de cribado. Un puntaje alterado orienta, no confirma.',8.2,[100,110,120]);
+
+    // ── Pie en todas las páginas ──
+    const tot=doc.internal.getNumberOfPages();
+    for(let i=1;i<=tot;i++){
+      doc.setPage(i);
+      doc.setDrawColor(226,232,240); doc.setLineWidth(0.2); doc.line(mg,H-13,W-mg,H-13);
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor(150,158,166);
+      doc.text('Generado por Dormetria · dormetria.com · registro domiciliario de sueño',mg,H-9);
+      doc.text('Pág. '+i+' de '+tot,W-mg,H-9,{align:'right'});
+    }
+    const nom=((u.lname||'')+'-'+(u.name||'')).replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ-]/g,'')||'paciente';
+    doc.save('Informe-sueno-'+nom+'.pdf');
+    toast('Informe descargado ✓');
+  }catch(e){
+    console.error('[informe]', e);
+    toast('No se pudo generar el informe: '+((e&&e.message)||''));
+  }
+}
+
+function exportPatientPDF(){ return exportInformeParaProfesional(); }
+
 // ─── Informe clínico en PDF (botón ↓PDF del header de la ficha) ───
 // Genera y DESCARGA un PDF real con jsPDF. Antes se abría el diálogo de
 // impresión del navegador (había que elegir "Guardar como PDF" a mano).

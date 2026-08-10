@@ -974,6 +974,25 @@ input, select, textarea{ color: inherit; }
 }
 #screen-diary-new .form-input[type="time"],
 #screen-diary-new .form-input[type="date"]{ color-scheme:dark; }
+/* ── Etiquetas del diario en móvil ──
+   "ME DESPERTÉ / cuando abriste los ojos" y "SALÍ DE LA CAMA / si fue al
+   toque, misma hora" se encimaban: la etiqueta y su aclaración competían por
+   la misma línea. Ahora la aclaración va SIEMPRE debajo, en bloque. */
+#screen-diary-new .form-label{ display:block !important; line-height:1.35; margin-bottom:6px; }
+#screen-diary-new .form-label span,
+#screen-diary-new .form-label small{
+  display:block; font-size:10.5px; font-weight:400; letter-spacing:0;
+  text-transform:none; color:rgba(244,239,229,0.45); margin-top:2px;
+}
+/* Los campos de las dos columnas arrancan a la misma altura aunque una
+   etiqueta ocupe dos líneas y la otra una. */
+#screen-diary-new .form-row{ align-items:stretch !important; }
+#screen-diary-new .form-row > .form-group{ display:flex; flex-direction:column; justify-content:flex-end; }
+#screen-diary-new .form-row .form-label{ flex:1 0 auto; min-height:3.1em; display:flex !important; flex-direction:column; justify-content:flex-end; }
+@media (max-width:420px){
+  #screen-diary-new .form-row .form-label{ min-height:3.9em; font-size:10px; }
+}
+
 /* Alineación de las dos columnas: cuando una etiqueta ocupa dos líneas y la
    otra una, los campos quedaban a distinta altura y con distinto ancho.
    Con align-items:end los inputs se apoyan en la misma línea de base, y con
