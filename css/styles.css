@@ -682,6 +682,21 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 .bar-f{height:100%;border-radius:2px;}
 .chev{color:var(--label-3);font-size:20px;flex-shrink:0;font-weight:300;}
 
+/* ══ ROJOS Y VERDES SOBRE FONDO OSCURO ═══════════════════════════════
+   Los colores clínicos (#dc2626 rojo, #16a34a verde, ámbar) se eligieron
+   para fondo blanco. Sobre el verde oscuro del panel pierden contraste y
+   los números casi no se leen. Una sombra oscura detrás los despega sin
+   cambiar el color, que es lo que codifica la información. */
+.dm-num-clinico,
+#screen-doctor-patient [style*="color:#dc2626"],
+#screen-doctor-patient [style*="color:#16a34a"],
+#screen-doctor-patient [style*="color:#d97706"],
+#screen-doctor-patient [style*="color:#991b1b"],
+#screen-doctor-patient [style*="color:#14532d"]{
+  text-shadow: 0 1px 3px rgba(0,0,0,.75), 0 0 1px rgba(0,0,0,.9);
+  font-weight: 600;
+}
+
 /* ══ RED DE SEGURIDAD DE CONTRASTE ═══════════════════════════════════
    Dos clases de error visual se repetían por toda la app y las dos vienen
    de valores por defecto del navegador, no de decisiones nuestras:

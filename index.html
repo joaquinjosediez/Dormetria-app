@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod76">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod77">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod76"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod77"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod76';
+const APP_VERSION='hoy75-mod77';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4303,7 +4303,7 @@ function updatePillarBars(entries){
   } else {
     cardsOwn=[{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:_optOwn.lo+'–'+_optOwn.hi+'h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
-     {label:'Regularidad',val:avgRegP,color:'#e67e22',sub:_localRegResult.sd_midpoint_min!==null?('Variación: ±'+_localRegResult.sd_midpoint_min+' min'):'Variabilidad del horario'}
+     {label:'Regularidad',val:avgRegP,color:'#e67e22',statusOverride:(_localRegResult&&_localRegResult.label)||null,sub:_localRegResult.sd_midpoint_min!==null?('Variación: ±'+_localRegResult.sd_midpoint_min+' min'):'Variabilidad del horario'}
     ].map(p=>{const c=pillarColor(p.val);const status=(p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
       return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.color+'">'+
         '<div style="font-size:10px;font-weight:700;color:'+p.color+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.label+'</div>'+
@@ -8958,7 +8958,12 @@ async function showDiaryTab_(tab){
             ${[
               {label:'Cantidad',val:avgQtyP,icon:'',color:'#2d9e6b',sub:'Duración'},
               {label:'Fragmentación',val:avgFragP,icon:'',color:'#0e7490',sub:'Despertares'},
-              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: null},
+              // ── UNIFICACIÓN DE LA ETIQUETA DE REGULARIDAD ──
+              // El pilar usaba bandas genéricas de 0–100 ('Regular' con 65) y
+              // la tarjeta de métricas técnicas las bandas del desvío del punto
+              // medio ('Buena' con ese mismo 65). El mismo número con dos
+              // palabras distintas en la misma pantalla. Manda la clínica.
+              {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: (regResult && regResult.label) || null},
             ].map(p=>{
               const c=pillarColor(p.val);
               const pillarC = p.color || '#1a4a3a';
@@ -10435,9 +10440,24 @@ async function showDrTab_(tab){
         cont.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>No tenés pacientes vinculados.<br><br><button class="btn btn-g" style="max-width:240px;margin:0 auto" onclick="showDrTab(\'link\',document.getElementById(\'drnav-metrics\'))">+ Vincular paciente por código</button></div>';
         return;
       }
+      // ── RENDIMIENTO ──
+      // Antes se hacía UNA consulta HTTP POR PACIENTE (y una segunda si no
+      // aparecía). Con 32 pacientes eran 32 a 64 pedidos en paralelo, que el
+      // navegador encola de a 6: de ahí la demora al abrir el listado.
+      // Ahora son DOS consultas con email=in.(...) para todos.
+      const _lote = (tabla, emails) => emails.length
+        ? db.get(tabla+'?email=in.('+emails.map(e=>encodeURIComponent(e)).join(',')+')&select=*').catch(()=>[])
+        : Promise.resolve([]);
+      const [_pRows, _dRows] = await Promise.all([
+        _lote('patients', cachedEmails),
+        _lote('doctors',  cachedEmails)
+      ]);
+      const _porEmail = {};
+      (_dRows||[]).forEach(r=>{ if(r&&r.email) _porEmail[String(r.email).toLowerCase()] = r; });
+      (_pRows||[]).forEach(r=>{ if(r&&r.email) _porEmail[String(r.email).toLowerCase()] = r; });
+
       const pts=await Promise.all(cachedEmails.map(async pEmail=>{
-        let u=await db.get(`patients?email=eq.${encodeURIComponent(pEmail)}&select=*`).then(d=>d&&d[0]||null).catch(()=>null);
-        if(!u) u=await db.get(`doctors?email=eq.${encodeURIComponent(pEmail)}&select=*`).then(d=>d&&d[0]||null).catch(()=>null);
+        let u = _porEmail[String(pEmail).toLowerCase()] || null;
         if(!u) {
           // Para perfiles infantiles (sufijo +name@child), extraer nombre amigable
           const cm = pEmail.match(/\+([^@]+)@child$/i);
@@ -11541,7 +11561,7 @@ async function showDrPTab_(tab){
         '<div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:6px">Copia datos, escalas, diario y cronotipo en texto plano — pegalo en tu historia clínica</div>' +
       '</div>';
 
-      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div><div class="dm-grid2">'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const pct=Math.round(r.score/r.max_score*100);const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score}</div>`}</div></div>`;}).join('')+'</div>':'<div class="empty-state">Sin evaluaciones aún</div>')+copyAllBtn;
+      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div><div class="dm-grid2">'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const _mx=(r.max_score||(sc&&sc.max)||0); const pct=_mx?Math.round(r.score/_mx*100):0;const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score || (sc&&sc.max) || '—'}</div>`}</div></div>`;}).join('')+'</div>':'<div class="empty-state">Sin evaluaciones aún</div>')+copyAllBtn;
     }else if(tab==='profile'){
       const u=S.viewData;
       const dob=u.dob?new Date(u.dob):null;
@@ -12459,7 +12479,7 @@ async function showDrPTab_(tab){
     }else if(tab==='history'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);S.viewRecs=recs||[];
       if(!recs||!recs.length){cont.innerHTML='<div class="empty-state">Sin evaluaciones</div>';return;}
-      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')"><div><div style="font-size:14px;font-weight:500;color:#F4EFE5">${r.scale_name}</div><div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:600;color:#F4EFE5">${r.score}/${r.max_score}</div><span class="badge" style="background:#F4EFE5;color:${i.c};border:none;font-weight:600;padding:3px 10px;margin-top:4px;display:inline-block">${i.l}</span></div><span style="color:rgba(244,239,229,0.5);font-size:16px">›</span></div></div>`;}).join('');
+      cont.innerHTML=recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')"><div><div style="font-size:14px;font-weight:500;color:#F4EFE5">${r.scale_name}</div><div style="font-size:12px;color:rgba(244,239,229,0.55);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:600;color:#F4EFE5">${r.score}/${r.max_score || (sc&&sc.max) || '—'}</div><span class="badge" style="background:#F4EFE5;color:${i.c};border:none;font-weight:600;padding:3px 10px;margin-top:4px;display:inline-block">${i.l}</span></div><span style="color:rgba(244,239,229,0.5);font-size:16px">›</span></div></div>`;}).join('');
     }else if(tab==='notes'){
       renderConsultNotes();
       return;
@@ -12641,9 +12661,9 @@ function buildPDF(pd,records,dd){
   if(!records.length){doc.setTextColor(120,120,120);doc.setFontSize(10);doc.text('Sin evaluaciones registradas.',mg,y+10);doc.save(`Dormetria_${pd.name}.pdf`);return;}
   doc.setTextColor(26,74,58);doc.setFontSize(12);doc.setFont('helvetica','bold');y+=4;doc.text('Resumen clínico',mg,y);y+=10;
   const lastBS={};records.forEach(r=>{lastBS[r.scale_id]=r;});
-  SCALES.forEach(sc=>{const r=lastBS[sc.id];if(!r)return;const interp=sc.interp(r.score);const pct=r.score/r.max_score;if(y>260){doc.addPage();y=mg;}doc.setFillColor(248,248,248);doc.roundedRect(mg,y,cw,20,2,2,'F');doc.setTextColor(30,30,30);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(sc.name.substring(0,35),mg+4,y+8);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,100,100);doc.text(new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}),mg+4,y+14);const rgb=h2r(interp.c);doc.setTextColor(...rgb);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text(`${r.score}/${r.max_score}`,mg+cw-28,y+9);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(interp.l.substring(0,25),mg+cw-28,y+15);doc.setFillColor(220,220,220);doc.roundedRect(mg+60,y+8,60,3,1,1,'F');doc.setFillColor(...rgb);doc.roundedRect(mg+60,y+8,Math.round(60*pct),3,1,1,'F');y+=24;});
+  SCALES.forEach(sc=>{const r=lastBS[sc.id];if(!r)return;const interp=sc.interp(r.score);const pct=r.score/r.max_score;if(y>260){doc.addPage();y=mg;}doc.setFillColor(248,248,248);doc.roundedRect(mg,y,cw,20,2,2,'F');doc.setTextColor(30,30,30);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(sc.name.substring(0,35),mg+4,y+8);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,100,100);doc.text(new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}),mg+4,y+14);const rgb=h2r(interp.c);doc.setTextColor(...rgb);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text(`${r.score}/${r.max_score || (sc&&sc.max) || '—'}`,mg+cw-28,y+9);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(interp.l.substring(0,25),mg+cw-28,y+15);doc.setFillColor(220,220,220);doc.roundedRect(mg+60,y+8,60,3,1,1,'F');doc.setFillColor(...rgb);doc.roundedRect(mg+60,y+8,Math.round(60*pct),3,1,1,'F');y+=24;});
   if(y>240){doc.addPage();y=mg;}y+=4;doc.setTextColor(26,74,58);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text('Historial completo',mg,y);y+=8;doc.setFillColor(26,74,58);doc.rect(mg,y,cw,7,'F');doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('Fecha',mg+2,y+5);doc.text('Escala',mg+28,y+5);doc.text('Puntaje',mg+100,y+5);doc.text('Interpretación',mg+122,y+5);y+=9;let alt=false;
-  records.slice().reverse().forEach(r=>{if(y>275){doc.addPage();y=mg;}const sc=SCALES.find(s=>s.id===r.scale_id);const interp=sc?sc.interp(r.score):{l:'—',c:'#444'};doc.setFillColor(alt?248:255,alt?250:255,alt?248:255);doc.rect(mg,y,cw,6,'F');doc.setTextColor(50,50,50);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}),mg+2,y+4);doc.text((r.scale_name||'').substring(0,28),mg+28,y+4);doc.text(`${r.score}/${r.max_score}`,mg+100,y+4);doc.setTextColor(...h2r(interp.c));doc.text(interp.l.substring(0,25),mg+122,y+4);y+=7;alt=!alt;});
+  records.slice().reverse().forEach(r=>{if(y>275){doc.addPage();y=mg;}const sc=SCALES.find(s=>s.id===r.scale_id);const interp=sc?sc.interp(r.score):{l:'—',c:'#444'};doc.setFillColor(alt?248:255,alt?250:255,alt?248:255);doc.rect(mg,y,cw,6,'F');doc.setTextColor(50,50,50);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}),mg+2,y+4);doc.text((r.scale_name||'').substring(0,28),mg+28,y+4);doc.text(`${r.score}/${r.max_score || (sc&&sc.max) || '—'}`,mg+100,y+4);doc.setTextColor(...h2r(interp.c));doc.text(interp.l.substring(0,25),mg+122,y+4);y+=7;alt=!alt;});
   const pages=doc.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFillColor(240,240,240);doc.rect(0,287,W,10,'F');doc.setTextColor(120,120,120);doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text('Dormetria · Documento confidencial · Solo para uso clínico',mg,293);doc.text(`Pág. ${p} / ${pages}`,W-mg-10,293);}
   doc.save(`Dormetria_${pd.name}_${pd.lname||''}_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf`);
 }
