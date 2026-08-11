@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod77">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod78">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod77"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod78"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod77';
+const APP_VERSION='hoy75-mod78';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4929,10 +4929,11 @@ function computeHabitsImpact(entries){
     if(conDato.length < 8) return;                 // no lo registra lo suficiente
     const on =conDato.filter(hb.on);
     const off=conDato.filter(e=>!hb.on(e));
-    // Con menos de 7 noches en algún grupo el resultado es demasiado
-    // inestable: un solo valor extremo lo da vuelta. Preferimos no mostrarlo
-    // antes que mostrar un número que parece más firme de lo que es.
-    if(on.length < 7 || off.length < 7) return;
+    // Piso de 5 noches por grupo. Entre 5 y 6 el resultado es frágil —un solo
+    // valor extremo lo da vuelta— así que se muestra igual pero marcado como
+    // preliminar. Por debajo de 5 no se muestra: no hay nada que interpretar.
+    if(on.length < 5 || off.length < 5) return;
+    const _preliminar = (on.length < 7 || off.length < 7);
     const efectos=[];
     salidas.forEach(s=>{
       const a=on .map(s.val).filter(v=>v!=null && !isNaN(v)).map(Number);
@@ -4961,7 +4962,7 @@ function computeHabitsImpact(entries){
       veredicto = suma>0?'positivo' : suma<0?'negativo' : 'mixto';
     }
     out.push({ id:hb.id, label:hb.label, icon:hb.icon, onTxt:hb.onTxt, offTxt:hb.offTxt,
-               fisiologico:!!hb.fisiologico, personal:!!hb.personal,
+               fisiologico:!!hb.fisiologico, personal:!!hb.personal, preliminar:_preliminar,
                nOn:on.length, nOff:off.length, efectos, veredicto });
   });
   return { n:E.length, habitos:out };
@@ -4984,7 +4985,7 @@ function renderHabitsImpactHtml(entries){
     '<div style="font-size:10.5px;color:var(--label-3);line-height:1.45;margin-bottom:11px;padding:7px 9px;background:#f8fafc;border-radius:7px">'+
       '<strong>Cómo leerlo.</strong> Asociación dentro de un mismo paciente, no un ensayo: puede haber confusión (tomar café justamente los días de peor descanso previo). '+
       'Se comparan varios factores por varias variables, así que algún p&lt;0,05 aislado es esperable por azar. Para generar hipótesis en consulta, no para concluir causalidad. '+
-      'Solo se muestran factores con al menos 7 noches en cada grupo.</div>';
+      'Se muestran factores con al menos 5 noches en cada grupo; entre 5 y 6 se marcan como <strong>preliminares</strong>, porque un solo valor extremo puede darlos vuelta.</div>';
   R.habitos.forEach(hb=>{
     const vCol = hb.veredicto==='positivo'?'#16a34a' : hb.veredicto==='negativo'?'#dc2626' : '#6b7280';
     const vTxt = hb.veredicto==='positivo'?'Asociado a mejor sueño'
@@ -4994,6 +4995,8 @@ function renderHabitsImpactHtml(entries){
       ? '<span style="font-size:9.5px;background:#eef2ff;color:#4338ca;border-radius:99px;padding:2px 7px;font-weight:600">no modificable</span>'
       : (hb.personal
         ? '<span style="font-size:9.5px;background:#fdf4ff;color:#86198f;border-radius:99px;padding:2px 7px;font-weight:600">tu variable</span>' : '');
+    const avisoPrelim = hb.preliminar
+      ? '<span style="font-size:9.5px;background:#fef9c3;color:#854d0e;border-radius:99px;padding:2px 7px;font-weight:600">preliminar</span>' : '';
     // El hallazgo principal: la variable con mayor efecto, en palabras.
     const _fuerte = hb.efectos.filter(e=>e.signo!==0)
       .sort((a,b)=>Math.abs(b.diff/(b.mOff||1))-Math.abs(a.diff/(a.mOff||1)))[0];
@@ -5004,7 +5007,7 @@ function renderHabitsImpactHtml(entries){
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">'+
         '<span style="font-size:15px">'+hb.icon+'</span>'+
         '<span style="font-size:12.5px;font-weight:700;color:var(--label)">'+hb.label+'</span>'+
-        '<span style="font-size:10px;font-weight:700;color:'+vCol+';background:'+vCol+'14;border-radius:99px;padding:2px 8px">'+vTxt+'</span>'+etiqueta+
+        '<span style="font-size:10px;font-weight:700;color:'+vCol+';background:'+vCol+'14;border-radius:99px;padding:2px 8px">'+vTxt+'</span>'+etiqueta+avisoPrelim+
       '</div>'+
       '<div style="font-size:12px;color:'+vCol+';margin-bottom:8px">'+_titular+
         '<span style="color:var(--label-3);font-weight:400"> · '+hb.nOn+' vs '+hb.nOff+' noches</span></div>';
