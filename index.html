@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod78">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod79">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod78"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod79"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod78';
+const APP_VERSION='hoy75-mod79';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4520,8 +4520,41 @@ function computeMCTQFromDiary(entries){
 }
 
 // [modularizado] Helpers de métricas de sueño movidos a js/dormetria-sleep-metrics.js
+// ── Que noche entra en el analisis ──────────────────────────────────────────
+// Habia DOS criterios distintos en este mismo archivo: el actograma del medico
+// dibujaba toda noche con horarios cargados, y las metricas descartaban las
+// importadas y las de menos de una hora. Resultado: 24 barras arriba y "14
+// noches" abajo, sobre la misma paciente. Ahora las dos vistas preguntan aca.
+// Devuelve el motivo del descarte para poder mostrarlo en vez de esconderlo.
+function dmMotivoDescarte(e){
+  if(!e) return 'vacio';
+  if(!e.bedtime || !e.wake_time) return 'sin_horarios';
+  if(e.notes && String(e.notes).startsWith('Importado')) return 'importada';
+  if(!e.sleep_minutes || e.sleep_minutes < 60) return 'menos_de_1h';
+  // Un tramo de mas de 14 h entre acostarse y despertar no es una noche: casi
+  // siempre es un AM/PM invertido al cargar. Se descarta del promedio y se
+  // avisa, porque el promedio de esa paciente cambia por horas.
+  try{
+    const [bh,bm]=String(e.bedtime).split(':').map(Number);
+    const [wh,wm]=String(e.wake_time).split(':').map(Number);
+    let d=(wh*60+wm)-(bh*60+bm); if(d<0) d+=1440;
+    if(d > 14*60) return 'duracion_inverosimil';
+  }catch(_){}
+  return null;
+}
+function dmNochesValidas(entries){ return (entries||[]).filter(e=>!dmMotivoDescarte(e)); }
+function dmResumenDescartes(entries){
+  const c={};
+  (entries||[]).forEach(e=>{ const m=dmMotivoDescarte(e); if(m) c[m]=(c[m]||0)+1; });
+  const txt={sin_horarios:'sin horarios cargados', importada:'importadas de otra app',
+             menos_de_1h:'de menos de 1 h', duracion_inverosimil:'con horarios inverosimiles (posible AM/PM invertido)',
+             vacio:'vacias'};
+  const partes=Object.keys(c).map(k=>c[k]+' '+(txt[k]||k));
+  return { total:Object.keys(c).reduce((a,k)=>a+c[k],0), texto:partes.join(' · ') };
+}
+
 function computeDiaryMetrics(entries){
-  const valid = (entries||[]).filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
+  const valid = dmNochesValidas(entries);
   if(valid.length<3) return null;
   // Promedios de horarios — usamos minutos con ajuste de cruce de medianoche para bedtime
   const bedMins=[], wakeMins=[], totalMins=[], wdTotal=[], weTotal=[], wdMid=[], weMid=[], tibMinsArr=[];
@@ -4861,8 +4894,10 @@ function dmFmtP(p){
 // concluir causalidad. Por eso exigimos un mínimo de noches en AMBOS grupos y
 // mostramos siempre la n.
 function computeHabitsImpact(entries){
-  const E=(entries||[]).filter(e=>e && e.sleep_minutes>0 &&
-    !(e.notes && String(e.notes).startsWith('Importado')));
+  // Mismo criterio de noche valida que el actograma y las metricas. Importa:
+  // una noche con AM/PM invertido mete 14 h de "sueno total" en uno de los dos
+  // grupos y da vuelta la conclusion sobre el cafe o el ejercicio.
+  const E=dmNochesValidas(entries);
   if(E.length < 10) return {error:'few_nights', n:E.length};
 
   // Un hábito solo se analiza si el paciente REALMENTE lo registra: tiene que
@@ -8595,7 +8630,8 @@ async function showDiaryTab_(tab){
           return;
         }
         killChart('ds');killChart('dm');killChart('acto');killChart('dp');
-        const sorted=[...entries].filter(e=>!(e.notes&&e.notes.startsWith('Importado'))).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
+        // Mismo criterio que las metricas y que la vista del profesional.
+        const sorted=dmNochesValidas(entries).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const weekendRows=sorted.map((e,i)=>{const d=new Date(e.diary_date+'T12:00:00');const isFreeDay=e.day_type==='free';const isWeekend=d.getDay()===0||d.getDay()===6;return(isFreeDay||isWeekend)?i:null;}).filter(i=>i!==null);
         // Noches con período menstrual (marcador en notes)
@@ -9474,9 +9510,22 @@ async function saveDiary(){
   const quality=parseInt(document.getElementById('d-qual')?.value)||null;
   const mood=parseInt(document.getElementById('d-mood')?.value)||null;
   const energy=parseInt(document.getElementById('d-energy')?.value)||null;
-  const exerciseMins=parseInt(document.getElementById('d-exercise-mins')?.value)||null;
+  // ── El cero es una RESPUESTA, no la ausencia de una respuesta ──
+  // Estos campos usaban `parseInt(...)||null`. En JavaScript `0||null` da null,
+  // asi que "Sin actividad" (que vale 0 y viene seleccionado por defecto) se
+  // guardaba como "no contesto". Consecuencia: en la base de datos el grupo
+  // "noches SIN ejercicio" estaba SIEMPRE vacio, y por lo tanto la comparacion
+  // con/sin no podia aparecer para NINGUN paciente, nunca. Igual con pantallas.
+  const _numOCero = el => {
+    if(!el) return null;
+    const raw = String(el.value==null?'':el.value).trim();
+    if(raw === '') return null;          // realmente vacio -> sin dato
+    const n = parseInt(raw, 10);
+    return isNaN(n) ? null : n;          // el 0 se conserva como 0
+  };
+  const exerciseMins=_numOCero(document.getElementById('d-exercise-mins'));
   const exerciseTime=document.getElementById('d-exercise-time')?.value||null;
-  const screenMins=parseInt(document.getElementById('d-screen')?.value)||null;
+  const screenMins=_numOCero(document.getElementById('d-screen'));
   const notes=document.getElementById('d-notes')?.value||'';
   const meds=getMedications();
   const napStart=document.getElementById('d-nap-start')?.value||null;
@@ -9496,7 +9545,10 @@ async function saveDiary(){
   }
   // Awakenings (calculados ANTES de sleepMins para descontar WASO de TST)
   const awakList=awakeningList||[];
-  const wasoMins=awakList.reduce((a,b)=>a+(parseInt(b.duration)||0),0)||null;
+  // hasAwakenings===false significa "no me desperte": eso es 0 minutos de WASO,
+  // no "sin dato". Antes el ||null lo convertia en desconocido.
+  const wasoMins=(hasAwakenings===false) ? 0
+                : (awakList.length ? awakList.reduce((a,b)=>a+(parseInt(b.duration)||0),0) : null);
   // Tiempo despierto en cama entre el despertar final y levantarse (schema v2).
   // NO se descuenta del TST porque wake_time ahora ES el despertar final: el TST
   // va de bedtime a wake_time. Este dato es un marcador clínico independiente
@@ -9526,8 +9578,14 @@ async function saveDiary(){
   // Los ítems se guardan como {label, mg} y {label, ua}. Antes esta suma leía
   // b.qty —una propiedad que NUNCA existió— así que daba 0 y se guardaba null:
   // ningún paciente tuvo jamás registrado el alcohol ni la cafeína.
-  const caffTotal=caffItems.reduce((a,b)=>a+(parseFloat(b.mg)||0),0)||null;
-  const alcTotal=(Math.round(alcItems.reduce((a,b)=>a+(parseFloat(b.ua)||0),0)*10)/10)||null;
+  // El `||null` del final borraba el cero igual que en ejercicio: una noche sin
+  // cafe quedaba como "no se pregunto" en vez de "no tomo". Ahora el total es 0
+  // si la seccion del diario estuvo presente, y null solo si ni siquiera existe
+  // (registros viejos o importados, donde el dato de verdad se desconoce).
+  const _seccionCaff = !!document.getElementById('d-caff-type');
+  const _seccionAlc  = !!document.getElementById('d-alc-type');
+  const caffTotal=_seccionCaff ? caffItems.reduce((a,b)=>a+(parseFloat(b.mg)||0),0) : null;
+  const alcTotal=_seccionAlc ? (Math.round(alcItems.reduce((a,b)=>a+(parseFloat(b.ua)||0),0)*10)/10) : null;
   // Red de seguridad: compara lo que la persona completó contra lo que
   // efectivamente viaja al servidor. Si algo se llenó y llega vacío, queda
   // registrado en la consola con nombre y valor. Así un error de tipeo en un
@@ -11922,9 +11980,23 @@ async function showDrPTab_(tab){
         killChart('dr-acto');killChart('dp-dr');
         // Omitir del actograma las noches sin horarios cargados: generaban filas
         // vacías (p.ej. dos "mar 30-06" en blanco) que confunden la lectura.
-        const sorted=[...subj]
-          .filter(e=>e.bedtime && e.wake_time)
+        // Antes este filtro solo pedia horarios, mientras las metricas de abajo
+        // aplicaban otro criterio: por eso el grafico y la tabla hablaban de
+        // noches distintas. Ahora usan la misma funcion, y lo que queda afuera
+        // se informa debajo del grafico en vez de desaparecer sin explicacion.
+        const sorted=dmNochesValidas(subj)
           .sort((a,b)=>a.diary_date>b.diary_date?1:-1);
+        try{
+          const _desc=dmResumenDescartes(subj);
+          const _dhs=document.getElementById('dr-habit-summary');
+          if(_dhs && _desc.total>0){
+            const _av=document.createElement('div');
+            _av.id='dr-acto-descartes';
+            _av.style.cssText='font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 8px;margin-bottom:6px';
+            _av.textContent='No se grafican '+_desc.total+' noche'+(_desc.total>1?'s':'')+': '+_desc.texto+'. Tampoco entran en las metricas.';
+            _dhs.parentNode.insertBefore(_av,_dhs.nextSibling);
+          }
+        }catch(_dsc){}
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,(w>s?w:w+24)];});
@@ -11936,7 +12008,7 @@ async function showDrPTab_(tab){
           const H=Math.max(180,sorted.length*12+80);ctxA.style.height=H+'px';ctxA.height=H;
           // Filtrar las noches válidas con el MISMO criterio que computeDiaryMetrics
           // así el promedio que se muestra arriba coincide con la línea del actograma.
-          const _validForAvg = sorted.filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
+          const _validForAvg = sorted; // ya filtrado por dmNochesValidas
           // Calcular promedio en minutos del día (igual que computeDiaryMetrics),
           // luego mapear al offset del actograma. De este modo NO hay discrepancia
           // entre el "promedio levantarse" numérico y la línea azul del gráfico.
