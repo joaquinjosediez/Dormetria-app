@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod75">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod76">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod75"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod76"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod75';
+const APP_VERSION='hoy75-mod76';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4835,7 +4835,10 @@ function dmWelch(a, b){
   const m1=a.reduce((x,y)=>x+y,0)/n1, m2=b.reduce((x,y)=>x+y,0)/n2;
   const v1=a.reduce((x,y)=>x+(y-m1)*(y-m1),0)/(n1-1);
   const v2=b.reduce((x,y)=>x+(y-m2)*(y-m2),0)/(n2-1);
-  if(v1===0 && v2===0) return {dif:m1-m2, p:1, d:0};
+  // Varianza cero en ambos grupos: o son idénticos (p=1) o están
+  // perfectamente separados (p→0). Devolver 1 en el segundo caso, como hacía
+  // antes, escondía justo el efecto más nítido posible.
+  if(v1===0 && v2===0) return {dif:m1-m2, p:(m1===m2?1:0), d:(m1===m2?0:Infinity)};
   const se=Math.sqrt(v1/n1 + v2/n2);
   if(!(se>0)) return {dif:m1-m2, p:1, d:0};
   const t=(m1-m2)/se;
@@ -4888,6 +4891,8 @@ function computeHabitsImpact(entries){
       has:e=>e.nap_minutes!=null,
       on:e=>Number(e.nap_minutes)>0,
       onTxt:'con siesta', offTxt:'sin siesta' },
+    // Variables que definió el propio paciente. Se agregan dinámicamente.
+    // (se insertan más abajo, después de armar la lista base)
     // La menstruación NO es un hábito: es un estado fisiológico. Se analiza
     // igual porque el efecto sobre el sueño está bien descrito, pero la
     // tarjeta lo rotula aparte para no sugerir que sea algo "modificable".
@@ -4903,6 +4908,20 @@ function computeHabitsImpact(entries){
     { id:'awk',   label:'Despertares',        unit:'',    dirGood:-1, val:e=>e.awakenings },
     { id:'qual',  label:'Calidad percibida',  unit:'/5',  dirGood:+1, val:e=>e.sleep_quality }
   ];
+  // ── Variables personalizadas del paciente ──
+  // Se leen de la definición guardada y de la marca por noche.
+  try{
+    const _defs = (typeof dmGetVarsPersonales==='function') ? dmGetVarsPersonales() : [];
+    _defs.forEach(function(v){
+      habitos.push({
+        id:'custom_'+v.id, label:v.label, icon:(v.icon||'⭐'), personal:true,
+        has:e=>{ const f=e.custom_flags; return f && typeof f==='object' && f[v.id]!==undefined; },
+        on: e=>{ const f=e.custom_flags; return !!(f && f[v.id]===true); },
+        onTxt:'con '+String(v.label).toLowerCase(), offTxt:'sin '+String(v.label).toLowerCase()
+      });
+    });
+  }catch(_){}
+
   const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
   const out=[];
   habitos.forEach(hb=>{
@@ -4942,7 +4961,8 @@ function computeHabitsImpact(entries){
       veredicto = suma>0?'positivo' : suma<0?'negativo' : 'mixto';
     }
     out.push({ id:hb.id, label:hb.label, icon:hb.icon, onTxt:hb.onTxt, offTxt:hb.offTxt,
-               fisiologico:!!hb.fisiologico, nOn:on.length, nOff:off.length, efectos, veredicto });
+               fisiologico:!!hb.fisiologico, personal:!!hb.personal,
+               nOn:on.length, nOff:off.length, efectos, veredicto });
   });
   return { n:E.length, habitos:out };
 }
@@ -4971,7 +4991,9 @@ function renderHabitsImpactHtml(entries){
                : hb.veredicto==='negativo'?'Asociado a peor sueño'
                : hb.veredicto==='mixto'?'Efecto mixto' : 'Sin diferencia relevante';
     const etiqueta = hb.fisiologico
-      ? '<span style="font-size:9.5px;background:#eef2ff;color:#4338ca;border-radius:99px;padding:2px 7px;font-weight:600">no modificable</span>' : '';
+      ? '<span style="font-size:9.5px;background:#eef2ff;color:#4338ca;border-radius:99px;padding:2px 7px;font-weight:600">no modificable</span>'
+      : (hb.personal
+        ? '<span style="font-size:9.5px;background:#fdf4ff;color:#86198f;border-radius:99px;padding:2px 7px;font-weight:600">tu variable</span>' : '');
     // El hallazgo principal: la variable con mayor efecto, en palabras.
     const _fuerte = hb.efectos.filter(e=>e.signo!==0)
       .sort((a,b)=>Math.abs(b.diff/(b.mOff||1))-Math.abs(a.diff/(a.mOff||1)))[0];
@@ -8991,6 +9013,14 @@ async function showDiaryTab_(tab){
 // DIARY HELPERS (global state)
 let caffItems=[];let alcItems=[];let awakeningList=[];let hasAwakenings=null;let hasNap=null;
 function resetDiaryHelpers(){caffItems=[];alcItems=[];awakeningList=[];hasAwakenings=null;hasNap=null;_medModalMeds=[];_periodActive=false;}
+// Redibuja el bloque de variables personalizadas al abrir un registro nuevo.
+function dmPintarVarsSlot(){
+  try{
+    _dmVarsNoche = {};
+    const c=document.getElementById('dm-vars-slot');
+    if(c) c.innerHTML = dmRenderVarsPersonales();
+  }catch(_){}
+}
 function selEmoji(el,targetId){const row=el.closest('.emoji-row');row.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');document.getElementById(targetId).value=el.dataset.val;}
 function selNum(el,targetId){selEmoji(el,targetId);}
 function addAwakening(){awakeningList.push({time:'',duration:''});renderAwakenings();}
@@ -9182,6 +9212,7 @@ async function editDiaryEntry(id){
 }
 
 function showDiaryNew(){
+  setTimeout(dmPintarVarsSlot, 60);
   // Recordar desde qué pantalla se abrió, para que "Volver" no adivine.
   try{
     const cur=document.querySelector('.screen.active');
@@ -9376,6 +9407,7 @@ function showDiaryNew(){
       <button type="button" id="period-btn" onclick="togglePeriod()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(225,29,72,0.12);border:1.5px solid rgba(225,29,72,0.45);border-radius:999px;padding:10px 16px;cursor:pointer;font-family:var(--font);width:100%;justify-content:flex-start"><span style="font-size:16px;line-height:1">🩸</span><span id="period-btn-label" style="font-size:13.5px;color:#F4EFE5;font-weight:600">Marcar período menstrual</span><span id="period-check" style="margin-left:auto;font-size:15px;line-height:1">⬜</span></button>
     </div>
     </div>
+    <div id="dm-vars-slot"></div>
     <div class="dm-diary-block">
     <div class="sec-title" style="margin-top:0">Notas (opcional)</div>
     <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..."></textarea>
@@ -9541,6 +9573,13 @@ async function saveDiary(){
     // OJO con el 0 vs null: si el paciente marcó "no dormí siesta" hay que
     // guardar 0, no null. Con null, "sin siesta" es indistinguible de "no se
     // preguntó" y el análisis descarta esas noches por falta de contraste.
+    custom_flags: (function(){
+      const vs=dmGetVarsPersonales();
+      if(!vs.length) return null;
+      const o={};
+      vs.forEach(function(v){ o[v.id] = !!_dmVarsNoche[v.id]; });
+      return o;
+    })(),
     nap_minutes: napStart ? (napDur||0) : (hasNap===false ? 0 : null),
     nap_start: napStart || null,
     has_period: !!_periodActive,
@@ -17508,6 +17547,109 @@ function dmScoreTxt(score, maxScore, scaleId){
                    irls:15, fss:36, dbas:60, gses:7, psas:32, rbdq:5, sassv_screen:31 };
   const c = cortes[scaleId];
   return c ? (score+' <span style="opacity:.65;font-size:.85em">(patológico ≥'+c+')</span>') : String(score);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// VARIABLES PERSONALIZADAS DEL DIARIO
+// ═══════════════════════════════════════════════════════════════════════
+// El paciente define hasta dos cosas que quiera seguir y que solo importan
+// en su caso: "tomé la medicación", "dormí con el nene", "entrené fuerte",
+// "guardia". Se marcan sí/no cada noche y entran al análisis de factores
+// igual que el café o el ejercicio.
+//
+// Por qué sí/no y no una escala: para comparar noches con y sin, que es lo
+// único que se puede hacer con 30 registros. Una escala de 1 a 5 partiría la
+// muestra en pedazos demasiado chicos.
+const DM_MAX_VARS = 2;
+
+function dmGetVarsPersonales(){
+  try{
+    const v = (S.user && S.user.custom_vars);
+    if(Array.isArray(v)) return v.slice(0, DM_MAX_VARS);
+    if(typeof v === 'string' && v) return (JSON.parse(v)||[]).slice(0, DM_MAX_VARS);
+  }catch(_){}
+  return [];
+}
+
+// Estado de la noche que se está cargando.
+let _dmVarsNoche = {};
+function dmToggleVarPersonal(id, btn){
+  _dmVarsNoche[id] = !_dmVarsNoche[id];
+  const on = _dmVarsNoche[id];
+  btn.style.background = on ? 'rgba(126,200,164,0.28)' : 'rgba(255,255,255,0.06)';
+  btn.style.borderColor = on ? '#7EC8A4' : 'rgba(255,255,255,0.16)';
+  const chk = btn.querySelector('.dm-var-chk');
+  if(chk) chk.textContent = on ? '✅' : '⬜';
+}
+
+function dmRenderVarsPersonales(){
+  const vars = dmGetVarsPersonales();
+  if(!vars.length){
+    return '<div class="dm-diary-block">'+
+      '<div class="sec-title" style="margin-top:0">Tu propia variable</div>'+
+      '<div style="font-size:12.5px;color:rgba(244,239,229,0.6);line-height:1.55;margin-bottom:10px">'+
+        'Podés seguir algo que solo importa en tu caso —si tomaste la medicación, si dormiste con tu hijo, si tuviste guardia— '+
+        'y la app te va a mostrar si se asocia a mejor o peor sueño.</div>'+
+      '<button type="button" onclick="dmAbrirVarsPersonales()" style="width:100%;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(126,200,164,0.45);border-radius:10px;padding:11px;color:#F4EFE5;font-size:13.5px;cursor:pointer;font-family:var(--font)">+ Crear mi variable</button>'+
+    '</div>';
+  }
+  return '<div class="dm-diary-block">'+
+    '<div class="sec-title" style="margin-top:0">Tus variables</div>'+
+    vars.map(function(v){
+      return '<button type="button" onclick="dmToggleVarPersonal(\''+v.id+'\',this)" '+
+        'style="display:flex;align-items:center;gap:10px;width:100%;background:rgba(255,255,255,0.06);'+
+        'border:1.5px solid rgba(255,255,255,0.16);border-radius:12px;padding:12px 14px;margin-bottom:8px;'+
+        'cursor:pointer;font-family:var(--font);text-align:left">'+
+        '<span style="font-size:16px">'+(v.icon||'⭐')+'</span>'+
+        '<span style="flex:1;font-size:13.5px;color:#F4EFE5;font-weight:500">'+escHtml(v.label)+'</span>'+
+        '<span class="dm-var-chk" style="font-size:15px">⬜</span></button>';
+    }).join('')+
+    '<button type="button" onclick="dmAbrirVarsPersonales()" style="background:none;border:none;color:rgba(126,200,164,0.8);font-size:12px;cursor:pointer;font-family:var(--font);padding:4px 0">Editar mis variables</button>'+
+  '</div>';
+}
+
+function dmAbrirVarsPersonales(){
+  const vars = dmGetVarsPersonales();
+  const old=document.getElementById('dm-vars-modal'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-vars-modal';
+  w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:10006;display:flex;align-items:center;justify-content:center;padding:18px';
+  w.onclick=function(e){ if(e.target===w) w.remove(); };
+  const inp='width:100%;box-sizing:border-box;background:#fff;border:1px solid #d8d4cb;border-radius:11px;padding:11px 12px;font-size:14px;font-family:var(--font);color:#10231c';
+  w.innerHTML='<div style="background:#F4EFE5;border-radius:20px;padding:22px 20px;width:100%;max-width:420px;max-height:86vh;overflow-y:auto">'+
+    '<div style="font-size:17px;font-weight:700;color:#10231c;margin-bottom:5px">Tus variables</div>'+
+    '<div style="font-size:12.5px;color:#5c6b64;margin-bottom:16px;line-height:1.5">Hasta dos cosas que quieras seguir. Las vas a marcar cada noche y la app te dirá si se asocian a mejor o peor sueño.</div>'+
+    '<label style="font-size:10.5px;letter-spacing:.05em;color:#5c6b64;display:block;margin-bottom:4px">VARIABLE 1</label>'+
+    '<input id="dm-var1" type="text" maxlength="34" placeholder="Ej: tomé la medicación" value="'+((vars[0]&&vars[0].label||'').replace(/"/g,'&quot;'))+'" style="'+inp+';margin-bottom:12px">'+
+    '<label style="font-size:10.5px;letter-spacing:.05em;color:#5c6b64;display:block;margin-bottom:4px">VARIABLE 2 (opcional)</label>'+
+    '<input id="dm-var2" type="text" maxlength="34" placeholder="Ej: dormí con mi hijo" value="'+((vars[1]&&vars[1].label||'').replace(/"/g,'&quot;'))+'" style="'+inp+'">'+
+    '<div style="background:rgba(0,0,0,.04);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:11.5px;color:#5c6b64;line-height:1.5">'+
+      'Elegí algo que <strong>cambie</strong> de una noche a otra. Si pasa todas las noches o ninguna, no hay con qué comparar.</div>'+
+    '<div style="display:flex;gap:8px;margin-top:16px">'+
+      '<button onclick="dmGuardarVarsPersonales()" style="flex:2;background:#1a4a3a;border:none;border-radius:11px;padding:13px;color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar</button>'+
+      '<button onclick="document.getElementById(\'dm-vars-modal\').remove()" style="flex:1;background:rgba(0,0,0,.06);border:1px solid #d8d4cb;border-radius:11px;padding:13px;color:#10231c;font-size:14px;cursor:pointer;font-family:var(--font)">Cancelar</button>'+
+    '</div></div>';
+  document.body.appendChild(w);
+}
+
+async function dmGuardarVarsPersonales(){
+  const l1=(document.getElementById('dm-var1')?.value||'').trim();
+  const l2=(document.getElementById('dm-var2')?.value||'').trim();
+  const vars=[];
+  if(l1) vars.push({id:'v1', label:l1, icon:'⭐'});
+  if(l2) vars.push({id:'v2', label:l2, icon:'✨'});
+  try{
+    await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email), {custom_vars: vars});
+    S.user.custom_vars = vars;
+    const w=document.getElementById('dm-vars-modal'); if(w) w.remove();
+    toast(vars.length? 'Variables guardadas ✓' : 'Variables borradas');
+    // Redibujar el bloque del diario si está abierto
+    const cont=document.getElementById('dm-vars-slot');
+    if(cont) cont.innerHTML = dmRenderVarsPersonales();
+  }catch(e){
+    toast('No se pudo guardar: falta la columna custom_vars en la base.');
+    console.error('[vars]', e);
+  }
 }
 
 // ── PERIOD TRACKING ──
