@@ -1,0 +1,2872 @@
+/* b1 */
+
+/* ── iOS DESIGN SYSTEM ── */
+:root{
+  /* iOS Colors */
+  --ios-blue:#1a4a3a;
+  --ios-blue-light:#eef8f5;
+  --ios-green:#34C759;
+  --ios-red:#FF3B30;
+  --ios-orange:#FF9500;
+  --ios-yellow:#FFCC00;
+  --ios-purple:#AF52DE;
+  --ios-teal:#5AC8FA;
+  --ios-indigo:#2d6b56;
+  
+  /* Backgrounds */
+  --bg:#FFFFFF;
+  --bg-primary:#F2F2F7;
+  --bg-secondary:#FFFFFF;
+  --bg-tertiary:#F2F2F7;
+  --bg-grouped:#F2F2F7;
+  
+  /* Labels */
+  --label:#000000;
+  --label-2:rgba(60,60,67,0.6);
+  --label-3:rgba(60,60,67,0.3);
+  --label-4:rgba(60,60,67,0.18);
+  
+  /* Separators */
+  --sep:rgba(60,60,67,0.12);
+  --sep-opaque:#C6C6C8;
+  
+  /* Fill */
+  --fill:rgba(120,120,128,0.2);
+  --fill-2:rgba(120,120,128,0.16);
+  --fill-3:rgba(118,118,128,0.12);
+  
+  /* Typography */
+  --font:'DM Sans',system-ui,sans-serif;
+  --font-display:'DM Sans',system-ui,sans-serif;
+  --font-mono:'SF Mono','Menlo',monospace;
+  /* Palette */
+  --verde-noche:#0f2820;
+  --verde-base:#1a4a3a;
+  --verde-medio:#2d6b55;
+  --verde-luz:#4a9a7a;
+  --menta:#7ec8a4;
+  --menta-palido:#c2e8d4;
+  --crema:#f4efe5;
+  --oro:#c8a96e;
+  
+  /* Radii */
+  --r:10px;
+  --rl:12px;
+  --rxl:16px;
+  
+  /* Legacy aliases (keep JS working) */
+  --g800:#1a4a3a;
+  --g700:#21614c;
+  --g600:#2d6b56;
+  --g400:#4da88a;
+  --g200:#a8d8cc;
+  --g100:#d4ede8;
+  --g50:#eef8f5;
+  --paper:#F2F2F7;
+  --paper2:#E5E5EA;
+  --paper3:#D1D1D6;
+  --ink:#000;
+  --ink2:#3C3C43;
+  --ink3:rgba(60,60,67,0.6);
+  --ink4:rgba(60,60,67,0.3);
+  --border:rgba(60,60,67,0.12);
+  --border2:rgba(60,60,67,0.2);
+  --danger:#FF3B30;
+  --danger-bg:#FFF5F5;
+  --warn:#FF9500;
+  --warn-bg:#FFF9EC;
+  --warn2:#FF6B00;
+  --warn2-bg:#FFF3E0;
+  --ok:#34C759;
+  --ok-bg:#F0FFF4;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DM DESIGN SYSTEM — auditoría UX (tarjetas, grillas y chips unificados)
+   Un solo radio (--rxl), un solo gap, y clases reutilizables para que
+   las pestañas del panel profesional (Perfil/Resumen/Diario) dejen de
+   depender de estilos inline ad hoc con radios/espaciados distintos.
+   ══════════════════════════════════════════════════════════════════ */
+.dm-card{
+  background:#1d3a2b;
+  border:0.5px solid rgba(126,200,164,0.14);
+  border-radius:var(--rxl);
+  padding:16px;
+  margin-bottom:16px;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.dm-card.dm-light{ background:#fff; border-color:rgba(0,0,0,0.06); color:var(--label); }
+.dm-card > .dm-card-title{
+  display:flex;align-items:center;gap:8px;margin-bottom:10px;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7EC8A4;
+}
+.dm-card.dm-light > .dm-card-title{ color:var(--label-2); }
+.dm-hero{ border-radius:var(--rxl); overflow:hidden; margin-bottom:16px; }
+.dm-grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+.dm-identity-strip{ display:flex; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+.dm-stat{ background:rgba(126,200,164,0.08); border:0.5px solid rgba(126,200,164,0.15); border-radius:var(--r); padding:10px 6px; text-align:center; }
+
+/* Etiquetas clínicas: pill compacta (encabezado, solo lectura) y toggle grande (tarjeta Perfil) */
+.dm-tagpill{ display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;line-height:1.7;white-space:nowrap; }
+.dm-tagtoggle{ cursor:pointer;font-size:11px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid;transition:transform .1s;white-space:nowrap;line-height:1.3; }
+.dm-tagtoggle:active{ transform:scale(0.96); }
+
+/* Filtro de etiquetas en la lista de pacientes */
+.dm-tagfilter-bar{ display:flex;gap:5px;flex-wrap:wrap;padding:0 16px 10px; }
+.dm-tagfilter-bar::-webkit-scrollbar{ display:none; }
+/* Barra de FILTRO por etiqueta: grid de 4 columnas → 7 chips quedan en
+   exactamente 2 filas (4 + 3), prolijo y sin scroll. La barra de "Ordenar"
+   sigue siendo flex normal. */
+/* minmax(0,1fr) permite que las columnas se achiquen: con repeat(4,1fr) el
+   contenido más largo ("Cronodisrupción") empujaba el ancho y "SPI" quedaba
+   cortado fuera del panel. */
+/* Filtros en dos filas que ocupan el MISMO ancho: 4 chips arriba y 3 abajo,
+   cada uno repartiéndose su fila (flex:1). Así ambas filas quedan parejas. */
+#dr-tagfilter-bar{ padding:0 16px 10px;box-sizing:border-box; }
+.dm-filterrow{ display:flex;gap:4px;margin-bottom:4px; }
+.dm-filterrow .dm-tagfilter-chip{
+  flex:1;justify-content:center;font-size:9px;padding:5px 3px;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.1px;
+}
+.dm-filterrow .dm-tagdot{ width:5px;height:5px;margin-right:2px;flex-shrink:0; }
+/* Filtros fijos: al bajar por el listado de pacientes siguen visibles. */
+.dm-filters-sticky{
+  position:sticky;top:0;z-index:5;
+  background:#0f2820;
+  box-shadow:0 4px 10px -6px rgba(0,0,0,0.6);
+}
+.dm-tagfilter-chip{ cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.55);background:transparent;transition:all .12s;white-space:nowrap;flex-shrink:0;display:flex;align-items:center; }
+.dm-tagfilter-chip.on{ background:rgba(126,200,164,0.16);border-color:#7EC8A4;color:#7EC8A4; }
+.dm-patlist-tags{ display:flex;gap:4px;flex-wrap:wrap;margin-top:3px; }
+.dm-patlist-tag{ font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid currentColor;line-height:1.5; }
+/* Franja de color a la izquierda de cada fila del listado: reemplaza el pill
+   con texto ("Insomnio", "SAHOS"...) que ocupaba espacio. La referencia de
+   qué color es qué patología queda en los chips de filtro de arriba. */
+.dm-patlist-stripe{ position:absolute;left:0;top:0;bottom:0;display:flex; }
+.dm-patlist-stripe span{ width:4px;height:100%; }
+.dm-tagdot{ display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle; }
+
+/* Toggle de capas (actograma / hábitos) */
+.dm-layer-bar{ display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px; }
+.dm-layer-btn{ cursor:pointer;font-size:11px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid rgba(0,0,0,0.12);color:rgba(0,0,0,0.4);background:#fff;transition:all .12s; }
+.dm-layer-btn.on{ background:rgba(26,74,58,0.08);border-color:#1a4a3a;color:#1a4a3a; }
+
+/* Resumen en escritorio: hallazgos/alertas/evaluaciones en 2 columnas para
+   no dejar tanto aire — en mobile siguen apiladas en 1 columna. Usamos
+   CSS multi-column, no grid: con grid, una cantidad IMPAR de tarjetas deja
+   la última sola con un hueco vacío al lado (exactamente lo que pasaba con
+   3 alertas). Con column-count el contenido se reparte solo. */
+.dm-grid2{ display:block; }
+.dm-grid2 > *{ margin-bottom:8px; }
+@media (min-width:900px){
+  body.dr-desktop .dm-grid2{
+    display:block;column-count:2;column-gap:10px;
+  }
+  body.dr-desktop .dm-grid2 > *{ margin-bottom:8px !important;break-inside:avoid; }
+  body.dr-desktop .dm-grid2 .sc-card{ margin-bottom:8px !important;break-inside:avoid; }
+}
+
+/* Diario de sueño: Score+evolución y Pilares apilados a la izquierda, el
+   Actograma ocupando esa misma altura total a la derecha (según boceto).
+   Abajo, a ancho completo, Métricas clínicas — que renderClinicalMetricsHtml
+   ya devuelve como 2 cajas (clínicas + regularidad) para audience 'doctor',
+   así que alcanza con ponerlas en grid de 2 columnas para que queden lado
+   a lado en vez de una debajo de la otra. */
+.dm-diary-top{ display:block; }
+@media (min-width:900px){
+  /* align-items:start + wrapper .dm-diary-left: las tarjetas miden lo que
+     mide su contenido (antes las filas del grid se estiraban a la altura del
+     actograma y el blanco sobrante quedaba ADENTRO de Score y Pilares). */
+  body.dr-desktop .dm-diary-top{
+    display:grid;grid-template-columns:1fr 1.15fr;gap:12px;margin-bottom:12px;align-items:start;
+  }
+  body.dr-desktop .dm-diary-left,
+  body.dr-desktop .dm-diary-right{ display:flex;flex-direction:column;gap:12px;min-width:0; }
+  body.dr-desktop .dm-diary-left .dm-card,
+  body.dr-desktop .dm-diary-right .dm-card{ margin-bottom:0 !important; }
+  body.dr-desktop .dm-diary-acto{ margin-bottom:0 !important; }
+  /* Las métricas clínicas quedan en la columna izquierda (la caja de
+     regularidad se muda por JS a la derecha, bajo el actograma). */
+  body.dr-desktop .dm-diary-metrics{ display:flex;flex-direction:column;gap:12px; }
+  body.dr-desktop .dm-diary-metrics > div{ margin-top:0 !important; }
+  body.dr-desktop #dr-reg-slot > div{ margin-top:0 !important; }
+  /* Score y Pilares un poco más compactos */
+  body.dr-desktop .dm-diary-score,
+  body.dr-desktop .dm-diary-pillars{ padding:8px 12px; }
+  body.dr-desktop .dm-diary-pillars .dm-card-title{ margin-bottom:4px; }
+  body.dr-desktop .dm-diary-pillars .chart-wrap{ height:170px !important; }
+
+}
+/* La caja de Score ocupaba demasiado lugar (número gigante de 64px + mucho
+   padding). Compactado FUERA del media query: aplica en desktop Y en móvil
+   (en el teléfono el score gigante empujaba todo lo demás fuera de vista). */
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child{
+  padding:8px 12px !important;margin-bottom:6px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(1){
+  font-size:10px !important;margin-bottom:3px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(2){
+  font-size:30px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(3){
+  font-size:13px !important;margin-top:3px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap > div:first-child > div:nth-child(4){
+  font-size:10px !important;margin-top:5px !important;
+}
+#screen-doctor-patient .dm-diary-score #dr-score-panel-wrap details summary{
+  padding:9px 14px !important;font-size:12px !important;
+}
+
+/* Comparativa de una escala: valor actual + anterior en la misma tarjeta */
+.dm-compare{ display:flex;align-items:center;gap:14px;margin-top:6px;padding-top:8px;border-top:1px dashed rgba(0,0,0,0.08); }
+.dm-compare .dm-compare-then{ opacity:0.55; }
+.dm-compare .dm-compare-arrow{ font-size:15px; }
+
+/* Header compacto de la ficha de paciente — una sola fila con avatar, nombre,
+   email, tags y edad/sexo, en vez de repetir esos mismos datos otra vez en
+   una tarjeta grande dentro de Perfil. */
+#screen-doctor-patient .topbar{ height:auto;min-height:56px;padding:6px 12px; }
+.dm-drp-header{ display:flex;align-items:center;gap:8px;flex:1;min-width:0;flex-wrap:wrap;padding:2px 0; }
+.dm-drp-avatar{ width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.18);align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0; }
+.dm-drp-name{ font-size:13px;font-weight:600;color:#e8f5f0;white-space:nowrap; }
+.dm-drp-email{ font-size:11px;color:var(--g200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px; }
+/* En desktop el header ES la franja de identidad del paciente (se quitó la
+   repetida de adentro del tab Perfil): nombre grande, correo y edad·sexo·IMC
+   legibles, todo centrado entre los botones Volver y PDF. */
+@media (min-width:900px){
+  body.dr-desktop .dm-drp-header{ justify-content:center;gap:22px;padding:6px 48px; }
+  body.dr-desktop .dm-drp-avatar{ width:34px;height:34px;font-size:12px; }
+  body.dr-desktop .dm-drp-name{ font-size:17px; }
+  body.dr-desktop .dm-drp-email{ font-size:12px;max-width:240px; }
+  body.dr-desktop .dm-drp-meta{ font-size:12.5px;color:rgba(255,255,255,0.75);font-weight:600;margin-left:0; }
+}
+.dm-drp-tags{ display:flex;gap:4px;flex-wrap:wrap; }
+.dm-drp-meta{ font-size:10.5px;color:rgba(255,255,255,0.4);white-space:nowrap;margin-left:auto; }
+@media (max-width:899px){
+  /* Los íconos de contacto (✉️/💬) entran bien en móvil; solo el meta
+     (edad·sexo·IMC) se oculta por espacio. */
+  .dm-drp-meta{ display:none; }
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%;font-family:var(--font);background:var(--bg-primary);color:var(--label);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+/* El lienzo de la página (html) queda VERDE, no gris claro. Con el body en
+   position:fixed y 100dvh, cuando la barra de Safari se retrae aparece una
+   franja del lienzo sin cubrir: con --bg-primary (#F2F2F7) se veía como una
+   línea blanca abajo. */
+html{background:#0F2820;}
+
+#app{max-width:430px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#0f2820;overflow:hidden;position:relative;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ══ VISTA ESCRITORIO PROFESIONAL — Fase 1: shell de dos paneles ══
+   Se activa SOLO cuando body.dr-desktop está presente (lo pone showScreen
+   cuando el rol es médico y la pantalla es la lista o el detalle) Y la
+   ventana mide ≥900px. En celular el media query no aplica → cero cambios.
+   En el lado paciente la clase nunca se agrega → cero cambios. */
+/* Fila compacta del Panel profesional — reemplaza el bloque grande de
+   botones (Admin/Cómo se usa/etc.) en el sidebar de escritorio, que le
+   robaba alto fijo a la lista de pacientes. En mobile no se usa: el hero
+   completo sigue siendo la pantalla de entrada normal. */
+/* El placeholder de "elegí un paciente" existe SOLO para el layout de dos
+   paneles de escritorio; sin esta regla base quedaba visible como una barra
+   suelta arriba de todo en el celular. */
+#dr-desktop-placeholder{ display:none; }
+/* La barra compacta del panel profesional ahora también se ve en móvil:
+   permite colapsar el bloque fijo de arriba (directorio, admin, cómo se
+   usa, ayudanos a mejorar) que ocupaba media pantalla del teléfono. */
+.dm-panel-compact{ display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(126,200,164,0.12);background:#0f2820;flex-shrink:0; }
+body.dr-panel-collapsed #dr-panel-hero{ display:none; }
+body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
+.dm-panel-compact-avatar{ width:30px;height:30px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#F4EFE5;font-weight:600;flex-shrink:0; }
+.dm-panel-compact-name{ font-size:12.5px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.dm-panel-compact-sub{ font-size:10px;color:rgba(244,239,229,0.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.dm-panel-chevron{ font-size:10px;color:rgba(244,239,229,0.4);flex-shrink:0;transition:transform .15s; }
+@media (min-width:900px){
+  body.dr-desktop .dm-panel-compact{
+    display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;
+    border-bottom:1px solid rgba(126,200,164,0.12);background:#0f2820;flex-shrink:0;
+  }
+  /* Expandido por default: recién cuando el médico lo colapsa a mano
+     (toggleDrPanelCollapse) se le suma dr-panel-collapsed al body, y esa
+     elección se recuerda la próxima vez (localStorage). */
+  body.dr-desktop.dr-panel-collapsed #dr-panel-hero{ display:none; }
+  body.dr-desktop:not(.dr-panel-collapsed) #dr-panel-hero{ max-height:60vh;overflow-y:auto; }
+  body.dr-desktop:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
+
+  /* Panel admin: mismo criterio de "no quedar en 430px" que el resto del
+     escritorio profesional, pero SIN el grid de 2 columnas (no tiene lista +
+     detalle, es un solo panel con tabs). */
+  body.dr-wide #app{
+    max-width:none;width:100%;
+  }
+  body.dr-wide #screen-admin .scroll{
+    max-width:1200px;margin:0 auto;width:100%;
+  }
+  /* No forzamos grid de 2 columnas acá: el contenido de cada tab admin
+     (pendientes, profesionales, estadísticas, vista previa) no lo revisé
+     todavía uno por uno, y romper una tabla o iframe sin verlo es peor que
+     dejarlo en una columna ancha. Si querés esa vista en 2 columnas, la
+     armamos mirando cada tab primero. */
+
+  body.dr-desktop #app{
+    max-width:none;width:100%;
+    display:grid;
+    grid-template-columns:300px minmax(0,1fr);
+    /* Fila 1: barra superior de navegacion. Fila 2: lista + panel. */
+    grid-template-rows:52px minmax(0,calc(100vh - 52px));
+    align-items:stretch;
+  }
+  /* ── BARRA SUPERIOR DEL PANEL PROFESIONAL (solo escritorio) ──
+     Reemplaza la bottomnav, que en pantalla grande quedaba escondida abajo
+     a la izquierda. La inyecta dmBuildDoctorTopbar() una sola vez. */
+  body.dr-desktop #dr-topbar-desktop{
+    display:flex;grid-column:1 / -1;grid-row:1;
+    align-items:center;gap:16px;padding:0 14px;
+    background:#16352a;border-bottom:1px solid rgba(255,255,255,0.09);
+  }
+  /* En movil la barra superior no existe y manda la bottomnav de siempre. */
+  #dr-topbar-desktop{ display:none; }
+  body.dr-desktop #dr-bottomnav{ display:none !important; }
+  /* El topbar viejo de la columna izquierda (logo + Salir) es redundante:
+     ambos viven ahora en la barra superior. */
+  body.dr-desktop #screen-doctor-home > .topbar{ display:none; }
+  .dr-tb-brand{ display:flex;align-items:center;gap:7px;padding-right:14px;border-right:1px solid rgba(255,255,255,0.1);flex-shrink:0; }
+  .dr-tb-tabs{ display:flex;gap:3px;flex:1;min-width:0; }
+  .dr-tb-tab{
+    display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;
+    background:none;border:none;cursor:pointer;font-family:var(--font);
+    font-size:13px;color:rgba(244,239,229,0.6);white-space:nowrap;transition:background .12s,color .12s;
+  }
+  .dr-tb-tab:hover{ background:rgba(255,255,255,0.06);color:rgba(244,239,229,0.85); }
+  .dr-tb-tab.active{ background:#1a4a3a;color:#fff; }
+  .dr-tb-tab svg{ flex-shrink:0; }
+  .dr-tb-badge{ background:#FF3B30;color:#fff;font-size:10px;border-radius:8px;padding:1px 5px;font-weight:600; }
+  .dr-tb-link{
+    display:flex;align-items:center;gap:6px;background:#1a4a3a;border:none;border-radius:7px;
+    padding:7px 12px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:var(--font);white-space:nowrap;flex-shrink:0;transition:background .12s;
+  }
+  .dr-tb-link:hover{ background:#236049; }
+  .dr-tb-me{ position:relative;flex-shrink:0;padding-left:12px;border-left:1px solid rgba(255,255,255,0.1); }
+  .dr-tb-me-btn{ display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:2px;font-family:var(--font); }
+  .dr-tb-avatar{ width:28px;height:28px;border-radius:50%;background:#C8A96E;color:#0f2820;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0; }
+  .dr-tb-menu{
+    display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:190px;z-index:400;
+    background:#1a2e23;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:5px;
+    box-shadow:0 12px 32px rgba(0,0,0,0.45);
+  }
+  .dr-tb-me.open .dr-tb-menu{ display:block; }
+  .dr-tb-menu button{
+    display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;cursor:pointer;
+    padding:9px 11px;border-radius:7px;color:#F4EFE5;font-size:13px;text-align:left;font-family:var(--font);
+  }
+  .dr-tb-menu button:hover{ background:rgba(255,255,255,0.08); }
+  .dr-tb-menu .danger{ color:#ffb3b3; }
+  .dr-tb-menu hr{ border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 6px; }
+  .dr-tb-menu-head{ padding:9px 11px 8px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px; }
+  .dr-tb-menu-name{ font-size:13px;font-weight:600;color:#F4EFE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .dr-tb-menu-sub{ font-size:11px;color:rgba(244,239,229,0.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .dr-tb-menu{ min-width:230px; }
+  .dr-tb-actions{ display:flex;align-items:center;gap:2px;flex-shrink:0; }
+  .dr-tb-icon{
+    display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
+    border-radius:8px;background:none;border:none;cursor:pointer;color:rgba(244,239,229,0.6);
+    transition:background .12s,color .12s;
+  }
+  .dr-tb-icon:hover{ background:rgba(255,255,255,0.08);color:#F4EFE5; }
+
+  /* Buscador de la lista de pacientes, ahora que la columna es mas angosta. */
+  body.dr-desktop #screen-doctor-home{ min-width:0; }
+
+  /* ── El bloque del profesional (nombre, directorio, admin, como se usa,
+        ayudanos a mejorar) vive ahora en la barra superior y en el menu del
+        avatar. En escritorio no se repite en la columna izquierda. ── */
+  body.dr-desktop #dr-panel-hero,
+  body.dr-desktop .dm-panel-compact{ display:none !important; }
+
+  /* ── La columna izquierda SOLO existe en la pestaña Pacientes ──
+        En Alertas / Metricas / TCC-I / Mi perfil el contenido usa todo el ancho. */
+  body.dr-desktop:not(.dr-tab-patients) #app{
+    grid-template-columns:minmax(0,1fr);
+  }
+  body.dr-desktop:not(.dr-tab-patients) #screen-doctor-home{ display:none !important; }
+  /* !important: mas abajo hay una regla vieja (.dr-metrics-view) con la misma
+     especificidad que fija grid-column:2. Al ganar ella, el grid creaba una
+     COLUMNA IMPLICITA y el panel quedaba pegado a la mitad derecha, con la
+     barra superior cortada a la mitad. */
+  body.dr-desktop:not(.dr-tab-patients) #dr-metrics-desktop,
+  body.dr-desktop:not(.dr-tab-patients) #screen-doctor-patient,
+  body.dr-desktop:not(.dr-tab-patients) #dr-desktop-placeholder{
+    grid-column:1 / -1 !important;
+  }
+  body.dr-desktop:not(.dr-tab-patients) #app{
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+  /* El panel ancho respira mejor centrado cuando ocupa toda la pantalla. */
+  body.dr-desktop:not(.dr-tab-patients) #dr-metrics-desktop > div{
+    max-width:1180px;
+  }
+  /* Lista de pacientes: columna izquierda, SIEMPRE visible (aunque no sea la
+     pantalla activa), con su propio scroll. */
+  body.dr-desktop #screen-doctor-home{
+    display:flex !important;
+    grid-column:1;grid-row:2;
+    border-right:1px solid rgba(126,200,164,0.16);
+    height:100%;overflow:hidden;
+  }
+  /* Detalle del paciente: columna derecha. */
+  body.dr-desktop #screen-doctor-patient{
+    grid-column:2;grid-row:2;
+    height:100%;overflow:hidden;
+  }
+  body.dr-desktop.dr-has-patient #screen-doctor-patient{ display:flex !important; }
+  /* Placeholder cuando todavía no se eligió un paciente. */
+  /* Métricas del profesional: ocupan el panel grande de la derecha. */
+  #dr-metrics-desktop{ display:none; }
+  body.dr-desktop.dr-metrics-view #dr-metrics-desktop{
+    display:block;grid-column:2;grid-row:2;
+    height:100%;overflow-y:auto;background:#0f2820;
+  }
+  body.dr-desktop.dr-metrics-view #dr-desktop-placeholder{ display:none !important; }
+  /* La ficha del paciente no debe quedar por encima del panel de métricas. */
+  body.dr-desktop.dr-metrics-view #screen-doctor-patient{ display:none !important; }
+  body.dr-desktop:not(.dr-has-patient) #dr-desktop-placeholder{
+    display:flex;grid-column:2;grid-row:2;
+    align-items:center;justify-content:center;text-align:center;
+    color:rgba(244,239,229,0.35);font-size:15px;padding:40px;
+    background:#0f2820;
+  }
+  /* El botón "Volver" del detalle es redundante en dos paneles (la lista está
+     al lado), pero lo dejamos por si el médico reduce la ventana. */
+  /* Resaltado del paciente activo en la lista lateral. */
+  body.dr-desktop .pat-row-active{
+    background:rgba(126,200,164,0.14) !important;
+    box-shadow:inset 3px 0 0 #7EC8A4;
+  }
+  /* El "Volver" del header del detalle no tiene sentido con la lista al lado. */
+  body.dr-desktop #screen-doctor-patient .topbar-btn[onclick*="showDoctorHome"]{
+    visibility:hidden;
+  }
+  /* Aprovechar el ancho del panel de detalle para el contenido.
+     GRID en vez de column-count: las columnas CSS parten los elementos por el
+     medio (cards cortadas, contenido que parece duplicado); el grid ubica cada
+     bloque ENTERO en una celda. */
+  body.dr-desktop #screen-doctor-patient #drp-content{
+    max-width:1100px;margin:0 auto;width:100%;
+  }
+  /* ── TODOS los tabs: dos columnas compactas, bloques enteros ── */
+  body.dr-desktop #screen-doctor-patient #drp-content{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-items:start;
+  }
+  /* Títulos de sección y bloques con gráficos: ancho completo */
+  body.dr-desktop #drp-content > .sec-title,
+  body.dr-desktop #drp-content > div:has(canvas),
+  body.dr-desktop #drp-content > p{
+    grid-column:1 / -1;
+  }
+  /* (El tope de 320px de altura del actograma se eliminó: era de la época
+     en que ocupaba todo el ancho. Ahora vive en su propia columna a todo
+     alto y la altura la calcula el JS según cantidad de noches.) */
+  body.dr-desktop #drp-content canvas{ max-width:100%; }
+
+  /* ── Auditoría UX: grid dense (rellena huecos) + gap simétrico + anchos explícitos ── */
+  body.dr-desktop #screen-doctor-patient #drp-content{
+    grid-auto-flow:dense;
+    gap:16px;
+  }
+  body.dr-desktop #drp-content .dm-card,
+  body.dr-desktop #drp-content .dm-hero,
+  body.dr-desktop #drp-content .dm-grid3{
+    margin-bottom:0; /* el gap del grid ya separa parejo en las 4 direcciones */
+  }
+  body.dr-desktop #drp-content .dm-wide,
+  body.dr-desktop #drp-content .dm-hero,
+  body.dr-desktop #drp-content .dm-grid3{
+    grid-column:1 / -1;
+  }
+  /* Las .sc-card (lista de escalas) pasan a tarjetas independientes con radio
+     unificado: en 2 columnas la unión "primera/última redondeada, medio recto"
+     pensada para lista vertical se rompe y quedan bordes cuadrados sueltos. */
+  body.dr-desktop #drp-content .sc-card{
+    border-radius:var(--rxl) !important;
+    margin-bottom:0 !important;
+  }
+  /* Resumen: pedido explícito de una sola columna a lo ancho completo (no
+     hay pares naturales de tarjetas de igual tamaño como en Perfil/Diario). */
+  body.dr-desktop #drp-content[data-tab="summary"]{
+    display:block !important;
+    max-width:100% !important;
+  }
+  /* Estudios / Notas / Alerta / Sugerir escalas / Material / Historial:
+     su contenido es una sola columna de bloques — bajo el grid base quedaban
+     apretados contra la izquierda. Columna única centrada. */
+  body.dr-desktop #drp-content[data-tab="docs"],
+  body.dr-desktop #drp-content[data-tab="notes"],
+  body.dr-desktop #drp-content[data-tab="pvt"],
+  body.dr-desktop #drp-content[data-tab="suggest"],
+  body.dr-desktop #drp-content[data-tab="edumat"],
+  body.dr-desktop #drp-content[data-tab="history"]{
+    display:block !important;
+    max-width:860px !important;
+    margin:0 auto !important;
+  }
+  body.dr-desktop #drp-content[data-tab="summary"] .sc-card{
+    margin-bottom:8px !important;
+  }
+  /* Perfil: 3 columnas con posición explícita por tarjeta (col:1/2/3 vía
+     inline style desde JS), en vez de CSS multi-column. El usuario pidió una
+     ubicación exacta (col2 = Antecedentes+Cronotipo apilados, col3 = Hábitos
+     declarados+registrados apilados) que column-count no puede expresar
+     (no tiene equivalente a grid-column). Con grid-auto-flow:row normal y
+     cada tarjeta con su grid-column fijo, cada columna apila sus tarjetas
+     en orden de aparición en el DOM sin intervención adicional. Como es
+     ubicación explícita (no auto-flow de items parejos), no genera huecos:
+     cada columna simplemente termina a una altura distinta, lo cual es
+     visualmente aceptable en un layout de tarjetas. */
+  /* OJO especificidad: la regla base del panel (body.dr-desktop
+     #screen-doctor-patient #drp-content → 2 IDs) le gana a esta (1 ID +
+     atributo) para toda propiedad SIN !important. En la ronda anterior solo
+     display llevaba !important y la grilla quedaba en 2 columnas heredadas
+     + auto-flow dense → el desorden con huecos que se vio en producción.
+     Por eso acá TODO lleva !important. Además cada columna vive en su
+     propio contenedor .dm-profcol (flex vertical), así el apilado dentro
+     de la columna es natural y no dependemos del algoritmo de colocación
+     del grid (que deja celdas vacías con items de alturas distintas). */
+  body.dr-desktop #drp-content[data-tab="profile"]{
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr) !important;
+    grid-auto-flow:row !important;
+    gap:12px 14px !important;
+    align-items:stretch;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] > .dm-wide{
+    grid-column:1/-1 !important;margin-bottom:0 !important;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] > .dm-profcol{
+    display:flex;flex-direction:column;gap:12px;min-width:0;
+  }
+  /* La última tarjeta de cada columna crece para que las TRES columnas
+     terminen en la misma línea de base. */
+  body.dr-desktop #drp-content[data-tab="profile"] > .dm-profcol > .dm-card:last-child{
+    flex:1;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-card{
+    margin-bottom:0 !important;padding:10px 12px;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-card-title{
+    margin-bottom:6px;font-size:10px;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-grid3{
+    gap:8px;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-stat{
+    padding:7px 6px;
+  }
+  /* Franja de identidad (nombre, edad, IMC, correo) más visible que antes,
+     reemplaza los dos "cuadritos" de stats sueltos (IMC + Cronotipo) que
+     ocupaban una fila entera para poca información. */
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-identity-strip{
+    grid-column:1/-1 !important;display:flex;align-items:center;justify-content:center;gap:22px;
+  }
+}
+.dark-screen{background:#1a2e23 !important;}
+#screen-home .scroll, #screen-home .scroll *:not(button):not(.btn) {
+  color: rgba(255,255,255,0.85) !important;
+}
+#screen-home .scroll .topbar { color: #fff !important; }
+.dark-screen .topbar{background:#1a2e23 !important;border-bottom:1px solid rgba(255,255,255,0.08) !important;}
+.dark-screen .topbar-btn{color:rgba(255,255,255,0.9) !important;}
+.dark-screen .scroll{background:#1a2e23 !important;}
+
+
+/* ── NAVIGATION BAR (iOS style) ── */
+.topbar{
+  background:rgba(242,242,247,0.92);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  backdrop-filter:blur(20px) saturate(180%);
+  padding:0 16px;
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  border-bottom:0.5px solid var(--sep-opaque);
+  position:relative;
+}
+.topbar-brand{font-size:17px;font-weight:600;color:var(--label);letter-spacing:-0.01em;}
+.topbar-sub{font-size:12px;color:var(--label-2);margin-top:1px;}
+.topbar-btn{
+  font-size:17px;font-weight:400;color:#1a4a3a;
+  background:none;border:none;cursor:pointer;
+  font-family:var(--font);padding:4px 0;
+  min-width:44px;
+}
+.topbar-btn:active{opacity:0.5;}
+
+/* ── LARGE TITLE HERO (like iOS large nav) ── */
+.hero{
+  background:rgba(242,242,247,0.92);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+  padding:4px 16px 16px;
+  flex-shrink:0;
+  border-bottom:0.5px solid var(--sep-opaque);
+}
+.hero-label{font-size:13px;color:#1a4a3a;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
+.hero-name{font-size:20px;font-weight:700;color:var(--label);letter-spacing:-0.01em;font-family:var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+.hero-meta{font-size:13px;color:var(--label-2);margin-top:2px;}
+
+/* ── METRICS (iOS widget style) ── */
+.metrics{display:flex;gap:6px;}
+.metric{background:var(--bg-secondary);border-radius:10px;padding:8px 10px;text-align:center;min-width:64px;}
+.metric-val{font-size:18px;font-weight:700;color:#1a4a3a;font-family:var(--font-display);}
+.metric-lbl{font-size:11px;color:var(--label-2);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;}
+
+/* ── SCROLL ── */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px));}
+
+/* ── PVT screens: light background so default dark text is readable ── */
+#screen-pvt-intro{background:#f4efe5;}
+#screen-pvt-intro .scroll, #screen-pvt-intro [class*="panel"]{background:#f4efe5;}
+#screen-pvt-result{background:#f4efe5;}
+#screen-pvt-calib{background:#f4efe5;}
+#screen-scale{background:#f4efe5;}
+#screen-result{background:#f4efe5;}
+
+/* ── SECTION HEADERS (iOS grouped style) ── */
+.section{padding:24px 16px 0;}
+.sec-title{
+  font-size:13px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.04em;color:var(--label-2);
+  margin-bottom:8px;padding:0 4px;
+}
+
+/* ── SCALE CARDS (iOS grouped list) ── */
+.sc-card{
+  background:rgba(255,255,255,0.07);
+  border-radius:12px;
+  padding:13px 16px;
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  transition:background 0.1s;
+  margin-bottom:8px;
+  border:1px solid rgba(255,255,255,0.1);
+  border-bottom:0.5px solid var(--sep);
+}
+.sc-card:first-of-type{border-radius:12px 12px 0 0;}
+.sc-card:last-of-type{border-radius:0 0 12px 12px;border-bottom:none;}
+.sc-card:only-of-type{border-radius:12px;border-bottom:none;}
+.sc-card:active{background:var(--fill-3);}
+
+/* When inside a category group */
+.ios-group .sc-card:first-child{border-radius:12px 12px 0 0;}
+.ios-group .sc-card:last-child{border-radius:0 0 12px 12px;border-bottom:none;}
+.ios-group .sc-card:only-child{border-radius:12px;border-bottom:none;}
+
+.sc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:rgba(255,255,255,0.1);}
+.sc-info{flex:1;min-width:0;}
+.sc-name{font-size:17px;font-weight:500;color:#fff;}
+.sc-desc{font-size:13px;color:rgba(255,255,255,0.6);margin-top:1px;}
+.badge{
+  display:inline-block;margin-top:4px;
+  font-size:12px;font-weight:500;
+  padding:3px 8px;border-radius:20px;
+}
+.bar-w{height:3px;background:var(--fill-3);border-radius:2px;margin-top:6px;overflow:hidden;}
+.bar-f{height:100%;border-radius:2px;}
+.chev{color:var(--label-3);font-size:20px;flex-shrink:0;font-weight:300;}
+
+/* ══ ROJOS Y VERDES SOBRE FONDO OSCURO ═══════════════════════════════
+   Los colores clínicos (#dc2626 rojo, #16a34a verde, ámbar) se eligieron
+   para fondo blanco. Sobre el verde oscuro del panel pierden contraste y
+   los números casi no se leen. Una sombra oscura detrás los despega sin
+   cambiar el color, que es lo que codifica la información. */
+/* El selector anterior era `#screen-doctor-patient [style*="color:#dc2626"]`:
+   alcanzaba TODO rojo y verde de la ficha, incluidos los que estan dentro de
+   tarjetas blancas (hallazgos principales, metricas, graficos), donde la
+   sombra no hace falta y ensucia. Solo hace falta donde el numero de color
+   cae directamente sobre el verde oscuro del panel: las tarjetas de
+   "Ultima evaluacion por escala". */
+.dm-num-clinico,
+.dm-escalas-ultimas [style*="color:#dc2626"],
+.dm-escalas-ultimas [style*="color:#16a34a"],
+.dm-escalas-ultimas [style*="color:#d97706"],
+.dm-escalas-ultimas [style*="color:#991b1b"],
+.dm-escalas-ultimas [style*="color:#14532d"]{
+  text-shadow: 0 1px 3px rgba(0,0,0,.75), 0 0 1px rgba(0,0,0,.9);
+  font-weight: 600;
+}
+
+/* ══ RED DE SEGURIDAD DE CONTRASTE ═══════════════════════════════════
+   Dos clases de error visual se repetían por toda la app y las dos vienen
+   de valores por defecto del navegador, no de decisiones nuestras:
+
+   1. Un <button> sin `color` propio se pinta de AZUL del sistema en iOS.
+      Que herede el color de su contenedor elimina el problema de raíz.
+   2. Una caja con fondo claro dentro de una pantalla oscura hereda el
+      texto blanco y queda ilegible. La clase .caja-clara le devuelve
+      texto oscuro a ella y a todo lo que tenga adentro.
+   ═══════════════════════════════════════════════════════════════════ */
+button{ color: inherit; }
+input, select, textarea{ color: inherit; }
+
+.caja-clara, .caja-clara *{ color:#10231c; }
+.caja-clara .form-label, .caja-clara label{ color:#5c6b64; }
+
+/* ── BOTTOM TAB BAR ── */
+.bottomnav{
+  display:none;
+  background:#111d15;
+  border-top:1px solid rgba(255,255,255,0.06);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+  padding-bottom:max(env(safe-area-inset-bottom,0px), 8px);
+  padding-top:4px;
+  flex-shrink:0;
+  order:99;
+}
+.screen{order:1;}
+.bnav{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:8px 4px 6px;cursor:pointer;background:none;border:none;
+  font-family:var(--font);
+  transition:opacity 0.1s;
+}
+.bnav:active{opacity:0.5;}
+.bnav svg{color:rgba(255,255,255,0.35);}
+.bnav-lbl{font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px;font-weight:500;}
+.bnav.active svg{color:#7ec8a4;}
+.bnav.active .bnav-lbl{color:#7ec8a4;}
+
+/* ── BUTTONS (iOS style) ── */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:14px 20px;border-radius:12px;
+  font-size:17px;font-weight:600;font-family:var(--font);
+  cursor:pointer;border:none;transition:opacity 0.15s;
+  width:100%;
+}
+.btn:active{opacity:0.7;}
+.btn-g{background:#1a4a3a;color:#fff;}
+.btn-s{background:var(--fill-2);color:#1a4a3a;}
+
+/* ── FORMS (iOS style) ── */
+.form-group{margin-bottom:16px;}
+.form-label{
+  font-size:13px;font-weight:600;color:var(--label-2);
+  display:block;margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:0.04em;
+}
+.form-input{
+  width:100%;padding:13px 15px;
+  border:none;
+  border-radius:10px;
+  font-size:17px;font-family:var(--font);
+  background:var(--bg-secondary);
+  color:var(--label);
+  box-shadow:inset 0 0 0 0.5px var(--sep-opaque);
+  -webkit-appearance:none;appearance:none;
+}
+.form-input:focus{outline:none;box-shadow:inset 0 0 0 2px #1a4a3a;}
+.form-select{
+  width:100%;padding:13px 15px;
+  border:none;border-radius:10px;
+  font-size:17px;font-family:var(--font);
+  background:var(--bg-secondary);
+  color:var(--label);
+  box-shadow:inset 0 0 0 0.5px var(--sep-opaque);
+  -webkit-appearance:none;appearance:none;
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.err{font-size:13px;color:var(--ios-red);margin-top:6px;display:none;}
+.err.show{display:block;}
+
+/* ── LOGIN ── */
+.login-outer{display:flex;align-items:center;justify-content:center;padding:24px;background:transparent;flex:1;width:100%;}
+.login-wrap{width:100%;max-width:380px;background:rgba(10,28,20,0.92);border-radius:16px;padding:24px 20px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 40px rgba(0,0,0,0.5);}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-icon{
+  width:80px;height:80px;border-radius:22px;
+  background:linear-gradient(145deg,#1a4a3a,#2d6b56);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:36px;margin-bottom:16px;
+  box-shadow:0 4px 20px rgba(26,74,58,0.3);
+}
+.login-title{font-size:28px;font-weight:700;color:var(--label);letter-spacing:-0.02em;font-family:var(--font-display);}
+.login-sub{font-size:15px;color:var(--label-2);margin-top:6px;line-height:1.5;text-align:center;}
+.mode-tabs{display:flex;background:var(--fill-3);border-radius:9px;padding:2px;margin-bottom:20px;}
+.mode-tab{
+  flex:1;padding:8px;border:none;border-radius:7px;
+  font-size:15px;font-weight:500;cursor:pointer;
+  color:var(--label-2);background:none;font-family:var(--font);
+  transition:all 0.2s;
+}
+.mode-tab.active{background:var(--bg-secondary);color:#1a4a3a;box-shadow:0 1px 4px rgba(0,0,0,0.12);}
+.toggle-link{text-align:center;font-size:15px;color:rgba(255,255,255,0.7);margin-top:16px;}
+.toggle-link span{color:#6ee7b7;cursor:pointer;font-weight:500;}
+
+/* ── QUESTIONNAIRE ── */
+.q-prog{height:3px;background:var(--fill-3);flex-shrink:0;}
+.q-prog-fill{height:100%;background:#1a4a3a;transition:width 0.3s ease;}
+.q-area{padding:28px 20px 16px;flex:1;overflow-y:auto;}
+.q-num{
+  font-size:13px;font-weight:500;color:var(--verde-medio);
+  text-transform:uppercase;letter-spacing:0.08em;
+  margin-bottom:12px;
+}
+.q-text{font-size:22px;color:var(--label);line-height:1.5;margin-bottom:28px;font-family:var(--font);font-weight:500;letter-spacing:-0.005em;}
+.opt{
+  display:block;width:100%;
+  padding:16px 20px;
+  background:var(--bg-secondary);border:1.5px solid var(--sep-opaque);
+  border-radius:12px;margin-bottom:10px;
+  font-size:18px;font-weight:400;font-family:var(--font);
+  text-align:left;cursor:pointer;color:var(--label);
+  transition:all 0.15s ease;
+  line-height:1.4;
+}
+.opt:first-of-type{border-radius:12px 12px 0 0;}
+.opt:last-of-type{border-radius:0 0 12px 12px;border-bottom:none;}
+.opt:active{background:var(--fill-3);}
+.opt.sel{
+  background:var(--verde-base);border-color:var(--verde-base);color:#fff;
+  font-weight:500;
+}
+.opt.sel::after{content:'✓';float:right;color:#1a4a3a;}
+.q-nav{display:flex;gap:10px;padding:12px 20px 20px;flex-shrink:0;}
+.q-nav .btn-s{flex:0 0 auto;width:auto;padding:12px 18px;}
+.q-nav .btn-g{flex:1;}
+
+/* ── RESULT ── */
+.r-head{
+  background:linear-gradient(160deg,#1a4a3a,#2d6b56);
+  padding:36px 20px;text-align:center;flex-shrink:0;
+}
+.r-num{font-size:72px;font-weight:700;line-height:1;color:#fff;font-family:var(--font-display);}
+.r-denom{font-size:20px;color:rgba(255,255,255,0.7);}
+.r-label{
+  font-size:20px;font-weight:600;margin-top:4px;
+}
+
+/* ── HISTORY ── */
+.hist-entry{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:0.5px solid var(--sep);
+}
+
+/* ── TABS ── */
+.tab-bar{
+  display:flex;
+  background:rgba(242,242,247,0.92);
+  border-bottom:0.5px solid var(--sep-opaque);
+  overflow-x:auto;flex-shrink:0;
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+}
+.tab{
+  padding:12px 16px;font-size:15px;font-weight:500;cursor:pointer;
+  border:none;border-bottom:2px solid transparent;
+  color:var(--label-2);background:none;font-family:var(--font);white-space:nowrap;
+}
+.tab.active{color:#1a4a3a;border-bottom-color:#1a4a3a;}
+@media (min-width:900px){
+  /* Ficha del paciente: las pestañas reparten todo el ancho disponible
+     en vez de amontonarse a la izquierda. */
+  body.dr-desktop #screen-doctor-patient .tab-bar .tab{
+    flex:1;text-align:center;padding:12px 8px;
+  }
+}
+
+/* ── PATIENT ROW ── */
+.pat-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:0.5px solid var(--sep);cursor:pointer;}
+.pat-row:active{opacity:0.6;}
+.avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#1a4a3a,#2d6b56);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:600;color:#fff;flex-shrink:0;
+}
+
+/* ── ALERT / INFO BARS ── */
+.alert-bar{
+  background:#FFF9EC;border:0.5px solid #FFD60A;
+  border-radius:12px;padding:13px 16px;margin-bottom:10px;
+  font-size:15px;color:#7C5000;cursor:pointer;
+}
+.code-box{
+  font-family:var(--font-mono);font-size:32px;font-weight:600;
+  letter-spacing:0.2em;text-align:center;
+  background:var(--bg-secondary);border:none;
+  border-radius:16px;padding:24px;color:#1a4a3a;
+  margin:20px 0;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── CHART WRAPPERS ── */
+.chart-wrap{position:relative;height:200px;padding:16px;}
+
+/* ── LOADING ── */
+.spinner-wrap{text-align:center;padding:48px 20px;color:var(--label-2);font-size:15px;}
+.spinner{width:24px;height:24px;border:2.5px solid var(--fill-3);border-top-color:var(--ios-blue);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes loginSlideUp{from{transform:translateY(100%);opacity:0.5}to{transform:translateY(0);opacity:1}}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:100px;left:50%;
+  transform:translateX(-50%) translateY(30px);
+  background:rgba(0,0,0,0.82);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+  color:white;font-size:15px;font-weight:500;
+  padding:12px 22px;border-radius:24px;
+  z-index:9999;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  opacity:0;pointer-events:none;white-space:nowrap;
+}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 20px;color:var(--label-2);font-size:15px;}
+.empty-icon{font-size:40px;margin-bottom:14px;}
+
+/* ── INFO ROW ── */
+.divider{height:0.5px;background:var(--sep);margin:16px 0;}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:0.5px solid var(--sep);font-size:17px;}
+.info-label{color:var(--label-2);}
+.info-val{font-weight:500;color:var(--label);}
+
+/* ── TAGS ── */
+.tag{
+  display:inline-block;padding:5px 12px;border-radius:20px;
+  font-size:14px;font-weight:500;background:#eef8f5;
+  color:#1a4a3a;margin:3px;
+}
+.tag-rm{cursor:pointer;margin-left:4px;opacity:0.5;}
+.tag-rm:hover{opacity:1;}
+
+/* ── RANGE / EMOJI ── */
+.range-wrap{display:flex;align-items:center;gap:10px;}
+.range-wrap input[type=range]{flex:1;accent-color:#1a4a3a;}
+.range-val{font-size:17px;font-weight:600;color:#1a4a3a;min-width:26px;text-align:center;}
+.emoji-row{display:flex;gap:8px;margin-top:6px;}
+.emoji-btn{
+  flex:1;padding:12px 4px;
+  border:none;border-radius:12px;
+  background:var(--bg-secondary);cursor:pointer;
+  text-align:center;font-size:22px;
+  box-shadow:inset 0 0 0 0.5px var(--sep-opaque);
+  transition:all 0.1s;
+}
+.emoji-btn:active{transform:scale(0.95);}
+.emoji-btn.sel{background:#eef8f5;box-shadow:inset 0 0 0 2px #1a4a3a;}
+
+/* ── DIARIO DE SUEÑO: estética unificada (verde oscuro, tarjetas parejas) ──
+   Antes el formulario heredaba el estilo claro genérico y desentonaba con el
+   resto de la app. Acá se alinea con la identidad de la plataforma. */
+#screen-diary-new .scroll{ background:#1a2e23; }
+#screen-diary-new #diary-form-content{ padding:16px 16px 90px !important; }
+#screen-diary-new .sec-title{
+  color:rgba(244,239,229,0.55);font-size:10.5px;letter-spacing:0.09em;
+  margin:18px 0 8px;padding:0;
+}
+#screen-diary-new .form-group{ margin-bottom:12px; }
+#screen-diary-new .form-label{
+  color:rgba(244,239,229,0.5);font-size:9.5px;letter-spacing:0.07em;margin-bottom:5px;
+}
+#screen-diary-new .form-input,
+#screen-diary-new .form-select{
+  background:rgba(255,255,255,0.07);
+  color:#F4EFE5;
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.14);
+  border-radius:12px;
+  font-size:16px;
+  padding:12px 14px;
+}
+#screen-diary-new .form-input:focus,
+#screen-diary-new .form-select:focus{
+  box-shadow:inset 0 0 0 1.5px #7EC8A4;
+}
+#screen-diary-new .form-input[type="time"],
+#screen-diary-new .form-input[type="date"]{ color-scheme:dark; }
+/* ── Etiquetas del diario en móvil ──
+   "ME DESPERTÉ / cuando abriste los ojos" y "SALÍ DE LA CAMA / si fue al
+   toque, misma hora" se encimaban: la etiqueta y su aclaración competían por
+   la misma línea. Ahora la aclaración va SIEMPRE debajo, en bloque. */
+#screen-diary-new .form-label{ display:block !important; line-height:1.35; margin-bottom:6px; }
+#screen-diary-new .form-label span,
+#screen-diary-new .form-label small{
+  display:block; font-size:10.5px; font-weight:400; letter-spacing:0;
+  text-transform:none; color:rgba(244,239,229,0.45); margin-top:2px;
+}
+/* Los campos de las dos columnas arrancan a la misma altura aunque una
+   etiqueta ocupe dos líneas y la otra una. */
+#screen-diary-new .form-row{ align-items:stretch !important; }
+#screen-diary-new .form-row > .form-group{ display:flex; flex-direction:column; justify-content:flex-end; }
+#screen-diary-new .form-row .form-label{ flex:1 0 auto; min-height:3.1em; display:flex !important; flex-direction:column; justify-content:flex-end; }
+@media (max-width:420px){
+  #screen-diary-new .form-row .form-label{ min-height:3.9em; font-size:10px; }
+}
+
+/* Alineación de las dos columnas: cuando una etiqueta ocupa dos líneas y la
+   otra una, los campos quedaban a distinta altura y con distinto ancho.
+   Con align-items:end los inputs se apoyan en la misma línea de base, y con
+   width:100% ocupan exactamente su celda. */
+#screen-diary-new .form-row{ gap:10px; align-items:end; }
+#screen-diary-new .form-row > .form-group{ display:flex;flex-direction:column;justify-content:flex-end;min-width:0; }
+#screen-diary-new .form-row .form-input,
+#screen-diary-new .form-row .form-select{ width:100%; box-sizing:border-box; }
+#screen-diary-new .form-row .form-label{ min-height:2.4em; display:flex; align-items:flex-end; }
+#screen-diary-new .emoji-row{ gap:6px; }
+#screen-diary-new .emoji-btn{
+  background:rgba(255,255,255,0.07);
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.14);
+  border-radius:12px;padding:10px 4px;font-size:20px;
+}
+#screen-diary-new .emoji-btn div{ color:rgba(244,239,229,0.5) !important; }
+#screen-diary-new .emoji-btn.sel{
+  background:#7EC8A4;box-shadow:inset 0 0 0 1.5px #7EC8A4;
+}
+#screen-diary-new .emoji-btn.sel div{ color:#0F2820 !important; }
+#screen-diary-new .opt{
+  background:rgba(255,255,255,0.07);
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.14);
+  color:#F4EFE5;border:none;border-radius:12px;
+}
+#screen-diary-new .opt.sel{ background:#7EC8A4;color:#0F2820;box-shadow:inset 0 0 0 1.5px #7EC8A4; }
+#screen-diary-new .divider{ border-color:rgba(126,200,164,0.12); }
+#screen-diary-new .btn-g{
+  background:#7EC8A4;color:#0F2820;font-weight:600;border-radius:12px;
+}
+#screen-diary-new .btn-s{
+  background:rgba(255,255,255,0.08);color:#F4EFE5;
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);border-radius:12px;
+}
+/* Tarjeta contenedora por bloque: agrupa y alinea como en la demo */
+.dm-diary-block{
+  background:rgba(255,255,255,0.045);
+  border:1px solid rgba(126,200,164,0.1);
+  border-radius:16px;
+  padding:13px 14px;
+  margin-bottom:12px;
+}
+/* Textos que venían oscuros por tokens inline (--ink/--label-3/etc.): se
+   fuerzan a claro para que se lean sobre el fondo verde.
+   ── CUIDADO ──
+   Esta regla aclaraba TODO, incluidos los textos que están dentro de cajas
+   de fondo CLARO (el aviso de "campos obligatorios", la fila de despertares,
+   los avisos ámbar). Ahí quedaba claro sobre claro, ilegible. Por eso ahora
+   se excluyen los descendientes de cualquier contenedor con fondo claro. */
+#screen-diary-new [style*="color:var(--ink)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--ink3)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--ink4)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--label)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--label-2)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--label-3)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:var(--g800)"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:#666"]:not(.sobre-claro *):not(.sobre-claro),
+#screen-diary-new [style*="color:#888"]:not(.sobre-claro *):not(.sobre-claro){
+  color:rgba(244,239,229,0.62) !important;
+}
+/* Cajas de fondo claro dentro del diario: el texto vuelve a ser oscuro. */
+#screen-diary-new .sobre-claro,
+#screen-diary-new .sobre-claro *{ color:#10231c !important; }
+#screen-diary-new .sobre-claro .form-input,
+#screen-diary-new .sobre-claro .form-select{
+  background:#fff !important; color:#10231c !important;
+  border:1px solid #d4cfc4 !important; color-scheme:light !important;
+}
+#screen-diary-new .sobre-claro label{ color:#5c6b64 !important; }
+
+/* Botones sin color propio: en iOS el navegador los pinta de AZUL por
+   defecto. Pasa en los botones de contexto al dormirse del diario infantil
+   y en cualquier otro <button> con background:none. */
+#screen-diary-new button:not(.sel):not(.opt):not(.emoji-btn){ color:#F4EFE5; }
+#screen-diary-new button[data-ctx]{ color:#F4EFE5 !important; }
+#screen-diary-new button[data-ctx].sel{ color:#0F2820 !important; }
+/* Botones de tipo de día: legibles y con la estética de la app. */
+#screen-diary-new #d-daytype-work,
+#screen-diary-new #d-daytype-free{
+  color:#F4EFE5 !important;border:1px solid rgba(126,200,164,0.25) !important;
+  background:rgba(255,255,255,0.06) !important;border-radius:12px !important;
+}
+#screen-diary-new #d-daytype-work.sel,
+#screen-diary-new #d-daytype-free.sel{
+  background:#1a4a3a !important;color:#fff !important;border-color:#7EC8A4 !important;
+}
+#screen-diary-new #d-daytype-auto-badge{
+  background:rgba(126,200,164,0.16) !important;color:#7EC8A4 !important;
+}
+
+/* ── PVT ── */
+.pvt-arena{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:#fff;cursor:pointer;
+  user-select:none;-webkit-user-select:none;
+}
+.pvt-dot{
+  width:100px;height:100px;border-radius:50%;
+  background:var(--ios-red);
+  box-shadow:0 0 40px rgba(255,59,48,0.35);
+  display:none;
+}
+.pvt-dot.show{display:block;}
+.pvt-msg{color:var(--label);font-size:20px;font-weight:600;text-align:center;padding:20px;font-family:var(--font-display);}
+.pvt-sub{color:var(--label-2);font-size:15px;margin-top:6px;text-align:center;}
+.pvt-rt{color:var(--ios-red);font-size:52px;font-weight:700;}
+
+/* ── PVT DURATION BUTTONS ── */
+.pvt-dur-btn{
+  padding:16px;border:0.5px solid var(--sep-opaque);
+  border-radius:12px;background:var(--bg-secondary);
+  cursor:pointer;font-family:var(--font);
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  transition:all 0.15s;
+}
+.pvt-dur-btn.sel, .pvt-dur-btn[style*="var(--g50)"]{
+  border-color:var(--ios-blue);
+  background:var(--ios-blue-light);
+}
+
+/* ── DIARY ── */
+.diary-day{
+  background:var(--bg-secondary);border-radius:12px;
+  padding:14px 16px;margin-bottom:10px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+.diary-date{font-size:13px;font-weight:600;color:var(--label-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;}
+.sleep-bar-outer{height:6px;background:var(--fill-3);border-radius:3px;margin:6px 0;overflow:hidden;}
+.sleep-bar-inner{height:100%;border-radius:3px;background:#1a4a3a;}
+
+/* ── NO NAV ── */
+#main-nav{flex-shrink:0;}
+.no-nav #main-nav{display:none!important;}
+/* child nav hidden via JS */
+
+/* ── GROUPED FORM ROWS ── */
+.ios-group{background:var(--bg-secondary);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+.ios-group-row{padding:14px 16px;border-bottom:0.5px solid var(--sep);display:flex;align-items:center;justify-content:space-between;font-size:17px;}
+.ios-group-row:last-child{border-bottom:none;}
+
+@media(min-width:430px){
+  #app{box-shadow:0 0 60px rgba(0,0,0,0.12);}
+}
+
+/* Cards on dark background - all dark screens */
+.dark-bg .sc-card,
+#screen-home .sc-card,
+#screen-escalas .sc-card {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-home .sc-name, #screen-escalas .sc-name {color:#fff !important;}
+#screen-home .sc-desc, #screen-escalas .sc-desc {color:rgba(255,255,255,0.65) !important;}
+#screen-home .sc-ref, #screen-escalas .sc-ref {color:rgba(255,255,255,0.4) !important;}
+#screen-home .sc-icon, #screen-escalas .sc-icon {background:rgba(255,255,255,0.1) !important; border-radius:10px;}
+#screen-home .scroll .sc-name,
+#screen-escalas .scroll .sc-name {
+  color: #fff !important;
+}
+#screen-home .scroll .sc-desc,
+#screen-escalas .scroll .sc-desc {
+  color: rgba(255,255,255,0.65) !important;
+}
+#screen-home .scroll .sc-ref,
+#screen-escalas .scroll .sc-ref {
+  color: rgba(255,255,255,0.4) !important;
+}
+#screen-home .scroll .sec-title,
+#screen-escalas .scroll .sec-title {
+  color: rgba(255,255,255,0.5) !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+#screen-home .scroll .more-scales-header,
+#screen-escalas .scroll .more-scales-header {
+  background: rgba(255,255,255,0.05) !important;
+}
+
+/* Profile screen */
+#screen-profile .scroll {
+  background: #1a2e23 !important;
+}
+#screen-profile .form-group label,
+#screen-profile .form-label {
+  color: rgba(255,255,255,0.7) !important;
+}
+#screen-profile .form-input,
+#screen-profile .form-select,
+#screen-profile .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-profile .sec-title {
+  color: rgba(255,255,255,0.5) !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+#screen-profile .divider {
+  background: rgba(255,255,255,0.08) !important;
+}
+#screen-profile .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-profile .topbar button, 
+#screen-profile .topbar .topbar-btn {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-profile .topbar div {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-profile .sec-title {
+  color: rgba(255,255,255,0.5) !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+#screen-profile .info-row {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+#screen-profile .info-label { color: rgba(255,255,255,0.55) !important; }
+#screen-profile .info-val { color: rgba(255,255,255,0.9) !important; }
+#screen-profile .tag { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.8) !important; }
+
+/* Diary/Diario header */
+#screen-diary-home .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-diary-home .topbar button, 
+#screen-diary-home .topbar .topbar-btn {
+  color: rgba(255,255,255,0.9) !important;
+}
+
+
+/* History record cards */
+#screen-patient-history [style*="border-bottom:1px solid var(--sep-opaque)"] {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history [style*="color:var(--label)"] {
+  color: #fff !important;
+}
+#screen-patient-history [style*="color:var(--label-3)"] {
+  color: rgba(255,255,255,0.4) !important;
+}
+/* Doctor screen */
+#screen-doctor-home {
+  background: #1a2e23 !important;
+}
+#screen-doctor-home .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-doctor-home .hero {
+  background: linear-gradient(135deg, #1a2e23, #2d4a3a) !important;
+}
+#screen-doctor-home .dr-content-wrap,
+#screen-doctor-home #dr-content {
+  background: #1a2e23 !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+
+/* Any element with dark green background */
+[style*="background:#1a4a3a"],
+[style*="background:#1a2e23"],
+[style*="background:#2d6b56"],
+[style*="background:#2d4a3a"],
+[style*="background:linear-gradient(135deg,#1a4a3a"],
+[style*="background:linear-gradient(135deg, #1a4a3a"] {
+  color: #fff !important;
+}
+[style*="background:#1a4a3a"] *,
+[style*="background:#1a2e23"] *,
+[style*="background:#2d6b56"] * {
+  color: inherit;
+}
+
+/* Fix: all label colors inside dark screens */
+#screen-home .scroll,
+#screen-home .scroll *:not(.badge):not(button):not(.btn):not(.opt) {
+  color: rgba(255,255,255,0.9);
+}
+#screen-home .scroll .sec-title { color: rgba(255,255,255,0.5) !important; }
+#screen-home .scroll .sc-ref { color: rgba(255,255,255,0.4) !important; font-style: italic; }
+#screen-home .scroll .sc-desc { color: rgba(255,255,255,0.65) !important; }
+#screen-home .scroll .badge { /* preserve badge colors */ }
+#screen-home .scroll button { color: inherit; }
+
+/* Profile */
+#screen-profile .scroll,
+#screen-profile .scroll *:not(.badge):not(.btn):not(button):not(input):not(select):not(textarea) {
+  color: rgba(255,255,255,0.85) !important;
+}
+#screen-profile .form-label { color: rgba(255,255,255,0.6) !important; }
+#screen-profile .form-input,
+#screen-profile .form-select,
+#screen-profile .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-profile .form-input::placeholder,
+#screen-profile .form-textarea::placeholder {
+  color: rgba(255,255,255,0.35) !important;
+}
+#screen-profile select option { background: #1a2e23; color: #fff; }
+
+/* Escalas screen */
+#screen-scales .scroll,
+#screen-scales .scroll .sc-name { color: #fff !important; }
+#screen-scales .scroll .sc-desc { color: rgba(255,255,255,0.65) !important; }
+#screen-scales .scroll .sc-ref { color: rgba(255,255,255,0.4) !important; font-style: italic; }
+#screen-scales .scroll .sec-title { color: rgba(255,255,255,0.5) !important; }
+
+/* Doctor screen */
+#screen-doctor-home { background: #1a2e23; }
+#screen-doctor-home,
+#screen-doctor-home .topbar,
+#screen-doctor-home #dr-panel,
+#screen-doctor-home #dr-content {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-doctor-home .sec-title { color: rgba(255,255,255,0.5) !important; }
+#screen-doctor-home .tab-bar,
+#screen-doctor-home .tab-bar .tab { 
+  background: transparent !important;
+  color: rgba(255,255,255,0.5) !important;
+}
+#screen-doctor-home .tab-bar .tab.active {
+  color: #fff !important;
+  border-bottom-color: #6ee7b7 !important;
+}
+
+/* Login screen */
+#screen-login { background: #1a2e23 !important; }
+#screen-login .login-card {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+#screen-login label, #screen-login .login-label { color: rgba(255,255,255,0.8) !important; }
+#screen-login input {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-login input::placeholder { color: rgba(255,255,255,0.35) !important; }
+#screen-login .login-title { color: #fff !important; }
+#screen-login .login-sub { color: rgba(255,255,255,0.6) !important; }
+#screen-login .tab { color: rgba(255,255,255,0.6) !important; }
+#screen-login .tab.active { color: #fff !important; border-bottom-color: #6ee7b7 !important; }
+
+/* Remove stray non-white text on green backgrounds */
+.topbar { background: #1a2e23 !important; }
+.topbar .topbar-btn, .topbar .topbar-brand, .topbar div { color: rgba(255,255,255,0.9) !important; }
+
+/* Hero section */
+.hero { background: linear-gradient(135deg, #1a2e23, #1e3a2c) !important; }
+.hero * { color: #fff !important; }
+.hero-label, .hero-meta { color: rgba(255,255,255,0.65) !important; }
+
+
+/* ════════════════════════════════════════════
+   DEFINITIVE COLOR SYSTEM
+   All dark-bg screens: white text
+   All light-bg elements: dark text
+   ════════════════════════════════════════════ */
+
+/* ── TOPBAR: always dark green bg, white text ── */
+.topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+.topbar-btn, .topbar-brand, .topbar-sub,
+/* La clase .back NO tenía ninguna regla: el navegador le aplicaba el fondo
+   gris claro por defecto de <button>, y la regla de abajo le ponía el texto
+   en blanco. Resultado: blanco sobre gris claro, ilegible. */
+.back{
+  background:rgba(255,255,255,0.10);
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:9px;
+  padding:7px 12px;
+  font-size:13.5px;
+  font-weight:500;
+  color:#fff;
+  cursor:pointer;
+  font-family:var(--font);
+  white-space:nowrap;
+  transition:background .15s;
+}
+.back:hover{ background:rgba(255,255,255,0.18); }
+.back:active{ transform:scale(.97); }
+
+.topbar > div, .topbar > button, .topbar > a {
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* ── HOME SCROLL: dark bg ── */
+#screen-home > .scroll {
+  background: #1a2e23 !important;
+}
+
+/* Scale cards on dark bg */
+#screen-home .sc-card {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+#screen-home .sc-card .sc-name { color: #fff !important; }
+#screen-home .sc-card .sc-desc { color: rgba(255,255,255,0.6) !important; }
+#screen-home .sc-card .sc-ref  { color: rgba(255,255,255,0.35) !important; font-style: italic; }
+#screen-home .sc-card .sc-icon { background: rgba(255,255,255,0.1) !important; }
+
+/* Section headers */
+#screen-home .sec-title {
+  color: rgba(255,255,255,0.45) !important;
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+#screen-home .more-scales-header {
+  color: rgba(255,255,255,0.7) !important;
+  background: rgba(255,255,255,0.05) !important;
+}
+
+/* ── ESCALAS SCREEN ── */
+#screen-scales > .topbar, #screen-scales .topbar { background: #1a2e23 !important; }
+#screen-scales > .topbar *, #screen-scales .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-scales > .scroll { background: #1a2e23 !important; }
+#screen-scales .sc-card {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+#screen-scales .sc-card .sc-name { color: #fff !important; }
+#screen-scales .sc-card .sc-desc { color: rgba(255,255,255,0.6) !important; }
+#screen-scales .sc-card .sc-ref  { color: rgba(255,255,255,0.35) !important; font-style: italic; }
+#screen-scales .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+#screen-scales .more-scales-header { color: rgba(255,255,255,0.7) !important; background: rgba(255,255,255,0.05) !important; }
+
+/* ── PATIENT HISTORY ── */
+#screen-patient-history { background: #1a2e23 !important; }
+#screen-patient-history .topbar { background: #1a2e23 !important; }
+#screen-patient-history .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-patient-history .scroll { background: #1a2e23 !important; }
+#screen-patient-history .tab-bar {
+  background: #1a2e23 !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history .tab { color: rgba(255,255,255,0.5) !important; border-bottom-color: transparent !important; }
+#screen-patient-history .tab.active { color: #fff !important; border-bottom-color: #6ee7b7 !important; }
+/* History record rows */
+#screen-patient-history [style*="display:flex"] > div > div:first-child { color: #fff !important; }
+#screen-patient-history [style*="color:var(--label)"] { color: #fff !important; }
+#screen-patient-history [style*="color:var(--label-2)"] { color: rgba(255,255,255,0.6) !important; }
+#screen-patient-history [style*="color:var(--label-3)"] { color: rgba(255,255,255,0.4) !important; }
+#screen-patient-history [style*="border-bottom:1px solid var(--sep"] { border-bottom-color: rgba(255,255,255,0.07) !important; }
+
+/* ── PROFILE SCREEN ── */
+#screen-profile { background: #1a2e23 !important; }
+#screen-profile .topbar { background: #1a2e23 !important; }
+#screen-profile .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-profile .scroll { background: #1a2e23 !important; }
+#screen-profile .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+#screen-profile .info-label { color: rgba(255,255,255,0.5) !important; }
+#screen-profile .info-val   { color: rgba(255,255,255,0.9) !important; }
+#screen-profile .info-row   { border-bottom-color: rgba(255,255,255,0.07) !important; }
+#screen-profile .tag { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.85) !important; }
+#screen-profile .form-label { color: rgba(255,255,255,0.65) !important; }
+#screen-profile .form-input, #screen-profile .form-select, #screen-profile .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-profile .form-input::placeholder, #screen-profile .form-textarea::placeholder { color: rgba(255,255,255,0.3) !important; }
+#screen-profile select option { background: #1a2e23; color: #fff; }
+#screen-profile .divider { background: rgba(255,255,255,0.07) !important; }
+
+/* ── DOCTOR PATIENT VIEW (dark green screen) — mismo tratamiento que screen-profile ── */
+#screen-doctor-patient .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+#screen-doctor-patient .info-label { color: rgba(255,255,255,0.5) !important; }
+#screen-doctor-patient .info-val   { color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-patient .info-row   { border-bottom-color: rgba(255,255,255,0.07) !important; }
+#screen-doctor-patient .tag { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.85) !important; }
+#screen-doctor-patient .divider { background: rgba(255,255,255,0.07) !important; }
+
+/* ── LOGIN SCREEN ── */
+#screen-login { background: #1a2e23 !important; }
+#screen-login { background: #0f2820 !important; justify-content: center !important; align-items: center !important; }
+#screen-login .login-outer { background: transparent !important; }
+#screen-login .form-label, #screen-login label { color: rgba(255,255,255,0.7) !important; }
+#screen-login .login-sub { color: rgba(255,255,255,0.6) !important; }
+#screen-login .toggle-link, #screen-login .toggle-link * { color: rgba(255,255,255,0.5) !important; }
+#screen-login .toggle-link span { color: #7ec8a4 !important; }
+#screen-login .mode-tab { color: rgba(255,255,255,0.5) !important; }
+#screen-login .mode-tab.active { color: #1a4a3a !important; }
+#screen-login .login-title { color: #fff !important; }
+#screen-login .login-sub   { color: rgba(255,255,255,0.6) !important; }
+#screen-login .form-label  { color: rgba(255,255,255,0.7) !important; }
+#screen-login .form-input  { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.2) !important; color: #fff !important; }
+#screen-login .form-input::placeholder { color: rgba(255,255,255,0.35) !important; }
+#screen-login .mode-tabs   { background: rgba(255,255,255,0.1) !important; }
+#screen-login .mode-tab    { color: rgba(255,255,255,0.6) !important; }
+#screen-login .mode-tab.active { background: rgba(255,255,255,0.18) !important; color: #fff !important; }
+#screen-login .err         { color: #fca5a5 !important; }
+
+/* ── DOCTOR PANEL ── */
+#screen-doctor-home { background: #1a2e23 !important; }
+#screen-doctor-home .topbar { background: #1a2e23 !important; }
+#screen-doctor-home .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-home .hero { background: linear-gradient(160deg,#1e3a2c,#162a1e) !important; }
+#screen-doctor-home .hero * { color: #fff !important; }
+#screen-doctor-home .hero-label, #screen-doctor-home .hero-meta { color: rgba(255,255,255,0.6) !important; }
+#screen-doctor-home #dr-content { background: #1a2e23 !important; color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-home .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+
+/* ── CHILD HOME ── */
+#screen-child-home { background: #1a2e23 !important; }
+#screen-child-home .topbar { background: #1a2e23 !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; }
+#screen-child-home .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-child-home .scroll { background: #1a2e23 !important; }
+
+/* ── HIGIENE / CONSULTAR ── */
+#screen-hygiene, #screen-consult-guide { background: #1a2e23 !important; }
+#screen-hygiene .topbar, #screen-consult-guide .topbar { background: #1a2e23 !important; }
+#screen-hygiene .topbar *, #screen-consult-guide .topbar * { color: rgba(255,255,255,0.9) !important; }
+#screen-hygiene .scroll, #screen-consult-guide .scroll { background: #1a2e23 !important; }
+
+/* ── LANDING PAGE: keep light ── */
+#screen-landing { background: var(--bg-primary); }
+#screen-landing .sec-title { color: var(--label-2) !important; border-bottom-color: var(--sep-opaque) !important; }
+
+/* ── SCALE SCREEN: keep light (white bg for focus) ── */
+#screen-scale { background: #f5f5f7 !important; }
+#screen-scale .topbar { background: #f5f5f7 !important; border-bottom: 1px solid #e0e0e5 !important; }
+#screen-scale .topbar-btn { color: #1a4a3a !important; }
+#screen-scale #scale-title { color: #1a4a3a !important; }
+#screen-scale .q-num    { color: #6b7280 !important; }
+#screen-scale .q-text   { color: #111 !important; }
+#screen-scale .opt      { background: #fff !important; color: #111 !important; border-color: #ddd !important; }
+#screen-scale .opt.sel  { background: #1a4a3a !important; color: #fff !important; }
+
+/* ── DIARY SCREENS: keep light for input clarity ── */
+#screen-diary-new, #screen-diary-edit { background: #f5f5f7 !important; }
+
+/* ── BOTTOM NAV ── */
+.bottomnav { background: rgba(26,46,35,0.97) !important; border-top: 1px solid rgba(255,255,255,0.08) !important; }
+.bnav-lbl  { color: rgba(255,255,255,0.5) !important; }
+.bnav.active .bnav-lbl { color: #fff !important; }
+.bnav svg  { stroke: rgba(255,255,255,0.5); }
+.bnav.active svg { stroke: #fff; }
+
+/* ── Remove all stray var(--label) on dark screens ── */
+#screen-home [style*="color:var(--label)"],
+#screen-scales [style*="color:var(--label)"],
+#screen-profile [style*="color:var(--label)"],
+#screen-patient-history [style*="color:var(--label)"],
+#screen-doctor-home [style*="color:var(--label)"] {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-home [style*="color:var(--label-2)"],
+#screen-scales [style*="color:var(--label-2)"],
+#screen-profile [style*="color:var(--label-2)"],
+#screen-patient-history [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="color:var(--label-2)"] {
+  color: rgba(255,255,255,0.6) !important;
+}
+#screen-home [style*="color:var(--label-3)"],
+#screen-scales [style*="color:var(--label-3)"],
+#screen-profile [style*="color:var(--label-3)"],
+#screen-patient-history [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="color:var(--label-3)"] {
+  color: rgba(255,255,255,0.4) !important;
+}
+
+/* ── AUDITORÍA DE CONTRASTE — ambos perfiles sobre verde ── */
+/* Vista del profesional sobre el paciente: faltaban los catch-all de label */
+#screen-doctor-patient [style*="color:var(--label)"]   { color: rgba(255,255,255,0.9) !important; }
+#screen-doctor-patient [style*="color:var(--label-2)"] { color: rgba(255,255,255,0.6) !important; }
+#screen-doctor-patient [style*="color:var(--label-3)"] { color: rgba(255,255,255,0.4) !important; }
+/* var(--ink*) inline queda invisible sobre verde en AMBOS perfiles → claro */
+#screen-doctor-patient [style*="color:var(--ink)"],
+#screen-profile        [style*="color:var(--ink)"]   { color: rgba(255,255,255,0.85) !important; }
+#screen-doctor-patient [style*="color:var(--ink2)"],
+#screen-profile        [style*="color:var(--ink2)"]  { color: rgba(255,255,255,0.6) !important; }
+#screen-doctor-patient [style*="color:var(--ink3)"],
+#screen-profile        [style*="color:var(--ink3)"]  { color: rgba(255,255,255,0.45) !important; }
+/* Tarjetas claras dentro del verde → mantener texto oscuro (gana por especificidad) */
+#screen-doctor-patient [style*="background:#fff"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background: #fff"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:white"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-doctor-patient [style*="background:var(--card)"]:not(button):not(.btn) { color: var(--label) !important; }
+
+/* ── PROTECCIÓN EXHAUSTIVA: dentro de tarjetas claras mantener texto oscuro en TODAS las pantallas verdes ── */
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-home [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-home [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-scales [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-scales [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-profile [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-profile [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-mas [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-mas [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-mas [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-doctor-home [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-doctor-home [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-doctor-patient [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-doctor-patient [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-patient-history [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-patient-history [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-child-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-child-home [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-child-home [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-result [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-result [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-result [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-hygiene [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-hygiene [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-consult-guide [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-consult-guide [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-consult-dir [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-consult-dir [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-scale [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-scale [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-scale [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-landing [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-landing [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-landing [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-docs [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-docs [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-docs [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-pvt [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-pvt [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-pvt [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-code [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-code [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-code [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-consult [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-consult [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-consult [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-child-scales [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-child-scales [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-diary [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-diary [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-diary [style*="background:#ffffff"] [style*="color:var(--label)"],
+#screen-graficos [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-graficos [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-graficos [style*="background:#ffffff"] [style*="color:var(--label)"]
+{ color: var(--label) !important; }
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-home [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-home [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-scales [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-scales [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-profile [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-profile [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-mas [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-mas [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-mas [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-patient-history [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-patient-history [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-child-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-child-home [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-child-home [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-result [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-result [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-result [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-hygiene [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-hygiene [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-consult-guide [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-consult-guide [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-consult-dir [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-consult-dir [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-scale [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-scale [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-scale [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-landing [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-landing [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-landing [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-docs [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-docs [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-docs [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-pvt [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-pvt [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-pvt [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-code [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-code [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-code [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-consult [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-consult [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-consult [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-child-scales [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-child-scales [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-diary [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-diary [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-diary [style*="background:#ffffff"] [style*="color:var(--label-2)"],
+#screen-graficos [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-graficos [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-graficos [style*="background:#ffffff"] [style*="color:var(--label-2)"]
+{ color: var(--label-2) !important; }
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-home [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-home [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-scales [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-scales [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-profile [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-profile [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-mas [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-mas [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-mas [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-patient-history [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-patient-history [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-child-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-child-home [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-child-home [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-result [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-result [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-result [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-hygiene [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-hygiene [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-consult-guide [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-consult-guide [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-consult-dir [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-consult-dir [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-scale [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-scale [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-scale [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-landing [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-landing [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-landing [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-docs [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-docs [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-docs [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-pvt [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-pvt [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-pvt [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-code [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-code [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-code [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-consult [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-consult [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-consult [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-child-scales [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-child-scales [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-diary [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-diary [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-diary [style*="background:#ffffff"] [style*="color:var(--label-3)"],
+#screen-graficos [style*="background:var(--bg-secondary)"] [style*="color:var(--label-3)"],
+#screen-graficos [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-graficos [style*="background:#ffffff"] [style*="color:var(--label-3)"]
+{ color: var(--label-3) !important; }
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-home [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-home [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-scales [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-scales [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-profile [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-profile [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-mas [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-mas [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-mas [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-doctor-home [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-doctor-home [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-doctor-patient [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-doctor-patient [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-patient-history [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-patient-history [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-child-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-child-home [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-child-home [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-result [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-result [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-result [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-hygiene [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-hygiene [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-consult-guide [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-consult-guide [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-consult-dir [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-consult-dir [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-scale [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-scale [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-scale [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-landing [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-landing [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-landing [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-docs [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-docs [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-docs [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-pvt [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-pvt [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-pvt [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-code [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-code [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-code [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-consult [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-consult [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-consult [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-child-scales [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-child-scales [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-diary [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-diary [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-diary [style*="background:#ffffff"] [style*="color:var(--ink)"],
+#screen-graficos [style*="background:var(--bg-secondary)"] [style*="color:var(--ink)"],
+#screen-graficos [style*="background:#fff"] [style*="color:var(--ink)"],
+#screen-graficos [style*="background:#ffffff"] [style*="color:var(--ink)"]
+{ color: var(--ink) !important; }
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-home [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-home [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-scales [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-scales [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-profile [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-profile [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-mas [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-mas [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-mas [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-doctor-home [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-doctor-home [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-patient-history [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-patient-history [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-child-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-child-home [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-child-home [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-result [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-result [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-result [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-hygiene [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-hygiene [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-consult-guide [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-consult-guide [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-consult-dir [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-consult-dir [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-scale [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-scale [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-scale [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-landing [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-landing [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-landing [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-docs [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-docs [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-docs [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-pvt [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-pvt [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-pvt [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-code [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-code [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-code [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-consult [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-consult [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-consult [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-child-scales [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-child-scales [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-diary [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-diary [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-diary [style*="background:#ffffff"] [style*="color:var(--ink2)"],
+#screen-graficos [style*="background:var(--bg-secondary)"] [style*="color:var(--ink2)"],
+#screen-graficos [style*="background:#fff"] [style*="color:var(--ink2)"],
+#screen-graficos [style*="background:#ffffff"] [style*="color:var(--ink2)"]
+{ color: var(--ink2) !important; }
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-home [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-home [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-scales [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-scales [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-profile [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-profile [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-mas [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-mas [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-mas [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-doctor-home [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-doctor-home [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-patient-history [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-patient-history [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-child-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-child-home [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-child-home [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-result [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-result [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-result [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-hygiene [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-hygiene [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-consult-guide [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-consult-guide [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-consult-dir [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-consult-dir [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-scale [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-scale [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-scale [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-landing [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-landing [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-landing [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-docs [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-docs [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-docs [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-pvt [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-pvt [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-pvt [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-code [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-code [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-code [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-consult [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-consult [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-consult [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-child-scales [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-child-scales [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-diary [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-diary [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-diary [style*="background:#ffffff"] [style*="color:var(--ink3)"],
+#screen-graficos [style*="background:var(--bg-secondary)"] [style*="color:var(--ink3)"],
+#screen-graficos [style*="background:#fff"] [style*="color:var(--ink3)"],
+#screen-graficos [style*="background:#ffffff"] [style*="color:var(--ink3)"]
+{ color: var(--ink3) !important; }
+#screen-home [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-home [style*="background:#fff"][style*="color:var(--label)"],
+#screen-home [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-scales [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-scales [style*="background:#fff"][style*="color:var(--label)"],
+#screen-scales [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-profile [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-profile [style*="background:#fff"][style*="color:var(--label)"],
+#screen-profile [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-mas [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-mas [style*="background:#fff"][style*="color:var(--label)"],
+#screen-mas [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-doctor-home [style*="background:#fff"][style*="color:var(--label)"],
+#screen-doctor-home [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-doctor-patient [style*="background:#fff"][style*="color:var(--label)"],
+#screen-doctor-patient [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-patient-history [style*="background:#fff"][style*="color:var(--label)"],
+#screen-patient-history [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-child-home [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-child-home [style*="background:#fff"][style*="color:var(--label)"],
+#screen-child-home [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-diary-home [style*="background:#fff"][style*="color:var(--label)"],
+#screen-diary-home [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-result [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-result [style*="background:#fff"][style*="color:var(--label)"],
+#screen-result [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-hygiene [style*="background:#fff"][style*="color:var(--label)"],
+#screen-hygiene [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-consult-guide [style*="background:#fff"][style*="color:var(--label)"],
+#screen-consult-guide [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-consult-dir [style*="background:#fff"][style*="color:var(--label)"],
+#screen-consult-dir [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-scale [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-scale [style*="background:#fff"][style*="color:var(--label)"],
+#screen-scale [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-landing [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-landing [style*="background:#fff"][style*="color:var(--label)"],
+#screen-landing [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-docs [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-docs [style*="background:#fff"][style*="color:var(--label)"],
+#screen-docs [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-pvt [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-pvt [style*="background:#fff"][style*="color:var(--label)"],
+#screen-pvt [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-code [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-code [style*="background:#fff"][style*="color:var(--label)"],
+#screen-code [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-consult [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-consult [style*="background:#fff"][style*="color:var(--label)"],
+#screen-consult [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-child-scales [style*="background:#fff"][style*="color:var(--label)"],
+#screen-child-scales [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-diary [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-diary [style*="background:#fff"][style*="color:var(--label)"],
+#screen-diary [style*="background:#ffffff"][style*="color:var(--label)"],
+#screen-graficos [style*="background:var(--bg-secondary)"][style*="color:var(--label)"],
+#screen-graficos [style*="background:#fff"][style*="color:var(--label)"],
+#screen-graficos [style*="background:#ffffff"][style*="color:var(--label)"]
+{ color: var(--label) !important; }
+#screen-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-home [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-home [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-scales [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-scales [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-scales [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-profile [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-profile [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-profile [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-mas [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-mas [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-mas [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-doctor-home [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-doctor-home [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-patient-history [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-patient-history [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-child-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-child-home [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-child-home [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-result [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-result [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-result [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-hygiene [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-hygiene [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-consult-guide [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-consult-guide [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-consult-dir [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-consult-dir [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-scale [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-scale [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-scale [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-landing [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-landing [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-landing [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-docs [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-docs [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-docs [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-pvt [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-pvt [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-pvt [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-code [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-code [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-code [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-consult [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-consult [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-consult [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-child-scales [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-child-scales [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-diary [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-diary [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-diary [style*="background:#ffffff"][style*="color:var(--label-2)"],
+#screen-graficos [style*="background:var(--bg-secondary)"][style*="color:var(--label-2)"],
+#screen-graficos [style*="background:#fff"][style*="color:var(--label-2)"],
+#screen-graficos [style*="background:#ffffff"][style*="color:var(--label-2)"]
+{ color: var(--label-2) !important; }
+#screen-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-home [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-home [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-scales [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-scales [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-scales [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-profile [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-profile [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-profile [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-mas [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-mas [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-mas [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-doctor-home [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-doctor-home [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-patient-history [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-patient-history [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-child-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-child-home [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-child-home [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-result [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-result [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-result [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-hygiene [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-hygiene [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-consult-guide [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-consult-guide [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-consult-dir [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-consult-dir [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-scale [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-scale [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-scale [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-landing [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-landing [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-landing [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-docs [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-docs [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-docs [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-pvt [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-pvt [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-pvt [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-code [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-code [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-code [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-consult [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-consult [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-consult [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-child-scales [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-child-scales [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-diary [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-diary [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-diary [style*="background:#ffffff"][style*="color:var(--label-3)"],
+#screen-graficos [style*="background:var(--bg-secondary)"][style*="color:var(--label-3)"],
+#screen-graficos [style*="background:#fff"][style*="color:var(--label-3)"],
+#screen-graficos [style*="background:#ffffff"][style*="color:var(--label-3)"]
+{ color: var(--label-3) !important; }
+#screen-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-home [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-home [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-scales [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-scales [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-scales [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-profile [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-profile [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-profile [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-mas [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-mas [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-mas [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-doctor-home [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-doctor-home [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-doctor-patient [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-doctor-patient [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-patient-history [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-patient-history [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-child-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-child-home [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-child-home [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-diary-home [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-diary-home [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-result [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-result [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-result [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-hygiene [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-hygiene [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-consult-guide [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-consult-guide [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-consult-dir [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-consult-dir [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-scale [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-scale [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-scale [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-landing [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-landing [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-landing [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-docs [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-docs [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-docs [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-pvt [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-pvt [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-pvt [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-code [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-code [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-code [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-consult [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-consult [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-consult [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-child-scales [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-child-scales [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-diary [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-diary [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-diary [style*="background:#ffffff"][style*="color:var(--ink)"],
+#screen-graficos [style*="background:var(--bg-secondary)"][style*="color:var(--ink)"],
+#screen-graficos [style*="background:#fff"][style*="color:var(--ink)"],
+#screen-graficos [style*="background:#ffffff"][style*="color:var(--ink)"]
+{ color: var(--ink) !important; }
+#screen-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-home [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-home [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-scales [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-scales [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-scales [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-profile [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-profile [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-profile [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-mas [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-mas [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-mas [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-doctor-home [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-doctor-home [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-patient-history [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-patient-history [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-child-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-child-home [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-child-home [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-diary-home [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-diary-home [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-result [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-result [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-result [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-hygiene [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-hygiene [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-consult-guide [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-consult-guide [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-consult-dir [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-consult-dir [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-scale [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-scale [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-scale [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-landing [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-landing [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-landing [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-docs [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-docs [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-docs [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-pvt [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-pvt [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-pvt [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-code [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-code [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-code [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-consult [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-consult [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-consult [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-child-scales [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-child-scales [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-diary [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-diary [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-diary [style*="background:#ffffff"][style*="color:var(--ink2)"],
+#screen-graficos [style*="background:var(--bg-secondary)"][style*="color:var(--ink2)"],
+#screen-graficos [style*="background:#fff"][style*="color:var(--ink2)"],
+#screen-graficos [style*="background:#ffffff"][style*="color:var(--ink2)"]
+{ color: var(--ink2) !important; }
+#screen-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-home [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-home [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-scales [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-scales [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-scales [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-profile [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-profile [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-profile [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-mas [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-mas [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-mas [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-doctor-home [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-doctor-home [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-patient-history [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-patient-history [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-child-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-child-home [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-child-home [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-diary-home [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-diary-home [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-diary-home [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-result [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-result [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-result [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-hygiene [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-hygiene [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-hygiene [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-consult-guide [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-consult-guide [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-consult-guide [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-consult-dir [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-consult-dir [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-consult-dir [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-scale [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-scale [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-scale [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-landing [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-landing [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-landing [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-docs [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-docs [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-docs [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-pvt [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-pvt [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-pvt [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-code [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-code [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-code [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-consult [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-consult [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-consult [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-child-scales [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-child-scales [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-child-scales [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-diary [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-diary [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-diary [style*="background:#ffffff"][style*="color:var(--ink3)"],
+#screen-graficos [style*="background:var(--bg-secondary)"][style*="color:var(--ink3)"],
+#screen-graficos [style*="background:#fff"][style*="color:var(--ink3)"],
+#screen-graficos [style*="background:#ffffff"][style*="color:var(--ink3)"]
+{ color: var(--ink3) !important; }
+
+/* Empty state: texto claro en pantallas verdes (estaba var(--label-2) oscuro) */
+#screen-home .empty-state,
+#screen-home .empty-state *,
+#screen-scales .empty-state,
+#screen-scales .empty-state *,
+#screen-profile .empty-state,
+#screen-profile .empty-state *,
+#screen-mas .empty-state,
+#screen-mas .empty-state *,
+#screen-doctor-home .empty-state,
+#screen-doctor-home .empty-state *,
+#screen-doctor-patient .empty-state,
+#screen-doctor-patient .empty-state *,
+#screen-patient-history .empty-state,
+#screen-patient-history .empty-state *,
+#screen-child-home .empty-state,
+#screen-child-home .empty-state *,
+#screen-diary-home .empty-state,
+#screen-diary-home .empty-state *,
+#screen-result .empty-state,
+#screen-result .empty-state *,
+#screen-hygiene .empty-state,
+#screen-hygiene .empty-state *,
+#screen-consult-guide .empty-state,
+#screen-consult-guide .empty-state *,
+#screen-consult-dir .empty-state,
+#screen-consult-dir .empty-state *,
+#screen-scale .empty-state,
+#screen-scale .empty-state *,
+#screen-landing .empty-state,
+#screen-landing .empty-state *,
+#screen-docs .empty-state,
+#screen-docs .empty-state *,
+#screen-pvt .empty-state,
+#screen-pvt .empty-state *,
+#screen-code .empty-state,
+#screen-code .empty-state *,
+#screen-consult .empty-state,
+#screen-consult .empty-state *,
+#screen-child-scales .empty-state,
+#screen-child-scales .empty-state *,
+#screen-diary .empty-state,
+#screen-diary .empty-state *,
+#screen-graficos .empty-state,
+#screen-graficos .empty-state *
+{ color: rgba(255,255,255,0.55) !important; }
+
+/* sec-title en doctor-patient */
+#screen-doctor-patient .sec-title { color: rgba(255,255,255,0.5) !important; }
+#screen-doctor-patient .suggest-label [style*="color:var(--label)"],
+#screen-doctor-home .suggest-label [style*="color:var(--label)"]
+{ color: var(--label) !important; }
+#screen-doctor-patient .suggest-label [style*="color:var(--label-2)"],
+#screen-doctor-home .suggest-label [style*="color:var(--label-2)"]
+{ color: var(--label-2) !important; }
+
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"],
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label)"]
+{ color: var(--label) !important; }
+#screen-doctor-patient [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-patient-history [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-scales [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-profile [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"],
+#screen-home [style*="background:var(--bg-secondary)"] [style*="color:var(--label-2)"]
+{ color: var(--label-2) !important; }
+
+/* ── BARRIDO GLOBAL DE CONTRASTE: tokens oscuros -> claro en pantallas verdes ──
+   Las tarjetas claras (resultados) usan hex propios, no estos tokens, así que no se rompen. */
+#screen-home [style*="color:var(--label)"],
+#screen-home [style*="color:var(--ink)"],
+#screen-scales [style*="color:var(--label)"],
+#screen-scales [style*="color:var(--ink)"],
+#screen-profile [style*="color:var(--label)"],
+#screen-profile [style*="color:var(--ink)"],
+#screen-mas [style*="color:var(--label)"],
+#screen-mas [style*="color:var(--ink)"],
+#screen-doctor-home [style*="color:var(--label)"],
+#screen-doctor-home [style*="color:var(--ink)"],
+#screen-doctor-patient [style*="color:var(--label)"],
+#screen-doctor-patient [style*="color:var(--ink)"],
+#screen-patient-history [style*="color:var(--label)"],
+#screen-patient-history [style*="color:var(--ink)"],
+#screen-child-home [style*="color:var(--label)"],
+#screen-child-home [style*="color:var(--ink)"],
+#screen-diary-home [style*="color:var(--label)"],
+#screen-diary-home [style*="color:var(--ink)"],
+#screen-result [style*="color:var(--label)"],
+#screen-result [style*="color:var(--ink)"],
+#screen-hygiene [style*="color:var(--label)"],
+#screen-hygiene [style*="color:var(--ink)"],
+#screen-consult-guide [style*="color:var(--label)"],
+#screen-consult-guide [style*="color:var(--ink)"],
+#screen-consult-dir [style*="color:var(--label)"],
+#screen-consult-dir [style*="color:var(--ink)"],
+#screen-scale [style*="color:var(--label)"],
+#screen-scale [style*="color:var(--ink)"],
+#screen-landing [style*="color:var(--label)"],
+#screen-landing [style*="color:var(--ink)"],
+#screen-docs [style*="color:var(--label)"],
+#screen-docs [style*="color:var(--ink)"],
+#screen-pvt [style*="color:var(--label)"],
+#screen-pvt [style*="color:var(--ink)"],
+#screen-code [style*="color:var(--label)"],
+#screen-code [style*="color:var(--ink)"],
+#screen-consult [style*="color:var(--label)"],
+#screen-consult [style*="color:var(--ink)"],
+#screen-child-scales [style*="color:var(--label)"],
+#screen-child-scales [style*="color:var(--ink)"],
+#screen-diary [style*="color:var(--label)"],
+#screen-diary [style*="color:var(--ink)"] {
+  color: rgba(255,255,255,0.92) !important;
+}
+#screen-home [style*="color:var(--label-2)"],
+#screen-home [style*="color:var(--ink2)"],
+#screen-scales [style*="color:var(--label-2)"],
+#screen-scales [style*="color:var(--ink2)"],
+#screen-profile [style*="color:var(--label-2)"],
+#screen-profile [style*="color:var(--ink2)"],
+#screen-mas [style*="color:var(--label-2)"],
+#screen-mas [style*="color:var(--ink2)"],
+#screen-doctor-home [style*="color:var(--label-2)"],
+#screen-doctor-home [style*="color:var(--ink2)"],
+#screen-doctor-patient [style*="color:var(--label-2)"],
+#screen-doctor-patient [style*="color:var(--ink2)"],
+#screen-patient-history [style*="color:var(--label-2)"],
+#screen-patient-history [style*="color:var(--ink2)"],
+#screen-child-home [style*="color:var(--label-2)"],
+#screen-child-home [style*="color:var(--ink2)"],
+#screen-diary-home [style*="color:var(--label-2)"],
+#screen-diary-home [style*="color:var(--ink2)"],
+#screen-result [style*="color:var(--label-2)"],
+#screen-result [style*="color:var(--ink2)"],
+#screen-hygiene [style*="color:var(--label-2)"],
+#screen-hygiene [style*="color:var(--ink2)"],
+#screen-consult-guide [style*="color:var(--label-2)"],
+#screen-consult-guide [style*="color:var(--ink2)"],
+#screen-consult-dir [style*="color:var(--label-2)"],
+#screen-consult-dir [style*="color:var(--ink2)"],
+#screen-scale [style*="color:var(--label-2)"],
+#screen-scale [style*="color:var(--ink2)"],
+#screen-landing [style*="color:var(--label-2)"],
+#screen-landing [style*="color:var(--ink2)"],
+#screen-docs [style*="color:var(--label-2)"],
+#screen-docs [style*="color:var(--ink2)"],
+#screen-pvt [style*="color:var(--label-2)"],
+#screen-pvt [style*="color:var(--ink2)"],
+#screen-code [style*="color:var(--label-2)"],
+#screen-code [style*="color:var(--ink2)"],
+#screen-consult [style*="color:var(--label-2)"],
+#screen-consult [style*="color:var(--ink2)"],
+#screen-child-scales [style*="color:var(--label-2)"],
+#screen-child-scales [style*="color:var(--ink2)"],
+#screen-diary [style*="color:var(--label-2)"],
+#screen-diary [style*="color:var(--ink2)"] {
+  color: rgba(255,255,255,0.62) !important;
+}
+#screen-home [style*="color:var(--label-3)"],
+#screen-home [style*="color:var(--ink3)"],
+#screen-scales [style*="color:var(--label-3)"],
+#screen-scales [style*="color:var(--ink3)"],
+#screen-profile [style*="color:var(--label-3)"],
+#screen-profile [style*="color:var(--ink3)"],
+#screen-mas [style*="color:var(--label-3)"],
+#screen-mas [style*="color:var(--ink3)"],
+#screen-doctor-home [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="color:var(--ink3)"],
+#screen-doctor-patient [style*="color:var(--label-3)"],
+#screen-doctor-patient [style*="color:var(--ink3)"],
+#screen-patient-history [style*="color:var(--label-3)"],
+#screen-patient-history [style*="color:var(--ink3)"],
+#screen-child-home [style*="color:var(--label-3)"],
+#screen-child-home [style*="color:var(--ink3)"],
+#screen-diary-home [style*="color:var(--label-3)"],
+#screen-diary-home [style*="color:var(--ink3)"],
+#screen-result [style*="color:var(--label-3)"],
+#screen-result [style*="color:var(--ink3)"],
+#screen-hygiene [style*="color:var(--label-3)"],
+#screen-hygiene [style*="color:var(--ink3)"],
+#screen-consult-guide [style*="color:var(--label-3)"],
+#screen-consult-guide [style*="color:var(--ink3)"],
+#screen-consult-dir [style*="color:var(--label-3)"],
+#screen-consult-dir [style*="color:var(--ink3)"],
+#screen-scale [style*="color:var(--label-3)"],
+#screen-scale [style*="color:var(--ink3)"],
+#screen-landing [style*="color:var(--label-3)"],
+#screen-landing [style*="color:var(--ink3)"],
+#screen-docs [style*="color:var(--label-3)"],
+#screen-docs [style*="color:var(--ink3)"],
+#screen-pvt [style*="color:var(--label-3)"],
+#screen-pvt [style*="color:var(--ink3)"],
+#screen-code [style*="color:var(--label-3)"],
+#screen-code [style*="color:var(--ink3)"],
+#screen-consult [style*="color:var(--label-3)"],
+#screen-consult [style*="color:var(--ink3)"],
+#screen-child-scales [style*="color:var(--label-3)"],
+#screen-child-scales [style*="color:var(--ink3)"],
+#screen-diary [style*="color:var(--label-3)"],
+#screen-diary [style*="color:var(--ink3)"] {
+  color: rgba(255,255,255,0.45) !important;
+}
+
+/* Patient history - force dark on all children */
+#screen-patient-history .tab-bar {
+  background: #1a2e23 !important;
+  border-top: none;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history .tab {
+  color: rgba(255,255,255,0.5) !important;
+  background: none !important;
+  border-bottom: 2px solid transparent !important;
+}
+#screen-patient-history .tab.active {
+  color: #fff !important;
+  border-bottom-color: #6ee7b7 !important;
+}
+#screen-patient-history .scroll {
+  background: #1a2e23 !important;
+}
+#screen-patient-history .topbar {
+  background: #1a2e23 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+#screen-patient-history .topbar-btn {
+  color: rgba(255,255,255,0.9) !important;
+}
+#screen-patient-history .topbar div {
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* Child info panel */
+#ch-panel-info {
+  background: #1a2e23 !important;
+}
+#screen-child-home #ch-panel-info details > div {
+  background: rgba(255,255,255,0.04) !important;
+}
+/* Remove browser default marker on details */
+#screen-child-home details summary::-webkit-details-marker,
+#screen-child-home details summary::marker {
+  display: none !important;
+  content: '' !important;
+}
+#screen-child-home .info-chev {
+  display: none !important;
+}
+
+/* Force scale card icons to appear lighter */
+.sc-icon { filter: brightness(0.9); }
+/* Remove ios-group white bg aggressively */
+.ios-group { background: transparent !important; }
+
+/* Info para padres: prevent text bleed */
+#ch-panel-info .info-card-content {
+  background: #1e3d2f !important;
+  position: relative;
+  z-index: 5;
+}
+#ch-panel-info .info-card-header {
+  position: relative;
+  z-index: 6;
+}
+#ch-panel-info > div {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Login form dark fixes */
+.login-title { color: #fff !important; }
+.login-sub { color: rgba(255,255,255,0.65) !important; }
+.toggle-link { color: rgba(255,255,255,0.7) !important; }
+.toggle-link span { color: #6ee7b7 !important; }
+#screen-login .form-label { color: rgba(255,255,255,0.75) !important; }
+#screen-login .form-input { 
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-login .form-input::placeholder { color: rgba(255,255,255,0.4) !important; }
+#screen-login .err { color: #fca5a5 !important; }
+#screen-login .mode-tabs { background: rgba(255,255,255,0.1) !important; }
+#screen-login .mode-tab { color: rgba(255,255,255,0.6) !important; }
+#screen-login .mode-tab.active { color: #fff !important; background: rgba(255,255,255,0.15) !important; }
+
+/* Register form - all dark bg fixes */
+#register-form .form-label { color: rgba(255,255,255,0.75) !important; }
+#register-form .form-input, #register-form .form-select {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#register-form .form-input::placeholder { color: rgba(255,255,255,0.4) !important; }
+#register-form label span { color: rgba(255,255,255,0.85) !important; }
+#register-form [style*="color:var(--label"] { color: rgba(255,255,255,0.85) !important; }
+#register-form a { color: #6ee7b7 !important; }
+#p-reg .form-label, #d-reg .form-label { color: rgba(255,255,255,0.75) !important; }
+
+/* Doctor panel - profile form white text */
+#screen-doctor-home #dr-content .form-label { color: rgba(255,255,255,0.75) !important; }
+#screen-doctor-home #dr-content .form-input,
+#screen-doctor-home #dr-content .form-select,
+#screen-doctor-home #dr-content .form-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+}
+#screen-doctor-home #dr-content .form-input::placeholder { color: rgba(255,255,255,0.35) !important; }
+#screen-doctor-home #dr-content select option { background: #1a2e23; color: #fff; }
+#screen-doctor-home #dr-content .sec-title { color: rgba(255,255,255,0.5) !important; }
+
+/* ───────────── CONTRAST SAFETY NET v80 ─────────────
+   (1) Texto blanco sobre cualquier fondo verde oscuro inline.
+   (2) Texto oscuro dentro de cards claras en pantallas oscuras. */
+[style*="background:#0f2820"],[style*="background: #0f2820"],
+[style*="background:#1a4a3a"],[style*="background: #1a4a3a"],
+[style*="background:#1a2e23"],[style*="background: #1a2e23"],
+[style*="background:#1e3a2c"],[style*="background: #1e3a2c"],
+[style*="background:#162a1e"],[style*="background: #162a1e"],
+[style*="background:#1e3d2f"],[style*="background: #1e3d2f"],
+[style*="background:#2d6b55"],[style*="background: #2d6b55"],
+[style*="background:#2d6b56"],[style*="background: #2d6b56"],
+[style*="background:#2d4a3a"],[style*="background: #2d4a3a"],
+[style*="background:#21614c"],[style*="background: #21614c"],
+[style*="background:rgba(26,74,58"],[style*="background: rgba(26,74,58"],
+[style*="background:rgba(15,40,32"],[style*="background: rgba(15,40,32"]{color:#fff !important;}
+#screen-doctor-home [style*="background:#fff"]:not(button):not(.btn),
+#screen-doctor-home [style*="background: #fff"]:not(button):not(.btn),
+#screen-doctor-home [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-doctor-home [style*="background:white"]:not(button):not(.btn),
+#screen-doctor-home [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-patient-history [style*="background:#fff"]:not(button):not(.btn),
+#screen-patient-history [style*="background: #fff"]:not(button):not(.btn),
+#screen-patient-history [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-patient-history [style*="background:white"]:not(button):not(.btn),
+#screen-patient-history [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-home [style*="background:#fff"]:not(button):not(.btn),
+#screen-home [style*="background: #fff"]:not(button):not(.btn),
+#screen-home [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-home [style*="background:white"]:not(button):not(.btn),
+#screen-home [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-profile [style*="background:#fff"]:not(button):not(.btn),
+#screen-profile [style*="background: #fff"]:not(button):not(.btn),
+#screen-profile [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-profile [style*="background:white"]:not(button):not(.btn),
+#screen-profile [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-scales [style*="background:#fff"]:not(button):not(.btn),
+#screen-scales [style*="background: #fff"]:not(button):not(.btn),
+#screen-scales [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-scales [style*="background:white"]:not(button):not(.btn),
+#screen-scales [style*="background:var(--bg-secondary)"]:not(button):not(.btn),
+#screen-child-home [style*="background:#fff"]:not(button):not(.btn),
+#screen-child-home [style*="background: #fff"]:not(button):not(.btn),
+#screen-child-home [style*="background:#ffffff"]:not(button):not(.btn),
+#screen-child-home [style*="background:white"]:not(button):not(.btn),
+#screen-child-home [style*="background:var(--bg-secondary)"]:not(button):not(.btn){color:var(--label) !important;}
+#screen-doctor-home [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-doctor-home [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-patient-history [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-home [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-profile [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-scales [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:#fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background: #fff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:#ffffff"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:white"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path),
+#screen-child-home [style*="background:var(--bg-secondary)"] *:not([style*="color"]):not(button):not(.btn):not(svg):not(path){color:var(--label) !important;}
+[style*="background:#f4efe5"],[style*="background: #f4efe5"],
+[style*="background:#c2e8d4"],[style*="background: #c2e8d4"],
+[style*="background:#e8f0eb"],[style*="background: #e8f0eb"]{color:var(--label) !important;}
+
+
+
+/* b2 */
+
+  #screen-landing{background:#0f2820;position:relative;overflow:hidden;}
+  #dm-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 38% at 50% 8%,#1a4a3a 0%,transparent 58%),#0f2820;z-index:0;pointer-events:none;}
+  #dm-stars{position:absolute;inset:0;z-index:2;pointer-events:none;}
+  /* Skyline: z-index 1, below stars, pointer-events:none already on SVG */
+  #dm-wrap{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:0 32px 44px;}
+  #dm-logo-area{display:flex;flex-direction:column;align-items:center;}
+  #dm-logo-svg{width:min(98%,432px);height:auto;overflow:visible;shape-rendering:geometricPrecision;}
+  #dm-tagline{font-family:'Instrument Sans',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.28);text-transform:uppercase;margin-top:20px;opacity:0;animation:dmFadeIn 0.6s ease 3.4s forwards;}
+  /* BOTTOM: always visible — no opacity animation, no delay */
+  #dm-bottom{width:100%;display:flex;flex-direction:column;align-items:center;opacity:0;animation:dmFadeIn 0.5s ease calc(var(--dm-inicio) + 8*var(--dm-paso) + var(--dm-letra)) forwards;}
+  #dm-subtitle{font-family:'Instrument Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.42);text-align:center;line-height:1.7;margin-bottom:22px;}
+  #dm-btn{width:100%;height:54px;border-radius:27px;background:linear-gradient(135deg,#2d6b4a 0%,#1a4a3a 100%);border:1px solid rgba(126,200,164,0.2);display:flex;align-items:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;pointer-events:auto;}
+  #dm-btn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;}
+  #dm-btn-label{flex:1;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:white;padding-right:48px;}
+  #dm-login{font-family:'Instrument Sans',sans-serif;font-size:12px;color:rgba(255,255,255,0.28);cursor:pointer;}
+  #dm-login span{color:#7ec8a4;}
+  @keyframes dmFadeIn{from{opacity:0}to{opacity:1}}
+  /* ── Animación de entrada ──
+     Duraciones en variables: la primera visita usa la versión INTERMEDIA
+     (2,9 s) y a partir de la segunda el body lleva .dm-visto y pasa a la
+     ÁGIL (1,1 s). Una bienvenida se disfruta una vez; el paciente que abre
+     la app todos los días no debería esperarla nunca más. */
+  :root{
+    --dm-moon:.5s;      /* fundido de la luna            */
+    --dm-letra:.4s;     /* fundido de cada letra          */
+    --dm-inicio:.85s;   /* cuándo arranca la primera letra */
+    --dm-paso:.085s;    /* separación entre letras         */
+  }
+  body.dm-visto{
+    --dm-moon:.28s; --dm-letra:.2s; --dm-inicio:.3s; --dm-paso:.04s;
+  }
+  #ltr-o{opacity:0;animation:dmFadeIn var(--dm-moon) ease 0s forwards}
+  #ltr-d{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 0*var(--dm-paso)) forwards}
+  #ltr-r{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 1*var(--dm-paso)) forwards}
+  #ltr-m{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 2*var(--dm-paso)) forwards}
+  #ltr-e{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 3*var(--dm-paso)) forwards}
+  #ltr-t{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 4*var(--dm-paso)) forwards}
+  #ltr-r2{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 5*var(--dm-paso)) forwards}
+  #ltr-i{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 6*var(--dm-paso)) forwards}
+  #ltr-a{opacity:0;animation:dmFadeIn var(--dm-letra) ease calc(var(--dm-inicio) + 7*var(--dm-paso)) forwards}
+
+
+
+/* b3 */
+
+    #screen-onboarding{background:linear-gradient(160deg,#0f2820 0%,#1a4a3a 60%,#2d6b55 100%);}
+    .ob-step{display:none;padding:32px 24px;}
+    .ob-step.active{display:block;}
+    .ob-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;font-family:-apple-system,sans-serif;}
+    .ob-sub{font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:28px;line-height:1.5;font-family:-apple-system,sans-serif;}
+    .ob-progress{display:flex;gap:6px;margin-bottom:32px;}
+    .ob-dot{height:4px;border-radius:2px;background:rgba(255,255,255,0.25);flex:1;transition:background 0.3s;}
+    .ob-dot.done{background:#7ec8a4;}
+    .ob-opt{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.1);border:2px solid transparent;border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;}
+    .ob-opt.selected{background:rgba(126,200,164,0.2);border-color:#7ec8a4;}
+    .ob-opt-icon{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    .ob-opt-text{color:#fff;font-size:15px;font-weight:500;font-family:-apple-system,sans-serif;}
+    .ob-opt-sub{color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;font-family:-apple-system,sans-serif;}
+    .ob-next{width:100%;padding:16px;border:none;border-radius:14px;background:#7ec8a4;color:#0f2820;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;font-family:-apple-system,sans-serif;opacity:0.4;pointer-events:none;transition:opacity 0.2s;}
+    .ob-next.ready{opacity:1;pointer-events:auto;}
+    .ob-skip{text-align:center;margin-top:14px;font-size:12px;color:rgba(255,255,255,0.3);cursor:pointer;font-family:-apple-system,sans-serif;}
+  

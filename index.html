@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod79">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod80">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod79"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod80"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod79';
+const APP_VERSION='hoy75-mod80';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4987,6 +4987,10 @@ function computeHabitsImpact(entries){
       const sig = st && st.p < 0.05;
       if(Math.abs(diff) >= minDif && sig) signo = (diff>0?1:-1) * s.dirGood;
       efectos.push({ id:s.id, label:s.label, unit:s.unit, mOn:ma, mOff:mb, diff, signo,
+                     dirGood:s.dirGood,
+                     // direccion: +1 mejora con el factor, -1 empeora, 0 igual.
+                     // Es independiente de si el efecto llega a ser relevante.
+                     dir: diff===0 ? 0 : ((diff>0?1:-1) * s.dirGood),
                      p: st?st.p:null, d: st?st.d:null, nA:a.length, nB:b.length });
     });
     if(!efectos.length) return;
@@ -5045,7 +5049,14 @@ function renderHabitsImpactHtml(entries){
         '<span style="font-size:10px;font-weight:700;color:'+vCol+';background:'+vCol+'14;border-radius:99px;padding:2px 8px">'+vTxt+'</span>'+etiqueta+avisoPrelim+
       '</div>'+
       '<div style="font-size:12px;color:'+vCol+';margin-bottom:8px">'+_titular+
-        '<span style="color:var(--label-3);font-weight:400"> · '+hb.nOn+' vs '+hb.nOff+' noches</span></div>';
+        '<span style="color:var(--label-3);font-weight:400"> · '+hb.nOn+' vs '+hb.nOff+' noches</span></div>'+
+      // Encabezado: sin esto los dos numeros de cada fila eran anonimos y no
+      // se sabia cual correspondia a las noches CON el factor.
+      '<div style="display:grid;grid-template-columns:1fr 62px 62px 92px;gap:4px;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--label-3);border-bottom:1px solid #f0eee9;padding-bottom:3px;margin-bottom:2px">'+
+        '<span></span>'+
+        '<span style="text-align:right;color:#1a4a3a;font-weight:700">'+hb.onTxt+'</span>'+
+        '<span style="text-align:right">'+hb.offTxt+'</span>'+
+        '<span style="text-align:right">diferencia</span></div>';
     hb.efectos.forEach(ef=>{
       // La p va en gris y chica SIEMPRE, incluso cuando es significativa: es
       // un dato de apoyo, no el titular. Con n de 30 noches y comparaciones
@@ -5053,14 +5064,19 @@ function renderHabitsImpactHtml(entries){
       const pTxt = ef.p!=null
         ? '<span style="font-size:9.5px;color:#9ca3af;margin-left:6px;font-variant-numeric:tabular-nums">'+dmFmtP(ef.p)+'</span>'
         : '';
-      html+='<div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-size:11.5px">'+
+      const _n = v => (ef.id==='awk'||ef.id==='qual') ? v.toFixed(1) : String(Math.round(v));
+      // Verde cuando el factor MEJORA esa variable, rojo cuando la empeora.
+      // Tono fuerte si el efecto pasa el umbral clinico y p<0,05; tono suave
+      // si la direccion existe pero no llega a ser relevante, para que se
+      // lea la tendencia sin darle un peso que no tiene.
+      const _col = ef.signo>0 ? '#16a34a' : ef.signo<0 ? '#dc2626'
+                 : ef.dir>0  ? '#7fae90' : ef.dir<0  ? '#cf9a9a' : '#9ca3af';
+      html+='<div style="display:grid;grid-template-columns:1fr 62px 62px 92px;align-items:baseline;gap:4px;padding:3px 0;font-size:11.5px">'+
         '<span style="color:#666">'+ef.label+'</span>'+
-        '<span><span style="color:#999;font-size:10.5px">'+
-          (ef.id==='awk'||ef.id==='qual'?ef.mOn.toFixed(1):Math.round(ef.mOn))+' vs '+
-          (ef.id==='awk'||ef.id==='qual'?ef.mOff.toFixed(1):Math.round(ef.mOff))+'</span> '+
-        '<b style="color:'+colFor(ef.signo)+'">'+fmtDif(ef)+'</b>'+pTxt+'</span></div>';
+        '<span style="text-align:right;color:#444;font-variant-numeric:tabular-nums">'+_n(ef.mOn)+'</span>'+
+        '<span style="text-align:right;color:#444;font-variant-numeric:tabular-nums">'+_n(ef.mOff)+'</span>'+
+        '<span style="text-align:right"><b style="color:'+_col+'">'+fmtDif(ef)+'</b>'+pTxt+'</span></div>';
     });
-    html+='<div style="font-size:10px;color:var(--label-3);margin-top:5px">'+hb.onTxt+' vs '+hb.offTxt+'</div>';
     html+='</div>';
   });
   html+='</div>';
@@ -8630,8 +8646,9 @@ async function showDiaryTab_(tab){
           return;
         }
         killChart('ds');killChart('dm');killChart('acto');killChart('dp');
-        // Mismo criterio que las metricas y que la vista del profesional.
-        const sorted=dmNochesValidas(entries).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
+        // Se grafican todas las noches con horarios; las que quedan fuera de
+        // los promedios se distinguen por el color, no se esconden.
+        const sorted=[...entries].filter(e=>e.bedtime && e.wake_time).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const weekendRows=sorted.map((e,i)=>{const d=new Date(e.diary_date+'T12:00:00');const isFreeDay=e.day_type==='free';const isWeekend=d.getDay()===0||d.getDay()===6;return(isFreeDay||isWeekend)?i:null;}).filter(i=>i!==null);
         // Noches con período menstrual (marcador en notes)
@@ -8846,18 +8863,32 @@ async function showDiaryTab_(tab){
                     if(r.latency && r.bedOffset!=null){
                       const lx1=xS.getPixelForValue(r.bedOffset);
                       const lx2=xS.getPixelForValue(r.bedOffset + r.latency/60);
-                      cx.fillStyle='rgba(255,255,255,0.72)';
+                      // Se borra el tramo oscuro y se repinta claro, si no
+                      // el verde translucido sobre verde oscuro no se ve.
+                      cx.save(); cx.globalCompositeOperation='destination-out';
+                      cx.fillStyle='#000';
+                      cx.fillRect(lx1+1, _g.y-_g.h/2, Math.max(2,lx2-lx1-1), _g.h);
+                      cx.restore();
+                      cx.fillStyle='rgba(26,74,58,0.22)';
                       cx.fillRect(lx1+1, _g.y-_g.h/2, Math.max(2,lx2-lx1-1), _g.h);
                     }
-                    if(r.getUpOff!=null && r.wakeOff!=null && r.getUpOff>r.wakeOff && (r.getUpOff-r.wakeOff)<=3){
-                      // Tiempo en cama ya despierto/a: barra MÁS FINA y tenue,
-                      // para que no se lea como sueño. Tolerancia 3 h (antes 6 h,
-                      // que con un dato mal cargado estiraba la fila y parecía
-                      // que el paciente dormía hasta el mediodía).
-                      const ux1=xS.getPixelForValue(r.wakeOff);
-                      const ux2=xS.getPixelForValue(r.getUpOff);
-                      cx.fillStyle='rgba(26,74,58,0.18)';
-                      cx.fillRect(ux1+1, _g.y-_g.h*0.22, Math.max(2,ux2-ux1-1), _g.h*0.44);
+                    // ── Despertar final → levantarse ──
+                    // Este tramo es tiempo en cama SIN dormir y clinicamente
+                    // importa (control de estimulos, despertar precoz). Estaba
+                    // dibujado tan fino y tan tenue que no se distinguia, y
+                    // ademas cortado a 3 h: quien se queda 4 h en la cama
+                    // despierto no veia nada. Ahora se dibuja igual que la
+                    // latencia —mismo verde claro, mismo alto que la barra—
+                    // porque son lo mismo: en cama, despierto.
+                    if(r.getUpOff!=null && r.wakeOff!=null){
+                      let _fin=r.getUpOff; if(_fin<r.wakeOff) _fin+=24;   // cruza el mediodia
+                      const _horas=_fin-r.wakeOff;
+                      if(_horas>0 && _horas<=8){
+                        const ux1=xS.getPixelForValue(r.wakeOff);
+                        const ux2=xS.getPixelForValue(_fin);
+                        cx.fillStyle='rgba(26,74,58,0.22)';
+                        cx.fillRect(ux1+1, _g.y-_g.h/2, Math.max(2,ux2-ux1-1), _g.h);
+                      }
                     }
                     if(r.exercise){
                       const hOfDay=EX_HOUR_P2[r.exerciseTime];
@@ -11622,7 +11653,7 @@ async function showDrPTab_(tab){
         '<div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:6px">Copia datos, escalas, diario y cronotipo en texto plano — pegalo en tu historia clínica</div>' +
       '</div>';
 
-      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div><div class="dm-grid2">'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const _mx=(r.max_score||(sc&&sc.max)||0); const pct=_mx?Math.round(r.score/_mx*100):0;const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score || (sc&&sc.max) || '—'}</div>`}</div></div>`;}).join('')+'</div>':'<div class="empty-state">Sin evaluaciones aún</div>')+copyAllBtn;
+      cont.innerHTML=autoNarrative+aHtml+(latest.length?'<div class="sec-title" style="margin-top:14px">Última evaluación por escala</div><div class="dm-grid2 dm-escalas-ultimas">'+latest.map(({sc,r})=>{const i=sc.interp(r.score);const _mx=(r.max_score||(sc&&sc.max)||0); const pct=_mx?Math.round(r.score/_mx*100):0;const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});const isMEQ=sc.id==='meq';const isMCTQ=sc.id==='mctq';const meqPct=isMEQ?Math.round((r.score-19)/(86-19)*100):0;const mctqPct=isMCTQ?Math.round(r.score/48*100):0;const barHtml=isMEQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span></div></div>`:isMCTQ?`<div style="margin-top:4px"><div style="position:relative;height:8px;background:linear-gradient(to right,#22c55e,#86efac,#d4d4d8,#fbbf24,#ef4444);border-radius:4px;overflow:hidden"><div style="position:absolute;top:-2px;left:${mctqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px"><span>Matutino extremo</span><span>Intermedio</span><span>Vespertino extremo</span></div></div>`:`<div class="bar-w"><div class="bar-f" style="width:${pct}%;background:${i.c}"></div></div>`;return`<div class="sc-card" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')" ><div class="sc-icon" style="background:${sc.bg||'#f0fdf4'}">${sc.icon||'📋'}</div><div class="sc-info"><div class="sc-name">${sc.name}</div><div class="sc-desc">${d}</div>${barHtml}</div><div style="text-align:right"><div style="font-size:20px;font-weight:500;color:${i.c}">${r.score}</div>${sc.id==='psqi'?'':`<div style="font-size:11px;color:var(--ink3)">/${r.max_score || (sc&&sc.max) || '—'}</div>`}</div></div>`;}).join('')+'</div>':'<div class="empty-state">Sin evaluaciones aún</div>')+copyAllBtn;
     }else if(tab==='profile'){
       const u=S.viewData;
       const dob=u.dob?new Date(u.dob):null;
@@ -11984,16 +12015,21 @@ async function showDrPTab_(tab){
         // aplicaban otro criterio: por eso el grafico y la tabla hablaban de
         // noches distintas. Ahora usan la misma funcion, y lo que queda afuera
         // se informa debajo del grafico en vez de desaparecer sin explicacion.
-        const sorted=dmNochesValidas(subj)
+        // El actograma dibuja TODAS las noches con horarios: esconder datos es
+        // peor que mostrarlos raros, y el medico necesita ver la noche para
+        // preguntarle al paciente. Lo que no entra en los PROMEDIOS se marca
+        // con borde ambar punteado y se explica en el aviso de abajo.
+        const sorted=[...subj]
+          .filter(e=>e.bedtime && e.wake_time)
           .sort((a,b)=>a.diary_date>b.diary_date?1:-1);
         try{
           const _desc=dmResumenDescartes(subj);
           const _dhs=document.getElementById('dr-habit-summary');
-          if(_dhs && _desc.total>0){
+          if(_dhs && _desc.total>0 && !document.getElementById('dr-acto-descartes')){
             const _av=document.createElement('div');
             _av.id='dr-acto-descartes';
             _av.style.cssText='font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 8px;margin-bottom:6px';
-            _av.textContent='No se grafican '+_desc.total+' noche'+(_desc.total>1?'s':'')+': '+_desc.texto+'. Tampoco entran en las metricas.';
+            _av.textContent='Fuera de los promedios: '+_desc.total+' noche'+(_desc.total>1?'s':'')+' '+_desc.texto+'. Se grafican igual, con borde punteado.';
             _dhs.parentNode.insertBefore(_av,_dhs.nextSibling);
           }
         }catch(_dsc){}
@@ -12001,8 +12037,10 @@ async function showDrPTab_(tab){
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,(w>s?w:w+24)];});
         const drPeriodNights=sorted.filter(e=>/🩸Período/.test(e.notes||'')).length;
-        const drSleepColors=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc');
-        const drSleepBorders=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a');
+        const drFueraProm=sorted.map(e=>!!dmMotivoDescarte(e));
+        const drSleepColors=sorted.map((e,i)=>drFueraProm[i]?'#1a4a3a55':(/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc'));
+        const drSleepBorders=sorted.map((e,i)=>drFueraProm[i]?'#d97706':(/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a'));
+        const drSleepDash=sorted.map((e,i)=>drFueraProm[i]?[4,3]:[]);
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
           const H=Math.max(180,sorted.length*12+80);ctxA.style.height=H+'px';ctxA.height=H;
@@ -12128,7 +12166,7 @@ async function showDrPTab_(tab){
           (function(){try{if(S.charts['dr-acto'])S.charts['dr-acto'].destroy();}catch(_){}})(),S.charts['dr-acto']=new Chart(ctxA,{
             type:'bar',
             data:{labels:actoLabels,datasets:[
-              {label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderRadius:3,grouped:false,borderSkipped:false},
+              {label:'Sueño nocturno',data:sleepBars,backgroundColor:drSleepColors,borderColor:drSleepBorders,borderWidth:1,borderDash:drSleepDash,borderRadius:3,grouped:false,borderSkipped:false},
               {label:'Siesta',data:drNapBars,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false,grouped:false}
               ,{label:'Siesta 2',data:drNapExtra.map(a=>a[0]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false,grouped:false}
               ,{label:'Siesta 3',data:drNapExtra.map(a=>a[1]||null),backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,borderSkipped:false,grouped:false}
@@ -12305,19 +12343,33 @@ async function showDrPTab_(tab){
                     if(r.latency && r.bedOffset!=null){
                       const lx1=xS.getPixelForValue(r.bedOffset);
                       const lx2=xS.getPixelForValue(r.bedOffset + r.latency/60);
-                      cx.fillStyle='rgba(255,255,255,0.72)';
+                      // Se borra el tramo oscuro y se repinta claro, si no
+                      // el verde translucido sobre verde oscuro no se ve.
+                      cx.save(); cx.globalCompositeOperation='destination-out';
+                      cx.fillStyle='#000';
+                      cx.fillRect(lx1+1, _g.y-_g.h/2, Math.max(2,lx2-lx1-1), _g.h);
+                      cx.restore();
+                      cx.fillStyle='rgba(26,74,58,0.22)';
                       cx.fillRect(lx1+1, _g.y-_g.h/2, Math.max(2,lx2-lx1-1), _g.h);
                     }
                     // Despertar final → levantarse: prolongación tenue del otro lado
-                    if(r.getUpOff!=null && r.wakeOff!=null && r.getUpOff>r.wakeOff && (r.getUpOff-r.wakeOff)<=3){
-                      // Tiempo en cama ya despierto/a: barra MÁS FINA y tenue,
-                      // para que no se lea como sueño. Tolerancia 3 h (antes 6 h,
-                      // que con un dato mal cargado estiraba la fila y parecía
-                      // que el paciente dormía hasta el mediodía).
-                      const ux1=xS.getPixelForValue(r.wakeOff);
-                      const ux2=xS.getPixelForValue(r.getUpOff);
-                      cx.fillStyle='rgba(26,74,58,0.18)';
-                      cx.fillRect(ux1+1, _g.y-_g.h*0.22, Math.max(2,ux2-ux1-1), _g.h*0.44);
+                    // ── Despertar final → levantarse ──
+                    // Este tramo es tiempo en cama SIN dormir y clinicamente
+                    // importa (control de estimulos, despertar precoz). Estaba
+                    // dibujado tan fino y tan tenue que no se distinguia, y
+                    // ademas cortado a 3 h: quien se queda 4 h en la cama
+                    // despierto no veia nada. Ahora se dibuja igual que la
+                    // latencia —mismo verde claro, mismo alto que la barra—
+                    // porque son lo mismo: en cama, despierto.
+                    if(r.getUpOff!=null && r.wakeOff!=null){
+                      let _fin=r.getUpOff; if(_fin<r.wakeOff) _fin+=24;   // cruza el mediodia
+                      const _horas=_fin-r.wakeOff;
+                      if(_horas>0 && _horas<=8){
+                        const ux1=xS.getPixelForValue(r.wakeOff);
+                        const ux2=xS.getPixelForValue(_fin);
+                        cx.fillStyle='rgba(26,74,58,0.22)';
+                        cx.fillRect(ux1+1, _g.y-_g.h/2, Math.max(2,ux2-ux1-1), _g.h);
+                      }
                     }
                     if(layers.exercise && r.exercise){
                       const hOfDay=EX_HOUR[r.exerciseTime];
