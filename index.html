@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod80">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod81">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod80"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod81"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod80';
+const APP_VERSION='hoy75-mod81';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4547,9 +4547,9 @@ function dmResumenDescartes(entries){
   const c={};
   (entries||[]).forEach(e=>{ const m=dmMotivoDescarte(e); if(m) c[m]=(c[m]||0)+1; });
   const txt={sin_horarios:'sin horarios cargados', importada:'importadas de otra app',
-             menos_de_1h:'de menos de 1 h', duracion_inverosimil:'con horarios inverosimiles (posible AM/PM invertido)',
+             menos_de_1h:'de menos de 1 h', duracion_inverosimil:'de mas de 14 h entre acostarse y despertar',
              vacio:'vacias'};
-  const partes=Object.keys(c).map(k=>c[k]+' '+(txt[k]||k));
+  const partes=Object.keys(c).map(k=>c[k]+(c[k]>1?' noches ':' noche ')+(txt[k]||k));
   return { total:Object.keys(c).reduce((a,k)=>a+c[k],0), texto:partes.join(' · ') };
 }
 
@@ -11952,6 +11952,7 @@ async function showDrPTab_(tab){
             <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
             <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
             <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
+            <span id="dr-acto-revisar-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(217,119,6,0.13);border:1.5px dashed #d97706;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Horarios a revisar — no entra en los promedios</span>
             <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
             <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
             <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(to right,rgba(26,74,58,0.25),#1a4a3a,rgba(26,74,58,0.25));border-radius:2px;margin-right:3px;vertical-align:middle"></span>Tramos tenues: en cama sin dormir (latencia / antes de levantarse)</span>
@@ -12029,7 +12030,7 @@ async function showDrPTab_(tab){
             const _av=document.createElement('div');
             _av.id='dr-acto-descartes';
             _av.style.cssText='font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 8px;margin-bottom:6px';
-            _av.textContent='Fuera de los promedios: '+_desc.total+' noche'+(_desc.total>1?'s':'')+' '+_desc.texto+'. Se grafican igual, con borde punteado.';
+            _av.textContent='Borde punteado ambar: '+_desc.texto+'. Se grafican, pero no entran en los promedios ni en las comparaciones.';
             _dhs.parentNode.insertBefore(_av,_dhs.nextSibling);
           }
         }catch(_dsc){}
@@ -12038,7 +12039,7 @@ async function showDrPTab_(tab){
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,(w>s?w:w+24)];});
         const drPeriodNights=sorted.filter(e=>/🩸Período/.test(e.notes||'')).length;
         const drFueraProm=sorted.map(e=>!!dmMotivoDescarte(e));
-        const drSleepColors=sorted.map((e,i)=>drFueraProm[i]?'#1a4a3a55':(/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc'));
+        const drSleepColors=sorted.map((e,i)=>drFueraProm[i]?'rgba(217,119,6,0.13)':(/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc'));
         const drSleepBorders=sorted.map((e,i)=>drFueraProm[i]?'#d97706':(/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a'));
         const drSleepDash=sorted.map((e,i)=>drFueraProm[i]?[4,3]:[]);
         const ctxA=document.getElementById('dr-acto-chart');
@@ -12145,6 +12146,7 @@ async function showDrPTab_(tab){
           if(drPeriodNights>0){ const dpl=document.getElementById('dr-acto-period-legend'); if(dpl) dpl.style.display='inline'; }
           // Mostrar leyenda "Día libre" solo si hay datos
           const dfl=document.getElementById('dr-acto-freeday-legend'); if(dfl) dfl.style.display = drWeekendRows.length>0?'inline':'none';
+          const drl=document.getElementById('dr-acto-revisar-legend'); if(drl) drl.style.display = drFueraProm.some(Boolean)?'inline':'none';
           // Hábitos por noche (ejercicio/cafeína/alcohol/pantallas) — se dibujan
           // en un margen a la derecha del actograma, fila por fila, con la MISMA
           // fila que usa el bloque de sueño (mismo array "sorted", mismo índice),
@@ -17554,12 +17556,12 @@ function renderMedInline(){
   let html = '';
   cats.forEach(cat=>{
     const meds = COMMON_MEDS.filter(m=>m.cat===cat);
-    html += '<div style="font-size:10px;color:var(--label-3);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:8px 0 4px">'+cat+'</div>';
+    html += '<div class="dm-med-cat">'+cat+'</div>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px">';
     meds.forEach(m=>{
       const active = _medModalMeds.some(x=>x.name===m.name);
       const safeN = m.name.replace(/'/g,"\'");
-      html += `<button type="button" onclick="toggleInlineMed('${safeN}')" style="padding:7px 12px;border-radius:20px;font-size:13px;cursor:pointer;font-family:var(--font);border:1.5px solid ${active?'#1a4a3a':'var(--sep-opaque)'};background:${active?'#1a4a3a':'var(--bg-secondary)'};color:${active?'#fff':'var(--label)'}">${m.name}</button>`;
+      html += `<button type="button" onclick="toggleInlineMed('${safeN}')" class="dm-med-chip${active?' on':''}">${m.name}</button>`;
     });
     html += '</div>';
   });

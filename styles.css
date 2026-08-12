@@ -699,8 +699,36 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 .dm-escalas-ultimas [style*="color:#d97706"],
 .dm-escalas-ultimas [style*="color:#991b1b"],
 .dm-escalas-ultimas [style*="color:#14532d"]{
-  text-shadow: 0 1px 3px rgba(0,0,0,.75), 0 0 1px rgba(0,0,0,.9);
+  /* Halo blanco muy sutil. La sombra NEGRA que habia aca apagaba el color en
+     vez de despegarlo: sobre verde oscuro lo que hace falta es un borde de
+     luz alrededor del rojo o del verde, no mas oscuridad. */
+  text-shadow: 0 0 3px rgba(255,255,255,.40);
   font-weight: 600;
+}
+
+/* ══ CHIPS DE MEDICACION ═════════════════════════════════════════════
+   Estaban escritos con var(--label) y var(--bg-secondary) en el style
+   inline. Dentro de las pantallas oscuras hay reglas globales que pisan
+   var(--label) con blanco !important, y como la tarjeta del diario es
+   BLANCA el paciente veia botones vacios: texto blanco sobre blanco, sin
+   poder cargar la medicacion. Con colores propios el problema no puede
+   volver, porque ya no dependen de una variable que otra regla reescribe. */
+.dm-med-chip{
+  padding:7px 12px; border-radius:20px; font-size:13px; cursor:pointer;
+  font-family:var(--font);
+  border:1.5px solid #cfd8d3;
+  background:#ffffff;
+  color:#10231c !important;
+}
+.dm-med-chip.on{
+  border-color:#1a4a3a;
+  background:#1a4a3a;
+  color:#ffffff !important;
+}
+.dm-med-cat{
+  font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.05em; margin:8px 0 4px;
+  color:#6b7c74 !important;
 }
 
 /* ══ RED DE SEGURIDAD DE CONTRASTE ═══════════════════════════════════
