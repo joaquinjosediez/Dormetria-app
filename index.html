@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod81">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod82">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod81"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod82"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod81';
+const APP_VERSION='hoy75-mod82';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2823,6 +2823,25 @@ function showScreen(id){
     if(scrollEl) scrollEl.scrollTop=0;
   }
   window.scrollTo(0,0);
+  try{ dmRedibujarGraficos(); }catch(_){}
+}
+
+// Vuelve a medir y redibujar todo grafico que se haya creado mientras su
+// pantalla estaba oculta. Se llama dos veces: en el frame siguiente y a los
+// 250 ms, porque en celular el layout puede tardar en asentarse.
+function dmRedibujarGraficos(){
+  const paso=()=>{
+    try{
+      Object.keys((typeof S!=='undefined' && S.charts) || {}).forEach(function(k){
+        const ch=S.charts[k];
+        if(!ch || !ch.canvas) return;
+        const cont=ch.canvas.parentNode;
+        if(cont && cont.offsetWidth>0){ try{ ch.resize(); }catch(_){} }
+      });
+    }catch(_){}
+  };
+  if(typeof requestAnimationFrame==='function') requestAnimationFrame(paso); else paso();
+  setTimeout(paso, 250);
 }
 function adminReApprove(email){
   const rejected=JSON.parse(localStorage.getItem('dm_rejected_doctors')||'{}');
@@ -4635,6 +4654,12 @@ function updateClinicalMetrics(entries){
   const el = document.getElementById('diary-clinical-metrics');
   if(!el) return;
   el.innerHTML = renderClinicalMetricsHtml(entries);
+  // Comparativas con/sin cada habito. Devuelve '' si no hay noches suficientes,
+  // asi que no hace falta condicionar nada aca.
+  try{
+    const _hi = (typeof renderHabitsImpactHtml==='function') ? renderHabitsImpactHtml(entries) : '';
+    if(_hi) el.insertAdjacentHTML('beforeend', _hi);
+  }catch(_e){ console.warn('[habitos paciente]', _e); }
 }
 
 // HTML reutilizable de métricas (paciente y médico).
@@ -5081,6 +5106,37 @@ function renderHabitsImpactHtml(entries){
   });
   html+='</div>';
   return html;
+}
+
+// ── Comentarios que escribe el paciente en el diario ──
+// El campo `notes` guarda, ademas del texto libre, marcadores internos que la
+// app usa para reconstruir el formulario ("Siestas: [...]", "Importado",
+// "\ud83e\ude78Periodo"). Hay que sacarlos antes de mostrar, si no el medico lee ruido.
+function dmLimpiarNota(n){
+  let t=String(n||'');
+  t=t.replace(/Siestas?:\s*\[[^\]]*\]/g,'');
+  t=t.replace(/Siesta: \d{2}:\d{2}(?: \d+min)?/g,'');
+  t=t.replace(/\ud83e\ude78\s*Per[ií]odo/g,'');
+  t=t.split('|').map(s=>s.trim()).filter(Boolean).join(' · ');
+  return t.trim();
+}
+function renderNotasPacienteHtml(entries){
+  const con=(entries||[])
+    .filter(e=>e && e.notes && !String(e.notes).startsWith('Importado'))
+    .map(e=>({fecha:e.diary_date, txt:dmLimpiarNota(e.notes)}))
+    .filter(x=>x.txt.length>1)
+    .sort((a,b)=>a.fecha<b.fecha?1:-1);
+  if(!con.length) return '';
+  const fmt=f=>{ try{ return new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'short'}); }catch(_){ return f; } };
+  return '<div class="dm-card" style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px">'+
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Comentarios del paciente'+
+      '<span style="font-weight:400;color:var(--label-3)"> · '+con.length+' noche'+(con.length>1?'s':'')+'</span></div>'+
+    '<div style="font-size:11px;color:var(--label-3);margin-bottom:8px">Texto libre del diario. Puede traer sintomas que ninguna metrica captura.</div>'+
+    con.map(x=>'<div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid #f0eee9;font-size:12px">'+
+        '<span style="color:var(--label-3);white-space:nowrap;min-width:52px">'+fmt(x.fecha)+'</span>'+
+        '<span style="color:#3f3f46;line-height:1.45">'+String(x.txt).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>'+
+      '</div>').join('')+
+    '</div>';
 }
 
 function renderClinicalMetricsHtml(entries, audience, ageYears){
@@ -9333,7 +9389,7 @@ function showDiaryNew(){
     <!-- Tipo de día: autodetectado por día de la semana, editable -->
     <div style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <label class="form-label" style="margin:0">Tipo de día</label>
+        <label class="form-label" style="margin:0">Tipo de día · <span style="font-weight:400;opacity:.75">el de AYER</span></label>
         <span id="d-daytype-auto-badge" style="font-size:10.5px;color:#1a4a3a;background:#dcfce7;padding:2px 8px;border-radius:10px;font-weight:600">Detectado automáticamente</span>
       </div>
       <div style="display:flex;gap:10px">
@@ -9388,15 +9444,7 @@ function showDiaryNew(){
     <div id="awakening-section" style="display:none"><div id="awakening-list"></div><button class="btn btn-s" style="width:auto;padding:8px 14px;font-size:13px;margin-bottom:12px" onclick="addAwakening()">+ Agregar despertar</button></div>
     </div>
     <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Siesta</div>
-    <div style="display:flex;gap:10px;margin-bottom:10px">
-      <button id="nap-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(false)">No dormí siesta</button>
-      <button id="nap-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(true)">Dormí siesta</button>
-    </div>
-    <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div></div>
-    </div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Calidad del sueño</div>
+    <div class="sec-title" style="margin-top:0">Calidad del sueño de anoche</div>
     <div class="emoji-row">
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy mal</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="2">😕<div style="font-size:9px;color:var(--ink3);margin-top:2px">Mal</div></button>
@@ -9404,6 +9452,14 @@ function showDiaryNew(){
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="4">🙂<div style="font-size:9px;color:var(--ink3);margin-top:2px">Bien</div></button>
       <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="5">😊<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy bien</div></button>
     </div><input type="hidden" id="d-qual" value="">
+    </div>
+    <div class="dm-diary-block">
+    <div class="sec-title" style="margin-top:0">Siesta de ayer</div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <button id="nap-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(false)">No dormí siesta</button>
+      <button id="nap-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(true)">Dormí siesta</button>
+    </div>
+    <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div></div>
     </div>
     <div class="dm-diary-block">
     <div class="sec-title" style="margin-top:0">Cómo te sentiste al despertar</div>
@@ -9426,7 +9482,7 @@ function showDiaryNew(){
     </div><input type="hidden" id="d-energy" value="">
     </div>
     <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Actividad física 🏃</div>
+    <div class="sec-title" style="margin-top:0">Actividad física de ayer 🏃</div>
     <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
       <div style="flex:1">
         <label class="form-label">Duración</label>
@@ -11978,6 +12034,10 @@ async function showDrPTab_(tab){
             const _hi=renderHabitsImpactHtml(subj);
             if(_hi){ dme.insertAdjacentHTML('beforeend', _hi); }
           }catch(_e){ console.warn('[habitos]', _e); }
+          try{
+            const _nt=renderNotasPacienteHtml(subj);
+            if(_nt){ dme.insertAdjacentHTML('beforeend', _nt); }
+          }catch(_e){ console.warn('[notas diario]', _e); }
         }
         // Progresión semanal (movida desde Resumen)
         const _wpEl=document.getElementById('dr-weekly-prog');
@@ -17556,12 +17616,12 @@ function renderMedInline(){
   let html = '';
   cats.forEach(cat=>{
     const meds = COMMON_MEDS.filter(m=>m.cat===cat);
-    html += '<div class="dm-med-cat">'+cat+'</div>';
+    html += '<div class="dm-med-cat" style="font-size:10px;color:#6b7c74;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:8px 0 4px">'+cat+'</div>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px">';
     meds.forEach(m=>{
       const active = _medModalMeds.some(x=>x.name===m.name);
       const safeN = m.name.replace(/'/g,"\'");
-      html += `<button type="button" onclick="toggleInlineMed('${safeN}')" class="dm-med-chip${active?' on':''}">${m.name}</button>`;
+      html += `<button type="button" onclick="toggleInlineMed('${safeN}')" class="dm-med-chip${active?' on':''}" style="padding:7px 12px;border-radius:20px;font-size:13px;cursor:pointer;font-family:var(--font);border:1.5px solid ${active?'#1a4a3a':'#cfd8d3'};background:${active?'#1a4a3a':'#ffffff'};color:${active?'#ffffff':'#10231c'}">${m.name}</button>`;
     });
     html += '</div>';
   });
