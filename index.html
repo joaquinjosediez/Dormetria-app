@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod82">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod84">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod82"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod84"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod82';
+const APP_VERSION='hoy75-mod84';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4961,6 +4961,67 @@ function computeHabitsImpact(entries){
       on:e=>e.has_period===true || /🩸Período/.test(String(e.notes||'')),
       onTxt:'con menstruación', offTxt:'resto del ciclo' }
   ];
+
+  // ── Fase premenstrual ────────────────────────────────────────────────
+  // La comparación de arriba mide los días CON sangrado. El sueño de la fase
+  // lútea tardía —los días previos— se altera por otro mecanismo: la caída de
+  // progesterona y el ascenso de la temperatura basal, no el sangrado. Un
+  // patrón puede estar presente y el otro no, y medidos juntos se diluyen.
+  // Por eso van como dos factores separados.
+  // Ventana de 5 días: es la que usa el DSM-5 para el trastorno disfórico
+  // premenstrual ("la semana previa al inicio de la menstruación").
+  var DM_DIAS_PREMENSTRUAL = 5;
+  var _esPeriodo = function(e){ return e.has_period===true || /🩸Período/.test(String(e.notes||'')); };
+  var _preSet = new Set();
+  try{
+    var _ord = E.filter(function(e){ return e.diary_date; })
+                .slice().sort(function(x,y){ return x.diary_date<y.diary_date?-1:1; });
+    var _porFecha = {};
+    _ord.forEach(function(e){ _porFecha[e.diary_date]=e; });
+    var _difDias = function(a,b){ return Math.round((new Date(a+'T12:00:00') - new Date(b+'T12:00:00'))/86400000); };
+    var _fechaMenos = function(f,d){
+      var x=new Date(f+'T12:00:00'); x.setDate(x.getDate()-d);
+      return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+    };
+    // Inicio de menstruación = primer día con sangrado cuyo registro anterior
+    // NO tenía. Se tolera un hueco de hasta 3 días para no inventar un ciclo
+    // nuevo cada vez que la paciente se saltea una noche.
+    _ord.forEach(function(e,i){
+      if(!_esPeriodo(e)) return;
+      var prev=_ord[i-1];
+      if(!prev) return;
+      if(_difDias(e.diary_date, prev.diary_date) > 3) return;
+      if(_esPeriodo(prev)) return;
+      for(var d=1; d<=DM_DIAS_PREMENSTRUAL; d++){
+        var k=_fechaMenos(e.diary_date, d);
+        var n=_porFecha[k];
+        if(n && !_esPeriodo(n)) _preSet.add(k);   // el sangrado nunca cuenta como "previo"
+      }
+    });
+  }catch(_pm){}
+  if(_preSet.size){
+    // Los dos factores tienen que ser MUTUAMENTE EXCLUYENTES. Si los dias
+    // previos quedan dentro del "resto del ciclo" de la menstruacion, y son
+    // peores, la menstruacion aparece asociada a MEJOR sueno solo por
+    // contraste con ellos. Probado: daba +17 min con p=0,001 sobre datos
+    // donde el sangrado no cambiaba nada. Asi que se sacan de ese grupo.
+    var _hPeriod = habitos.filter(function(x){ return x.id==='period'; })[0];
+    if(_hPeriod){
+      var _hasPeriodOrig = _hPeriod.has;
+      _hPeriod.has = function(e){ return _hasPeriodOrig(e) && !_preSet.has(e.diary_date); };
+      _hPeriod.offTxt = 'resto del ciclo (sin los previos)';
+      _hPeriod.nota = 'Los ' + DM_DIAS_PREMENSTRUAL + ' dias previos al sangrado se analizan aparte y quedan fuera de esta comparacion, para que no se mezclen los dos efectos.';
+    }
+    habitos.push({
+      id:'premenstrual', label:'Días previos a la menstruación', icon:'🌙', fisiologico:true,
+      // Los días CON sangrado quedan fuera de los DOS grupos: si entraran al
+      // de comparación, el efecto de la menstruación se colaría acá.
+      has:function(e){ return !_esPeriodo(e); },
+      on:function(e){ return _preSet.has(e.diary_date); },
+      onTxt:'5 días previos', offTxt:'resto del ciclo',
+      nota:'Ventana de '+DM_DIAS_PREMENSTRUAL+' días antes de cada inicio de menstruación, con los días de sangrado excluidos de ambos grupos. Una diferencia acá orienta a fase lútea tardía; no alcanza para hablar de síndrome premenstrual ni de TDPM, que requieren registro prospectivo de síntomas durante dos ciclos.'
+    });
+  }
   // Variables de salida. dirGood indica si SUBIR es mejor (+1) o peor (-1).
   const salidas=[
     { id:'tst',   label:'Sueño total',        unit:'min', dirGood:+1, val:e=>e.sleep_minutes },
@@ -5026,6 +5087,7 @@ function computeHabitsImpact(entries){
       veredicto = suma>0?'positivo' : suma<0?'negativo' : 'mixto';
     }
     out.push({ id:hb.id, label:hb.label, icon:hb.icon, onTxt:hb.onTxt, offTxt:hb.offTxt,
+               nota:hb.nota||null,
                fisiologico:!!hb.fisiologico, personal:!!hb.personal, preliminar:_preliminar,
                nOn:on.length, nOff:off.length, efectos, veredicto });
   });
@@ -5102,6 +5164,9 @@ function renderHabitsImpactHtml(entries){
         '<span style="text-align:right;color:#444;font-variant-numeric:tabular-nums">'+_n(ef.mOff)+'</span>'+
         '<span style="text-align:right"><b style="color:'+_col+'">'+fmtDif(ef)+'</b>'+pTxt+'</span></div>';
     });
+    if(hb.nota){
+      html+='<div style="font-size:10.5px;color:#6b6b76;line-height:1.5;margin-top:7px;padding-top:6px;border-top:1px solid #f0eee9">'+hb.nota+'</div>';
+    }
     html+='</div>';
   });
   html+='</div>';
