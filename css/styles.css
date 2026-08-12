@@ -643,8 +643,8 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 /* ── SECTION HEADERS (iOS grouped style) ── */
 .section{padding:24px 16px 0;}
 .sec-title{
-  font-size:13px;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.04em;color:var(--label-2);
+  font-size:14.5px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.03em;color:var(--label-2);
   margin-bottom:8px;padding:0 4px;
 }
 
@@ -687,23 +687,37 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
    para fondo blanco. Sobre el verde oscuro del panel pierden contraste y
    los números casi no se leen. Una sombra oscura detrás los despega sin
    cambiar el color, que es lo que codifica la información. */
-/* El selector anterior era `#screen-doctor-patient [style*="color:#dc2626"]`:
-   alcanzaba TODO rojo y verde de la ficha, incluidos los que estan dentro de
-   tarjetas blancas (hallazgos principales, metricas, graficos), donde la
-   sombra no hace falta y ensucia. Solo hace falta donde el numero de color
-   cae directamente sobre el verde oscuro del panel: las tarjetas de
-   "Ultima evaluacion por escala". */
+/* ══ ROJOS Y VERDES SOBRE EL VERDE OSCURO ════════════════════════════
+   Tercer intento, y las dos versiones anteriores fallaron por lo mismo:
+   usaban desenfoque. Un halo difuminado alrededor de una letra chica le come
+   el filo y la deja MENOS legible, no mas. Lo que funciona es una copia
+   solida del mismo texto, corrida un pixel, que actua como sombra proyectada
+   y le devuelve el borde.
+   El alcance tambien estaba mal: primero pegaba en todos lados —incluidas
+   las tarjetas blancas, donde no hace falta— y despues solo en las escalas.
+   Ahora vale en toda la ficha y se apaga adentro de cualquier caja clara. */
 .dm-num-clinico,
-.dm-escalas-ultimas [style*="color:#dc2626"],
-.dm-escalas-ultimas [style*="color:#16a34a"],
-.dm-escalas-ultimas [style*="color:#d97706"],
-.dm-escalas-ultimas [style*="color:#991b1b"],
-.dm-escalas-ultimas [style*="color:#14532d"]{
-  /* Halo blanco muy sutil. La sombra NEGRA que habia aca apagaba el color en
-     vez de despegarlo: sobre verde oscuro lo que hace falta es un borde de
-     luz alrededor del rojo o del verde, no mas oscuridad. */
-  text-shadow: 0 0 3px rgba(255,255,255,.40);
+#screen-doctor-patient [style*="color:#dc2626"],
+#screen-doctor-patient [style*="color:#16a34a"],
+#screen-doctor-patient [style*="color:#d97706"],
+#screen-doctor-patient [style*="color:#991b1b"],
+#screen-doctor-patient [style*="color:#14532d"],
+#screen-doctor-patient [style*="color:#ea580c"],
+#screen-doctor-patient [style*="color:#2d9e6b"]{
+  text-shadow: 1px 1px 0 rgba(4,17,13,.85);
   font-weight: 600;
+}
+
+/* Adentro de una tarjeta clara la sombra sobra: ahi el contraste ya existe. */
+#screen-doctor-patient [style*="background:#fff"] [style*="color:"],
+#screen-doctor-patient [style*="background: #fff"] [style*="color:"],
+#screen-doctor-patient [style*="background:#ffffff"] [style*="color:"],
+#screen-doctor-patient [style*="background:white"] [style*="color:"],
+#screen-doctor-patient [style*="background:var(--card)"] [style*="color:"],
+#screen-doctor-patient .dm-card [style*="color:"],
+#screen-doctor-patient .caja-clara [style*="color:"],
+#screen-doctor-patient .sobre-claro [style*="color:"]{
+  text-shadow: none;
 }
 
 /* ══ CHIPS DE MEDICACION ═════════════════════════════════════════════
@@ -1005,8 +1019,11 @@ input, select, textarea{ color: inherit; }
   margin:18px 0 8px;padding:0;
 }
 #screen-diary-new .form-group{ margin-bottom:12px; }
+/* 9,5 px es ilegible a los 70 anios, y este formulario lo completa gente de
+   esa edad todas las mananas. Sube a 12 y baja el interletrado, que a tamanio
+   chico dispersa mas de lo que ayuda. */
 #screen-diary-new .form-label{
-  color:rgba(244,239,229,0.5);font-size:9.5px;letter-spacing:0.07em;margin-bottom:5px;
+  color:rgba(244,239,229,0.62);font-size:12px;letter-spacing:0.045em;margin-bottom:6px;
 }
 #screen-diary-new .form-input,
 #screen-diary-new .form-select{
@@ -1014,8 +1031,12 @@ input, select, textarea{ color: inherit; }
   color:#F4EFE5;
   box-shadow:inset 0 0 0 1px rgba(126,200,164,0.14);
   border-radius:12px;
-  font-size:16px;
-  padding:12px 14px;
+  font-size:17px;
+  /* Misma altura para el campo de hora y el desplegable de latencia: estaban
+     uno al lado del otro con tamanios distintos y parecian cosas distintas. */
+  padding:13px 14px;
+  height:52px;
+  box-sizing:border-box;
 }
 #screen-diary-new .form-input:focus,
 #screen-diary-new .form-select:focus{

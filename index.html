@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod84">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod85">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod84"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod85"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod84';
+const APP_VERSION='hoy75-mod85';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5335,18 +5335,21 @@ function setDayType(t,btn,manual){
   const _dti=document.getElementById('d-daytype');if(_dti)_dti.value=t;
   const wk=document.getElementById('d-daytype-work');
   const fr=document.getElementById('d-daytype-free');
-  if(wk){
-    wk.style.background=t==='work'?'#1a4a3a':'transparent';
-    wk.style.color=t==='work'?'#fff':'var(--ink)';
-    wk.style.borderColor=t==='work'?'#1a4a3a':'var(--border)';
-    wk.style.fontWeight=t==='work'?'600':'500';
-  }
-  if(fr){
-    fr.style.background=t==='free'?'#e67e22':'transparent';
-    fr.style.color=t==='free'?'#fff':'var(--ink)';
-    fr.style.borderColor=t==='free'?'#e67e22':'var(--border)';
-    fr.style.fontWeight=t==='free'?'600':'500';
-  }
+  const _pintar=(el,activo,colorFondo,colorTexto,colorBorde)=>{
+    if(!el) return;
+    el.style.background = activo ? colorFondo : 'transparent';
+    el.style.color      = activo ? colorTexto : 'rgba(244,239,229,0.72)';
+    el.style.borderColor= activo ? colorBorde : 'rgba(244,239,229,0.22)';
+    el.style.fontWeight = activo ? '700' : '500';
+    el.style.boxShadow  = activo ? '0 0 0 3px rgba(126,200,164,0.18)' : 'none';
+    // El tilde es la señal que se lee sin depender del color, que es lo que
+    // hace falta para quien distingue mal los verdes.
+    const base = el.getAttribute('data-base') || el.textContent.replace(/^✓\s*/,'');
+    el.setAttribute('data-base', base);
+    el.textContent = (activo ? '✓ ' : '') + base;
+  };
+  _pintar(wk, t==='work', '#d8ece1', '#0f2b22', '#7ec8a4');
+  _pintar(fr, t==='free', '#fbe3cd', '#7c3f0a', '#e67e22');
   // Si el usuario tocó un botón, oculto el badge "detectado automáticamente"
   if(manual){
     const badge=document.getElementById('d-daytype-auto-badge');
@@ -7471,7 +7474,7 @@ function renderScaleCard(sc, records, isGASQ){
         <div style="position:relative;height:8px;background:linear-gradient(to right,#6366f1,#a78bfa,#d4d4d8,#86efac,#22c55e);border-radius:4px;overflow:hidden">
           <div style="position:absolute;top:-2px;left:${meqPct}%;transform:translateX(-50%);width:3px;height:12px;background:#111;border-radius:2px"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--ink3);margin-top:2px">
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink3);margin-top:2px">
           <span>Vespertino extremo</span><span>Intermedio</span><span>Matutino extremo</span>
         </div>
       </div>`;
@@ -9374,6 +9377,13 @@ async function editDiaryEntry(id){
       }
       const exT=document.getElementById('d-exercise-time');
       if(exT && e.exercise_time) exT.value=e.exercise_time;
+      if(e.energy_afternoon!=null && typeof selEmojiVal==='function') selEmojiVal('d-energy-pm', e.energy_afternoon);
+      else if(e.energy_afternoon!=null){
+        const _ep=document.getElementById('d-energy-pm'); if(_ep) _ep.value=String(e.energy_afternoon);
+        document.querySelectorAll('[onclick*="d-energy-pm"]').forEach(b=>{
+          if(b.getAttribute('data-val')===String(e.energy_afternoon)) b.classList.add('sel');
+        });
+      }
       // Pantallas
       const scrEl=document.getElementById('d-screen');
       if(scrEl && e.screen_minutes!=null) scrEl.value=e.screen_minutes;
@@ -9470,8 +9480,8 @@ function showDiaryNew(){
       <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
       <div class="form-group">
         <label class="form-label">¿Cuánto tardé en dormirme? <span style="color:#dc2626">*</span></label>
-        <select class="form-select" id="d-latency" style="height:44px">
-          <option value="">Seleccioná...</option>
+        <select class="form-select" id="d-latency">
+          <option value=""></option>
           <option value="3">&lt;5 min</option>
           <option value="10">5–15 min</option>
           <option value="22">15–30 min</option>
@@ -9511,11 +9521,11 @@ function showDiaryNew(){
     <div class="dm-diary-block">
     <div class="sec-title" style="margin-top:0">Calidad del sueño de anoche</div>
     <div class="emoji-row">
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy mal</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="2">😕<div style="font-size:9px;color:var(--ink3);margin-top:2px">Mal</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="3">😐<div style="font-size:9px;color:var(--ink3);margin-top:2px">Regular</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="4">🙂<div style="font-size:9px;color:var(--ink3);margin-top:2px">Bien</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="5">😊<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy bien</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Muy mal</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="2">😕<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Mal</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="3">😐<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Regular</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="4">🙂<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Bien</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="5">😊<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Muy bien</div></button>
     </div><input type="hidden" id="d-qual" value="">
     </div>
     <div class="dm-diary-block">
@@ -9531,20 +9541,28 @@ function showDiaryNew(){
     <div style="font-size:11.5px;color:rgba(244,239,229,0.55);line-height:1.5;margin:-4px 0 10px">Referido al momento de levantarte hoy, no al día de ayer. Así se mide cómo repercutió <em>esta</em> noche.</div>
     <label class="form-label">Estado de ánimo al despertar</label>
     <div class="emoji-row">
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="1">😫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Muy bajo</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="2">😕<div style="font-size:9px;color:var(--ink3);margin-top:2px">Bajo</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="3">😐<div style="font-size:9px;color:var(--ink3);margin-top:2px">Neutro</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="4">🙂<div style="font-size:9px;color:var(--ink3);margin-top:2px">Bueno</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="5">😊<div style="font-size:9px;color:var(--ink3);margin-top:2px">Excelente</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="1">😫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Muy bajo</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="2">😕<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Bajo</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="3">😐<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Neutro</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="4">🙂<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Bueno</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="5">😊<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Excelente</div></button>
     </div><input type="hidden" id="d-mood" value="">
     <label class="form-label" style="margin-top:14px">Energía al despertar</label>
     <div class="emoji-row">
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="1">🪫<div style="font-size:9px;color:var(--ink3);margin-top:2px">Sin energía</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="2">😴<div style="font-size:9px;color:var(--ink3);margin-top:2px">Poca</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="3">⚡<div style="font-size:9px;color:var(--ink3);margin-top:2px">Moderada</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="4">⚡⚡<div style="font-size:9px;color:var(--ink3);margin-top:2px">Buena</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="5">🔥<div style="font-size:9px;color:var(--ink3);margin-top:2px">Mucha</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="1">🪫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Sin energía</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="2">😴<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Poca</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="3">⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Moderada</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="4">⚡⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Buena</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="5">🔥<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Mucha</div></button>
     </div><input type="hidden" id="d-energy" value="">
+    <label class="form-label" style="margin-top:14px">Energía a media tarde <span style="font-size:11px;font-weight:400;opacity:.75;display:block;margin-top:2px;letter-spacing:0">Entre las 14 y las 17 de AYER</span></label>
+    <div class="emoji-row">
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="1">🪫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Sin energía</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="2">😴<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Poca</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="3">⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Moderada</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="4">⚡⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Buena</div></button>
+      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="5">🔥<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Mucha</div></button>
+    </div><input type="hidden" id="d-energy-pm" value="">
     </div>
     <div class="dm-diary-block">
     <div class="sec-title" style="margin-top:0">Actividad física de ayer 🏃</div>
@@ -9656,12 +9674,34 @@ async function saveDiary(){
   if(!date){toast('Completá la fecha');return;}
   const bed=document.getElementById('d-bed')?.value||null;
   const wake=document.getElementById('d-wake')?.value||null;
+  // ── Control de AM/PM ──
+  // El selector de hora del celular ofrece 6:00 AM y 6:00 PM pegados. Elegir
+  // el de la tarde da un tramo de 19 h en cama en vez de 7 h: doce horas
+  // exactas de diferencia. Es el error mas frecuente y silencioso del diario,
+  // y arrastra el promedio de sueño de la persona por horas. Se pregunta en
+  // el momento, que es cuando ella todavia se acuerda de la respuesta.
+  if(bed && wake){
+    const [_bh,_bm]=bed.split(':').map(Number);
+    const [_wh,_wm]=wake.split(':').map(Number);
+    let _tib=(_wh*60+_wm)-(_bh*60+_bm); if(_tib<0) _tib+=1440;
+    if(_tib > 14*60){
+      const _hs=Math.floor(_tib/60), _mm=_tib%60;
+      const _alt=String((_wh+12)%24).padStart(2,'0')+':'+String(_wm).padStart(2,'0');
+      const ok = confirm(
+        'Anotaste que te acostaste a las '+bed+' y te despertaste a las '+wake+'.\n'+
+        'Eso son '+_hs+' h '+(_mm?_mm+' min ':'')+'en la cama.\n\n'+
+        '¿Seguro que fue a las '+wake+' y no a las '+_alt+'?\n\n'+
+        'Aceptar = lo dejo como esta.  Cancelar = vuelvo a corregirlo.');
+      if(!ok){ const _w=document.getElementById('d-wake'); if(_w) _w.focus(); return; }
+    }
+  }
   const getup=document.getElementById('d-getup')?.value||null;
   const latency=parseInt(document.getElementById('d-latency')?.value)||null;
   const dayType=document.getElementById('d-daytype')?.value||'work';
   const quality=parseInt(document.getElementById('d-qual')?.value)||null;
   const mood=parseInt(document.getElementById('d-mood')?.value)||null;
   const energy=parseInt(document.getElementById('d-energy')?.value)||null;
+  const energyPm=parseInt(document.getElementById('d-energy-pm')?.value)||null;
   // ── El cero es una RESPUESTA, no la ausencia de una respuesta ──
   // Estos campos usaban `parseInt(...)||null`. En JavaScript `0||null` da null,
   // asi que "Sin actividad" (que vale 0 y viene seleccionado por defecto) se
@@ -9798,6 +9838,7 @@ async function saveDiary(){
       vs.forEach(function(v){ o[v.id] = !!_dmVarsNoche[v.id]; });
       return o;
     })(),
+    energy_afternoon: energyPm,
     nap_minutes: napStart ? (napDur||0) : (hasNap===false ? 0 : null),
     nap_start: napStart || null,
     has_period: !!_periodActive,
@@ -17635,12 +17676,13 @@ const COMMON_MEDS = [
   {name:'Zolpidem', cat:'Hipnótico'},
   {name:'Zopiclona', cat:'Hipnótico'},
   {name:'Eszopiclona', cat:'Hipnótico'},
-  {name:'Midazolam', cat:'Hipnótico'},
-  {name:'Clonazepam', cat:'Benzo'},
-  {name:'Lorazepam', cat:'Benzo'},
-  {name:'Bromazepam', cat:'Benzo'},
-  {name:'Diazepam', cat:'Benzo'},
-  {name:'Alprazolam', cat:'Benzo'},
+  // Midazolam es una benzodiacepina: estaba mal agrupado en hipnóticos.
+  {name:'Midazolam', cat:'Benzodiacepina'},
+  {name:'Clonazepam', cat:'Benzodiacepina'},
+  {name:'Lorazepam', cat:'Benzodiacepina'},
+  {name:'Bromazepam', cat:'Benzodiacepina'},
+  {name:'Diazepam', cat:'Benzodiacepina'},
+  {name:'Alprazolam', cat:'Benzodiacepina'},
   {name:'Quetiapina', cat:'Antipsicótico'},
   {name:'Prometazina', cat:'Antipsicótico'},
   {name:'Levomepromazina', cat:'Antipsicótico'},
@@ -17648,8 +17690,13 @@ const COMMON_MEDS = [
   {name:'Risperidona', cat:'Antipsicótico'},
   {name:'Olanzapina', cat:'Antipsicótico'},
   {name:'Aripiprazol', cat:'Antipsicótico'},
+  {name:'Brexpiprazol', cat:'Antipsicótico'},
   {name:'Mirtazapina', cat:'Antidepresivo'},
   {name:'Trazodona', cat:'Antidepresivo'},
+  {name:'Doxepina', cat:'Antidepresivo'},
+  // La agomelatina es un antidepresivo agonista MT1/MT2: se registra donde el
+  // médico la va a buscar, no en una categoría por su mecanismo circadiano.
+  {name:'Agomelatina', cat:'Antidepresivo'},
   {name:'Sertralina', cat:'ISRS'},
   {name:'Escitalopram', cat:'ISRS'},
   {name:'Fluoxetina', cat:'ISRS'},
@@ -17659,7 +17706,11 @@ const COMMON_MEDS = [
   {name:'Valproato', cat:'Estabilizador'},
   {name:'Lamotrigina', cat:'Estabilizador'},
   {name:'Melatonina', cat:'Cronobiótico'},
-  {name:'Agomelatina', cat:'Cronobiótico'},
+  {name:'Magnesio', cat:'Otros'},
+  {name:'Valeriana', cat:'Otros'},
+  {name:'Cannabis', cat:'Otros'},
+  {name:'Reishi', cat:'Otros'},
+  {name:'Ashwagandha', cat:'Otros'},
 ];
 
 let _medModalMeds = [];
