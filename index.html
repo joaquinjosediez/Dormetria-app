@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod99">
+<link rel="stylesheet" href="css/styles.css?v=hoy76-mod100">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod99"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod100"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod99';
+const APP_VERSION='hoy76-mod100';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4514,9 +4514,13 @@ function dmSelectorMesDrHtml(entries){
   if(meses.length<2) return '';
   const _p=window._drPeriodo||{};
   const activo=(_p.tipo==='mes')?_p.valor:'';
+  // Colores explicitos: con var(--label-2) el texto se volvia blanco sobre el
+  // fondo claro del panel fijo y el desplegable parecia una caja vacia.
+  const _sel = !!activo;
   return '<select id="dr-score-mes" onchange="switchDrScoreMes(this.value)" '+
-    'style="padding:4px 8px;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;'+
-    'background:transparent;color:var(--label-2);border:1px solid var(--sep-opaque);font-family:var(--font)">'+
+    'style="padding:4px 10px;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;'+
+    'background:'+(_sel?'#1a4a3a':'#e8f0eb')+' !important;color:'+(_sel?'#fff':'#1a4a3a')+' !important;'+
+    'border:none;font-family:var(--font);-webkit-appearance:none;appearance:none;padding-right:22px">'+
     '<option value=""'+(activo?'':' selected')+'>Por mes…</option>'+
     meses.map(function(m){ return '<option value="'+m.valor+'"'+(m.valor===activo?' selected':'')+'>'+m.label+' ('+m.n+')</option>'; }).join('')+
     '</select>';
@@ -12186,7 +12190,10 @@ async function dmCrearPacienteGuardar(){
                      weight_kg:v('ap-weight')?parseFloat(v('ap-weight')):null,
                      height_cm:v('ap-height')?parseFloat(v('ap-height')):null };
     const r = await db.post('patients', cuerpo);
-    const nuevo = Array.isArray(r)?r[0]:r;
+    // El codigo lo generamos nosotros antes de guardar, asi que no hace falta
+    // que el servidor nos devuelva la fila: si las reglas de acceso permiten
+    // escribir pero no leer, igual podemos mostrarlo.
+    const nuevo = (Array.isArray(r)?r[0]:r) || { code: cuerpo.code };
     // Queda vinculado al profesional desde el momento cero.
     try{ await db.post('doctor_patients', { doctor_email:S.user.email, patient_email:email }); }catch(_){}
     // Escalas elegidas: quedan esperandola en su app desde la primera entrada.
@@ -12223,7 +12230,17 @@ async function dmCrearPacienteGuardar(){
     if(typeof loadDoctorPatients==='function') loadDoctorPatients();
   }catch(e){
     console.error('[ALTA]', e);
-    poner((e&&e.message)||'No se pudo crear la ficha');
+    const m=String((e&&e.message)||'');
+    if(/row-level security|violates row/i.test(m)){
+      poner('La base todavía no permite que un profesional cree fichas. Hay que agregar la regla de acceso en Supabase (te pasé el SQL).');
+    } else if(/duplicate key|unique constraint/i.test(m)){
+      // Puede pasar aunque el chequeo previo no haya encontrado nada: si las
+      // reglas de acceso no dejan LEER esa fila, el control de duplicados no
+      // la ve, pero la base igual la rechaza al escribir.
+      poner('Ya existe una ficha con ese mail. Vinculala con su código en vez de crearla.');
+    } else {
+      poner(m||'No se pudo crear la ficha');
+    }
   }
 }
 
@@ -12957,12 +12974,14 @@ async function showDrPTab_(tab){
         <div class="dm-diary-top">
         <div class="dm-diary-left">
         <div class="dm-card dm-light dm-diary-score">
-          <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center;position:sticky;top:0;z-index:30;background:var(--bg);padding:8px 6px;margin-left:-6px;margin-right:-6px;border-radius:10px;box-shadow:0 4px 12px -6px rgba(0,0,0,.35);flex-wrap:wrap">
-            <span style="font-size:12px;color:var(--label-2);font-weight:600">Período:</span>
-            <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',7)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',7)?'#fff':'#1a4a3a'};font-family:var(--font)">7 días</button>
-            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',30)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',30)?'#fff':'#1a4a3a'};font-family:var(--font)">30 días</button>
+          <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center;position:sticky;top:0;z-index:30;background:#0f2b22;padding:9px 8px;margin-left:-6px;margin-right:-6px;border-radius:10px;box-shadow:0 4px 12px -6px rgba(0,0,0,.35);flex-wrap:wrap">
+            <span style="font-size:12px;color:rgba(255,255,255,.72) !important;font-weight:600">Período:</span>
+            <button onclick="switchDrScorePeriod(7)"  id="dr-score-7"  style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',7)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',7)?'#fff':'#1a4a3a'};font-family:var(--font)">7 d</button>
+            <button onclick="switchDrScorePeriod(15)" id="dr-score-15" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',15)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',15)?'#fff':'#1a4a3a'};font-family:var(--font)">15 d</button>
+            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',30)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',30)?'#fff':'#1a4a3a'};font-family:var(--font)">30 d</button>
+            <button onclick="switchDrScorePeriod(60)" id="dr-score-60" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',60)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',60)?'#fff':'#1a4a3a'};font-family:var(--font)">60 d</button>
+            <button onclick="switchDrScorePeriod(0)"  id="dr-score-all" style="padding:4px 12px;border:none;border-radius:16px;font-size:11.5px;font-weight:700;cursor:pointer;background:${dmDrPerActivo('dias',0)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',0)?'#fff':'#1a4a3a'};font-family:var(--font)">Todo</button>
             ${dmSelectorMesDrHtml(subj)}
-            <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:500;cursor:pointer;background:${dmDrPerActivo('dias',0)?'#1a4a3a':'transparent'};color:${dmDrPerActivo('dias',0)?'#fff':'var(--label-2)'};font-family:var(--font)">Todo</button>
           </div>
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())}</div>
           ${weekCompareHtml}
