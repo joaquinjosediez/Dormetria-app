@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod86">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod87">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod86"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod87"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod86';
+const APP_VERSION='hoy75-mod87';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4589,6 +4589,8 @@ function dmMotivoDescarte(e){
   if(!e) return 'vacio';
   if(!e.bedtime || !e.wake_time) return 'sin_horarios';
   if(e.notes && String(e.notes).startsWith('Importado')) return 'importada';
+  // Despertar igual a acostarse = la hora de despertar nunca se cargo.
+  if(String(e.bedtime).slice(0,5) === String(e.wake_time).slice(0,5)) return 'sin_hora_despertar';
   if(!e.sleep_minutes || e.sleep_minutes < 60) return 'menos_de_1h';
   // Un tramo de mas de 14 h entre acostarse y despertar no es una noche: casi
   // siempre es un AM/PM invertido al cargar. Se descarta del promedio y se
@@ -4607,6 +4609,7 @@ function dmResumenDescartes(entries){
   (entries||[]).forEach(e=>{ const m=dmMotivoDescarte(e); if(m) c[m]=(c[m]||0)+1; });
   const txt={sin_horarios:'sin horarios cargados', importada:'importadas de otra app',
              menos_de_1h:'de menos de 1 h', duracion_inverosimil:'de mas de 14 h entre acostarse y despertar',
+             sin_hora_despertar:'sin hora de despertar (quedo igual a la de acostarse)',
              vacio:'vacias'};
   const partes=Object.keys(c).map(k=>c[k]+(c[k]>1?' noches ':' noche ')+(txt[k]||k));
   return { total:Object.keys(c).reduce((a,k)=>a+c[k],0), texto:partes.join(' · ') };
@@ -8635,6 +8638,10 @@ function goHomeCtx(){
 async function showDiaryHome(){showScreen('diary-home');showDiaryTab_('list');}
 function showDiaryTab(tab,el){document.querySelectorAll('#screen-diary-home .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDiaryTab_(tab);}
 async function showDiaryTab_(tab){
+  // El redibujado estaba enganchado solo al cambio de PANTALLA. Los graficos
+  // de esta vista se crean al cambiar de PESTAÑA, con la pestaña todavia
+  // oculta: ancho cero, lienzo en blanco. Por eso seguia pasando en el celular.
+  try{ setTimeout(dmRedibujarGraficos, 80); setTimeout(dmRedibujarGraficos, 400); }catch(_){}
   const cont=document.getElementById('diary-content');
   cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
@@ -8829,7 +8836,12 @@ async function showDiaryTab_(tab){
           if(!e.bedtime||!e.wake_time)return[0,0];
           const start=timeToOffset(e.bedtime.slice(0,5));
           const w=timeToOffset(e.wake_time.slice(0,5));
-          return[start,Math.min(w>start?w:w+24,24)];
+          // Misma correccion que en la vista del profesional: despertar igual
+          // a acostarse daba una barra de 24 h atravesando todo el grafico.
+          if(w===start) return[0,0];
+          const fin=(w>start?w:w+24);
+          if(fin-start>16) return[0,0];
+          return[start,fin];
         });
         // ── BUG HISTÓRICO ──
         // Esto buscaba en notes el patrón "Siesta: HH:MM NNmin" (singular),
@@ -9720,6 +9732,14 @@ async function saveDiary(){
   // exactas de diferencia. Es el error mas frecuente y silencioso del diario,
   // y arrastra el promedio de sueño de la persona por horas. Se pregunta en
   // el momento, que es cuando ella todavia se acuerda de la respuesta.
+  if(bed && wake && bed.slice(0,5)===wake.slice(0,5)){
+    // Es lo que le paso a varios registros: la hora de despertar quedo igual
+    // a la de acostarse, la noche se guardo con 0 minutos de sueño y el
+    // actograma la dibujaba como un dia entero en la cama.
+    toast('La hora de despertar no puede ser igual a la de acostarse');
+    const _w=document.getElementById('d-wake'); if(_w){ _w.focus(); }
+    return;
+  }
   if(bed && wake){
     const [_bh,_bm]=bed.split(':').map(Number);
     const [_wh,_wm]=wake.split(':').map(Number);
@@ -12242,7 +12262,7 @@ async function showDrPTab_(tab){
         }catch(_dsc){}
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
-        const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));return[s,(w>s?w:w+24)];});
+        const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));if(w===s) return[0,0];const fin=(w>s?w:w+24);if(fin-s>16) return[0,0];return[s,fin];});
         const drPeriodNights=sorted.filter(e=>/🩸Período/.test(e.notes||'')).length;
         const drFueraProm=sorted.map(e=>!!dmMotivoDescarte(e));
         const drSleepColors=sorted.map((e,i)=>drFueraProm[i]?'rgba(217,119,6,0.13)':(/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc'));

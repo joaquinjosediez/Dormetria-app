@@ -688,33 +688,44 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
    los números casi no se leen. Una sombra oscura detrás los despega sin
    cambiar el color, que es lo que codifica la información. */
 /* ══ NUMEROS CLINICOS SOBRE EL VERDE OSCURO ══════════════════════════
-   Cuarto intento, y ahora atacando la causa en vez del sintoma.
-   El problema no era la falta de sombra: es que #dc2626 sobre el verde
-   oscuro del panel da una relacion de contraste de alrededor de 2:1, muy
-   por debajo del minimo legible. Ninguna sombra arregla eso, porque el
-   color en si tiene poca luz. Lo que corresponde es usar la version CLARA
-   del mismo color, que conserva el significado (rojo sigue siendo rojo) y
-   sube el contraste a mas de 6:1.
-   La sombra queda, solida y corrida un pixel, solo para dar filo.
-   Alcance: unicamente las tarjetas de "Ultima evaluacion por escala", que
-   son las que apoyan directo sobre el verde. En los recuadros rojos,
-   amarillos o blancos no se toca nada: ahi el contraste ya existe. */
-.dm-escalas-ultimas [style*="color:#dc2626"]{ color:#f87171 !important; }
-.dm-escalas-ultimas [style*="color:#991b1b"]{ color:#fca5a5 !important; }
-.dm-escalas-ultimas [style*="color:#ea580c"]{ color:#fdba74 !important; }
-.dm-escalas-ultimas [style*="color:#d97706"]{ color:#fbbf24 !important; }
-.dm-escalas-ultimas [style*="color:#16a34a"]{ color:#4ade80 !important; }
-.dm-escalas-ultimas [style*="color:#14532d"]{ color:#86efac !important; }
-.dm-escalas-ultimas [style*="color:#2d9e6b"]{ color:#6ee7b7 !important; }
+   El intento anterior remapeaba siete colores a mano y por eso funcionaba en
+   una columna y en la otra no: las escalas devuelven 27 colores distintos
+   desde sus funciones de interpretacion, no siete.
+   Aca estan los 27, cada uno aclarado hasta llegar a una relacion de
+   contraste de al menos 4,5:1 contra el verde del panel, conservando el tono
+   (el rojo sigue siendo rojo, el ambar sigue siendo ambar). Los que ya se
+   leian bien no figuran, porque no habia nada que corregir.
+   Calculado con la formula de luminancia relativa de WCAG. */
+.dm-escalas-ultimas [style*="color:#065f46"]{ color:#0cba89 !important; }
+.dm-escalas-ultimas [style*="color:#0F2820"]{ color:#3ca080 !important; }
+.dm-escalas-ultimas [style*="color:#14532d"]{ color:#2db964 !important; }
+.dm-escalas-ultimas [style*="color:#15803d"]{ color:#1eba58 !important; }
+.dm-escalas-ultimas [style*="color:#166534"]{ color:#28ba60 !important; }
+.dm-escalas-ultimas [style*="color:#185fa5"]{ color:#2ba9ff !important; }
+.dm-escalas-ultimas [style*="color:#1a4a3a"]{ color:#40b78f !important; }
+.dm-escalas-ultimas [style*="color:#1d4ed8"]{ color:#3fa9ff !important; }
+.dm-escalas-ultimas [style*="color:#2563eb"]{ color:#40aaff !important; }
+.dm-escalas-ultimas [style*="color:#2d9e6b"]{ color:#35ba7e !important; }
+.dm-escalas-ultimas [style*="color:#374151"]{ color:#8ba4cd !important; }
+.dm-escalas-ultimas [style*="color:#3b6b52"]{ color:#62b288 !important; }
+.dm-escalas-ultimas [style*="color:#3f6212"]{ color:#74b421 !important; }
+.dm-escalas-ultimas [style*="color:#4338ca"]{ color:#ae91ff !important; }
+.dm-escalas-ultimas [style*="color:#7c3aed"]{ color:#ec6eff !important; }
+.dm-escalas-ultimas [style*="color:#7f1d1d"]{ color:#ff7474 !important; }
+.dm-escalas-ultimas [style*="color:#854d0e"]{ color:#f18b19 !important; }
+.dm-escalas-ultimas [style*="color:#92400e"]{ color:#ff7f1c !important; }
+.dm-escalas-ultimas [style*="color:#991b1b"]{ color:#ff6c6c !important; }
+.dm-escalas-ultimas [style*="color:#9a3412"]{ color:#ff7d2b !important; }
+.dm-escalas-ultimas [style*="color:#9b1c1c"]{ color:#ff7070 !important; }
+.dm-escalas-ultimas [style*="color:#a16207"]{ color:#e98e0a !important; }
+.dm-escalas-ultimas [style*="color:#b45309"]{ color:#ff800e !important; }
+.dm-escalas-ultimas [style*="color:#b91c1c"]{ color:#ff7070 !important; }
+.dm-escalas-ultimas [style*="color:#c2410c"]{ color:#ff7f18 !important; }
+.dm-escalas-ultimas [style*="color:#d97706"]{ color:#fa8907 !important; }
+.dm-escalas-ultimas [style*="color:#dc2626"]{ color:#ff7979 !important; }
 
 .dm-num-clinico,
-.dm-escalas-ultimas [style*="color:#dc2626"],
-.dm-escalas-ultimas [style*="color:#991b1b"],
-.dm-escalas-ultimas [style*="color:#ea580c"],
-.dm-escalas-ultimas [style*="color:#d97706"],
-.dm-escalas-ultimas [style*="color:#16a34a"],
-.dm-escalas-ultimas [style*="color:#14532d"],
-.dm-escalas-ultimas [style*="color:#2d9e6b"]{
+.dm-escalas-ultimas [style*="color:#"]{
   text-shadow: 1px 1px 0 rgba(4,17,13,.9);
   font-weight: 700;
 }
@@ -1021,9 +1032,20 @@ input, select, textarea{ color: inherit; }
 /* 9,5 px es ilegible a los 70 anios, y este formulario lo completa gente de
    esa edad todas las mananas. Sube a 12 y baja el interletrado, que a tamanio
    chico dispersa mas de lo que ayuda. */
+/* Las etiquetas se veian corridas a la derecha y de distinto ancho segun el
+   largo del texto: heredaban la alineacion del contenedor. Se fuerzan a
+   bloque completo, alineadas a la izquierda, con la misma altura minima para
+   que los dos campos de una fila arranquen a la misma altura aunque una
+   etiqueta ocupe dos renglones. */
 #screen-diary-new .form-label{
   color:rgba(244,239,229,0.62);font-size:12px;letter-spacing:0.045em;margin-bottom:6px;
+  display:block !important;
+  width:100% !important;
+  text-align:left !important;
+  min-height:2.6em;
 }
+#screen-diary-new .form-row{ align-items:flex-start !important; }
+#screen-diary-new .form-row .form-group{ display:flex; flex-direction:column; }
 #screen-diary-new .form-input,
 #screen-diary-new .form-select{
   background:rgba(255,255,255,0.07);
