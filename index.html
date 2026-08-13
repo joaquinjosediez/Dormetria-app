@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod93">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod94">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod93"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod94"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod93';
+const APP_VERSION='hoy75-mod94';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2859,6 +2859,7 @@ function showScreen(id){
   window.scrollTo(0,0);
   try{ dmRedibujarGraficos(); }catch(_){}
   if(id==='diary-new'){ setTimeout(dmRefrescarEcosHora, 60); }
+  if(id==='doctor-home'){ setTimeout(function(){ try{ dmPedirEspecialidad(); }catch(_){} }, 400); }
 }
 
 // Vuelve a medir y redibujar todo grafico que se haya creado mientras su
@@ -3767,6 +3768,14 @@ async function loadAdminTab(tab){
           </div></div>`).join('');
     } else if(tab==='doctors'){
       const docs=await db.get("doctors?select=name,lname,email,specialty,mat,created_at,listed,public_profile,cv_url&order=created_at.desc");
+      // Cuantos pacientes tiene vinculados cada profesional. Antes la columna
+      // decia "Ingresos" y mostraba un guion fijo: no habia nada detras.
+      try{
+        const _v = await db.get('doctor_patients?select=doctor_email');
+        const _c = {};
+        (_v||[]).forEach(function(r){ if(r && r.doctor_email) _c[r.doctor_email]=(_c[r.doctor_email]||0)+1; });
+        window._admVincPorDoc = _c;
+      }catch(_){ window._admVincPorDoc = {}; }
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state">Sin profesionales registrados.</div>';return;}
       const _appList3=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
@@ -3780,8 +3789,8 @@ async function loadAdminTab(tab){
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Nombre</th>'+
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Especialidad</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Estado</th>'+
-        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Ingresos</th>'+
-        '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Último ingreso</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Pacientes</th>'+
+        '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Alta</th>'+
         '</tr></thead><tbody>'+
         docs.map(d=>{
           const lastLogin='—';const daysAgo=null;
@@ -3795,7 +3804,7 @@ async function loadAdminTab(tab){
             <td style="padding:8px"><div style="font-weight:600">${d.name} ${d.lname||''}</div><div style="color:var(--label-3);font-size:11px">${d.email}</div></td>
             <td style="padding:8px;color:var(--label-2)">${d.specialty||'—'}</td>
             <td style="padding:8px;text-align:center">${badge}</td>
-            <td style="padding:8px;text-align:center;color:var(--label-3)">—</td>
+            <td style="padding:8px;text-align:center;color:var(--label-2);font-weight:600">${(window._admVincPorDoc&&window._admVincPorDoc[d.email])||0}</td>
             <td style="padding:8px;color:var(--label-3)">${d.created_at?new Date(d.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'—'}</td>
           </tr>`;
         }).join('')+'</tbody></table></div>'+
@@ -3954,11 +3963,20 @@ async function loadAdminTab(tab){
         const applied = d.listed==='pending' || d.listed===true || d.cv_url;
         return !applied && !_appList2[d.email];
       }).length;
+      // Pacientes que crearon cuenta y no estan vinculados a ningun profesional:
+      // es el numero que dice cuanta gente esta usando la app por su cuenta.
+      try{
+        const _vp = await db.get('doctor_patients?select=patient_email');
+        const _con = {};
+        (_vp||[]).forEach(function(r){ if(r && r.patient_email) _con[String(r.patient_email).toLowerCase()]=1; });
+        window._admSinProf = (allPts||[]).filter(function(p){ return !_con[String(p.email||'').toLowerCase()]; }).length;
+      }catch(_){ window._admSinProf = null; }
       cont.innerHTML=`<div class="sec-title" style="margin-top:10px">Estadísticas de uso</div>
         <div style="font-size:11px;color:var(--label-3);margin:2px 0 10px">Computado en vivo desde diario y evaluaciones</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
           ${[
-            {icon:'👥',label:'Pacientes',val:totalPts,sub:'registrados'},
+            {icon:'👥',label:'Cuentas de paciente',val:totalPts,sub:'total creadas'},
+            {icon:'🔗',label:'Sin profesional',val:(window._admSinProf!=null?window._admSinProf:'—'),sub:'no vinculados a nadie'},
             {icon:'🩺',label:'Médicos',val:totalDrs,sub:'registrados'},
             {icon:'🟢',label:'Activos (7d)',val:activePts7,sub:'pacientes con actividad',hi:activePts7>0},
             {icon:'🟡',label:'Activos (30d)',val:activePts30,sub:'pacientes con actividad',hi:activePts30>0},
@@ -5629,19 +5647,25 @@ function dmMesesConDatos(entries){
   });
 }
 function dmSelectorMesHtml(_ignorado, entries){
-  const meses=dmMesesConDatos(window._graficosSubjEntries||entries||[]);
+  const meses=dmMesesConDatos(window._dmTodasLasNoches||window._graficosSubjEntries||entries||[]);
   if(meses.length<2) return '';   // con un solo mes no hay nada que elegir
+  const activo = window._dmMesActivo || '';
   return '<select id="score-period-mes" onchange="switchScoreMes(this.value)" '+
     'style="padding:5px 10px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;'+
     'background:transparent;color:var(--label-2);border:1px solid var(--sep-opaque);font-family:var(--font)">'+
-    '<option value="">Por mes…</option>'+
-    meses.map(function(m){ return '<option value="'+m.valor+'">'+m.label+' ('+m.n+')</option>'; }).join('')+
+    '<option value=""'+(activo?'':' selected')+'>Por mes…</option>'+
+    meses.map(function(m){ return '<option value="'+m.valor+'"'+(m.valor===activo?' selected':'')+'>'+m.label+' ('+m.n+')</option>'; }).join('')+
     '</select>';
 }
 function switchScoreMes(ym){
-  if(!ym){ switchScorePeriod(30); return; }
-  const all = window._graficosSubjEntries||[];
+  if(!ym){ window._dmMesActivo=null; switchScorePeriod(30); if(typeof showDiaryTab_==='function') showDiaryTab_('graficos'); return; }
+  // El mes tiene que gobernar TODA la pantalla —score, pilares, actograma y
+  // comparativas—, si no se ve un score de junio junto a un actograma completo
+  // y no hay forma de saber a que periodo corresponde cada cosa.
+  window._dmMesActivo = ym;
+  const all = window._dmTodasLasNoches || window._graficosSubjEntries || [];
   const filtradas = all.filter(function(e){ return String(e.diary_date||'').slice(0,7)===ym; });
+  if(filtradas.length>=3 && typeof showDiaryTab_==='function'){ showDiaryTab_('graficos'); return; }
   ['7','30','all'].forEach(function(p){
     const btn=document.getElementById('score-period-'+p);
     if(!btn) return;
@@ -5676,6 +5700,7 @@ function switchScorePeriod(days){
     if(isActive){ btn.style.background='#1a4a3a'; btn.style.color='#fff'; }
     else { btn.style.background= p==='all'?'transparent':'#e8f0eb'; btn.style.color=p==='all'?'var(--label-2)':'#1a4a3a'; }
   });
+  window._dmMesActivo=null;
   const _selMes=document.getElementById('score-period-mes');
   if(_selMes){ _selMes.value=''; _selMes.style.background='transparent'; _selMes.style.color='var(--label-2)'; _selMes.style.borderColor='var(--sep-opaque)'; }
   const wrap = document.getElementById('score-panel-wrap');
@@ -8966,6 +8991,17 @@ async function showDiaryTab_(tab){
     // Separate subjective from wearable-imported entries
     const entries=(allEntries||[]).filter(e=>!e.notes||!e.notes.startsWith('Importado desde'));
     const wearableEntries=S.wearableEntries=(allEntries||[]).filter(e=>e.notes&&e.notes.startsWith('Importado desde'));
+    // Mes elegido: se aplica antes de calcular nada, para que score, pilares,
+    // actograma y comparativas hablen todos del mismo periodo.
+    // El listado COMPLETO se guarda aparte: el desplegable de meses tiene que
+    // seguir mostrando todos los meses aunque estemos viendo uno solo.
+    window._dmTodasLasNoches = entries.slice();
+    let _mesFiltro = window._dmMesActivo || null;
+    if(_mesFiltro){
+      const _delMes = entries.filter(function(e){ return String(e.diary_date||'').slice(0,7)===_mesFiltro; });
+      if(_delMes.length>=3) entries.splice(0, entries.length, ..._delMes);
+      else _mesFiltro = window._dmMesActivo = null;
+    }
     if(tab==='list'){
       if(!entries||!entries.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📔</div>Aún no tenés registros.<br>Tocá <b>+ Nuevo</b> para empezar.</div>';return;}
       cont.innerHTML='<div style="height:8px"></div>'+entries.map(e=>{
@@ -9111,9 +9147,10 @@ async function showDiaryTab_(tab){
         <div id="diary-clinical-metrics" style="margin:8px 0"></div>
         <div class="sec-title" style="margin-top:12px;color:#fff">Actograma — horarios de sueño</div>
         <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
-        <div style="background:#fff;border-radius:14px;padding:12px 10px;overflow-x:auto;padding-bottom:8px">
+        <div style="background:#fff;border-radius:14px;padding:12px 10px;padding-bottom:8px;max-height:62vh;overflow:auto;-webkit-overflow-scrolling:touch">
           <canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas>
         </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:5px">Si hay muchas noches, el actograma se desplaza dentro del recuadro.</div>
         <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0 14px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
@@ -9124,6 +9161,7 @@ async function showDiaryTab_(tab){
           <span><span style="display:inline-block;width:10px;height:3px;background:#16a34a;margin-right:3px;vertical-align:middle"></span>🏃 Ejercicio (ancho = duración)</span>
           <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
         </div>
+        <div id="diary-habits-slot" style="margin-top:12px"></div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
         try{
@@ -10083,6 +10121,46 @@ function updateAwakeInBed(){
 // analisis de ciclo, y sin peso y altura no hay IMC ni riesgo de apnea. Son
 // los cuatro datos de los que dependen las conclusiones, asi que se piden una
 // sola vez, antes del primer registro. Lo demas sigue siendo opcional.
+// La especialidad ya es obligatoria al registrarse, pero las cuentas creadas
+// antes de esa validacion quedaron sin ella: en el panel de admin aparecen con
+// un guion. Se les pide una vez, al entrar.
+function dmPedirEspecialidad(){
+  if(!S || S.role!=='doctor' || !S.user) return false;
+  if(S.user.specialty) return false;
+  if(document.getElementById('dm-espec')) return true;
+  const OPC=[['psychiatry','Psiquiatría'],['neurology','Neurología'],['pneumology','Neumonología / Medicina del sueño'],
+             ['ent','Otorrinolaringología'],['pediatrics','Pediatría'],['psychology','Psicología'],
+             ['dentistry','Odontología'],['nutrition','Nutrición'],['kinesiology','Kinesiología'],
+             ['general','Clínica general'],['physician','Otra especialidad médica'],['other_health','Otra profesión de la salud']];
+  const w=document.createElement('div');
+  w.id='dm-espec';
+  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,0.94);z-index:10003;overflow-y:auto;padding:26px 18px';
+  w.innerHTML='<div style="max-width:420px;margin:0 auto">'+
+    '<div style="font-size:19px;font-weight:700;color:#fff;margin-bottom:6px">Falta tu especialidad</div>'+
+    '<div style="font-size:13px;color:rgba(255,255,255,.68);line-height:1.6;margin-bottom:16px">La usamos para el directorio y para ajustar qué escalas y materiales te sugerimos. Es un solo dato.</div>'+
+    '<select id="esp-sel" style="width:100%;padding:12px 13px;border:none;border-radius:10px;font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.08);color:#F4EFE5;box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);box-sizing:border-box;margin-bottom:12px">'+
+      '<option value="">Seleccionar…</option>'+
+      OPC.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+
+    '</select>'+
+    '<div id="esp-err" style="font-size:12.5px;color:#ff7979;margin-bottom:10px;min-height:1em"></div>'+
+    '<button onclick="dmGuardarEspecialidad()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar</button>'+
+  '</div>';
+  document.body.appendChild(w);
+  return true;
+}
+async function dmGuardarEspecialidad(){
+  const sel=document.getElementById('esp-sel');
+  const err=document.getElementById('esp-err');
+  const v=sel?String(sel.value||''):'';
+  if(!v){ if(err) err.textContent='Elegí una opción'; return; }
+  try{
+    await db.patch('doctors?email=eq.'+encodeURIComponent(S.user.email), { specialty:v });
+    S.user.specialty=v;
+    const w=document.getElementById('dm-espec'); if(w) w.remove();
+    toast('Especialidad guardada ✓');
+  }catch(e){ if(err) err.textContent=(e&&e.message)||'No se pudo guardar'; }
+}
+
 function dmDatosBasicosFaltantes(){
   const u=(S && S.user) || {};
   const f=[];
@@ -12682,7 +12760,7 @@ async function showDrPTab_(tab){
             <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
           </div>
           <div id="dr-habit-summary" style="font-size:11px;color:#6b6b76;margin-bottom:6px">Cargando hábitos…</div>
-          <div style="overflow-x:auto;padding-bottom:8px">
+          <div style="max-height:64vh;overflow:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch">
             <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
           </div>
           <div style="display:flex;gap:16px;font-size:11px;color:#6b6b76;margin:6px 0 4px;flex-wrap:wrap">
