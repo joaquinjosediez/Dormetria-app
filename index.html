@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod85">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod86">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod85"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod86"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod85';
+const APP_VERSION='hoy75-mod86';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2824,11 +2824,51 @@ function showScreen(id){
   }
   window.scrollTo(0,0);
   try{ dmRedibujarGraficos(); }catch(_){}
+  if(id==='diary-new'){ setTimeout(dmRefrescarEcosHora, 60); }
 }
 
 // Vuelve a medir y redibujar todo grafico que se haya creado mientras su
 // pantalla estaba oculta. Se llama dos veces: en el frame siguiente y a los
 // 250 ms, porque en celular el layout puede tardar en asentarse.
+// ── Eco de la hora cargada ──
+// El selector del celular puede mostrar AM/PM segun la configuracion del
+// telefono, y ahi es donde se cuela el error de 12 horas. No se puede forzar
+// el formato de 24 h desde la pagina, pero SI se puede devolverle a la
+// persona lo que acaba de elegir, escrito de las dos maneras. Un "18:00 h ·
+// 6 de la tarde" debajo del campo hace visible el error en el acto.
+function dmEcoHora(el){
+  if(!el || !el.parentNode) return;
+  let eco=el.parentNode.querySelector('.dm-eco-hora');
+  if(!eco){
+    eco=document.createElement('div');
+    eco.className='dm-eco-hora';
+    eco.style.cssText='font-size:12.5px;color:#7ec8a4;margin-top:5px;letter-spacing:0;font-weight:600;min-height:1em';
+    el.parentNode.appendChild(eco);
+  }
+  const v=String(el.value||'');
+  if(!/^\d{2}:\d{2}/.test(v)){ eco.textContent=''; return; }
+  const hh=parseInt(v.slice(0,2),10), mm=v.slice(3,5);
+  const franja = hh===0 ? 'de la medianoche'
+               : hh<6   ? 'de la madrugada'
+               : hh<12  ? 'de la mañana'
+               : hh===12? 'del mediodía'
+               : hh<20  ? 'de la tarde'
+               : 'de la noche';
+  const h12 = (hh%12===0) ? 12 : hh%12;
+  eco.textContent = v.slice(0,5)+' h · '+h12+(mm!=='00'?(':'+mm):'')+' '+franja;
+}
+document.addEventListener('input', function(ev){
+  const el=ev.target;
+  if(el && el.tagName==='INPUT' && el.type==='time') dmEcoHora(el);
+}, true);
+document.addEventListener('change', function(ev){
+  const el=ev.target;
+  if(el && el.tagName==='INPUT' && el.type==='time') dmEcoHora(el);
+}, true);
+function dmRefrescarEcosHora(){
+  try{ document.querySelectorAll('#screen-diary-new input[type="time"]').forEach(dmEcoHora); }catch(_){}
+}
+
 function dmRedibujarGraficos(){
   const paso=()=>{
     try{
@@ -11351,11 +11391,11 @@ async function renderDoctorAdherence(){
     let html='<div style="display:flex;gap:8px;margin-bottom:12px">'+
       card(alDia,'Al día<br>(≤3 días)','#7EC8A4')+card(tibios,'Aflojando<br>(4–14 días)','#C8A96E')+card(perdidos,'Sin registrar<br>(+14 días)','#fca5a5')+
       '</div>'+
-      '<div class="dm-adh-charts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-bottom:14px">'+
-        chartBox('Adherencia','drChAdh')+
-        chartBox('Evolución del score','drChEvo')+
-        chartBox('Escalas pedidas vs respondidas','drChEsc')+
-        chartBox('Registros en 30 días · top','drChUso',190)+
+      '<div class="dm-adh-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">'+
+        chartBox('Adherencia','drChAdh',210)+
+        chartBox('Evolución del score','drChEvo',210)+
+        chartBox('Escalas pedidas vs respondidas','drChEsc',210)+
+        chartBox('Registros en 30 días · top','drChUso',210)+
       '</div>'+
       '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;align-items:center">'+
         '<span style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-right:2px">Ordenar:</span>'+
@@ -12346,6 +12386,27 @@ async function showDrPTab_(tab){
                 annotation:{annotations:annots},
                 tooltip:{
                   callbacks:{
+                    // Lo que escribio la persona esa noche, en la misma fila.
+                    afterBody:function(items){
+                      try{
+                        const i=items && items[0] ? items[0].dataIndex : -1;
+                        const e=sorted[i];
+                        if(!e) return '';
+                        const t=(typeof dmLimpiarNota==='function') ? dmLimpiarNota(e.notes) : '';
+                        if(!t) return '';
+                        // Se corta en lineas de ~46 caracteres para que el globo
+                        // no se estire a lo ancho de la pantalla.
+                        const out=['','📝 '+' '];
+                        let linea='';
+                        String(t).split(/\s+/).forEach(function(w){
+                          if((linea+' '+w).trim().length>46){ out.push(linea.trim()); linea=w; }
+                          else linea+=' '+w;
+                        });
+                        if(linea.trim()) out.push(linea.trim());
+                        out[1]='📝 Comentario:';
+                        return out;
+                      }catch(_){ return ''; }
+                    },
                     label:function(ctx){
                       const v = ctx.raw;
                       if(!Array.isArray(v) || v.length<2) return ctx.dataset.label;
@@ -19540,7 +19601,14 @@ const DM_TCCI_PROGRAMA = [
 // Punto único de control del acceso al programa pago. Hoy devuelve false para
 // todos salvo que exista la marca local; cuando esté el cobro, se reemplaza
 // por la consulta real de suscripción.
+// Cuentas con acceso completo al programa autogestionado sin pasar por el
+// cobro. Es para poder recorrerlo entero desde adentro antes de abrirlo.
+const DM_TCCI_ACCESO_LIBRE = ['diezjoaquinjose@gmail.com'];
 function dmTcciTieneAcceso(){
+  try{
+    const _e = (S && S.user && S.user.email ? String(S.user.email) : '').toLowerCase().trim();
+    if(_e && DM_TCCI_ACCESO_LIBRE.indexOf(_e) >= 0) return true;
+  }catch(_){}
   try{ if(localStorage.getItem('dm_tcci_acceso')==='1') return true; }catch(_){}
   return false;
 }

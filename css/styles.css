@@ -687,37 +687,36 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
    para fondo blanco. Sobre el verde oscuro del panel pierden contraste y
    los números casi no se leen. Una sombra oscura detrás los despega sin
    cambiar el color, que es lo que codifica la información. */
-/* ══ ROJOS Y VERDES SOBRE EL VERDE OSCURO ════════════════════════════
-   Tercer intento, y las dos versiones anteriores fallaron por lo mismo:
-   usaban desenfoque. Un halo difuminado alrededor de una letra chica le come
-   el filo y la deja MENOS legible, no mas. Lo que funciona es una copia
-   solida del mismo texto, corrida un pixel, que actua como sombra proyectada
-   y le devuelve el borde.
-   El alcance tambien estaba mal: primero pegaba en todos lados —incluidas
-   las tarjetas blancas, donde no hace falta— y despues solo en las escalas.
-   Ahora vale en toda la ficha y se apaga adentro de cualquier caja clara. */
-.dm-num-clinico,
-#screen-doctor-patient [style*="color:#dc2626"],
-#screen-doctor-patient [style*="color:#16a34a"],
-#screen-doctor-patient [style*="color:#d97706"],
-#screen-doctor-patient [style*="color:#991b1b"],
-#screen-doctor-patient [style*="color:#14532d"],
-#screen-doctor-patient [style*="color:#ea580c"],
-#screen-doctor-patient [style*="color:#2d9e6b"]{
-  text-shadow: 1px 1px 0 rgba(4,17,13,.85);
-  font-weight: 600;
-}
+/* ══ NUMEROS CLINICOS SOBRE EL VERDE OSCURO ══════════════════════════
+   Cuarto intento, y ahora atacando la causa en vez del sintoma.
+   El problema no era la falta de sombra: es que #dc2626 sobre el verde
+   oscuro del panel da una relacion de contraste de alrededor de 2:1, muy
+   por debajo del minimo legible. Ninguna sombra arregla eso, porque el
+   color en si tiene poca luz. Lo que corresponde es usar la version CLARA
+   del mismo color, que conserva el significado (rojo sigue siendo rojo) y
+   sube el contraste a mas de 6:1.
+   La sombra queda, solida y corrida un pixel, solo para dar filo.
+   Alcance: unicamente las tarjetas de "Ultima evaluacion por escala", que
+   son las que apoyan directo sobre el verde. En los recuadros rojos,
+   amarillos o blancos no se toca nada: ahi el contraste ya existe. */
+.dm-escalas-ultimas [style*="color:#dc2626"]{ color:#f87171 !important; }
+.dm-escalas-ultimas [style*="color:#991b1b"]{ color:#fca5a5 !important; }
+.dm-escalas-ultimas [style*="color:#ea580c"]{ color:#fdba74 !important; }
+.dm-escalas-ultimas [style*="color:#d97706"]{ color:#fbbf24 !important; }
+.dm-escalas-ultimas [style*="color:#16a34a"]{ color:#4ade80 !important; }
+.dm-escalas-ultimas [style*="color:#14532d"]{ color:#86efac !important; }
+.dm-escalas-ultimas [style*="color:#2d9e6b"]{ color:#6ee7b7 !important; }
 
-/* Adentro de una tarjeta clara la sombra sobra: ahi el contraste ya existe. */
-#screen-doctor-patient [style*="background:#fff"] [style*="color:"],
-#screen-doctor-patient [style*="background: #fff"] [style*="color:"],
-#screen-doctor-patient [style*="background:#ffffff"] [style*="color:"],
-#screen-doctor-patient [style*="background:white"] [style*="color:"],
-#screen-doctor-patient [style*="background:var(--card)"] [style*="color:"],
-#screen-doctor-patient .dm-card [style*="color:"],
-#screen-doctor-patient .caja-clara [style*="color:"],
-#screen-doctor-patient .sobre-claro [style*="color:"]{
-  text-shadow: none;
+.dm-num-clinico,
+.dm-escalas-ultimas [style*="color:#dc2626"],
+.dm-escalas-ultimas [style*="color:#991b1b"],
+.dm-escalas-ultimas [style*="color:#ea580c"],
+.dm-escalas-ultimas [style*="color:#d97706"],
+.dm-escalas-ultimas [style*="color:#16a34a"],
+.dm-escalas-ultimas [style*="color:#14532d"],
+.dm-escalas-ultimas [style*="color:#2d9e6b"]{
+  text-shadow: 1px 1px 0 rgba(4,17,13,.9);
+  font-weight: 700;
 }
 
 /* ══ CHIPS DE MEDICACION ═════════════════════════════════════════════
