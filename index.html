@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod90">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod92">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod90"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod92"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod90';
+const APP_VERSION='hoy75-mod92';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -9457,9 +9457,26 @@ async function showDiaryTab_(tab){
         // Score basado en SD del punto medio del sueño (NHANES 2011-2014).
         // La regularidad GRUPAL es propiedad del período (constante en todas las noches).
         // La variación NOCHE-A-NOCHE se grafica con CPD (Composite Phase Deviation, Fischer 2016).
-        const regResult = computeSleepRegularity(sorted);
+        try{
+        // ── LA CAUSA ──
+        // `_edadPil` estaba definido dentro de updatePillarBars() y se usaba
+        // acá, en otro ambito, donde no existe. Eso lanzaba
+        // "ReferenceError: _edadPil is not defined" y mataba TODA la seccion:
+        // por eso faltaban tambien las tarjetas de Cantidad/Fragmentacion, no
+        // solo el grafico. No era un problema del celular ni de Chart.js: la
+        // vista del paciente nunca lo mostro en ningun dispositivo.
+        const _edadPil=(function(){
+          const d=(S.viewData&&S.viewData.dob)||(S.user&&S.user.dob);
+          return d?Math.floor((Date.now()-new Date(d))/31557600000):null;
+        })();
+        const regResult = computeSleepRegularity(sorted) || {score:null,label:null,sd_midpoint_min:null,cpd_per_night:null};
         const pillarData=sorted.map((e,i)=>{
-          const p=computePillarScore(e,_edadPil);
+          // Una sola noche con un dato imposible no puede dejar sin pilares a
+          // todo el periodo: si el calculo de esa noche falla, vale cero.
+          let p;
+          try{ p=computePillarScore(e,_edadPil) || {}; }catch(_ep){ p={}; }
+          if(p.qty_pct==null) p.qty_pct=0;
+          if(p.frag_pct==null) p.frag_pct=0;
           const groupReg = regResult.score !== null ? regResult.score : 0;
           const nightReg = (regResult.cpd_per_night && regResult.cpd_per_night[i] !== undefined)
                            ? regResult.cpd_per_night[i] : groupReg;
@@ -9536,6 +9553,19 @@ async function showDiaryTab_(tab){
           });
           buildPillarLegend('pat-pillar-legend','dp');
           });
+        }
+        }catch(_errPil){
+          // El recuadro salio en blanco Y sin las tarjetas de arriba: la
+          // excepcion no estaba en el grafico sino antes, y el try grande que
+          // envuelve todos los graficos se la tragaba y seguia de largo.
+          // Aislada, si vuelve a fallar el motivo queda escrito en pantalla.
+          console.error('[PILARES]', _errPil);
+          const _cajaP=document.getElementById('diary-chart-pillars');
+          const _contP=_cajaP?_cajaP.parentNode:null;
+          if(_contP) _contP.innerHTML='<div style="font-size:12px;color:#b45309;padding:16px;text-align:center;line-height:1.55">'+
+            'No se pudieron calcular los pilares.<br><b style="font-size:11.5px">'+
+            String((_errPil && _errPil.message) || _errPil).replace(/</g,'&lt;')+'</b>'+
+            '<br><span style="font-size:10.5px;opacity:.75">Sacale una captura a este texto: dice exactamente qué falló.</span></div>';
         }
         }catch(chartErr){console.error("[GRAFICOS] Error dibujando:",chartErr.message,chartErr.stack);}
       },100);
