@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod88">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod89">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod88"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod89"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod88';
+const APP_VERSION='hoy75-mod89';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2901,6 +2901,40 @@ document.addEventListener('change', function(ev){
 }, true);
 function dmRefrescarEcosHora(){
   try{ document.querySelectorAll('#screen-diary-new input[type="time"]').forEach(dmEcoHora); }catch(_){}
+}
+
+// Espera a que el contenedor del lienzo tenga ancho real antes de dejar que
+// Chart.js lo mida. Reintenta cuadro a cuadro hasta ~2 segundos. Si nunca
+// llega a tener ancho, o si la creacion falla, escribe el motivo EN LA CAJA:
+// un rectangulo blanco sin texto no permite averiguar nada.
+function dmChartCuandoMida(canvas, crear, intentos){
+  if(!canvas) return;
+  intentos = (intentos==null) ? 60 : intentos;
+  const cont = canvas.parentNode;
+  const ancho = cont ? (cont.offsetWidth || cont.clientWidth || 0) : 0;
+  if(ancho > 20){
+    try{
+      // Alto explicito: si el contenedor no lo define, el lienzo queda en 0.
+      const alto = (cont.offsetHeight || cont.clientHeight || 0);
+      if(alto < 20){ cont.style.height = '180px'; }
+      crear();
+      if(typeof requestAnimationFrame==='function'){
+        requestAnimationFrame(function(){
+          try{ Object.keys(S.charts||{}).forEach(function(k){ if(S.charts[k] && S.charts[k].canvas===canvas) S.charts[k].resize(); }); }catch(_){}
+        });
+      }
+    }catch(err){
+      console.error('[GRAFICO]', err);
+      if(cont) cont.innerHTML='<div style="font-size:12px;color:#b45309;padding:14px;text-align:center;line-height:1.5">No se pudo dibujar este gráfico.<br><span style="font-size:11px;opacity:.8">'+String(err && err.message || err)+'</span></div>';
+    }
+    return;
+  }
+  if(intentos <= 0){
+    if(cont) cont.innerHTML='<div style="font-size:12px;color:#b45309;padding:14px;text-align:center;line-height:1.5">El gráfico no se pudo mostrar en esta pantalla.<br><span style="font-size:11px;opacity:.8">Probá girar el teléfono o volver a entrar.</span></div>';
+    return;
+  }
+  if(typeof requestAnimationFrame==='function') requestAnimationFrame(function(){ dmChartCuandoMida(canvas, crear, intentos-1); });
+  else setTimeout(function(){ dmChartCuandoMida(canvas, crear, intentos-1); }, 30);
 }
 
 function dmRedibujarGraficos(){
@@ -4734,11 +4768,14 @@ function updateClinicalMetrics(entries, todasLasNoches){
   // Las comparativas usan el historial COMPLETO aunque arriba se esten viendo
   // 7 dias: con 7 noches nunca hay 5 en cada grupo y la tarjeta no aparecia.
   const _base = (todasLasNoches && todasLasNoches.length) ? todasLasNoches : entries;
+  // El destino del bloque de comparativas es DESPUES del actograma: el medico
+  // y el paciente leen primero los horarios y despues los factores.
+  var _destino = document.getElementById('diary-habits-slot') || el;
   // Comparativas con/sin cada habito. Devuelve '' si no hay noches suficientes,
   // asi que no hace falta condicionar nada aca.
   try{
     const _hi = (typeof renderHabitsImpactHtml==='function') ? renderHabitsImpactHtml(_base) : '';
-    if(_hi) el.insertAdjacentHTML('beforeend', _hi);
+    if(_hi) _destino.innerHTML = _hi;
   }catch(_e){ console.warn('[habitos paciente]', _e); }
 }
 
@@ -5295,21 +5332,33 @@ function renderNochesARevisarHtml(entries){
   const malas=(entries||[]).map(e=>({e, m:dmMotivoDescarte(e)}))
     .filter(x=>x.m && x.m!=='importada' && x.e.bedtime)
     .sort((a,b)=>a.e.diary_date<b.e.diary_date?1:-1);
-  if(!malas.length) return '';
+  const todas=(entries||[]).filter(e=>e && e.diary_date)
+    .slice().sort((a,b)=>a.diary_date<b.diary_date?1:-1);
+  if(!malas.length && !todas.length) return '';
   const txt={sin_horarios:'falta un horario', menos_de_1h:'menos de 1 h de sueño',
              duracion_inverosimil:'más de 14 h en la cama',
              sin_hora_despertar:'el despertar quedó igual al acostarse'};
   const fmt=f=>{ try{ return new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'short'}); }catch(_){ return f; } };
   return '<div class="dm-card" style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px">'+
-    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Noches a revisar'+
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Corregir horarios'+
       '<span style="font-weight:400;color:var(--label-3)"> · '+malas.length+'</span></div>'+
     '<div style="font-size:11px;color:var(--label-3);margin-bottom:9px">Estas noches no entran en los promedios. Si sabés el horario real, corregilo acá: queda firmado con tu mail y la fecha.</div>'+
+    (malas.length ? '' : '<div style="font-size:12px;color:#3f3f46;padding:2px 0 6px">Ninguna noche quedó fuera de los promedios.</div>')+
     malas.map(x=>'<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid #f0eee9;font-size:12px">'+
         '<span style="color:var(--label-3);min-width:52px">'+fmt(x.e.diary_date)+'</span>'+
         '<span style="color:#3f3f46;flex:1">'+(x.e.bedtime||'—').slice(0,5)+' → '+(x.e.wake_time||'—').slice(0,5)+
           '<span style="color:#b45309"> · '+(txt[x.m]||x.m)+'</span></span>'+
         '<button onclick="dmCorregirNoche('+JSON.stringify(String(x.e.id))+')" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:8px;border:1px solid #1a4a3a;background:#fff;color:#1a4a3a;cursor:pointer">Corregir</button>'+
       '</div>').join('')+
+    // Cualquier noche, aunque no este marcada: un horario puede estar mal sin
+    // ser imposible, y ahi el error no se detecta solo.
+    '<div style="display:flex;align-items:center;gap:8px;margin-top:11px;padding-top:9px;border-top:1px solid #f0eee9">'+
+      '<span style="font-size:11.5px;color:var(--label-3);white-space:nowrap">Corregir otra noche:</span>'+
+      '<select id="dm-sel-noche" style="flex:1;min-width:0;font-size:12px;padding:5px 7px;border-radius:8px;border:1px solid #d9d5cc;background:#fff;color:#3f3f46">'+
+        todas.map(e=>'<option value="'+e.id+'">'+fmt(e.diary_date)+' · '+String(e.bedtime||'—').slice(0,5)+' → '+String(e.wake_time||'—').slice(0,5)+'</option>').join('')+
+      '</select>'+
+      '<button onclick="var s=document.getElementById(\'dm-sel-noche\'); if(s&&s.value) dmCorregirNoche(s.value);" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:8px;border:1px solid #1a4a3a;background:#fff;color:#1a4a3a;cursor:pointer;white-space:nowrap">Corregir</button>'+
+    '</div>'+
     '</div>';
 }
 
@@ -9186,7 +9235,7 @@ async function showDiaryTab_(tab){
                       if(hOfDay!=null){
                         const off=hOfDay>=12?hOfDay-12:hOfDay+12;
                         const x1=xS.getPixelForValue(off), x2=xS.getPixelForValue(off+r.exercise/60);
-                        cx.fillStyle=r.exerciseLate?'#ea580c':'#16a34a';
+                        cx.fillStyle='#16a34a';
                         cx.fillRect(Math.min(x1,x2), _g.y-1.5, Math.max(3,Math.abs(x2-x1)), 3);
                       } else put('🏃', r.exerciseLate);
                     }
@@ -9341,6 +9390,15 @@ async function showDiaryTab_(tab){
         const ctxP=document.getElementById('diary-chart-pillars');
         if(ctxP){
           killChart('dp');
+          // Este grafico venia saliendo en blanco en el celular y los intentos
+          // anteriores (redibujar al cambiar de pantalla, y despues al cambiar
+          // de pestaña) no alcanzaron. El problema es que Chart.js mide el
+          // lienzo AL CREARLO: si en ese instante el contenedor todavia no
+          // tiene ancho, dibuja en cero pixeles y ya no se recupera solo.
+          // Ahora se espera a que el contenedor tenga ancho de verdad antes de
+          // crear nada, y si algo falla se escribe el motivo en pantalla en
+          // vez de dejar un rectangulo blanco sin explicacion.
+          dmChartCuandoMida(ctxP, function(){
           (function(){try{if(S.charts.dp)S.charts.dp.destroy();}catch(_){}})(),S.charts.dp=new Chart(ctxP,{
             type:'line',
             data:{
@@ -9366,6 +9424,7 @@ async function showDiaryTab_(tab){
             }
           });
           buildPillarLegend('pat-pillar-legend','dp');
+          });
         }
         }catch(chartErr){console.error("[GRAFICOS] Error dibujando:",chartErr.message,chartErr.stack);}
       },100);
@@ -12294,7 +12353,6 @@ async function showDrPTab_(tab){
             <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
             <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(to right,rgba(26,74,58,0.25),#1a4a3a,rgba(26,74,58,0.25));border-radius:2px;margin-right:3px;vertical-align:middle"></span>Tramos tenues: en cama sin dormir (latencia / antes de levantarse)</span>
             <span><span style="display:inline-block;width:10px;height:3px;background:#16a34a;margin-right:3px;vertical-align:middle"></span>🏃 Ejercicio (ancho = duración)</span>
-            <span><span style="display:inline-block;width:10px;height:3px;background:#ea580c;margin-right:3px;vertical-align:middle"></span>🏃 Ejercicio después de las 21 h</span>
             <span>📝 Comentario del paciente esa noche</span>
             <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
           </div>
@@ -12499,7 +12557,11 @@ async function showDrPTab_(tab){
           // fila que usa el bloque de sueño (mismo array "sorted", mismo índice),
           // así el alineado es exacto sin depender de una lista HTML aparte.
           ctxA._layers = ctxA._layers || {exercise:true,caffeine:true,alcohol:true,screens:true};
-          ctxA._habitRows = sorted.map((e,_hi)=>({
+          // Si la noche no se dibuja (horarios imposibles), sus marcadores de
+          // ejercicio y pantallas tampoco: quedaban flotando en una fila vacia
+          // y parecian una barra suelta sobre la nada.
+          const _sinBarra = _hi => !sleepBars[_hi] || (sleepBars[_hi][0]===0 && sleepBars[_hi][1]===0);
+          ctxA._habitRows = sorted.map(function(e,_hi){ if(_sinBarra(_hi)) return {}; return ({
             latency: (e.sleep_latency_mins!=null && e.sleep_latency_mins>0) ? parseInt(e.sleep_latency_mins) : null,
             wakeOff: sleepBars[_hi] ? sleepBars[_hi][1] : null,
             getUpOff: e.get_up_time ? toOff(e.get_up_time.slice(0,5)) : null,
@@ -12512,7 +12574,7 @@ async function showDrPTab_(tab){
             alcohol: e.alcohol_drinks>0 ? e.alcohol_drinks : null,
             screens: e.screen_minutes>0 ? e.screen_minutes : null,
             bedOffset: sleepBars[_hi] ? sleepBars[_hi][0] : null
-          }));
+          }); });
           (function(){try{if(S.charts['dr-acto'])S.charts['dr-acto'].destroy();}catch(_){}})(),S.charts['dr-acto']=new Chart(ctxA,{
             type:'bar',
             data:{labels:actoLabels,datasets:[
@@ -12527,6 +12589,10 @@ async function showDrPTab_(tab){
                 legend:{display:false},
                 annotation:{annotations:annots},
                 tooltip:{
+                  // Sin esto habia que acertarle a la barra. Con el modo por
+                  // indice alcanza con estar en la fila, que es donde esta el
+                  // icono del comentario.
+                  mode:'index', intersect:false,
                   callbacks:{
                     // Lo que escribio la persona esa noche, en la misma fila.
                     afterBody:function(items){
@@ -12748,7 +12814,7 @@ async function showDrPTab_(tab){
                         const off=hOfDay>=12?hOfDay-12:hOfDay+12;
                         const dur=r.exercise/60;
                         const x1=xS.getPixelForValue(off), x2=xS.getPixelForValue(off+dur);
-                        cx.fillStyle=r.exerciseLate?'#ea580c':'#16a34a';
+                        cx.fillStyle='#16a34a';
                         cx.fillRect(Math.min(x1,x2), yMid-1.5, Math.max(3,Math.abs(x2-x1)), 3);
                       } else {
                         put('🏃', r.exerciseLate);
@@ -19897,7 +19963,9 @@ function dmTcciRenderPrograma(){
   DM_TCCI_PROGRAMA.forEach(function(s){
     const disponible = empezado && s.n<=actual;
     const bloqueadaPorPago = !s.libre && !acceso;
-    const bloqueadaPorTiempo = empezado && s.n>actual;
+    // Con acceso libre no corre el bloqueo por semana: el programa se puede
+    // recorrer entero de una, que es de lo que se trata explorarlo.
+    const bloqueadaPorTiempo = empezado && s.n>actual && !dmTcciTieneAcceso();
     const activa = disponible && !bloqueadaPorPago;
     const borde = activa ? 'rgba(126,200,164,.35)' : 'rgba(255,255,255,.1)';
     let estado='';
