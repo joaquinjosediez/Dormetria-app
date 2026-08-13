@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod92">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod93">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod92"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod93"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod92';
+const APP_VERSION='hoy75-mod93';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3061,6 +3061,27 @@ function dismissPVTBanner(){
   // Also try removing by class
   document.querySelectorAll('.pvt-banner').forEach(function(el){el.remove();});
 }
+// ── Perfil creado por el profesional ────────────────────────────────────
+// Si el medico ya cargo a la persona con todos sus datos, ese perfil existe en
+// `patients` sin auth_id: es una ficha sin cuenta. Cuando la persona se
+// registra con el mismo mail, hay que ADOPTAR esa ficha en vez de crear una
+// nueva, si no queda un perfil vacio y los datos clinicos huerfanos.
+async function dmAdoptarPerfilExistente(email, authUid){
+  if(!email || !authUid) return null;
+  try{
+    const filas = await db.get('patients?email=eq.'+encodeURIComponent(String(email).toLowerCase())+'&select=*');
+    const previo = (filas||[])[0];
+    if(!previo) return null;
+    if(previo.auth_id && previo.auth_id !== authUid) return null;  // es de otra cuenta
+    if(!previo.auth_id){
+      await db.patch('patients?id=eq.'+encodeURIComponent(previo.id), { auth_id: authUid });
+      previo.auth_id = authUid;
+    }
+    console.log('[ALTA] perfil preexistente adoptado:', previo.id);
+    return previo;
+  }catch(e){ console.warn('[ALTA] adoptar:', e && e.message); return null; }
+}
+
 function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase();}
 
 
@@ -3140,9 +3161,13 @@ async function doLogin(){
           const d=await db.post('doctors', doctorData);
           profile = Array.isArray(d)?d[0]:d; S.role='doctor';
         } else {
-          const patientData={ name: md.name||'', lname: md.lname||'', email, code: genCode(), auth_id: authUid };
-          const d=await db.post('patients', patientData);
-          profile = Array.isArray(d)?d[0]:d; S.role='patient';
+          const _previo = await dmAdoptarPerfilExistente(email, authUid);
+          if(_previo){ profile=_previo; S.role='patient'; }
+          else{
+            const patientData={ name: md.name||'', lname: md.lname||'', email, code: genCode(), auth_id: authUid };
+            const d=await db.post('patients', patientData);
+            profile = Array.isArray(d)?d[0]:d; S.role='patient';
+          }
         }
       }catch(createErr){
         console.error('[LOGIN] auto-crear perfil:', createErr);
@@ -3324,13 +3349,31 @@ async function doRegister(){
       if(dob) patientData.dob=dob;
       if(sex) patientData.sex=sex;
       try{
+        const _previo = await dmAdoptarPerfilExistente(email, authData.user.id);
+        if(_previo){
+          // El profesional ya lo habia cargado: no se pisa lo que trae, solo
+          // se completa lo que falte con lo que la persona acaba de escribir.
+          const _faltantes={};
+          if(!_previo.name && name) _faltantes.name=name;
+          if(!_previo.lname && lname) _faltantes.lname=lname;
+          if(!_previo.dob && dob) _faltantes.dob=dob;
+          if(!_previo.sex && sex) _faltantes.sex=sex;
+          if(Object.keys(_faltantes).length){
+            try{ await db.patch('patients?id=eq.'+encodeURIComponent(_previo.id), _faltantes); Object.assign(_previo,_faltantes); }catch(_){}
+          }
+          S.user=_previo;
+          throw {__adoptado:true};
+        }
         const d=await db.post('patients', patientData);
         S.user = Array.isArray(d) ? d[0] : d;
       } catch(profErr){
+        if(profErr && profErr.__adoptado){ /* ya quedo resuelto arriba */ }
+        else{
         console.error('[REGISTER] crear patient profile:', profErr);
         // El usuario se creó en Auth pero falló el perfil — informar pero no bloquear
         err.textContent='Cuenta creada. Confirmá el email y luego completá tu perfil.';
         err.classList.add('show');
+        }
       }
       // Si Confirm email está activado, Auth NO devuelve sesión activa
       if(!authData.session){
@@ -10036,8 +10079,72 @@ function updateAwakeInBed(){
   hint.style.display = 'block';
 }
 
+// Sin fecha de nacimiento no hay bandas de sueño por edad, sin sexo no hay
+// analisis de ciclo, y sin peso y altura no hay IMC ni riesgo de apnea. Son
+// los cuatro datos de los que dependen las conclusiones, asi que se piden una
+// sola vez, antes del primer registro. Lo demas sigue siendo opcional.
+function dmDatosBasicosFaltantes(){
+  const u=(S && S.user) || {};
+  const f=[];
+  if(!u.dob) f.push('fecha de nacimiento');
+  if(!u.sex) f.push('sexo');
+  if(!u.weight_kg) f.push('peso');
+  if(!u.height_cm) f.push('altura');
+  return f;
+}
+function dmPedirDatosBasicos(){
+  const faltan=dmDatosBasicosFaltantes();
+  if(!faltan.length) return false;
+  const old=document.getElementById('dm-datos-basicos'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-datos-basicos';
+  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,0.94);z-index:10003;overflow-y:auto;padding:26px 18px';
+  w.innerHTML='<div style="max-width:420px;margin:0 auto">'+
+    '<div style="font-size:19px;font-weight:700;color:#fff;margin-bottom:6px">Antes de empezar</div>'+
+    '<div style="font-size:13px;color:rgba(255,255,255,.68);line-height:1.6;margin-bottom:18px">Faltan '+faltan.join(', ')+'. Sin estos datos el análisis usa valores promedio en vez de los tuyos: las horas de sueño recomendadas cambian con la edad, y el peso y la altura entran en varios cálculos. Se piden una sola vez.</div>'+
+    '<div style="margin-bottom:12px"><label style="display:block;font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:5px">Fecha de nacimiento</label>'+
+      '<input id="db-dob" type="date" value="'+((S.user&&S.user.dob)?String(S.user.dob).split('T')[0]:'')+'" style="width:100%;padding:12px 13px;border:none;border-radius:10px;font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.08);color:#F4EFE5;box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);box-sizing:border-box"></div>'+
+    '<div style="margin-bottom:12px"><label style="display:block;font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:5px">Sexo</label>'+
+      '<select id="db-sex" style="width:100%;padding:12px 13px;border:none;border-radius:10px;font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.08);color:#F4EFE5;box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);box-sizing:border-box">'+
+      '<option value="">—</option>'+
+      ['F|Femenino','M|Masculino','X|Otro'].map(function(o){ var p=o.split('|');
+        return '<option value="'+p[0]+'"'+((S.user&&S.user.sex)===p[0]?' selected':'')+'>'+p[1]+'</option>'; }).join('')+
+      '</select></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:14px">'+
+      '<div style="flex:1"><label style="display:block;font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:5px">Peso (kg)</label>'+
+        '<input id="db-weight" type="number" step="0.1" min="1" value="'+((S.user&&S.user.weight_kg)||'')+'" style="width:100%;padding:12px 13px;border:none;border-radius:10px;font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.08);color:#F4EFE5;box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);box-sizing:border-box"></div>'+
+      '<div style="flex:1"><label style="display:block;font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:5px">Altura (cm)</label>'+
+        '<input id="db-height" type="number" step="1" min="30" value="'+((S.user&&S.user.height_cm)||'')+'" style="width:100%;padding:12px 13px;border:none;border-radius:10px;font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.08);color:#F4EFE5;box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);box-sizing:border-box"></div>'+
+    '</div>'+
+    '<div id="db-err" style="font-size:12.5px;color:#ff7979;margin-bottom:10px;min-height:1em"></div>'+
+    '<button onclick="dmGuardarDatosBasicos()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar y seguir</button>'+
+  '</div>';
+  document.body.appendChild(w);
+  return true;
+}
+async function dmGuardarDatosBasicos(){
+  const g=id=>{ const el=document.getElementById(id); return el?String(el.value||'').trim():''; };
+  const err=document.getElementById('db-err');
+  const dob=g('db-dob'), sex=g('db-sex'), peso=parseFloat(g('db-weight')), alt=parseFloat(g('db-height'));
+  if(!dob){ if(err) err.textContent='Falta la fecha de nacimiento'; return; }
+  if(!sex){ if(err) err.textContent='Falta el sexo'; return; }
+  if(!peso || peso<1 || peso>400){ if(err) err.textContent='El peso no parece válido'; return; }
+  if(!alt || alt<30 || alt>250){ if(err) err.textContent='La altura no parece válida (en centímetros)'; return; }
+  try{
+    const upd={ dob, sex, weight_kg:peso, height_cm:alt };
+    await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email), upd);
+    Object.assign(S.user, upd);
+    const w=document.getElementById('dm-datos-basicos'); if(w) w.remove();
+    toast('Datos guardados ✓');
+  }catch(e){
+    console.error('[DATOS BASICOS]', e);
+    if(err) err.textContent=(e&&e.message)||'No se pudo guardar';
+  }
+}
+
 async function saveDiary(){
   if(!S.user){toast('Sesión no iniciada');return;}
+  if(dmPedirDatosBasicos()) return;
   const date=document.getElementById('d-date')?.value;
   if(!date){toast('Completá la fecha');return;}
   const bed=document.getElementById('d-bed')?.value||null;
@@ -11215,6 +11322,7 @@ async function renderPatientList(filter){
             <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--label-3)">🔍</span>
             <input type="text" id="dr-patient-search" placeholder="Buscar paciente..." style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--sep-opaque);border-radius:12px;font-size:14px;font-family:var(--font);background:var(--bg-secondary);color:var(--label);box-sizing:border-box">
           </div>
+          <button id="dr-btn-crear" onclick="dmCrearPacienteModal()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.22);border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">+ Alta</button>
           <button id="dr-btn-vincular" onclick="showDrTab('link',document.getElementById('drnav-metrics'))" style="background:#1a4a3a;border:none;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">+ Vincular</button>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px">
@@ -11789,6 +11897,80 @@ async function renderDoctorAdherence(){
     setTimeout(function(){ try{ drRenderAdhCharts(); }catch(_){} }, 40);
   }catch(e){ el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">No se pudo calcular la adherencia.</div>'; }
 }
+// ══ ALTA DE PACIENTE POR EL PROFESIONAL ═════════════════════════════════
+// El camino de siempre es al reves: la persona se registra y el medico la
+// vincula con un codigo. Eso funciona, pero deja los datos basicos librados a
+// que cada uno los complete, y no los completan.
+// Acá el medico crea la ficha con todo cargado en la consulta —que es cuando
+// tiene los datos a mano— y la persona despues se registra con ese MISMO mail
+// y adopta el perfil, sin volver a escribir nada.
+function dmCrearPacienteModal(){
+  const old=document.getElementById('dm-alta-pac'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-alta-pac';
+  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,0.92);z-index:10002;overflow-y:auto;padding:24px 16px';
+  const campo=(id,rot,tipo,extra)=>'<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:5px;letter-spacing:.03em">'+rot+'</label>'+
+    '<input id="'+id+'" type="'+(tipo||'text')+'" '+(extra||'')+' style="width:100%;padding:11px 13px;border:none;border-radius:10px;font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.08);color:#F4EFE5;box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);box-sizing:border-box"></div>';
+  w.innerHTML='<div style="max-width:480px;margin:0 auto">'+
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'+
+      '<button onclick="document.getElementById(\'dm-alta-pac\').remove()" style="background:rgba(255,255,255,.1);border:none;border-radius:10px;width:36px;height:36px;color:#fff;font-size:18px;cursor:pointer">←</button>'+
+      '<div style="font-size:18px;font-weight:700;color:#fff">Dar de alta un paciente</div></div>'+
+    '<div style="font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.55;margin-bottom:16px">Cargá los datos ahora, en la consulta. Cuando la persona se registre con ese mismo mail, la ficha ya va a estar completa y no tiene que escribir nada.</div>'+
+    campo('ap-name','Nombre')+campo('ap-lname','Apellido')+
+    campo('ap-email','Email (tiene que ser el mismo con el que se registre)','email')+
+    campo('ap-dob','Fecha de nacimiento','date')+
+    '<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:5px">Sexo</label>'+
+      '<select id="ap-sex" style="width:100%;padding:11px 13px;border:none;border-radius:10px;font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.08);color:#F4EFE5;box-shadow:inset 0 0 0 1px rgba(126,200,164,0.16);box-sizing:border-box">'+
+      '<option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="X">Otro</option></select></div>'+
+    '<div style="display:flex;gap:10px">'+
+      '<div style="flex:1">'+campo('ap-weight','Peso (kg)','number','step="0.1" min="1"')+'</div>'+
+      '<div style="flex:1">'+campo('ap-height','Altura (cm)','number','step="1" min="30"')+'</div>'+
+    '</div>'+
+    '<div id="ap-err" style="font-size:12.5px;color:#ff7979;margin-bottom:10px;min-height:1em"></div>'+
+    '<button onclick="dmCrearPacienteGuardar()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Crear ficha</button>'+
+    '<div id="ap-resultado" style="margin-top:14px"></div>'+
+  '</div>';
+  document.body.appendChild(w);
+}
+
+async function dmCrearPacienteGuardar(){
+  const v=id=>{ const el=document.getElementById(id); return el?String(el.value||'').trim():''; };
+  const errEl=document.getElementById('ap-err');
+  const poner=t=>{ if(errEl) errEl.textContent=t; };
+  const email=v('ap-email').toLowerCase();
+  if(!v('ap-name') || !v('ap-lname')){ poner('Falta el nombre o el apellido'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ poner('El mail no parece válido'); return; }
+  if(!v('ap-dob')){ poner('Falta la fecha de nacimiento'); return; }
+  poner('');
+  try{
+    const previas = await db.get('patients?email=eq.'+encodeURIComponent(email)+'&select=id,name,lname');
+    if(previas && previas.length){ poner('Ya existe una ficha con ese mail. Vinculala con su código.'); return; }
+    const cuerpo = { name:v('ap-name'), lname:v('ap-lname'), email, code:genCode(), dob:v('ap-dob')||null,
+                     sex:v('ap-sex')||null,
+                     weight_kg:v('ap-weight')?parseFloat(v('ap-weight')):null,
+                     height_cm:v('ap-height')?parseFloat(v('ap-height')):null };
+    const r = await db.post('patients', cuerpo);
+    const nuevo = Array.isArray(r)?r[0]:r;
+    // Queda vinculado al profesional desde el momento cero.
+    try{ await db.post('doctor_patients', { doctor_email:S.user.email, patient_email:email }); }catch(_){}
+    const texto = 'Te creé tu perfil en Dormetria con tus datos ya cargados.\n\n'+
+      '1) Entrá a app.dormetria.com\n'+
+      '2) Registrate como paciente con este mismo mail: '+email+'\n'+
+      '3) Listo, vas a ver tu ficha completa.\n\n'+
+      'Si algo no coincide, tu código es '+(nuevo&&nuevo.code?nuevo.code:'—')+'.';
+    const cont=document.getElementById('ap-resultado');
+    if(cont) cont.innerHTML='<div style="background:rgba(126,200,164,.12);border:1px solid rgba(126,200,164,.3);border-radius:12px;padding:13px 15px">'+
+      '<div style="font-size:13px;font-weight:700;color:#7EC8A4;margin-bottom:7px">Ficha creada · código '+(nuevo&&nuevo.code?nuevo.code:'—')+'</div>'+
+      '<textarea id="ap-msg" readonly style="width:100%;min-height:118px;font-size:12.5px;line-height:1.5;padding:10px;border-radius:9px;border:none;background:rgba(0,0,0,.25);color:rgba(255,255,255,.85);font-family:var(--font);box-sizing:border-box">'+texto+'</textarea>'+
+      '<button onclick="var t=document.getElementById(\'ap-msg\');t.select();document.execCommand(\'copy\');toast(\'Copiado\')" style="width:100%;margin-top:8px;background:rgba(255,255,255,.12);border:none;border-radius:10px;padding:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Copiar el mensaje para mandarle</button></div>';
+    toast('Paciente dado de alta ✓');
+    if(typeof loadDoctorPatients==='function') loadDoctorPatients();
+  }catch(e){
+    console.error('[ALTA]', e);
+    poner((e&&e.message)||'No se pudo crear la ficha');
+  }
+}
+
 async function linkPatient(){
   const code=document.getElementById('link-code').value.trim().toUpperCase();
   const err=document.getElementById('link-error');if(err)err.style.display='none';setBtn('link-btn',true);
