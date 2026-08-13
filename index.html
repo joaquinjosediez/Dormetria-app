@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod94">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod97">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod94"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod97"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod94';
+const APP_VERSION='hoy75-mod97';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2908,6 +2908,27 @@ function dmRefrescarEcosHora(){
 // Chart.js lo mida. Reintenta cuadro a cuadro hasta ~2 segundos. Si nunca
 // llega a tener ancho, o si la creacion falla, escribe el motivo EN LA CAJA:
 // un rectangulo blanco sin texto no permite averiguar nada.
+// Ventanita con el comentario de esa noche. Se abre al tocar la fila.
+function dmVerNotaNoche(e){
+  if(!e) return;
+  const t = (typeof dmLimpiarNota==='function') ? dmLimpiarNota(e.notes) : '';
+  if(!t){ if(typeof toast==='function') toast('Esa noche no tiene comentario'); return; }
+  const old=document.getElementById('dm-nota-noche'); if(old) old.remove();
+  let f=e.diary_date;
+  try{ f=new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}); }catch(_){}
+  const w=document.createElement('div');
+  w.id='dm-nota-noche';
+  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,0.75);z-index:10004;display:flex;align-items:center;justify-content:center;padding:22px';
+  w.onclick=function(){ w.remove(); };
+  w.innerHTML='<div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,.4)">'+
+    '<div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8a9691;font-weight:700;margin-bottom:3px">Comentario del paciente</div>'+
+    '<div style="font-size:13px;color:#1a4a3a;font-weight:700;margin-bottom:9px">'+f+'</div>'+
+    '<div style="font-size:14px;color:#3f3f46;line-height:1.6;white-space:pre-wrap">'+String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'+
+    '<button onclick="document.getElementById(\'dm-nota-noche\').remove()" style="width:100%;margin-top:14px;background:#1a4a3a;border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Cerrar</button>'+
+  '</div>';
+  document.body.appendChild(w);
+}
+
 function dmChartCuandoMida(canvas, crear, intentos){
   if(!canvas) return;
   intentos = (intentos==null) ? 60 : intentos;
@@ -3182,6 +3203,16 @@ async function doLogin(){
       }
     }
     S.user = profile;
+    // ── Último ingreso ──
+    // No teníamos ninguna marca de cuándo entra cada uno: el panel de admin
+    // tenía que inferirlo de la última escala sugerida, que no es lo mismo.
+    // Se escribe acá, en el único punto por el que pasan todos los ingresos.
+    // Si la columna no existe todavía, falla en silencio y no rompe el login.
+    try{
+      const _tabla = (S.role==='doctor') ? 'doctors' : 'patients';
+      db.patch(_tabla+'?email=eq.'+encodeURIComponent(String(profile.email).toLowerCase()),
+               { last_seen: new Date().toISOString() }).catch(function(){});
+    }catch(_){}
     trackUsage();
     if(window.PublicKeyCredential && !localStorage.getItem('dm_cred_'+email)){
       setTimeout(()=>offerBiometric(email), 800);
@@ -3767,7 +3798,7 @@ async function loadAdminTab(tab){
             <button onclick="adminReject('${d.email}',this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:#fee2e2;color:#991b1b;font-size:13px;font-weight:600;cursor:pointer">✗ Rechazar</button>
           </div></div>`).join('');
     } else if(tab==='doctors'){
-      const docs=await db.get("doctors?select=name,lname,email,specialty,mat,created_at,listed,public_profile,cv_url&order=created_at.desc");
+      const docs=await db.get("doctors?select=name,lname,email,specialty,mat,created_at,last_seen,listed,public_profile,cv_url&order=created_at.desc");
       // Cuantos pacientes tiene vinculados cada profesional. Antes la columna
       // decia "Ingresos" y mostraba un guion fijo: no habia nada detras.
       try{
@@ -3776,6 +3807,20 @@ async function loadAdminTab(tab){
         (_v||[]).forEach(function(r){ if(r && r.doctor_email) _c[r.doctor_email]=(_c[r.doctor_email]||0)+1; });
         window._admVincPorDoc = _c;
       }catch(_){ window._admVincPorDoc = {}; }
+      // Actividad real de cada profesional. No guardamos ingresos, asi que lo
+      // ultimo que se sabe de alguien es la ultima escala que sugirio. Se
+      // rotula como "última actividad" y no como "último ingreso", que seria
+      // decir algo que no medimos.
+      try{
+        const _sg = await db.get('doctor_suggestions?select=doctor_email,created_at&limit=5000');
+        const _ult = {};
+        (_sg||[]).forEach(function(r){
+          if(!r || !r.doctor_email || !r.created_at) return;
+          const k=String(r.doctor_email).toLowerCase();
+          if(!_ult[k] || r.created_at > _ult[k]) _ult[k]=r.created_at;
+        });
+        window._admUltDoc = _ult;
+      }catch(_){ window._admUltDoc = {}; }
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state">Sin profesionales registrados.</div>';return;}
       const _appList3=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
@@ -3790,6 +3835,9 @@ async function loadAdminTab(tab){
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Especialidad</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Estado</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Pacientes</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Tiempo de uso</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Última actividad</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Último ingreso</th>'+
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Alta</th>'+
         '</tr></thead><tbody>'+
         docs.map(d=>{
@@ -3805,6 +3853,9 @@ async function loadAdminTab(tab){
             <td style="padding:8px;color:var(--label-2)">${d.specialty||'—'}</td>
             <td style="padding:8px;text-align:center">${badge}</td>
             <td style="padding:8px;text-align:center;color:var(--label-2);font-weight:600">${(window._admVincPorDoc&&window._admVincPorDoc[d.email])||0}</td>
+            <td style="padding:8px;text-align:center;color:var(--label-3)">${dmTiempoDeUso(d.created_at, d.last_seen || (window._admUltDoc||{})[String(d.email||'').toLowerCase()])}</td>
+            <td style="padding:8px;text-align:center;color:var(--label-3)">${dmFechaCorta((window._admUltDoc||{})[String(d.email||'').toLowerCase()])}</td>
+            <td style="padding:8px;text-align:center;color:${d.last_seen?'var(--label-2)':'var(--label-3)'};font-weight:${d.last_seen?'600':'400'}">${dmDesdeCuando(d.last_seen)}</td>
             <td style="padding:8px;color:var(--label-3)">${d.created_at?new Date(d.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'—'}</td>
           </tr>`;
         }).join('')+'</tbody></table></div>'+
@@ -4114,6 +4165,7 @@ function renderAdminPatientsTable(){
     '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Nombre</th>'+
     '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Edad</th>'+
     '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Días activos</th>'+
+    '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Tiempo de uso</th>'+
     '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Última actividad</th>'+
     '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Profesional</th>'+
     '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Registrado</th>'+
@@ -4126,12 +4178,16 @@ function renderAdminPatientsTable(){
       lastStr = d===0?'Hoy':d===1?'Ayer':d<=60?('hace '+d+' días'):new Date(p.last).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
       lastColor = d<=7?'#15803d':d<=30?'#a16207':'#b91c1c';
     }
+    // Tiempo de uso = del alta a la ultima señal de actividad. Distinto de
+    // "dias activos", que cuenta cuantos dias efectivamente registro algo.
+    const usoTxt = dmTiempoDeUso(p.created_at, p.last ? new Date(p.last).toISOString() : null);
     const drTxt = p.doctors.length ? p.doctors.map(e=>e.split('@')[0]).join(', ') : '<span style="color:var(--label-3)">Sin vincular</span>';
     const regDate=p.created_at?new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'—';
     return '<tr style="border-bottom:1px solid var(--sep-opaque)">'+
       '<td style="padding:8px"><div style="font-weight:600">'+(p.name||'—')+'</div><div style="color:var(--label-3);font-size:11px">'+p.email+'</div></td>'+
       '<td style="padding:8px;text-align:center">'+(age!==null?age+' a':'—')+'</td>'+
       '<td style="padding:8px;text-align:center;color:'+(p.nDays>0?'var(--label)':'var(--label-3)')+';font-weight:'+(p.nDays>0?'600':'400')+'">'+(p.nDays||'—')+'</td>'+
+      '<td style="padding:8px;text-align:center;color:var(--label-3)">'+usoTxt+'</td>'+
       '<td style="padding:8px;color:'+lastColor+';font-weight:600">'+lastStr+'</td>'+
       '<td style="padding:8px;font-size:11px;color:var(--label-2)">'+drTxt+'</td>'+
       '<td style="padding:8px;color:var(--label-3)">'+regDate+'</td>'+
@@ -9140,15 +9196,16 @@ async function showDiaryTab_(tab){
         '</div>'+
         '<div id="score-panel-wrap">'+renderSleepScorePanel(scoreEntries,(function(){try{const _d=S.user&&S.user.dob?new Date(S.user.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())+'</div>'
       +`
+        <div id="pat-weekly-prog" style="margin-top:12px;display:none"></div>
         <div class="sec-title" style="margin-top:12px;color:#fff">Pilares del sueño</div>
-        <div id="diary-pillar-bars" style="margin-bottom:8px"></div>
-        <div style="background:#fff;border-radius:14px;padding:12px 10px;margin-top:8px"><div class="chart-wrap" style="height:180px"><canvas id="diary-chart-pillars"></canvas></div><div id="pat-pillar-legend"></div></div>
+        <div id="diary-pillar-bars" style="margin-bottom:6px"></div>
+        <div style="background:#fff;border-radius:14px;padding:6px 10px 10px;margin-top:6px"><div class="chart-wrap" style="height:180px;padding:6px 4px"><canvas id="diary-chart-pillars"></canvas></div><div id="pat-pillar-legend"></div></div>
         <div style="height:8px"></div>
         <div id="diary-clinical-metrics" style="margin:8px 0"></div>
         <div class="sec-title" style="margin-top:12px;color:#fff">Actograma — horarios de sueño</div>
         <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
         <div style="background:#fff;border-radius:14px;padding:12px 10px;padding-bottom:8px;max-height:62vh;overflow:auto;-webkit-overflow-scrolling:touch">
-          <canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas>
+          <div id="pat-acto-inner"><canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas></div>
         </div>
         <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:5px">Si hay muchas noches, el actograma se desplaza dentro del recuadro.</div>
         <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0 14px;flex-wrap:wrap">
@@ -9284,6 +9341,11 @@ async function showDiaryTab_(tab){
             screens:e.screen_minutes>0?e.screen_minutes:null
           }));
           const chartH=Math.max(220,sorted.length*15+100);
+          // El alto va al contenedor interno: es lo que Chart.js mide. Si se lo
+          // pone solo al canvas, el grafico se encoge para entrar en la caja
+          // recortada y las filas quedan aplastadas.
+          const _innerP=document.getElementById('pat-acto-inner');
+          if(_innerP) _innerP.style.height=chartH+'px';
           ctxA.style.height=chartH+'px';ctxA.height=chartH;
           (function(){try{if(S.charts.acto)S.charts.acto.destroy();}catch(_){}})(),S.charts.acto=new Chart(ctxA,{
             type:'bar',
@@ -9299,6 +9361,17 @@ async function showDiaryTab_(tab){
               responsive:true,
               layout:{padding:{top:68,bottom:4,right:48}},
               maintainAspectRatio:false,
+              // Tocar la fila abre el comentario de esa noche, si lo hay.
+              onClick:function(ev, els, chart){
+                try{
+                  const y = ev.y != null ? ev.y : (ev.native ? ev.native.offsetY : null);
+                  if(y==null) return;
+                  const esc = chart.scales.y;
+                  let i = els && els.length ? els[0].index : (esc ? Math.round(esc.getValueForPixel(y)) : -1);
+                  if(!(i>=0) || !sorted[i]) return;
+                  dmVerNotaNoche(sorted[i]);
+                }catch(_){}
+              },
               plugins:{
                 legend:{display:false},
                 tooltip:{
@@ -9652,6 +9725,15 @@ async function showDiaryTab_(tab){
       },100);
       // Update clinical metrics after charts render
       setTimeout(()=>updateClinicalMetrics(scoreEntries, entries),150);
+      // La progresion semanal estaba solo del lado del profesional. Es la vista
+      // que mejor responde "¿estoy mejorando?", que es la pregunta del paciente.
+      try{
+        const _wp=document.getElementById('pat-weekly-prog');
+        if(_wp && typeof renderWeeklyProgressionHtml==='function'){
+          const _wpH=renderWeeklyProgressionHtml(entries);
+          if(_wpH){ _wp.innerHTML=_wpH; _wp.style.display=''; }
+        }
+      }catch(_wpe){ console.warn('[progresion]', _wpe); }
     } // end graficos
     } // end tab===graficos
   }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar registros</div>';}
@@ -10159,6 +10241,36 @@ async function dmGuardarEspecialidad(){
     const w=document.getElementById('dm-espec'); if(w) w.remove();
     toast('Especialidad guardada ✓');
   }catch(e){ if(err) err.textContent=(e&&e.message)||'No se pudo guardar'; }
+}
+
+// Cuanto tiempo lleva usando la app: de la fecha de alta a la ultima señal de
+// vida. Si no hay actividad posterior al alta, no hay tiempo de uso: es alguien
+// que se registro y no volvio, y decir "3 meses" seria enganioso.
+function dmTiempoDeUso(alta, ultima){
+  if(!alta || !ultima) return '—';
+  try{
+    const d=Math.round((new Date(ultima)-new Date(alta))/86400000);
+    if(d<1) return 'menos de 1 d';
+    if(d<31) return d+' d';
+    const m=Math.floor(d/30);
+    return m+' mes'+(m>1?'es':'');
+  }catch(_){ return '—'; }
+}
+// "Hoy", "ayer", "hace 5 días" o la fecha. Un timestamp crudo obliga a hacer
+// la cuenta mentalmente cada vez que se mira la tabla.
+function dmDesdeCuando(f){
+  if(!f) return 'nunca';
+  try{
+    const d=Math.floor((Date.now()-new Date(f))/86400000);
+    if(d<=0) return 'hoy';
+    if(d===1) return 'ayer';
+    if(d<=60) return 'hace '+d+' d';
+    return new Date(f).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+  }catch(_){ return '—'; }
+}
+function dmFechaCorta(f){
+  if(!f) return '—';
+  try{ return new Date(f).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}); }catch(_){ return '—'; }
 }
 
 function dmDatosBasicosFaltantes(){
@@ -12004,6 +12116,14 @@ function dmCrearPacienteModal(){
       '<div style="flex:1">'+campo('ap-weight','Peso (kg)','number','step="0.1" min="1"')+'</div>'+
       '<div style="flex:1">'+campo('ap-height','Altura (cm)','number','step="1" min="30"')+'</div>'+
     '</div>'+
+    '<div style="margin:16px 0 10px"><div style="font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:7px">Escalas para que complete al entrar <span style="opacity:.7">(opcional)</span></div>'+
+      '<div style="max-height:190px;overflow-y:auto;background:rgba(0,0,0,.18);border-radius:10px;padding:8px 10px">'+
+        (typeof SCALES!=='undefined'?SCALES:[]).map(function(s){
+          return '<label style="display:flex;gap:9px;align-items:flex-start;padding:6px 0;cursor:pointer">'+
+            '<input type="checkbox" class="ap-escala" value="'+s.id+'" style="margin-top:2px;flex-shrink:0">'+
+            '<span style="font-size:12.5px;color:rgba(255,255,255,.82);line-height:1.4">'+(s.icon||'')+' '+s.name+'</span></label>';
+        }).join('')+
+      '</div></div>'+
     '<div id="ap-err" style="font-size:12.5px;color:#ff7979;margin-bottom:10px;min-height:1em"></div>'+
     '<button onclick="dmCrearPacienteGuardar()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Crear ficha</button>'+
     '<div id="ap-resultado" style="margin-top:14px"></div>'+
@@ -12031,6 +12151,24 @@ async function dmCrearPacienteGuardar(){
     const nuevo = Array.isArray(r)?r[0]:r;
     // Queda vinculado al profesional desde el momento cero.
     try{ await db.post('doctor_patients', { doctor_email:S.user.email, patient_email:email }); }catch(_){}
+    // Escalas elegidas: quedan esperandola en su app desde la primera entrada.
+    const _esc=[].slice.call(document.querySelectorAll('.ap-escala:checked')).map(function(c){ return c.value; });
+    let _escOk=0;
+    for(const sid of _esc){
+      const sc=(typeof SCALES!=='undefined'?SCALES:[]).find(function(x){ return x.id===sid; });
+      try{
+        await db.post('doctor_suggestions', {
+          doctor_email: String(S.user.email).trim().toLowerCase(),
+          doctor_name: ((S.user.gender==='Masculino')?'Dr. ':(S.user.gender==='Femenino')?'Dra. ':'Dr/a. ')+S.user.name+' '+(S.user.lname||''),
+          patient_email: email,
+          scale_id: sid,
+          scale_name: (sc&&sc.name)||sid,
+          seen:false, completed:false
+        });
+        _escOk++;
+      }catch(_){}
+    }
+    window._dmUltimaAlta = { email:email, name:cuerpo.name, lname:cuerpo.lname };
     const texto = 'Te creé tu perfil en Dormetria con tus datos ya cargados.\n\n'+
       '1) Entrá a app.dormetria.com\n'+
       '2) Registrate como paciente con este mismo mail: '+email+'\n'+
@@ -12038,7 +12176,9 @@ async function dmCrearPacienteGuardar(){
       'Si algo no coincide, tu código es '+(nuevo&&nuevo.code?nuevo.code:'—')+'.';
     const cont=document.getElementById('ap-resultado');
     if(cont) cont.innerHTML='<div style="background:rgba(126,200,164,.12);border:1px solid rgba(126,200,164,.3);border-radius:12px;padding:13px 15px">'+
-      '<div style="font-size:13px;font-weight:700;color:#7EC8A4;margin-bottom:7px">Ficha creada · código '+(nuevo&&nuevo.code?nuevo.code:'—')+'</div>'+
+      '<div style="font-size:13px;font-weight:700;color:#7EC8A4;margin-bottom:7px">Ficha creada · código '+(nuevo&&nuevo.code?nuevo.code:'—')+(_escOk?' · '+_escOk+' escala'+(_escOk>1?'s':'')+' asignada'+(_escOk>1?'s':''):'')+'</div>'+
+      '<button onclick="dmInvitarPaciente()" style="width:100%;margin-bottom:9px;background:#7EC8A4;border:none;border-radius:10px;padding:11px;color:#0F2820;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">✉️ Invitarlo por mail (elige su contraseña)</button>'+
+      '<div id="ap-inv-estado" style="font-size:12px;line-height:1.5;margin-bottom:9px;min-height:1em;color:rgba(255,255,255,.7)"></div>'+
       '<textarea id="ap-msg" readonly style="width:100%;min-height:118px;font-size:12.5px;line-height:1.5;padding:10px;border-radius:9px;border:none;background:rgba(0,0,0,.25);color:rgba(255,255,255,.85);font-family:var(--font);box-sizing:border-box">'+texto+'</textarea>'+
       '<button onclick="var t=document.getElementById(\'ap-msg\');t.select();document.execCommand(\'copy\');toast(\'Copiado\')" style="width:100%;margin-top:8px;background:rgba(255,255,255,.12);border:none;border-radius:10px;padding:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Copiar el mensaje para mandarle</button></div>';
     toast('Paciente dado de alta ✓');
@@ -12046,6 +12186,38 @@ async function dmCrearPacienteGuardar(){
   }catch(e){
     console.error('[ALTA]', e);
     poner((e&&e.message)||'No se pudo crear la ficha');
+  }
+}
+
+// La invitación la manda el servidor: crear una cuenta para otra persona
+// necesita la clave de servicio de Supabase, y esa clave no puede estar en el
+// navegador —salta todas las reglas de acceso de la base—. Acá solo se pide.
+const DM_URL_INVITAR = 'https://dormetria.com/.netlify/functions/invitar-paciente';
+async function dmInvitarPaciente(){
+  const datos = window._dmUltimaAlta;
+  const est = document.getElementById('ap-inv-estado');
+  const decir = (t,color)=>{ if(est){ est.textContent=t; est.style.color=color||'rgba(255,255,255,.7)'; } };
+  if(!datos || !datos.email){ decir('No hay ninguna ficha recién creada.', '#ff7979'); return; }
+  decir('Enviando…');
+  try{
+    const ses = await supa.auth.getSession();
+    const token = ses && ses.data && ses.data.session ? ses.data.session.access_token : null;
+    if(!token){ decir('Tu sesión expiró. Volvé a entrar.', '#ff7979'); return; }
+    const r = await fetch(DM_URL_INVITAR, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+      body: JSON.stringify(datos)
+    });
+    const d = await r.json().catch(()=>({}));
+    if(r.ok && d.ok){
+      decir('✓ Invitación enviada a '+datos.email+'. Le llega un mail para elegir su contraseña.', '#7EC8A4');
+      return;
+    }
+    if(r.status===409){ decir(d.error||'Ya existe una cuenta con ese mail.', '#C8A96E'); return; }
+    decir(d.error || ('No se pudo enviar (código '+r.status+'). Mandale el mensaje de abajo por WhatsApp.'), '#ff7979');
+  }catch(e){
+    console.error('[INVITAR]', e);
+    decir('No se pudo contactar al servidor de invitaciones. Mandale el mensaje de abajo por WhatsApp.', '#ff7979');
   }
 }
 
@@ -12760,8 +12932,8 @@ async function showDrPTab_(tab){
             <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
           </div>
           <div id="dr-habit-summary" style="font-size:11px;color:#6b6b76;margin-bottom:6px">Cargando hábitos…</div>
-          <div style="max-height:64vh;overflow:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch">
-            <canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas>
+          <div id="dr-acto-scroll" style="max-height:66vh;overflow:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch">
+            <div id="dr-acto-inner"><canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas></div>
           </div>
           <div style="display:flex;gap:16px;font-size:11px;color:#6b6b76;margin:6px 0 4px;flex-wrap:wrap">
             <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
@@ -12872,7 +13044,12 @@ async function showDrPTab_(tab){
         const drSleepDash=sorted.map((e,i)=>drFueraProm[i]?[4,3]:[]);
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
-          const H=Math.max(180,sorted.length*12+80);ctxA.style.height=H+'px';ctxA.height=H;
+          // 15 px por fila en vez de 12: con el scroll ya no hay que apretar
+          // las noches para que entren, y las barras se leen mejor.
+          const H=Math.max(200,sorted.length*15+90);
+          const _inner=document.getElementById('dr-acto-inner');
+          if(_inner) _inner.style.height=H+'px';
+          ctxA.style.height=H+'px';ctxA.height=H;
           // Filtrar las noches válidas con el MISMO criterio que computeDiaryMetrics
           // así el promedio que se muestra arriba coincide con la línea del actograma.
           const _validForAvg = sorted; // ya filtrado por dmNochesValidas
@@ -13008,6 +13185,18 @@ async function showDrPTab_(tab){
             ]},
             options:{
               indexAxis:'y',responsive:true,layout:{padding:{top:68,bottom:4,right:48}},
+              onClick:function(ev, els, chart){
+                try{
+                  // Se resuelve la FILA por la posicion vertical del clic, no
+                  // por acertarle a la barra: asi tocar el icono tambien sirve.
+                  const y = ev.y != null ? ev.y : (ev.native ? ev.native.offsetY : null);
+                  if(y==null) return;
+                  const esc = chart.scales.y;
+                  let i = els && els.length ? els[0].index : (esc ? Math.round(esc.getValueForPixel(y)) : -1);
+                  if(!(i>=0) || !sorted[i]) return;
+                  dmVerNotaNoche(sorted[i]);
+                }catch(_){}
+              },
               plugins:{
                 legend:{display:false},
                 annotation:{annotations:annots},
