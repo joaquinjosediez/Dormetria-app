@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod89">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod90">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod89"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod90"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod89';
+const APP_VERSION='hoy75-mod90';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2937,6 +2937,36 @@ function dmChartCuandoMida(canvas, crear, intentos){
   else setTimeout(function(){ dmChartCuandoMida(canvas, crear, intentos-1); }, 30);
 }
 
+// ── Noche sin dormir ────────────────────────────────────────────────────
+// No estar en condiciones de registrar "cero" era un vacio real: la persona
+// que paso la noche entera despierta tenia que inventar una hora de despertar
+// o dejar el registro incompleto, y en los dos casos el dato salia mal. Ahora
+// hay una opcion propia: la noche vale, el sueño es cero, y el tramo en cama
+// se dibuja entero como tiempo despierto.
+function dmEsSinDormir(){
+  const el=document.getElementById('d-latency');
+  return !!(el && String(el.value)==='-1');
+}
+function dmTogglearSinDormir(){
+  const sin=dmEsSinDormir();
+  const w=document.getElementById('d-wake');
+  const cont=w?w.parentNode:null;
+  let aviso=document.getElementById('d-sin-dormir-aviso');
+  if(sin){
+    if(w){ w.disabled=true; w.style.opacity='.35'; }
+    if(cont && !aviso){
+      aviso=document.createElement('div');
+      aviso.id='d-sin-dormir-aviso';
+      aviso.style.cssText='font-size:12px;color:#C8A96E;line-height:1.5;margin-top:6px';
+      aviso.textContent='Noche sin dormir: alcanza con la hora en que te levantaste.';
+      cont.appendChild(aviso);
+    }
+  }else{
+    if(w){ w.disabled=false; w.style.opacity=''; }
+    if(aviso) aviso.remove();
+  }
+}
+
 function dmRedibujarGraficos(){
   const paso=()=>{
     try{
@@ -4335,6 +4365,34 @@ function copyAIResult(){
 
 
 
+// Mismo selector de mes que en la vista del paciente, sobre las noches de la
+// persona que el profesional esta mirando.
+function dmSelectorMesDrHtml(entries){
+  const meses=dmMesesConDatos(entries||[]);
+  if(meses.length<2) return '';
+  return '<select id="dr-score-mes" onchange="switchDrScoreMes(this.value)" '+
+    'style="padding:4px 8px;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;'+
+    'background:transparent;color:var(--label-2);border:1px solid var(--sep-opaque);font-family:var(--font)">'+
+    '<option value="">Por mes…</option>'+
+    meses.map(function(m){ return '<option value="'+m.valor+'">'+m.label+' ('+m.n+')</option>'; }).join('')+
+    '</select>';
+}
+function switchDrScoreMes(ym){
+  if(!ym){ switchDrScorePeriod(30); return; }
+  const all=window._drGraficosSubj||[];
+  const f=all.filter(function(e){ return String(e.diary_date||'').slice(0,7)===ym; });
+  ['7','30','all'].forEach(function(p){
+    const btn=document.getElementById('dr-score-'+p); if(!btn) return;
+    btn.style.background = p==='all'?'transparent':'#e8f0eb';
+    btn.style.color = p==='all'?'var(--label-2)':'#1a4a3a';
+  });
+  const sel=document.getElementById('dr-score-mes');
+  if(sel){ sel.style.background='#1a4a3a'; sel.style.color='#fff'; sel.style.borderColor='#1a4a3a'; }
+  if(f.length<3){ toast('Ese mes tiene menos de 3 noches registradas'); return; }
+  const w=document.getElementById('dr-score-panel-wrap');
+  if(w) w.innerHTML=renderSleepScorePanel(f, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})());
+}
+
 function switchDrScorePeriod(days){
   const all=window._drGraficosSubj||[];
   let filtered=days===0?all:all.filter(e=>{const c=new Date();c.setDate(c.getDate()-days);return new Date(e.diary_date)>=c;});
@@ -4344,6 +4402,8 @@ function switchDrScorePeriod(days){
     btn.style.background=active?'#1a4a3a':(p==='all'?'transparent':'#e8f0eb');
     btn.style.color=active?'#fff':(p==='all'?'var(--label-2)':'#1a4a3a');
   });
+  const _sm=document.getElementById('dr-score-mes');
+  if(_sm){ _sm.value=''; _sm.style.background='transparent'; _sm.style.color='var(--label-2)'; _sm.style.borderColor='var(--sep-opaque)'; }
   const w=document.getElementById('dr-score-panel-wrap');
   if(w) w.innerHTML=renderSleepScorePanel(filtered.length>=3?filtered:all);
 }
@@ -4656,6 +4716,8 @@ function computeMCTQFromDiary(entries){
 function dmMotivoDescarte(e){
   if(!e) return 'vacio';
   if(!e.bedtime || !e.wake_time) return 'sin_horarios';
+  // Noche declarada sin sueño: el cero es el dato, no un error.
+  if(e.no_sleep === true) return null;
   if(e.notes && String(e.notes).startsWith('Importado')) return 'importada';
   // Despertar igual a acostarse = la hora de despertar nunca se cargo.
   if(String(e.bedtime).slice(0,5) === String(e.wake_time).slice(0,5)) return 'sin_hora_despertar';
@@ -5507,6 +5569,52 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   return html;
 }
 
+// ── Ver un mes concreto ─────────────────────────────────────────────────
+// "7 dias / 30 dias / Todo" sirve para el seguimiento corriente, pero no deja
+// mirar un periodo cerrado: como durmio en junio, antes de cambiar la
+// medicacion. El desplegable lista solo los meses que tienen registros.
+function dmMesesConDatos(entries){
+  const set={};
+  (entries||[]).forEach(function(e){
+    if(!e || !e.diary_date) return;
+    set[String(e.diary_date).slice(0,7)] = (set[String(e.diary_date).slice(0,7)]||0)+1;
+  });
+  const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return Object.keys(set).sort().reverse().map(function(k){
+    const p=k.split('-');
+    return { valor:k, n:set[k], label: MES[parseInt(p[1],10)-1]+' '+p[0] };
+  });
+}
+function dmSelectorMesHtml(_ignorado, entries){
+  const meses=dmMesesConDatos(window._graficosSubjEntries||entries||[]);
+  if(meses.length<2) return '';   // con un solo mes no hay nada que elegir
+  return '<select id="score-period-mes" onchange="switchScoreMes(this.value)" '+
+    'style="padding:5px 10px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;'+
+    'background:transparent;color:var(--label-2);border:1px solid var(--sep-opaque);font-family:var(--font)">'+
+    '<option value="">Por mes…</option>'+
+    meses.map(function(m){ return '<option value="'+m.valor+'">'+m.label+' ('+m.n+')</option>'; }).join('')+
+    '</select>';
+}
+function switchScoreMes(ym){
+  if(!ym){ switchScorePeriod(30); return; }
+  const all = window._graficosSubjEntries||[];
+  const filtradas = all.filter(function(e){ return String(e.diary_date||'').slice(0,7)===ym; });
+  ['7','30','all'].forEach(function(p){
+    const btn=document.getElementById('score-period-'+p);
+    if(!btn) return;
+    btn.style.background = p==='all'?'transparent':'#e8f0eb';
+    btn.style.color = p==='all'?'var(--label-2)':'#1a4a3a';
+  });
+  const sel=document.getElementById('score-period-mes');
+  if(sel){ sel.style.background='#1a4a3a'; sel.style.color='#fff'; sel.style.borderColor='#1a4a3a'; }
+  if(filtradas.length<3){ toast('Ese mes tiene menos de 3 noches registradas'); return; }
+  const wrap = document.getElementById('score-panel-wrap');
+  if(wrap) wrap.innerHTML = renderSleepScorePanel(filtradas);
+  updatePillarBars(filtradas);
+  updateClinicalMetrics(filtradas, all);
+  try{ setTimeout(dmRedibujarGraficos, 80); }catch(_){}
+}
+
 function switchScorePeriod(days){
   const all = window._graficosSubjEntries||[];
   let filtered;
@@ -5525,12 +5633,14 @@ function switchScorePeriod(days){
     if(isActive){ btn.style.background='#1a4a3a'; btn.style.color='#fff'; }
     else { btn.style.background= p==='all'?'transparent':'#e8f0eb'; btn.style.color=p==='all'?'var(--label-2)':'#1a4a3a'; }
   });
+  const _selMes=document.getElementById('score-period-mes');
+  if(_selMes){ _selMes.value=''; _selMes.style.background='transparent'; _selMes.style.color='var(--label-2)'; _selMes.style.borderColor='var(--sep-opaque)'; }
   const wrap = document.getElementById('score-panel-wrap');
   if(wrap) wrap.innerHTML = renderSleepScorePanel(useEntries);
   // Also update pillar bars for same period
   updatePillarBars(useEntries);
   // Update clinical metrics
-  updateClinicalMetrics(useEntries);
+  updateClinicalMetrics(useEntries, all);
 }
 
 function setDayType(t,btn,manual){
@@ -8946,6 +9056,7 @@ async function showDiaryTab_(tab){
         '<span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>'+
         '<button id="score-period-7" onclick="switchScorePeriod(7)" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:'+(entries7.length>=3?'#1a4a3a':'#e5e7eb')+';color:'+(entries7.length>=3?'#fff':'#9ca3af')+'">7 días</button>'+
         '<button id="score-period-30" onclick="switchScorePeriod(30)" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:#e8f0eb;color:#1a4a3a">30 días</button>'+
+        dmSelectorMesHtml(entries7.length?null:null, scoreEntries)+
         '<button id="score-period-all" onclick="switchScorePeriod(0)" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>'+
         '</div>'+
         '<div id="score-panel-wrap">'+renderSleepScorePanel(scoreEntries,(function(){try{const _d=S.user&&S.user.dob?new Date(S.user.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())+'</div>'
@@ -9706,7 +9817,7 @@ function showDiaryNew(){
       <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
       <div class="form-group">
         <label class="form-label">¿Cuánto tardé en dormirme? <span style="color:#dc2626">*</span></label>
-        <select class="form-select" id="d-latency">
+        <select class="form-select" id="d-latency" onchange="dmTogglearSinDormir()">
           <option value=""></option>
           <option value="3">&lt;5 min</option>
           <option value="10">5–15 min</option>
@@ -9714,6 +9825,7 @@ function showDiaryNew(){
           <option value="45">30–60 min</option>
           <option value="90">1–2 hs</option>
           <option value="150">&gt;2 hs</option>
+          <option value="-1">No me dormí en toda la noche</option>
         </select>
       </div>
     </div>
@@ -9906,7 +10018,11 @@ async function saveDiary(){
   // exactas de diferencia. Es el error mas frecuente y silencioso del diario,
   // y arrastra el promedio de sueño de la persona por horas. Se pregunta en
   // el momento, que es cuando ella todavia se acuerda de la respuesta.
-  if(bed && wake && bed.slice(0,5)===wake.slice(0,5)){
+  const _sinDormir = (String(document.getElementById('d-latency')?.value||'')==='-1');
+  if(_sinDormir){
+    if(!bed || !getup){ toast('Poné a qué hora te acostaste y a qué hora te levantaste'); return; }
+  }
+  if(!_sinDormir && bed && wake && bed.slice(0,5)===wake.slice(0,5)){
     // Es lo que le paso a varios registros: la hora de despertar quedo igual
     // a la de acostarse, la noche se guardo con 0 minutos de sueño y el
     // actograma la dibujaba como un dia entero en la cama.
@@ -9914,7 +10030,7 @@ async function saveDiary(){
     const _w=document.getElementById('d-wake'); if(_w){ _w.focus(); }
     return;
   }
-  if(bed && wake){
+  if(!_sinDormir && bed && wake){
     const [_bh,_bm]=bed.split(':').map(Number);
     const [_wh,_wm]=wake.split(':').map(Number);
     let _tib=(_wh*60+_wm)-(_bh*60+_bm); if(_tib<0) _tib+=1440;
@@ -9930,7 +10046,10 @@ async function saveDiary(){
     }
   }
   const getup=document.getElementById('d-getup')?.value||null;
-  const latency=parseInt(document.getElementById('d-latency')?.value)||null;
+  // -1 es el codigo de "no me dormi": no es una latencia, es la ausencia de
+  // sueño. Se guarda como latencia nula y sueño cero, con la marca aparte.
+  const _latRaw=parseInt(document.getElementById('d-latency')?.value);
+  const latency=(_latRaw===-1 || isNaN(_latRaw)) ? null : (_latRaw||null);
   const dayType=document.getElementById('d-daytype')?.value||'work';
   const quality=parseInt(document.getElementById('d-qual')?.value)||null;
   const mood=parseInt(document.getElementById('d-mood')?.value)||null;
@@ -9990,7 +10109,14 @@ async function saveDiary(){
   // Calculate sleep minutes — TST = (bedtime→wake_time) - latencia - WASO
   // wake_time = despertar final (schema v2). El tramo hasta levantarse queda fuera.
   let sleepMins=null, tibMins=null;
-  if(bed&&wake){
+  if(_sinDormir && bed && getup){
+    // Toda la noche en cama, despierta. El tiempo en cama es real; el sueño es
+    // cero, y ese cero es un dato, no una falta de dato.
+    const [bh,bm]=bed.split(':').map(Number);
+    const [gh,gm]=getup.split(':').map(Number);
+    let mins=(gh*60+gm)-(bh*60+bm); if(mins<0) mins+=1440;
+    tibMins=mins; sleepMins=0;
+  } else if(bed&&wake){
     const [bh,bm]=bed.split(':').map(Number);
     const [wh,wm]=wake.split(':').map(Number);
     let mins=(wh*60+wm)-(bh*60+bm);
@@ -10040,7 +10166,6 @@ async function saveDiary(){
     patient_email:S.user.email,
     diary_date:date,
     bedtime:bed,
-    wake_time:wake,
     get_up_time:getup,
     awake_in_bed_after_mins:awakeInBedAfter,
     schema_version:2,
@@ -10073,6 +10198,9 @@ async function saveDiary(){
       return o;
     })(),
     energy_afternoon: energyPm,
+    no_sleep: _sinDormir ? true : false,
+    // Sin hora de despertar propia: la noche termina cuando se levanta.
+    wake_time: _sinDormir ? (getup || null) : wake,
     nap_minutes: napStart ? (napDur||0) : (hasNap===false ? 0 : null),
     nap_start: napStart || null,
     has_period: !!_periodActive,
@@ -12315,6 +12443,7 @@ async function showDrPTab_(tab){
             <span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>
             <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${subj7.length>=3?'#e8f0eb':'#e5e7eb'};color:${subj7.length>=3?'#1a4a3a':'#9ca3af'}">7 días</button>
             <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:#1a4a3a;color:#fff">30 días</button>
+            ${dmSelectorMesDrHtml(subj)}
             <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>
           </div>
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())}</div>
@@ -12348,6 +12477,7 @@ async function showDrPTab_(tab){
             <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
             <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
             <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(26,74,58,0.14);border:1px solid #1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche sin dormir</span>
             <span id="dr-acto-revisar-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(217,119,6,0.13);border:1.5px dashed #d97706;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Horarios a revisar — no entra en los promedios</span>
             <span id="dr-acto-freeday-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
             <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
@@ -12444,8 +12574,11 @@ async function showDrPTab_(tab){
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));if(w===s) return[0,0];const fin=(w>s?w:w+24);if(fin-s>16) return[0,0];return[s,fin];});
         const drPeriodNights=sorted.filter(e=>/🩸Período/.test(e.notes||'')).length;
         const drFueraProm=sorted.map(e=>!!dmMotivoDescarte(e));
-        const drSleepColors=sorted.map((e,i)=>drFueraProm[i]?'rgba(217,119,6,0.13)':(/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc'));
-        const drSleepBorders=sorted.map((e,i)=>drFueraProm[i]?'#d97706':(/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a'));
+        const drSinDormir=sorted.map(e=>e.no_sleep===true);
+        // Sin dormir: el bloque existe (estuvo en la cama) pero va tenue y con
+        // borde, para que no se lea como sueño.
+        const drSleepColors=sorted.map((e,i)=>drSinDormir[i]?'rgba(26,74,58,0.14)':(drFueraProm[i]?'rgba(217,119,6,0.13)':(/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc')));
+        const drSleepBorders=sorted.map((e,i)=>drSinDormir[i]?'#1a4a3a':(drFueraProm[i]?'#d97706':(/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a')));
         const drSleepDash=sorted.map((e,i)=>drFueraProm[i]?[4,3]:[]);
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
@@ -19837,6 +19970,75 @@ function dmTcciEmpezar(){
   toast('Programa iniciado ✓');
   openPatientCbtiView();
 }
+// ══ TCC-I · seguimiento de tareas ═══════════════════════════════════════
+// Hasta ahora las tareas eran una lista con tildes decorativos: no se podia
+// marcar nada y no habia forma de saber por donde iba uno. La adherencia a un
+// programa conductual depende de poder ver el propio avance, asi que las
+// tareas pasan a ser marcables y el progreso se muestra en las dos vistas.
+// Se guarda en el dispositivo. No es dato clinico: es la lista de la persona.
+function dmTcciHechos(){
+  try{ return JSON.parse(localStorage.getItem('dm_tcci_hechos')||'{}'); }catch(_){ return {}; }
+}
+function dmTcciMarcar(semana, idx){
+  const k = semana+'.'+idx;
+  const m = dmTcciHechos();
+  if(m[k]) delete m[k]; else m[k]=true;
+  try{ localStorage.setItem('dm_tcci_hechos', JSON.stringify(m)); }catch(_){}
+  const cont=document.getElementById('dm-tcci-tareas-'+semana);
+  const s=DM_TCCI_PROGRAMA.find(x=>x.n===semana);
+  if(cont && s) cont.innerHTML=dmTcciTareasHtml(s);
+  const barra=document.getElementById('dm-tcci-progreso');
+  if(barra) barra.outerHTML=dmTcciProgresoHtml();
+  // La lista de semanas tambien muestra el avance de cada una.
+  try{ if(typeof openPatientCbtiView==='function' && document.getElementById('dm-tcci-lista')) openPatientCbtiView(); }catch(_){}
+}
+function dmTcciProgresoSemana(s){
+  const m=dmTcciHechos();
+  const total=(s.tareas||[]).length;
+  if(!total) return {hechas:0, total:0, pct:0};
+  let hechas=0;
+  for(let i=0;i<total;i++) if(m[s.n+'.'+i]) hechas++;
+  return {hechas, total, pct: Math.round(hechas/total*100)};
+}
+function dmTcciProgresoTotal(){
+  let h=0, t=0;
+  DM_TCCI_PROGRAMA.forEach(function(s){ const p=dmTcciProgresoSemana(s); h+=p.hechas; t+=p.total; });
+  return {hechas:h, total:t, pct: t?Math.round(h/t*100):0};
+}
+function dmTcciTareasHtml(s){
+  const m=dmTcciHechos();
+  const p=dmTcciProgresoSemana(s);
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">'+
+      '<span style="font-size:10px;letter-spacing:.07em;color:rgba(255,255,255,.5);font-weight:700">TU TAREA ESTA SEMANA</span>'+
+      '<span style="font-size:11px;font-weight:700;color:'+(p.pct===100?'#7EC8A4':'rgba(255,255,255,.55)')+'">'+p.hechas+' de '+p.total+'</span>'+
+    '</div>'+
+    '<div style="height:5px;background:rgba(255,255,255,.09);border-radius:3px;overflow:hidden;margin-bottom:10px">'+
+      '<div style="height:100%;width:'+p.pct+'%;background:'+(p.pct===100?'#7EC8A4':'#C8A96E')+';border-radius:3px;transition:width .25s"></div>'+
+    '</div>'+
+    (s.tareas||[]).map(function(t,i){
+      const hecho=!!m[s.n+'.'+i];
+      return '<div onclick="dmTcciMarcar('+s.n+','+i+')" style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;cursor:pointer;'+(i<s.tareas.length-1?'border-bottom:1px solid rgba(255,255,255,.06);':'')+'">'+
+        '<span style="flex-shrink:0;width:20px;height:20px;border-radius:6px;border:1.5px solid '+(hecho?'#7EC8A4':'rgba(255,255,255,.28)')+';background:'+(hecho?'#7EC8A4':'transparent')+';color:#0f2b22;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1">'+(hecho?'✓':'')+'</span>'+
+        '<span style="flex:1;font-size:13.5px;line-height:1.55;color:'+(hecho?'rgba(255,255,255,.45)':'rgba(255,255,255,.85)')+';'+(hecho?'text-decoration:line-through;':'')+'">'+t+'</span></div>';
+    }).join('');
+}
+function dmTcciProgresoHtml(){
+  const p=dmTcciProgresoTotal();
+  const semanas=DM_TCCI_PROGRAMA.map(function(s){
+    const q=dmTcciProgresoSemana(s);
+    return '<div title="Semana '+s.n+'" style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.09);overflow:hidden">'+
+      '<div style="height:100%;width:'+q.pct+'%;background:'+(q.pct===100?'#7EC8A4':'#C8A96E')+'"></div></div>';
+  }).join('');
+  return '<div id="dm-tcci-progreso" style="background:rgba(255,255,255,.05);border-radius:14px;padding:13px 15px;margin-bottom:14px">'+
+    '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">'+
+      '<span style="font-size:12px;font-weight:700;color:#fff">Tu progreso</span>'+
+      '<span style="font-size:12px;color:'+(p.pct===100?'#7EC8A4':'rgba(255,255,255,.6)')+'"><b style="font-size:15px">'+p.pct+'%</b> · '+p.hechas+' de '+p.total+' tareas</span>'+
+    '</div>'+
+    '<div style="display:flex;gap:4px">'+semanas+'</div>'+
+    '<div style="font-size:10.5px;color:rgba(255,255,255,.4);margin-top:6px">Una barra por semana. Se guarda en este dispositivo.</div>'+
+  '</div>';
+}
+
 function dmTcciAbrirSemana(n){
   const s=DM_TCCI_PROGRAMA.find(x=>x.n===n); if(!s) return;
   if(!s.libre && !dmTcciTieneAcceso()){ window._dmTcciSemanaIntento=n; dmTcciMostrarSuscripcion(); return; }
@@ -19858,11 +20060,7 @@ function dmTcciAbrirSemana(n){
       '<div style="font-size:14px;color:rgba(255,255,255,.82);line-height:1.7;white-space:pre-line;margin-bottom:18px">'+s.contenido+'</div>'+
       '<div style="background:rgba(255,255,255,.05);border-radius:14px;padding:14px 16px">'+
         '<div style="font-size:10px;letter-spacing:.07em;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:10px">TU TAREA ESTA SEMANA</div>'+
-        s.tareas.map(function(t,i){
-          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0'+(i<s.tareas.length-1?';border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
-            '<span style="color:#7EC8A4;font-size:14px;line-height:1.5">✓</span>'+
-            '<span style="flex:1;font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.55">'+t+'</span></div>';
-        }).join('')+
+        '<div id="dm-tcci-tareas-'+s.n+'">'+dmTcciTareasHtml(s)+'</div>'+
       '</div>'+
       '<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.28);border-radius:12px;padding:12px 14px;margin-top:18px">'+
         '<div style="font-size:11.5px;color:#C8A96E;font-weight:700;letter-spacing:.05em;margin-bottom:5px">CON ACOMPAÑAMIENTO FUNCIONA MEJOR</div>'+
@@ -19960,6 +20158,9 @@ function dmTcciRenderPrograma(){
   if(!empezado){
     html+='<button onclick="dmTcciEmpezar()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:12px">Empezar el programa</button>';
   }
+  // Progreso general, arriba de todo: es lo primero que uno quiere ver al
+  // volver a un programa de seis semanas.
+  if(dmTcciProgresoTotal().total) html+=dmTcciProgresoHtml();
   DM_TCCI_PROGRAMA.forEach(function(s){
     const disponible = empezado && s.n<=actual;
     const bloqueadaPorPago = !s.libre && !acceso;
@@ -19976,11 +20177,15 @@ function dmTcciRenderPrograma(){
     html+='<div onclick="'+(bloqueadaPorTiempo?'':'dmTcciAbrirSemana('+s.n+')')+'" style="background:rgba(255,255,255,.04);border:1px solid '+borde+';border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+(bloqueadaPorTiempo?'opacity:.45':'cursor:pointer')+'">'+
       '<div style="width:26px;height:26px;border-radius:50%;background:'+(activa?'#1a4a3a':'rgba(255,255,255,.08)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(activa?'#fff':'rgba(255,255,255,.45)')+';flex-shrink:0">'+s.n+'</div>'+
       '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:'+(activa?'#fff':'rgba(255,255,255,.6)')+'">'+s.titulo+'</div>'+
-      '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(s.subtitulo||s.objetivo)+'</div></div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(s.subtitulo||s.objetivo)+'</div>'+
+      (function(){ const q=dmTcciProgresoSemana(s); if(!q.total || !disponible) return '';
+        return '<div style="display:flex;align-items:center;gap:7px;margin-top:6px">'+
+          '<div style="flex:1;height:4px;background:rgba(255,255,255,.09);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+q.pct+'%;background:'+(q.pct===100?'#7EC8A4':'#C8A96E')+'"></div></div>'+
+          '<span style="font-size:10px;color:'+(q.pct===100?'#7EC8A4':'rgba(255,255,255,.45)')+';white-space:nowrap">'+q.hechas+'/'+q.total+'</span></div>'; })()+'<div></div>'+
       '<div style="flex-shrink:0">'+estado+'</div></div>';
   });
   html+='</div>';
-  return html;
+  return '<div id="dm-tcci-lista">'+html+'</div>';
 }
 
 async function openPatientCbtiView(){
