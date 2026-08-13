@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod87">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod88">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod87"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod88"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod87';
+const APP_VERSION='hoy75-mod88';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -1373,6 +1373,40 @@ const ONESIGNAL_APP_ID = '53980618-ff09-4477-94b0-445e5ec18050';
 // Etiqueta al suscriptor con su correo y su horario de recordatorio. OneSignal
 // arma los envíos por segmento a partir de estas etiquetas: una campaña
 // recurrente por cada hora (reminder_hour = "08", "21", etc.).
+// Pinta debajo del interruptor de recordatorios el estado real: permiso del
+// navegador, suscripcion en OneSignal y etiqueta de hora que se esta enviando.
+async function dmMostrarEstadoPush(){
+  const cont=document.getElementById('pf-reminder-toggle');
+  if(!cont || !cont.parentNode) return;
+  let caja=document.getElementById('pf-push-estado');
+  if(!caja){
+    caja=document.createElement('div');
+    caja.id='pf-push-estado';
+    caja.style.cssText='font-size:12px;line-height:1.6;margin-top:10px;padding:9px 11px;border-radius:9px;background:rgba(255,255,255,0.06);color:rgba(244,239,229,0.8)';
+    let anc=cont.parentNode; for(let k=0;k<3 && anc.parentNode;k++) anc=anc.parentNode;
+    (cont.parentNode.parentNode||cont.parentNode).appendChild(caja);
+  }
+  const prefs=getReminderPrefs();
+  const hh=String(prefs.time||'08:00').split(':')[0].padStart(2,'0');
+  const permiso = (typeof Notification!=='undefined') ? Notification.permission : 'no disponible';
+  let suscripto='—', idSub='—';
+  try{
+    const OS=window._dmOneSignal;
+    if(OS && OS.User && OS.User.PushSubscription){
+      suscripto = OS.User.PushSubscription.optedIn ? 'sí' : 'no';
+      idSub = OS.User.PushSubscription.id ? String(OS.User.PushSubscription.id).slice(0,8)+'…' : '—';
+    }
+  }catch(_){}
+  const fila=(k,v,mal)=>'<div style="display:flex;justify-content:space-between;gap:10px"><span style="opacity:.7">'+k+'</span><span style="font-weight:600;color:'+(mal?'#ff7979':'#7ec8a4')+'">'+v+'</span></div>';
+  caja.innerHTML =
+    '<div style="font-weight:700;margin-bottom:5px;opacity:.85">Estado de las notificaciones</div>'+
+    fila('Permiso del navegador', permiso, permiso!=='granted')+
+    fila('Dispositivo suscripto', suscripto, suscripto!=='sí')+
+    fila('Recordatorio activado', prefs.enabled?'sí':'no', !prefs.enabled)+
+    fila('Hora que se envía', hh+':00', false)+
+    '<div style="opacity:.55;margin-top:5px;font-size:11px">ID '+idSub+' · si algo dice no, ahí está el motivo por el que no llega.</div>';
+}
+
 async function dmSyncPushTags(){
   const OS = window._dmOneSignal; if(!OS) return;
   try{
@@ -4693,14 +4727,17 @@ function computeDiaryMetrics(entries){
   };
 }
 
-function updateClinicalMetrics(entries){
+function updateClinicalMetrics(entries, todasLasNoches){
   const el = document.getElementById('diary-clinical-metrics');
   if(!el) return;
   el.innerHTML = renderClinicalMetricsHtml(entries);
+  // Las comparativas usan el historial COMPLETO aunque arriba se esten viendo
+  // 7 dias: con 7 noches nunca hay 5 en cada grupo y la tarjeta no aparecia.
+  const _base = (todasLasNoches && todasLasNoches.length) ? todasLasNoches : entries;
   // Comparativas con/sin cada habito. Devuelve '' si no hay noches suficientes,
   // asi que no hace falta condicionar nada aca.
   try{
-    const _hi = (typeof renderHabitsImpactHtml==='function') ? renderHabitsImpactHtml(entries) : '';
+    const _hi = (typeof renderHabitsImpactHtml==='function') ? renderHabitsImpactHtml(_base) : '';
     if(_hi) el.insertAdjacentHTML('beforeend', _hi);
   }catch(_e){ console.warn('[habitos paciente]', _e); }
 }
@@ -5245,6 +5282,80 @@ function renderNotasPacienteHtml(entries){
         '<span style="color:#3f3f46;line-height:1.45">'+String(x.txt).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>'+
       '</div>').join('')+
     '</div>';
+}
+
+// ── Corrección de horarios por el profesional ────────────────────────
+// Un paciente mayor que se equivocó de AM/PM no siempre puede volver a la app
+// a arreglarlo, y esos errores desordenan la regularidad de todo el período.
+// El médico puede corregir el HORARIO —solo eso: acostarse, despertar y
+// levantarse— y cada corrección queda firmada en el propio registro con
+// fecha y con el mail de quien la hizo. No se puede borrar ni reescribir lo
+// subjetivo (calidad, ánimo, notas): eso es relato del paciente.
+function renderNochesARevisarHtml(entries){
+  const malas=(entries||[]).map(e=>({e, m:dmMotivoDescarte(e)}))
+    .filter(x=>x.m && x.m!=='importada' && x.e.bedtime)
+    .sort((a,b)=>a.e.diary_date<b.e.diary_date?1:-1);
+  if(!malas.length) return '';
+  const txt={sin_horarios:'falta un horario', menos_de_1h:'menos de 1 h de sueño',
+             duracion_inverosimil:'más de 14 h en la cama',
+             sin_hora_despertar:'el despertar quedó igual al acostarse'};
+  const fmt=f=>{ try{ return new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'short'}); }catch(_){ return f; } };
+  return '<div class="dm-card" style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px">'+
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Noches a revisar'+
+      '<span style="font-weight:400;color:var(--label-3)"> · '+malas.length+'</span></div>'+
+    '<div style="font-size:11px;color:var(--label-3);margin-bottom:9px">Estas noches no entran en los promedios. Si sabés el horario real, corregilo acá: queda firmado con tu mail y la fecha.</div>'+
+    malas.map(x=>'<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid #f0eee9;font-size:12px">'+
+        '<span style="color:var(--label-3);min-width:52px">'+fmt(x.e.diary_date)+'</span>'+
+        '<span style="color:#3f3f46;flex:1">'+(x.e.bedtime||'—').slice(0,5)+' → '+(x.e.wake_time||'—').slice(0,5)+
+          '<span style="color:#b45309"> · '+(txt[x.m]||x.m)+'</span></span>'+
+        '<button onclick="dmCorregirNoche('+JSON.stringify(String(x.e.id))+')" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:8px;border:1px solid #1a4a3a;background:#fff;color:#1a4a3a;cursor:pointer">Corregir</button>'+
+      '</div>').join('')+
+    '</div>';
+}
+
+async function dmCorregirNoche(id){
+  try{
+    const filas = await db.get('sleep_diary?id=eq.'+encodeURIComponent(id)+'&select=*');
+    const e = filas && filas[0];
+    if(!e){ toast('No se encontró el registro'); return; }
+    const pedir = (rotulo, actual) => {
+      const v = prompt(rotulo+'  (formato 24 h, por ejemplo 23:30)\nDejalo vacío para no cambiarlo.', (actual||'').slice(0,5));
+      if(v===null) return undefined;                 // canceló
+      const t=String(v).trim();
+      if(t==='') return null;                        // lo vacía a proposito
+      if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)){ throw new Error('Horario inválido: '+t); }
+      return t;
+    };
+    const bed  = pedir('Se acostó a las…', e.bedtime);   if(bed===undefined) return;
+    const wake = pedir('Se despertó a las…', e.wake_time); if(wake===undefined) return;
+    const getup= pedir('Se levantó a las…', e.get_up_time); if(getup===undefined) return;
+    if(bed && wake && bed===wake){ toast('El despertar no puede ser igual al acostarse'); return; }
+
+    // Se recalcula el sueño total con la misma fórmula que usa el diario.
+    let tst=null;
+    if(bed && wake){
+      const [bh,bm]=bed.split(':').map(Number), [wh,wm]=wake.split(':').map(Number);
+      let d=(wh*60+wm)-(bh*60+bm); if(d<0) d+=1440;
+      tst=Math.max(0, d - (parseInt(e.sleep_latency_mins)||0) - (parseInt(e.wake_in_bed_mins)||0));
+    }
+    const quien=(S&&S.user&&S.user.email)?S.user.email:'profesional';
+    const firma='[Horario corregido por '+quien+' el '+new Date().toLocaleDateString('es-AR')+']';
+    const notas=[String(e.notes||'').replace(/\s*\[Horario corregido[^\]]*\]/g,'').trim(), firma].filter(Boolean).join(' | ');
+
+    if(!confirm('Queda:\n  acostarse '+(bed||'—')+'\n  despertar '+(wake||'—')+'\n  levantarse '+(getup||'—')+
+                '\n  sueño total '+(tst!=null?Math.floor(tst/60)+'h '+(tst%60)+'m':'—')+
+                '\n\nSe guarda con tu firma en el registro. ¿Confirmás?')) return;
+
+    await db.patch('sleep_diary?id=eq.'+encodeURIComponent(id),
+      { bedtime:bed, wake_time:wake, get_up_time:getup, sleep_minutes:tst, notes:notas });
+    toast('Horario corregido ✓');
+    if(typeof openDoctorPatient==='function' && S.viewData && S.viewData.email){
+      openDoctorPatient(S.viewData.email);
+    }
+  }catch(err){
+    console.error('[corregir noche]', err);
+    toast(err && err.message ? err.message : 'No se pudo corregir');
+  }
 }
 
 function renderClinicalMetricsHtml(entries, audience, ageYears){
@@ -8281,6 +8392,10 @@ function initProfileEditExtras(){
   if(rInp) rInp.value=rPrefs.time||'08:00';
   const rTog=document.getElementById('pf-reminder-toggle');
   if(rTog) rTog.checked=rPrefs.enabled;
+  // Estado real del push, a la vista. Sin esto no hay forma de saber por que
+  // no llega una notificacion: si el navegador no dio permiso, si el
+  // dispositivo no quedo suscripto, o si el recordatorio esta apagado.
+  try{ dmMostrarEstadoPush(); }catch(_){}
   // Init activity type select
   const actEl=document.getElementById('pf-activity-type');
   if(actEl && S.user && S.user.activity_type){
@@ -9255,7 +9370,7 @@ async function showDiaryTab_(tab){
         }catch(chartErr){console.error("[GRAFICOS] Error dibujando:",chartErr.message,chartErr.stack);}
       },100);
       // Update clinical metrics after charts render
-      setTimeout(()=>updateClinicalMetrics(scoreEntries),150);
+      setTimeout(()=>updateClinicalMetrics(scoreEntries, entries),150);
     } // end graficos
     } // end tab===graficos
   }catch(e){cont.innerHTML='<div class="empty-state">Error al cargar registros</div>';}
@@ -12179,6 +12294,8 @@ async function showDrPTab_(tab){
             <span id="dr-acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
             <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(to right,rgba(26,74,58,0.25),#1a4a3a,rgba(26,74,58,0.25));border-radius:2px;margin-right:3px;vertical-align:middle"></span>Tramos tenues: en cama sin dormir (latencia / antes de levantarse)</span>
             <span><span style="display:inline-block;width:10px;height:3px;background:#16a34a;margin-right:3px;vertical-align:middle"></span>🏃 Ejercicio (ancho = duración)</span>
+            <span><span style="display:inline-block;width:10px;height:3px;background:#ea580c;margin-right:3px;vertical-align:middle"></span>🏃 Ejercicio después de las 21 h</span>
+            <span>📝 Comentario del paciente esa noche</span>
             <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
           </div>
         </div>
@@ -12204,6 +12321,10 @@ async function showDrPTab_(tab){
             const _nt=renderNotasPacienteHtml(subj);
             if(_nt){ dme.insertAdjacentHTML('beforeend', _nt); }
           }catch(_e){ console.warn('[notas diario]', _e); }
+          try{
+            const _rev=renderNochesARevisarHtml(subj);
+            if(_rev){ dme.insertAdjacentHTML('beforeend', _rev); }
+          }catch(_e){ console.warn('[noches a revisar]', _e); }
         }
         // Progresión semanal (movida desde Resumen)
         const _wpEl=document.getElementById('dr-weekly-prog');
@@ -12382,6 +12503,7 @@ async function showDrPTab_(tab){
             latency: (e.sleep_latency_mins!=null && e.sleep_latency_mins>0) ? parseInt(e.sleep_latency_mins) : null,
             wakeOff: sleepBars[_hi] ? sleepBars[_hi][1] : null,
             getUpOff: e.get_up_time ? toOff(e.get_up_time.slice(0,5)) : null,
+            nota: (typeof dmLimpiarNota==='function' && dmLimpiarNota(e.notes)) ? 1 : 0,
             exercise: e.exercise_mins>0 ? e.exercise_mins : null,
             exerciseTime: e.exercise_time||null,
             exerciseLate: e.exercise_time==='late',
@@ -12632,6 +12754,10 @@ async function showDrPTab_(tab){
                         put('🏃', r.exerciseLate);
                       }
                     }
+                    // El comentario escrito esa noche. El texto completo sale
+                    // en el globo al pasar el mouse; el icono es lo que hace
+                    // que uno sepa que hay algo que mirar.
+                    if(r.nota) put('📝', false);
                     if(layers.caffeine && r.caffeine) put('☕', r.caffeineHigh);
                     if(layers.alcohol && r.alcohol) put('🍷', false);
                     if(layers.screens && r.screens){
