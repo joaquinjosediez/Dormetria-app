@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy75-mod97">
+<link rel="stylesheet" href="css/styles.css?v=hoy75-mod98">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod97"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy75-mod98"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy75-mod97';
+const APP_VERSION='hoy75-mod98';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2909,24 +2909,45 @@ function dmRefrescarEcosHora(){
 // llega a tener ancho, o si la creacion falla, escribe el motivo EN LA CAJA:
 // un rectangulo blanco sin texto no permite averiguar nada.
 // Ventanita con el comentario de esa noche. Se abre al tocar la fila.
-function dmVerNotaNoche(e){
+function dmVerNotaNoche(e, ev){
   if(!e) return;
   const t = (typeof dmLimpiarNota==='function') ? dmLimpiarNota(e.notes) : '';
   if(!t){ if(typeof toast==='function') toast('Esa noche no tiene comentario'); return; }
   const old=document.getElementById('dm-nota-noche'); if(old) old.remove();
   let f=e.diary_date;
   try{ f=new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}); }catch(_){}
-  const w=document.createElement('div');
-  w.id='dm-nota-noche';
-  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,0.75);z-index:10004;display:flex;align-items:center;justify-content:center;padding:22px';
-  w.onclick=function(){ w.remove(); };
-  w.innerHTML='<div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,.4)">'+
-    '<div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8a9691;font-weight:700;margin-bottom:3px">Comentario del paciente</div>'+
-    '<div style="font-size:13px;color:#1a4a3a;font-weight:700;margin-bottom:9px">'+f+'</div>'+
-    '<div style="font-size:14px;color:#3f3f46;line-height:1.6;white-space:pre-wrap">'+String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'+
-    '<button onclick="document.getElementById(\'dm-nota-noche\').remove()" style="width:100%;margin-top:14px;background:#1a4a3a;border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Cerrar</button>'+
-  '</div>';
-  document.body.appendChild(w);
+  // Globo chico, pegado a donde se toco. Un modal centrado y oscurecido tapaba
+  // el actograma y no dejaba claro de que noche se estaba hablando.
+  const capa=document.createElement('div');
+  capa.id='dm-nota-noche';
+  capa.style.cssText='position:fixed;inset:0;z-index:10004';
+  capa.onclick=function(){ capa.remove(); };
+  const globo=document.createElement('div');
+  globo.style.cssText='position:absolute;max-width:290px;background:#fff;border-radius:12px;padding:11px 13px;'+
+    'box-shadow:0 10px 34px rgba(0,0,0,.32);border:1px solid #e6e2da';
+  globo.onclick=function(evt){ evt.stopPropagation(); };
+  globo.innerHTML='<div style="font-size:11.5px;color:#1a4a3a;font-weight:700;margin-bottom:5px">'+f+'</div>'+
+    '<div style="font-size:13.5px;color:#3f3f46;line-height:1.55;white-space:pre-wrap">'+
+      String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+  capa.appendChild(globo);
+  document.body.appendChild(capa);
+  // Se ubica donde ocurrio el clic y se corrige si se sale de la pantalla.
+  let x = 0, y = 0;
+  try{
+    const n = ev && (ev.native || ev);
+    x = (n && (n.clientX!=null ? n.clientX : 0)) || 0;
+    y = (n && (n.clientY!=null ? n.clientY : 0)) || 0;
+  }catch(_){}
+  if(!x && !y){ x = window.innerWidth/2; y = window.innerHeight/2; }
+  const r = globo.getBoundingClientRect();
+  let px = x - r.width - 14;                      // a la izquierda del icono
+  if(px < 8) px = x + 14;                         // si no entra, a la derecha
+  if(px + r.width > window.innerWidth - 8) px = window.innerWidth - r.width - 8;
+  let py = y - r.height/2;
+  if(py < 8) py = 8;
+  if(py + r.height > window.innerHeight - 8) py = window.innerHeight - r.height - 8;
+  globo.style.left = px+'px';
+  globo.style.top  = py+'px';
 }
 
 function dmChartCuandoMida(canvas, crear, intentos){
@@ -4484,18 +4505,26 @@ function copyAIResult(){
 
 // Mismo selector de mes que en la vista del paciente, sobre las noches de la
 // persona que el profesional esta mirando.
+function dmDrPerActivo(tipo, valor){
+  const p=window._drPeriodo||{tipo:'dias',valor:30};
+  return p.tipo===tipo && String(p.valor)===String(valor);
+}
 function dmSelectorMesDrHtml(entries){
-  const meses=dmMesesConDatos(entries||[]);
+  const meses=dmMesesConDatos(window._drTodasLasNoches||entries||[]);
   if(meses.length<2) return '';
+  const _p=window._drPeriodo||{};
+  const activo=(_p.tipo==='mes')?_p.valor:'';
   return '<select id="dr-score-mes" onchange="switchDrScoreMes(this.value)" '+
     'style="padding:4px 8px;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;'+
     'background:transparent;color:var(--label-2);border:1px solid var(--sep-opaque);font-family:var(--font)">'+
-    '<option value="">Por mes…</option>'+
-    meses.map(function(m){ return '<option value="'+m.valor+'">'+m.label+' ('+m.n+')</option>'; }).join('')+
+    '<option value=""'+(activo?'':' selected')+'>Por mes…</option>'+
+    meses.map(function(m){ return '<option value="'+m.valor+'"'+(m.valor===activo?' selected':'')+'>'+m.label+' ('+m.n+')</option>'; }).join('')+
     '</select>';
 }
 function switchDrScoreMes(ym){
   if(!ym){ switchDrScorePeriod(30); return; }
+  window._drPeriodo = { tipo:'mes', valor:ym };
+  if(typeof showDrPTab_==='function'){ showDrPTab_('diary'); return; }
   const all=window._drGraficosSubj||[];
   const f=all.filter(function(e){ return String(e.diary_date||'').slice(0,7)===ym; });
   ['7','30','all'].forEach(function(p){
@@ -4511,6 +4540,10 @@ function switchDrScoreMes(ym){
 }
 
 function switchDrScorePeriod(days){
+  // Recargar la pestaña es lo unico que garantiza que TODOS los bloques —score,
+  // pilares, metricas clinicas, actograma y comparativas— usen el mismo recorte.
+  window._drPeriodo = { tipo:'dias', valor:days };
+  if(typeof showDrPTab_==='function'){ showDrPTab_('diary'); return; }
   const all=window._drGraficosSubj||[];
   let filtered=days===0?all:all.filter(e=>{const c=new Date();c.setDate(c.getDate()-days);return new Date(e.diary_date)>=c;});
   ['7','30','all'].forEach(p=>{
@@ -9369,7 +9402,7 @@ async function showDiaryTab_(tab){
                   const esc = chart.scales.y;
                   let i = els && els.length ? els[0].index : (esc ? Math.round(esc.getValueForPixel(y)) : -1);
                   if(!(i>=0) || !sorted[i]) return;
-                  dmVerNotaNoche(sorted[i]);
+                  dmVerNotaNoche(sorted[i], ev);
                 }catch(_){}
               },
               plugins:{
@@ -12865,14 +12898,32 @@ async function showDrPTab_(tab){
     }else if(tab==='diary'){
       const entries=await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&order=diary_date.asc&select=*`);
       if(!entries||!entries.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📔</div>Sin registros de diario.</div>';return;}
-      const subj=entries.filter(e=>!(e.notes&&e.notes.startsWith('Importado')));
-      if(subj.length<3){cont.innerHTML='<div class="empty-state">Se necesitan al menos 3 noches de registro.</div>';return;}
+      const subjTodas=entries.filter(e=>!(e.notes&&e.notes.startsWith('Importado')));
+      if(subjTodas.length<3){cont.innerHTML='<div class="empty-state">Se necesitan al menos 3 noches de registro.</div>';return;}
+      // ── Periodo elegido ──
+      // Antes el selector solo cambiaba el numero del score: pilares, metricas
+      // y actograma seguian mostrando todo el historial. Eso hace imposible
+      // interpretar la pantalla, porque cada bloque hablaba de otro periodo.
+      // Ahora se filtra ACA, una sola vez, y todo lo de abajo hereda el recorte.
+      window._drTodasLasNoches = subjTodas;
+      const _per = window._drPeriodo || {tipo:'dias', valor:30};
+      let subj = subjTodas;
+      if(_per.tipo==='mes'){
+        const _m = subjTodas.filter(e=>String(e.diary_date||'').slice(0,7)===_per.valor);
+        if(_m.length>=3) subj=_m; else window._drPeriodo={tipo:'dias',valor:30};
+      } else if(_per.tipo==='dias' && _per.valor>0){
+        const _c=new Date(); _c.setDate(_c.getDate()-_per.valor);
+        const _d = subjTodas.filter(e=>new Date(e.diary_date)>=_c);
+        if(_d.length>=3) subj=_d;
+      }
       const cutoff30dr=new Date();cutoff30dr.setDate(cutoff30dr.getDate()-30);
       const cutoff7dr=new Date();cutoff7dr.setDate(cutoff7dr.getDate()-7);
       const subj30=subj.filter(e=>new Date(e.diary_date)>=cutoff30dr);
       const subj7=subj.filter(e=>new Date(e.diary_date)>=cutoff7dr);
       window._drGraficosSubj=subj;
-      const drScoreEntries=subj30.length>=3?subj30:subj;
+      // Ya viene recortado por el periodo: volver a filtrar 30 dias encima
+      // haria que "julio" mostrara solo los ultimos 30 dias de julio.
+      const drScoreEntries=subj;
       // Evolución 7 días vs 7 anteriores — mismo patrón que la comparación de
       // 14 vs 14 de Resumen, pero en la ventana corta que sirve para ver
       // cambios recientes (ajuste de medicación, inicio de TCC-I, etc.).
@@ -12901,12 +12952,12 @@ async function showDrPTab_(tab){
         <div class="dm-diary-top">
         <div class="dm-diary-left">
         <div class="dm-card dm-light dm-diary-score">
-          <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center">
-            <span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>
-            <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${subj7.length>=3?'#e8f0eb':'#e5e7eb'};color:${subj7.length>=3?'#1a4a3a':'#9ca3af'}">7 días</button>
-            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:#1a4a3a;color:#fff">30 días</button>
+          <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center;position:sticky;top:0;z-index:30;background:var(--bg);padding:8px 6px;margin-left:-6px;margin-right:-6px;border-radius:10px;box-shadow:0 4px 12px -6px rgba(0,0,0,.35);flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--label-2);font-weight:600">Período:</span>
+            <button onclick="switchDrScorePeriod(7)" id="dr-score-7" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',7)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',7)?'#fff':'#1a4a3a'};font-family:var(--font)">7 días</button>
+            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',30)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',30)?'#fff':'#1a4a3a'};font-family:var(--font)">30 días</button>
             ${dmSelectorMesDrHtml(subj)}
-            <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>
+            <button onclick="switchDrScorePeriod(0)" id="dr-score-all" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:500;cursor:pointer;background:${dmDrPerActivo('dias',0)?'#1a4a3a':'transparent'};color:${dmDrPerActivo('dias',0)?'#fff':'var(--label-2)'};font-family:var(--font)">Todo</button>
           </div>
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())}</div>
           ${weekCompareHtml}
@@ -13048,8 +13099,17 @@ async function showDrPTab_(tab){
           // las noches para que entren, y las barras se leen mejor.
           const H=Math.max(200,sorted.length*15+90);
           const _inner=document.getElementById('dr-acto-inner');
-          if(_inner) _inner.style.height=H+'px';
+          const _scroll=document.getElementById('dr-acto-scroll');
+          // Ancho explicito: dejarselo a Chart.js daba un grafico angosto con
+          // media caja en blanco a la derecha. Se descuenta la barra de scroll
+          // vertical, que si no aparece un scroll horizontal de dos pixeles.
+          const _anchoDisp = _scroll ? Math.max(340, (_scroll.clientWidth||0) - 2) : 0;
+          if(_inner){
+            _inner.style.height=H+'px';
+            if(_anchoDisp) _inner.style.width=_anchoDisp+'px';
+          }
           ctxA.style.height=H+'px';ctxA.height=H;
+          if(_anchoDisp){ ctxA.style.width=_anchoDisp+'px'; ctxA.style.minWidth='0'; }
           // Filtrar las noches válidas con el MISMO criterio que computeDiaryMetrics
           // así el promedio que se muestra arriba coincide con la línea del actograma.
           const _validForAvg = sorted; // ya filtrado por dmNochesValidas
@@ -13077,6 +13137,13 @@ async function showDrPTab_(tab){
           if(bS){annots.bM={type:'line',xMin:bS.m,xMax:bS.m,borderColor:'rgba(217,119,6,0.9)',borderWidth:2,borderDash:[5,3]};annots.bLo={type:'box',xMin:bS.m-bS.s,xMax:bS.m+bS.s,backgroundColor:'rgba(217,119,6,0.08)',borderColor:'transparent'};}
           if(wS){annots.wM={type:'line',xMin:wS.m,xMax:wS.m,borderColor:'rgba(45,90,158,0.9)',borderWidth:2,borderDash:[5,3]};annots.wLo={type:'box',xMin:wS.m-wS.s,xMax:wS.m+wS.s,backgroundColor:'rgba(45,90,158,0.08)',borderColor:'transparent'};}
           ctxA._bedStats=bS;ctxA._wakeStats=wS;
+          setTimeout(function(){
+            try{
+              const ch=S.charts['dr-acto'];
+              const sc=document.getElementById('dr-acto-scroll');
+              if(ch && sc && sc.clientWidth>340) ch.resize(sc.clientWidth-2, H);
+            }catch(_){}
+          }, 120);
           // Discriminar días libres: igual lógica que el paciente. day_type==='free' OR sáb/dom.
           const drWeekendRows=sorted.map((e,i)=>{
             const d=new Date(e.diary_date+'T12:00:00');
@@ -13194,7 +13261,7 @@ async function showDrPTab_(tab){
                   const esc = chart.scales.y;
                   let i = els && els.length ? els[0].index : (esc ? Math.round(esc.getValueForPixel(y)) : -1);
                   if(!(i>=0) || !sorted[i]) return;
-                  dmVerNotaNoche(sorted[i]);
+                  dmVerNotaNoche(sorted[i], ev);
                 }catch(_){}
               },
               plugins:{
