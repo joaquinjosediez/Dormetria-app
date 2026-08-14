@@ -749,6 +749,19 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   background:#1a4a3a;
   color:#ffffff !important;
 }
+/* ══ LISTAS DESPLEGABLES ═════════════════════════════════════════════
+   El <select> lo pintamos nosotros, pero la lista que se abre la dibuja el
+   sistema operativo con SU fondo —blanco en Windows— heredando el color de
+   texto de la pagina. Como en las pantallas oscuras ese color es crema, las
+   opciones quedaban blanco sobre blanco y no se leia ninguna.
+   Fijar el color de las <option> lo resuelve en todos los desplegables de la
+   app de una sola vez. */
+select option,
+select optgroup{
+  color:#10231c !important;
+  background:#ffffff !important;
+}
+
 .dm-med-cat{
   font-size:10px; font-weight:700; text-transform:uppercase;
   letter-spacing:0.05em; margin:8px 0 4px;
