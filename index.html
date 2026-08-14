@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy76-mod104">
+<link rel="stylesheet" href="css/styles.css?v=hoy76-mod105">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod104"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod105"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy76-mod104';
+const APP_VERSION='hoy76-mod105';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2914,7 +2914,6 @@ function dmRefrescarEcosHora(){
 function dmVerNotaNoche(e, ev){
   if(!e) return;
   const t = (typeof dmLimpiarNota==='function') ? dmLimpiarNota(e.notes) : '';
-  if(!t){ if(typeof toast==='function') toast('Esa noche no tiene comentario'); return; }
   const old=document.getElementById('dm-nota-noche'); if(old) old.remove();
   let f=e.diary_date;
   try{ f=new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}); }catch(_){}
@@ -2928,9 +2927,17 @@ function dmVerNotaNoche(e, ev){
   globo.style.cssText='position:absolute;max-width:290px;background:#fff;border-radius:12px;padding:11px 13px;'+
     'box-shadow:0 10px 34px rgba(0,0,0,.32);border:1px solid #e6e2da';
   globo.onclick=function(evt){ evt.stopPropagation(); };
-  globo.innerHTML='<div style="font-size:11.5px;color:#1a4a3a;font-weight:700;margin-bottom:5px">'+f+'</div>'+
-    '<div style="font-size:13.5px;color:#3f3f46;line-height:1.55;white-space:pre-wrap">'+
-      String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+  // Tres datos y el comentario. Nada mas: el exceso de numeros en un globo
+  // hace que no se lea ninguno.
+  const _hm = m => (m==null||isNaN(m)) ? '—' : (Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' m');
+  const _lat = (e.sleep_latency_mins!=null && e.sleep_latency_mins!=='') ? (parseInt(e.sleep_latency_mins)+' min') : '—';
+  const _dato = (rot,val) => '<div style="display:flex;justify-content:space-between;gap:18px;padding:3px 0;font-size:13px">'+
+      '<span style="color:#6b7c74">'+rot+'</span><span style="color:#10231c;font-weight:600">'+val+'</span></div>';
+  globo.innerHTML='<div style="font-size:12px;color:#1a4a3a;font-weight:700;margin-bottom:7px">'+f+'</div>'+
+    _dato('Durmió', e.no_sleep===true ? 'no durmió' : _hm(e.sleep_minutes))+
+    _dato('Tardó en dormirse', _lat)+
+    (t ? '<div style="margin-top:9px;padding-top:8px;border-top:1px solid #f0eee9;font-size:13px;color:#3f3f46;line-height:1.5;white-space:pre-wrap">'+
+         String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>' : '');
   capa.appendChild(globo);
   document.body.appendChild(capa);
   // Se ubica donde ocurrio el clic y se corrige si se sale de la pantalla.
@@ -5041,7 +5048,7 @@ function updateClinicalMetrics(entries, todasLasNoches){
   // Comparativas con/sin cada habito. Devuelve '' si no hay noches suficientes,
   // asi que no hace falta condicionar nada aca.
   try{
-    const _hi = (typeof renderHabitsImpactHtml==='function') ? renderHabitsImpactHtml(_base) : '';
+    const _hi = (typeof renderHabitsImpactHtml==='function') ? renderHabitsImpactHtml(_base, 'patient') : '';
     if(_hi) _destino.innerHTML = _hi;
   }catch(_e){ console.warn('[habitos paciente]', _e); }
 }
@@ -5478,9 +5485,45 @@ function computeHabitsImpact(entries){
   return { n:E.length, habitos:out };
 }
 
-function renderHabitsImpactHtml(entries){
+function renderHabitsImpactHtml(entries, audiencia){
   const R=computeHabitsImpact(entries);
   if(!R || R.error || !R.habitos || !R.habitos.length) return '';
+  // ── Version del paciente ──
+  // La tabla con cuatro columnas, la t de Welch y los valores p son para la
+  // consulta. A la persona que registra su sueño le sirve una frase que pueda
+  // repetir. Se muestra UN solo efecto por factor: el mas marcado.
+  if(audiencia==='patient'){
+    const conEfecto=R.habitos.filter(function(hb){ return hb.efectos.some(function(e){ return e.signo!==0; }); });
+    if(!conEfecto.length) return '';
+    const frase=function(hb){
+      const e=hb.efectos.filter(function(x){ return x.signo!==0; })
+        .sort(function(a,b){ return Math.abs(b.diff/(b.mOff||1))-Math.abs(a.diff/(a.mOff||1)); })[0];
+      const mejor=e.signo>0;
+      const cuanto = e.id==='tst'  ? Math.abs(Math.round(e.diff))+' minutos más de sueño'
+                   : e.id==='lat'  ? Math.abs(Math.round(e.diff))+' minutos '+(e.diff>0?'más':'menos')+' en dormirte'
+                   : e.id==='awk'  ? Math.abs(e.diff).toFixed(1)+' despertares '+(e.diff>0?'más':'menos')
+                   : 'mejor calidad';
+      if(e.id==='tst' && !mejor) return Math.abs(Math.round(e.diff))+' minutos menos de sueño';
+      return cuanto;
+    };
+    return '<div class="dm-card" style="background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:12px">'+
+      '<div style="font-size:13.5px;font-weight:700;color:var(--label);margin-bottom:3px">Lo que se nota en tus noches</div>'+
+      '<div style="font-size:11.5px;color:var(--label-3);margin-bottom:11px">Comparado con tus propias noches, no con un promedio general.</div>'+
+      conEfecto.map(function(hb){
+        const bueno = hb.veredicto==='positivo';
+        const col = bueno ? '#15803d' : '#b91c1c';
+        return '<div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid #f0eee9">'+
+          '<span style="font-size:19px;flex-shrink:0;line-height:1.2">'+hb.icon+'</span>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:13.5px;color:#3f3f46;line-height:1.5">Las noches <b>'+hb.onTxt+'</b> tenés '+
+              '<b style="color:'+col+'">'+frase(hb)+'</b>.</div>'+
+            '<div style="font-size:10.5px;color:var(--label-3);margin-top:3px">'+hb.nOn+' noches con · '+hb.nOff+' sin'+
+              (hb.preliminar?' · todavía son pocas noches':'')+'</div>'+
+          '</div></div>';
+      }).join('')+
+      '<div style="font-size:10.5px;color:var(--label-3);margin-top:10px;line-height:1.5">Son coincidencias en tus registros, no una causa comprobada. Sirven para probar cambios y ver qué pasa.</div>'+
+    '</div>';
+  }
   const fmtDif=(ef)=>{
     const d=ef.diff;
     if(ef.id==='awk'||ef.id==='qual') return (d>0?'+':'')+d.toFixed(1)+ef.unit;
@@ -9279,7 +9322,11 @@ async function showDiaryTab_(tab){
       const cutoff7 = new Date(); cutoff7.setDate(cutoff7.getDate()-7);
       const entries30 = subjEntries.filter(e=>new Date(e.diary_date)>=cutoff30);
       const entries7 = subjEntries.filter(e=>new Date(e.diary_date)>=cutoff7);
+      // Por defecto se muestran los ultimos 30 dias. Si no hay al menos 3
+      // noches en ese lapso se cae al historial completo, que es preferible a
+      // una pantalla vacia.
       const scoreEntries = entries30.length>=3 ? entries30 : subjEntries;
+      window._dmPeriodoInicial = entries30.length>=3 ? 30 : 0;
       cont.innerHTML='<div style="display:flex;gap:8px;margin:8px 0 4px;align-items:center">'+
         '<span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>'+
         '<button id="score-period-7" onclick="switchScorePeriod(7)" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:'+(entries7.length>=3?'#1a4a3a':'#e5e7eb')+';color:'+(entries7.length>=3?'#fff':'#9ca3af')+'">7 días</button>'+
@@ -9467,7 +9514,7 @@ async function showDiaryTab_(tab){
               },
               plugins:{
                 legend:{display:false},
-                tooltip:{
+                tooltip:{ enabled:false,   // se abre con un clic, no al pasar el mouse
                   callbacks:{
                     label:function(ctx){
                       const v = ctx.raw;
@@ -13353,10 +13400,10 @@ async function showDrPTab_(tab){
               plugins:{
                 legend:{display:false},
                 annotation:{annotations:annots},
-                tooltip:{
-                  // Sin esto habia que acertarle a la barra. Con el modo por
-                  // indice alcanza con estar en la fila, que es donde esta el
-                  // icono del comentario.
+                // El globo automatico se saco: tapaba el grafico y mostraba
+                // mas datos de los necesarios. La noche se abre con un clic.
+                // La configuracion vieja queda inerte por `enabled:false`.
+                tooltip:{ enabled:false,
                   mode:'index', intersect:false,
                   callbacks:{
                     // Lo que escribio la persona esa noche, en la misma fila.
