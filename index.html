@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy76-mod105">
+<link rel="stylesheet" href="css/styles.css?v=hoy76-mod107">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod105"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod107"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy76-mod105';
+const APP_VERSION='hoy76-mod107';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3048,7 +3048,11 @@ function checkAdminAccess(){
   return getAdminEmails().includes(S.user.email.toLowerCase());
 }
 function getAdminEmails(){
-  return JSON.parse(localStorage.getItem('dm_admin_emails')||'[]').map(e=>e.toLowerCase());
+  // El acceso de administrador ya no se activa con un codigo desde el
+  // navegador: esta fijado a una cuenta. Si mañana hay que sumar a alguien, se
+  // agrega acá y se publica. Es una linea, y evita que la marca quede al
+  // alcance de cualquiera que abra la consola.
+  return ['drjoaquindiez@gmail.com'];
 }
 function revokeAdmin(email){
   const emails=getAdminEmails().filter(e=>e!==email.toLowerCase());
@@ -4579,7 +4583,7 @@ function dmSelectorMesDrHtml(entries){
     'style="padding:4px 10px;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;'+
     'background:'+(_sel?'#1a4a3a':'#e8f0eb')+' !important;color:'+(_sel?'#fff':'#1a4a3a')+' !important;'+
     'border:none;font-family:var(--font);-webkit-appearance:none;appearance:none;padding-right:22px">'+
-    '<option value=""'+(activo?'':' selected')+'>Por mes…</option>'+
+    '<option value=""'+(activo?'':' selected')+'>📅 Ver un mes</option>'+
     meses.map(function(m){ return '<option value="'+m.valor+'"'+(m.valor===activo?' selected':'')+'>'+m.label+' ('+m.n+')</option>'; }).join('')+
     '</select>';
 }
@@ -5190,7 +5194,7 @@ const DM_PATRONES = [
         valor:'Eficiencia '+d.sleepEfficiency+'% · '+d.fmtDur(d.avgTIB)+' en cama para '+d.fmtDur(d.avgTotal)+' de sueño',
         fuerza: d.sleepEfficiency<75 ? 'marcado' : 'presente',
         falta:'Verificar que el tiempo en cama no incluya lectura, pantallas o trabajo, que inflan el denominador sin ser intento de dormir.',
-        formativo:'Es el parámetro sobre el que opera la restricción de sueño: por debajo de 85% hay margen para achicar la ventana, y por debajo de 75% suele ser la intervención de mayor rendimiento.'
+        formativo:'Es el parámetro sobre el que opera la restricción de sueño: por debajo de 85% hay margen para achicar el horario, y por debajo de 75% suele ser la intervención de mayor rendimiento.'
       };
     }
   }
@@ -5410,7 +5414,7 @@ function computeHabitsImpact(entries){
       has:function(e){ return !_esPeriodo(e); },
       on:function(e){ return _preSet.has(e.diary_date); },
       onTxt:'5 días previos', offTxt:'resto del ciclo',
-      nota:'Ventana de '+DM_DIAS_PREMENSTRUAL+' días antes de cada inicio de menstruación, con los días de sangrado excluidos de ambos grupos. Una diferencia acá orienta a fase lútea tardía; no alcanza para hablar de síndrome premenstrual ni de TDPM, que requieren registro prospectivo de síntomas durante dos ciclos.'
+      nota:'Los '+DM_DIAS_PREMENSTRUAL+' días antes de cada inicio de menstruación, con los días de sangrado excluidos de ambos grupos. Una diferencia acá orienta a fase lútea tardía; no alcanza para hablar de síndrome premenstrual ni de TDPM, que requieren registro prospectivo de síntomas durante dos ciclos.'
     });
   }
   // Variables de salida. dirGood indica si SUBIR es mejor (+1) o peor (-1).
@@ -5493,7 +5497,7 @@ function renderHabitsImpactHtml(entries, audiencia){
   // consulta. A la persona que registra su sueño le sirve una frase que pueda
   // repetir. Se muestra UN solo efecto por factor: el mas marcado.
   if(audiencia==='patient'){
-    const conEfecto=R.habitos.filter(function(hb){ return hb.efectos.some(function(e){ return e.signo!==0; }); });
+    const conEfecto=R.habitos;
     if(!conEfecto.length) return '';
     const frase=function(hb){
       const e=hb.efectos.filter(function(x){ return x.signo!==0; })
@@ -5510,13 +5514,16 @@ function renderHabitsImpactHtml(entries, audiencia){
       '<div style="font-size:13.5px;font-weight:700;color:var(--label);margin-bottom:3px">Lo que se nota en tus noches</div>'+
       '<div style="font-size:11.5px;color:var(--label-3);margin-bottom:11px">Comparado con tus propias noches, no con un promedio general.</div>'+
       conEfecto.map(function(hb){
+        const hay = hb.efectos.some(function(e){ return e.signo!==0; });
         const bueno = hb.veredicto==='positivo';
         const col = bueno ? '#15803d' : '#b91c1c';
+        const texto = hay
+          ? 'Las noches <b>'+hb.onTxt+'</b> tenés <b style="color:'+col+'">'+frase(hb)+'</b>.'
+          : 'Entre las noches <b>'+hb.onTxt+'</b> y el resto, <b style="color:#6b7c74">por ahora no se nota diferencia</b>.';
         return '<div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid #f0eee9">'+
-          '<span style="font-size:19px;flex-shrink:0;line-height:1.2">'+hb.icon+'</span>'+
+          '<span style="font-size:19px;flex-shrink:0;line-height:1.2'+(hay?'':';opacity:.5')+'">'+hb.icon+'</span>'+
           '<div style="flex:1;min-width:0">'+
-            '<div style="font-size:13.5px;color:#3f3f46;line-height:1.5">Las noches <b>'+hb.onTxt+'</b> tenés '+
-              '<b style="color:'+col+'">'+frase(hb)+'</b>.</div>'+
+            '<div style="font-size:13.5px;color:#3f3f46;line-height:1.5">'+texto+'</div>'+
             '<div style="font-size:10.5px;color:var(--label-3);margin-top:3px">'+hb.nOn+' noches con · '+hb.nOff+' sin'+
               (hb.preliminar?' · todavía son pocas noches':'')+'</div>'+
           '</div></div>';
@@ -5609,6 +5616,12 @@ function dmLimpiarNota(n){
   t=t.replace(/Siestas?:\s*\[[^\]]*\]/g,'');
   t=t.replace(/Siesta: \d{2}:\d{2}(?: \d+min)?/g,'');
   t=t.replace(/\ud83e\ude78\s*Per[ií]odo/g,'');
+  // Los tramos del diario infantil traen los valores crudos de los
+  // desplegables —"yes", "good", "jornada_completa"— que son formato interno.
+  // El comentario tiene que mostrar SOLO lo que la persona escribio.
+  t=t.replace(/Contexto:[^|]*/gi,'');
+  t=t.replace(/Jard[ií]n:[^|]*/gi,'');
+  t=t.replace(/Estado al despertar:[^|]*/gi,'');
   t=t.split('|').map(s=>s.trim()).filter(Boolean).join(' · ');
   return t.trim();
 }
@@ -5837,10 +5850,14 @@ function dmSelectorMesHtml(_ignorado, entries){
   const meses=dmMesesConDatos(window._dmTodasLasNoches||window._graficosSubjEntries||entries||[]);
   if(meses.length<2) return '';   // con un solo mes no hay nada que elegir
   const activo = window._dmMesActivo || '';
+  // Con fondo transparente y var(--label-2) quedaba texto claro sobre caja
+  // clara: el paciente no sabia que existia la opcion de ver un mes.
+  const _act = !!activo;
   return '<select id="score-period-mes" onchange="switchScoreMes(this.value)" '+
-    'style="padding:5px 10px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;'+
-    'background:transparent;color:var(--label-2);border:1px solid var(--sep-opaque);font-family:var(--font)">'+
-    '<option value=""'+(activo?'':' selected')+'>Por mes…</option>'+
+    'style="padding:5px 11px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;'+
+    'background:'+(_act?'#1a4a3a':'#e8f0eb')+' !important;color:'+(_act?'#fff':'#1a4a3a')+' !important;'+
+    'border:none;font-family:var(--font);-webkit-appearance:none;appearance:none;padding-right:24px">'+
+    '<option value=""'+(activo?'':' selected')+'>📅 Ver un mes</option>'+
     meses.map(function(m){ return '<option value="'+m.valor+'"'+(m.valor===activo?' selected':'')+'>'+m.label+' ('+m.n+')</option>'; }).join('')+
     '</select>';
 }
@@ -9329,10 +9346,10 @@ async function showDiaryTab_(tab){
       window._dmPeriodoInicial = entries30.length>=3 ? 30 : 0;
       cont.innerHTML='<div style="display:flex;gap:8px;margin:8px 0 4px;align-items:center">'+
         '<span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>'+
-        '<button id="score-period-7" onclick="switchScorePeriod(7)" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:'+(entries7.length>=3?'#1a4a3a':'#e5e7eb')+';color:'+(entries7.length>=3?'#fff':'#9ca3af')+'">7 días</button>'+
-        '<button id="score-period-30" onclick="switchScorePeriod(30)" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:#e8f0eb;color:#1a4a3a">30 días</button>'+
+        '<button id="score-period-7" onclick="switchScorePeriod(7)" style="padding:5px 13px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:'+(entries7.length>=3?'#1a4a3a':'#e5e7eb')+';color:'+(entries7.length>=3?'#fff':'#9ca3af')+'">7 días</button>'+
+        '<button id="score-period-30" onclick="switchScorePeriod(30)" style="padding:5px 13px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#e8f0eb;color:#1a4a3a">30 días</button>'+
         dmSelectorMesHtml(entries7.length?null:null, scoreEntries)+
-        '<button id="score-period-all" onclick="switchScorePeriod(0)" style="padding:5px 14px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--label-2)">Todo</button>'+
+        '<button id="score-period-all" onclick="switchScorePeriod(0)" style="padding:5px 13px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;background:transparent;color:var(--label-2)">Todo</button>'+
         '</div>'+
         '<div id="score-panel-wrap">'+renderSleepScorePanel(scoreEntries,(function(){try{const _d=S.user&&S.user.dob?new Date(S.user.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())+'</div>'
       +`
@@ -9348,7 +9365,7 @@ async function showDiaryTab_(tab){
           <div id="pat-acto-inner"><canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas></div>
         </div>
         <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:5px">Si hay muchas noches, el actograma se desplaza dentro del recuadro.</div>
-        <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0 14px;flex-wrap:wrap">
+        <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.86);margin:6px 0 14px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#fff;border-top:2px solid #ea580c;border-bottom:2px solid #ea580c;margin-right:3px;vertical-align:middle"></span>Despertar</span>
@@ -11280,7 +11297,7 @@ async function pvtFinish(){
 
 // DOCTOR
 async function showDoctorHome(){const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
-  try{ dmBuildDoctorTopbar(); }catch(_){}
+  try{ dmBuildDoctorTopbar(); dmTopbarRefrescarAdmin(); }catch(_){}
   // Sin esto, en el primer render el CSS no sabe que la pestaña activa es
   // Pacientes y esconde la columna izquierda con el listado.
   try{ if(!document.body.classList.contains('dr-metrics-view')) document.body.classList.add('dr-tab-patients'); }catch(_){}
@@ -11361,16 +11378,23 @@ function dmBuildDoctorTopbar(){
         '<button class="dr-tb-tab" data-tab="alerts" onclick="dmTopbarGo(\'alerts\')">'+ic('M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9')+'Alertas <span class="dr-tb-badge" id="dr-tb-alert-badge" style="display:none"></span></button>'+
         '<button class="dr-tb-tab" data-tab="metrics" onclick="dmTopbarGo(\'metrics\')">'+ic('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z')+'Métricas</button>'+
         '<button class="dr-tb-tab" data-tab="more" onclick="dmTopbarGo(\'more\')"><span style="font-size:15px;line-height:1">🌿</span>TCC-I</button>'+
+        '<span style="width:1px;height:20px;background:rgba(244,239,229,.16);margin:0 4px;flex-shrink:0"></span>'+
+        '<button class="dr-tb-tab" data-tab="profile" onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
+        '<button class="dr-tb-tab" onclick="showDrRegisterForm()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio</button>'+
+        '<button class="dr-tb-tab" onclick="dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo funciona</button>'+
+        '<button class="dr-tb-tab" onclick="showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'Ayudanos a mejorar</button>'+
+        '<button class="dr-tb-tab" id="dr-tb-admin-tab" style="display:none" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Admin</button>'+
+        '<button class="dr-tb-tab" onclick="logout()" style="color:rgba(252,165,165,.9)">'+ic('M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1')+'Salir</button>'+
       '</div>'+
-      '<div class="dr-tb-actions">'+
+      '<div class="dr-tb-actions" style="display:none">'+
         '<button class="dr-tb-icon" title="Cómo se usa" aria-label="Cómo se usa" onclick="dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'</button>'+
         '<button class="dr-tb-icon" title="Ayudanos a mejorar" aria-label="Ayudanos a mejorar" onclick="showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'</button>'+
         '<button class="dr-tb-icon" id="dr-tb-admin-quick" style="display:none" title="Panel Admin" aria-label="Panel Admin" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'</button>'+
       '</div>'+
-      '<div class="dr-tb-me" id="dr-tb-me">'+
-        '<button class="dr-tb-me-btn" onclick="dmTopbarToggleMenu(event)" aria-label="Tu cuenta">'+
+      '<div class="dr-tb-me" id="dr-tb-me" style="pointer-events:none">'+
+        '<button class="dr-tb-me-btn" style="cursor:default" aria-label="Tu cuenta">'+
           '<span class="dr-tb-avatar" id="dr-tb-avatar">··</span>'+
-          '<span style="color:rgba(244,239,229,.5);font-size:10px">▾</span>'+
+
         '</button>'+
         '<div class="dr-tb-menu">'+
           '<div class="dr-tb-menu-head"><div class="dr-tb-menu-name" id="dr-tb-menu-name">—</div><div class="dr-tb-menu-sub" id="dr-tb-menu-sub">Panel profesional</div></div>'+
@@ -11409,6 +11433,14 @@ function dmBuildDoctorTopbar(){
     });
     dmSyncTopbarBadge();
   }catch(e){ console.warn('[TOPBAR]', e.message); }
+}
+function dmTopbarRefrescarAdmin(){
+  try{
+    const b=document.getElementById('dr-tb-admin-tab');
+    if(!b) return;
+    const yo=String((S && S.user && S.user.email) || '').toLowerCase();
+    b.style.display = (typeof getAdminEmails==='function' && getAdminEmails().indexOf(yo)>=0) ? '' : 'none';
+  }catch(_){}
 }
 function dmTopbarGo(tab){
   dmTopbarCloseMenu();
@@ -11788,8 +11820,40 @@ async function renderPatientList(filter){
             <option value="">Seleccionar</option>
             ${[['🇦🇷','Argentina'],['🇪🇸','España'],['🇲🇽','México'],['🇨🇱','Chile'],['🇺🇾','Uruguay'],['🇨🇴','Colombia'],['🇵🇪','Perú'],['🇻🇪','Venezuela'],['🇧🇴','Bolivia'],['🇵🇾','Paraguay'],['🇪🇨','Ecuador'],['🇺🇸','Estados Unidos'],['🇧🇷','Brasil'],['🇵🇹','Portugal'],['🇮🇹','Italia'],['🇫🇷','Francia'],['🇩🇪','Alemania'],['🇬🇧','Reino Unido']].map(([f,n])=>`<option value="${n}"${dr.country===n?' selected':''}>${f} ${n}</option>`).join('')}
           </select></div>
-        <div class="form-group"><label class="form-label">Biografía profesional</label>
-          <textarea class="form-input" id="dr-edit-bio" rows="3" placeholder="Breve descripción de tu práctica clínica..." style="resize:none">${dr.bio||''}</textarea></div>
+        <div class="form-group"><label class="form-label">Reseña profesional <span style="color:#dc2626">*</span></label>
+          <div style="font-size:11.5px;color:rgba(244,239,229,0.6);line-height:1.5;margin:-2px 0 7px">
+            Esto es lo primero que ve un paciente que te encuentra en el directorio. Sirve contar: dónde te formaste,
+            dónde atendés, si pertenecés a alguna asociación científica —sobre todo del sueño—, y qué tipo de consultas
+            recibís. Tres o cuatro líneas alcanzan.
+          </div>
+          <textarea class="form-input" id="dr-edit-bio" rows="5" placeholder="Ej: Médica psiquiatra formada en la UBA. Atiendo insomnio crónico y trastornos del ritmo circadiano en consultorio y por videollamada. Miembro de la Asociación Argentina de Medicina del Sueño." style="resize:vertical">${dr.bio||''}</textarea></div>
+
+        <div class="form-group"><label class="form-label">Foto profesional</label>
+          <div style="font-size:11.5px;color:rgba(244,239,229,0.6);line-height:1.5;margin:-2px 0 7px">Pegá el enlace de una foto tuya. Una cara conocida cambia mucho la decisión de quien busca profesional.</div>
+          <input class="form-input" id="dr-edit-photo" value="${dr.photo_url||''}" placeholder="https://…"></div>
+
+        <div class="form-group"><label class="form-label">Formación <span style="opacity:.6;font-weight:400">(opcional)</span></label>
+          <input class="form-input" id="dr-edit-training" value="${dr.training||''}" placeholder="Universidad, residencia, posgrados"></div>
+
+        <div class="form-group"><label class="form-label">Asociaciones científicas <span style="opacity:.6;font-weight:400">(opcional)</span></label>
+          <input class="form-input" id="dr-edit-assoc" value="${dr.associations||''}" placeholder="Ej: AAMS, World Sleep Society"></div>
+
+        <div class="form-group"><label class="form-label">Dirección del consultorio <span style="color:#dc2626">*</span></label>
+          <input class="form-input" id="dr-edit-address" value="${dr.address||''}" placeholder="Calle y número, barrio"></div>
+
+        <div class="form-group"><label class="form-label">Teléfono o WhatsApp de contacto <span style="color:#dc2626">*</span></label>
+          <input class="form-input" id="dr-edit-phone" value="${dr.phone||''}" placeholder="+54 9 11 ..."></div>
+
+        <div class="form-group"><label class="form-label">Modalidad de atención</label>
+          <select class="form-select" id="dr-edit-modality">
+            <option value="">Seleccionar</option>
+            <option value="presencial"${dr.modality==='presencial'?' selected':''}>Solo presencial</option>
+            <option value="online"${dr.modality==='online'?' selected':''}>Solo por videollamada</option>
+            <option value="ambas"${dr.modality==='ambas'?' selected':''}>Presencial y videollamada</option>
+          </select></div>
+
+        <div class="form-group"><label class="form-label">Valor de la consulta <span style="opacity:.6;font-weight:400">(opcional — si lo dejás vacío no se muestra)</span></label>
+          <input class="form-input" id="dr-edit-fee" value="${dr.fee||''}" placeholder="Ej: $45.000 la primera consulta"></div>
         <div class="form-group" style="margin-top:16px">
           <label class="form-label">Escalas que usás habitualmente</label>
           <div style="font-size:12px;color:var(--label-3);margin-bottom:10px">Seleccioná las escalas de tu interés para que aparezcan destacadas en el panel de cada paciente</div>
@@ -12066,7 +12130,7 @@ async function renderDoctorRatings(containerId){
     const rows=await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&select=patient_email,rating,comment').catch(()=>[]);
     const rated=(rows||[]).filter(r=>r.rating);
     if(!rated.length){
-      el.innerHTML='<div style="font-size:12.5px;color:rgba(255,255,255,0.5);line-height:1.5">Todavía no recibiste calificaciones. Tus pacientes pueden calificarte desde <strong>Mi especialista</strong> en su app.</div>';
+      el.innerHTML='<div style="font-size:12.5px;color:rgba(255,255,255,0.62);line-height:1.55">Todavía no recibiste calificaciones.<br>Tus pacientes las dejan desde <b style="color:#7EC8A4">Más → Mi especialista</b> en su app.</div>';
       return;
     }
     const avg=(rated.reduce((a,b)=>a+(b.rating||0),0)/rated.length);
@@ -13119,7 +13183,7 @@ async function showDrPTab_(tab){
           <div id="dr-acto-scroll" style="max-height:66vh;overflow:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch">
             <div id="dr-acto-inner"><canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas></div>
           </div>
-          <div style="display:flex;gap:16px;font-size:11px;color:#6b6b76;margin:6px 0 4px;flex-wrap:wrap">
+          <div style="display:flex;gap:16px;font-size:11.5px;color:#3f3f46;margin:6px 0 4px;flex-wrap:wrap">
             <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
             <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
             <span><span style="display:inline-block;width:10px;height:5px;background:#fff;border:1.5px solid #ea580c;border-radius:1px;margin-right:3px;vertical-align:middle"></span>Despertar</span>
@@ -15614,8 +15678,8 @@ function renderWeeklyProgressionHtml(allDiary){
     return '<div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:10px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
       '<div style="display:flex;align-items:flex-end;gap:4px;height:78px;margin-bottom:8px">'+barsHtml+'</div>'+
       '<div style="font-size:11px;color:#444;line-height:1.5">'+
-        '<div>📈 <strong>Mejor semana</strong>: '+bestBlock.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' · <span style="color:'+bestBlock.color+';font-weight:600">'+bestBlock.score+'/100</span></div>'+
-        (worstBlock!==bestBlock?'<div>📉 <strong>Peor semana</strong>: '+worstBlock.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' · <span style="color:'+worstBlock.color+';font-weight:600">'+worstBlock.score+'/100</span></div>':'')+
+        ''+   // Mejor y peor semana: se saco. La barra de arriba ya muestra la
+        ''+   // evolucion, y un dato aislado de hace cinco semanas no orienta.
       '</div>';
   }catch(_wp){ return ''; }
 }
@@ -19118,12 +19182,26 @@ async function saveDrProfile(){
   const name=(document.getElementById('dr-edit-name')?.value||'').trim();
   const lname=(document.getElementById('dr-edit-lname')?.value||'').trim();
   if(!name||!lname){toast('Completá nombre y apellido');return;}
+  // La reseña, la dirección y el contacto son lo que ve un paciente que te
+  // busca. Un perfil sin eso ocupa lugar en el directorio y no sirve a nadie.
+  const _obl=[['dr-edit-bio','la reseña profesional'],['dr-edit-address','la dirección de atención'],['dr-edit-phone','un teléfono de contacto']];
+  for(const [id,rot] of _obl){
+    const el=document.getElementById(id);
+    if(el && !String(el.value||'').trim()){ toast('Falta '+rot); el.focus(); return; }
+  }
   const upd={
     name,lname,
     specialty:document.getElementById('dr-edit-specialty')?.value||'',
     mat:document.getElementById('dr-edit-mat')?.value||'',
     inst:document.getElementById('dr-edit-inst')?.value||'',
     bio:document.getElementById('dr-edit-bio')?.value||'',
+    photo_url:document.getElementById('dr-edit-photo')?.value||null,
+    training:document.getElementById('dr-edit-training')?.value||null,
+    associations:document.getElementById('dr-edit-assoc')?.value||null,
+    address:document.getElementById('dr-edit-address')?.value||null,
+    phone:document.getElementById('dr-edit-phone')?.value||null,
+    modality:document.getElementById('dr-edit-modality')?.value||null,
+    fee:document.getElementById('dr-edit-fee')?.value||null,
     city:document.getElementById('dr-edit-city')?.value||'',
     country:document.getElementById('dr-edit-country')?.value||'',
     gender:document.getElementById('dr-edit-gender')?.value||'',preferred_scales:window._drSelectedScales||[],population:[(document.getElementById('dr-pop-adult')?.checked?'adult':null),(document.getElementById('dr-pop-child')?.checked?'child':null)].filter(Boolean).join(',')||null,
@@ -19832,7 +19910,7 @@ const CBTI_PROTOCOL = {
     ]},
     {id:'M3', name:'Restricción del sueño', icon:'⏱️', items:[
       {id:'M3_1', label:'Calcular eficiencia del sueño desde el diario (≥7 noches)'},
-      {id:'M3_2', label:'Establecer ventana de tiempo en cama = TST medio + 15 min'},
+      {id:'M3_2', label:'Fijar el tiempo en cama = TST medio + 15 min'},
       {id:'M3_3', label:'Acordar hora de acostarse y despertarse'},
       {id:'M3_4', label:'Mínimo 5h en cama (regla de seguridad)'},
       {id:'M3_5', label:'Plan de ajuste semanal: +15 min si eficiencia >85%, -15 min si <80%'}
@@ -20350,10 +20428,10 @@ const CBTI_PATIENT_CONTENT = {
   M6_4: 'Vamos a definir cuándo se considera que terminamos el tratamiento, y plan de seguimiento a 3-6 meses para sostener los logros.'
 };
 
-// ── Motor de ventana de sueño (restricción) para TCC-I autoguiado ──
+// ── Motor de horario de sueño recomendado (restricción) para TCC-I autoguiado ──
 // A partir del diario: calcula el tiempo dormido promedio y la eficiencia, y
-// propone una ventana de sueño consolidada + la regla semanal de ajuste
-// (titración): eficiencia ≥90% amplía la ventana, <85% la recorta. Es el
+// propone una horario de sueño recomendado consolidada + la regla semanal de ajuste
+// (titración): eficiencia ≥90% amplía el horario, <85% la recorta. Es el
 // mecanismo central de la restricción de sueño (SleepioRx / Spielman).
 // anchorWake: hora fija de levantarse (minutos desde medianoche) acordada con
 // el paciente. Es como manda el protocolo clásico de restricción de sueño: se
@@ -20370,7 +20448,7 @@ function computeSleepWindow(entries, anchorWake){
   const tib=last.map(e=>{const [bh,bm]=e.bedtime.split(':').map(Number);let b=bh*60+bm;if(b<12*60)b+=1440;const [wh,wm]=e.wake_time.split(':').map(Number);let w=wh*60+wm; if(w<=(b%1440)) w+=1440; return (w-(b%1440)); });
   const avgTIB=Math.round(tib.reduce((a,b)=>a+b,0)/tib.length);
   const eff=avgTIB>0?Math.round(avgTST/avgTIB*100):0;
-  // Ventana prescrita = tiempo dormido promedio, con piso de seguridad de 5h.
+  // Horario indicado = tiempo dormido promedio, con piso de seguridad de 5h.
   const windowMin=Math.max(300, avgTST);
   const wakeMins=last.map(e=>{const [wh,wm]=e.wake_time.split(':').map(Number);return wh*60+wm;});
   const avgWake=Math.round(wakeMins.reduce((a,b)=>a+b,0)/wakeMins.length);
@@ -20389,8 +20467,8 @@ function computeSleepWindow(entries, anchorWake){
   // Regla de titración semanal
   let titr;
   if(eff>=90) titr={dir:'+', txt:'Tu eficiencia es alta: la próxima semana podés adelantar la hora de acostarte 15 minutos.'};
-  else if(eff<85) titr={dir:'-', txt:'Tu eficiencia está baja: mantené (o recortá 15 min) la ventana esta semana para consolidar el sueño.'};
-  else titr={dir:'=', txt:'Buen punto de partida: sostené esta ventana una semana más antes de ampliarla.'};
+  else if(eff<85) titr={dir:'-', txt:'Tu eficiencia está baja: mantené (o recortá 15 min) el horario esta semana para consolidar el sueño.'};
+  else titr={dir:'=', txt:'Buen punto de partida: sostené este horario una semana más antes de ampliarlo.'};
   return {n:last.length, avgTST, avgTIB, eff, windowMin, bedTarget,
           wakeTarget:anchorUsed, anchorFixed, anchorSug, avgWake:avgWake_legacy, avgWakeSD,
           fmt, fmtDur, titr};
@@ -20448,7 +20526,7 @@ async function renderCbtiWindowPanel(patientEmail){
   const ov  = ov0;
   window._cbtiWin = {sw, ov, patientEmail};
   let html='<div style="background:rgba(126,200,164,0.06);border:1px solid rgba(200,169,110,0.35);border-radius:14px;padding:16px;margin-bottom:18px">'+
-    '<div style="font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:10px">Ventana de sueño · restricción</div>';
+    '<div style="font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:10px">Horario de sueño recomendado · restricción</div>';
   if(!sw || sw.error){
     html+='<div style="font-size:12.5px;color:rgba(255,255,255,0.6);line-height:1.55">Todavía no hay diario suficiente para calcular la ventana'+
       (sw&&sw.n!=null?' ('+sw.n+' de 5 noches mínimas)':'')+'. Podés fijarla a mano igual.</div>';
@@ -20572,13 +20650,13 @@ async function saveCbtiWindow(){
 // reestructuración cognitiva, relajación y prevención de recaídas. La higiene
 // del sueño sola NO es tratamiento: va como apoyo, nunca como núcleo.
 //
-// MODELO DE ACCESO: la ventana de sueño calculada es GRATUITA (es la prueba
+// MODELO DE ACCESO: el horario recomendado calculada es GRATUITA (es la prueba
 // de que el cálculo sirve). El acompañamiento semana a semana es de pago.
 // Todo el control pasa por dmTcciTieneAcceso(): cuando exista el cobro real,
 // se cambia ahí y en ningún otro lado.
 const DM_TCCI_PROGRAMA = [
   {
-    n:1, titulo:'Restricción de sueño', subtitulo:'Menos tiempo en la cama, mejor sueño',
+    n:1, titulo:'Restricción de sueño', subtitulo:'Pasar en la cama el tiempo que realmente dormís',
     objetivo:'Fijar tu horario de sueño y entender por qué achicar el tiempo en cama, aunque suene al revés, es lo que mejor funciona.',
     contenido:'A esto se lo llama <b>restricción de sueño</b>, y el nombre engaña: no vas a dormir menos, vas a estar menos tiempo despierto en la cama.\n\nCuando dormís mal, lo natural es compensar: acostarse antes, levantarse más tarde, quedarse un rato más "por las dudas". Es lo que haría cualquiera. Y es justo lo que mantiene el problema.\n\nPensalo así: el sueño funciona como el hambre. Si picoteás todo el día, no llegás con hambre a la cena. Si pasás diez horas en la cama para dormir seis, esas cuatro horas de más son picoteo: gastás las ganas de dormir dando vueltas, y el sueño que queda se reparte fino y se despierta fácil.\n\nLo que vamos a hacer es lo contrario. Vas a pasar en la cama aproximadamente el tiempo que realmente dormís, ni más. No vas a dormir menos que ahora: vas a estar menos tiempo despierto en la cama. Ese sueño más concentrado es más profundo y se corta menos.\n\nTe lo decimos de frente: la primera semana suele ser la más dura. Es normal sentirse más cansado los primeros días. Ese cansancio no es un problema, es la señal de que se está acumulando el sueño que después vas a aprovechar mejor.',
     tareas:['Levantarte siempre a la misma hora, también sábados y domingos','No acostarte antes de la hora indicada, aunque tengas sueño en el sillón','Completar el diario cada mañana, apenas te levantás','No dormir siestas durante esta etapa'],
@@ -20592,7 +20670,7 @@ const DM_TCCI_PROGRAMA = [
     libre:false
   },
   {
-    n:3, titulo:'Titulación de la ventana', subtitulo:'Ajustamos tu horario con tus propios datos',
+    n:3, titulo:'Ajuste del horario', subtitulo:'Ajustamos tu horario con tus propios datos',
     objetivo:'Ampliar o mantener tu tiempo en cama según cómo dormiste estas dos semanas.',
     contenido:'La <b>titulación</b> es simplemente ir ajustando la dosis de a poco hasta encontrar la justa. Acá la dosis es tu tiempo en cama.\n\nYa tenés dos semanas de registro, así que podemos ajustar con tus datos y no a ojo.\n\nLo que miramos se llama eficiencia de sueño, y es una cuenta simple: del tiempo que pasaste en la cama, qué porcentaje dormiste realmente. Si estuviste siete horas acostado y dormiste seis, tu eficiencia es del 86%. La app ya te la calcula.\n\nLa regla del ajuste:\n\n· Si tu eficiencia superó el 90%, estás durmiendo casi todo el tiempo que estás acostado. Podés adelantar quince minutos la hora de acostarte.\n· Si quedó entre 85 y 90, vas bien pero todavía no. Sostené el mismo horario una semana más.\n· Si quedó por debajo de 85, conviene recortar quince minutos más para volver a concentrar el sueño.\n\nUna sola cosa no se toca: la hora de levantarte. Es el ancla de todo el sistema. Si la movés, el reloj interno se desordena y perdés lo ganado. Los ajustes se hacen siempre corriendo la hora de acostarse.',
     tareas:['Mirar tu eficiencia de sueño en la app','Aplicar el ajuste que te corresponda','Seguir levantándote de la cama si estás dando vueltas','Mantener la hora de levantarte sin moverla'],
@@ -20701,6 +20779,57 @@ function dmTcciTareasHtml(s){
         '<span style="flex:1;font-size:13.5px;line-height:1.55;color:'+(hecho?'rgba(255,255,255,.45)':'rgba(255,255,255,.85)')+';'+(hecho?'text-decoration:line-through;':'')+'">'+t+'</span></div>';
     }).join('');
 }
+// Cerrar la semana a mano. Marcar la ultima tarea y que no pase nada deja la
+// sensacion de que el programa no registra el esfuerzo; un programa conductual
+// de seis semanas vive de eso.
+function dmTcciCierreHtml(s){
+  const p=dmTcciProgresoSemana(s);
+  if(!p.total) return '';
+  const cerrada = (function(){ try{ return JSON.parse(localStorage.getItem('dm_tcci_cerradas')||'{}')[s.n]===true; }catch(_){ return false; } })();
+  if(cerrada){
+    return '<div style="background:rgba(126,200,164,.12);border:1px solid rgba(126,200,164,.35);border-radius:12px;padding:13px 15px;text-align:center">'+
+      '<div style="font-size:22px;margin-bottom:3px">✓</div>'+
+      '<div style="font-size:13.5px;font-weight:700;color:#7EC8A4">Semana '+s.n+' terminada</div>'+
+      '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:3px">Podés volver a leerla cuando quieras.</div></div>';
+  }
+  if(p.hechas < p.total){
+    return '<div style="font-size:12px;color:rgba(255,255,255,.45);text-align:center;padding:6px 0">Te faltan '+(p.total-p.hechas)+' de '+p.total+' para cerrar la semana.</div>';
+  }
+  return '<button onclick="dmTcciCerrarSemana('+s.n+')" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:14px;color:#0F2820;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">¡Terminé la semana '+s.n+'!</button>';
+}
+function dmTcciCerrarSemana(n){
+  let m={};
+  try{ m=JSON.parse(localStorage.getItem('dm_tcci_cerradas')||'{}'); }catch(_){}
+  m[n]=true;
+  try{ localStorage.setItem('dm_tcci_cerradas', JSON.stringify(m)); }catch(_){}
+  const s=DM_TCCI_PROGRAMA.find(function(x){ return x.n===n; });
+  const cont=document.getElementById('dm-tcci-cierre-'+n);
+  if(cont && s) cont.innerHTML=dmTcciCierreHtml(s);
+  const total=DM_TCCI_PROGRAMA.length;
+  const mensajes={
+    1:'Terminaste la semana más dura. La restricción de sueño es la parte que más cuesta y ya la pasaste.',
+    2:'Tu cama está volviendo a significar dormir. Eso no se siente de un día para el otro, pero se está armando.',
+    3:'Ya estás ajustando tu propio horario con tus propios datos. Poca gente llega hasta acá.',
+    4:'Trabajaste sobre lo que pensás a la noche cuando no podés dormir. Es la parte menos visible y de las que más rinde.',
+    5:'Sumaste herramientas para bajar la activación. Te van a servir mucho después de que termine el programa.',
+    6:'Terminaste las seis semanas. Lo que sigue es sostenerlo — y ya sabés cómo.'
+  };
+  const w=document.createElement('div');
+  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,.9);z-index:10005;display:flex;align-items:center;justify-content:center;padding:24px';
+  w.onclick=function(){ w.remove(); };
+  w.innerHTML='<div onclick="event.stopPropagation()" style="max-width:380px;background:#12302699;border:1px solid rgba(126,200,164,.35);border-radius:18px;padding:26px 24px;text-align:center;backdrop-filter:blur(8px)">'+
+    '<div style="font-size:42px;line-height:1;margin-bottom:10px">🌿</div>'+
+    '<div style="font-size:19px;font-weight:700;color:#fff;margin-bottom:8px">Semana '+n+' de '+total+', lista</div>'+
+    '<div style="font-size:14px;color:rgba(255,255,255,.78);line-height:1.6;margin-bottom:18px">'+(mensajes[n]||'Un paso más.')+'</div>'+
+    (n<total
+      ? '<button onclick="document.querySelector(\'[style*=\\\'z-index:10005\\\']\')?.remove(); dmTcciAbrirSemana('+(n+1)+')" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Ver la semana '+(n+1)+'</button>'
+      : '<div style="font-size:13px;color:#C8A96E;font-weight:600">Completaste el programa entero.</div>')+
+    '<div onclick="this.parentNode.parentNode.remove()" style="font-size:12.5px;color:rgba(255,255,255,.5);margin-top:12px;cursor:pointer">Cerrar</div>'+
+  '</div>';
+  document.body.appendChild(w);
+  try{ if(typeof openPatientCbtiView==='function' && document.getElementById('dm-tcci-lista')) openPatientCbtiView(); }catch(_){}
+}
+
 function dmTcciProgresoHtml(){
   const p=dmTcciProgresoTotal();
   const semanas=DM_TCCI_PROGRAMA.map(function(s){
@@ -20741,11 +20870,12 @@ function dmTcciAbrirSemana(n){
         '<div style="font-size:10px;letter-spacing:.07em;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:10px">TU TAREA ESTA SEMANA</div>'+
         '<div id="dm-tcci-tareas-'+s.n+'">'+dmTcciTareasHtml(s)+'</div>'+
       '</div>'+
-      '<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.28);border-radius:12px;padding:12px 14px;margin-top:18px">'+
+      '<div id="dm-tcci-cierre-'+s.n+'" style="margin-top:14px">'+dmTcciCierreHtml(s)+'</div>'+
+      (s.n===1 ? ('<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.28);border-radius:12px;padding:12px 14px;margin-top:18px">'+
         '<div style="font-size:11.5px;color:#C8A96E;font-weight:700;letter-spacing:.05em;margin-bottom:5px">CON ACOMPAÑAMIENTO FUNCIONA MEJOR</div>'+
         '<div style="font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.55">Este programa sigue la misma estructura que los tratamientos digitales aprobados por agencias regulatorias, que se indican <b>como complemento</b> de la atención profesional, no en reemplazo. Un profesional formado en TCC-I ajusta el ritmo a tu caso, resuelve las dudas del camino y acelera bastante los resultados. Si podés, buscá acompañamiento: te va a rendir más.</div>'+
         '<button onclick="document.getElementById(\'dm-tcci-sem\').remove();showPatientCode()" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px;color:#fff;font-size:12.5px;margin-top:10px;cursor:pointer;font-family:var(--font)">Vincular un profesional</button>'+
-      '</div>'+
+      '</div>') : '')+
       '<div style="font-size:11px;color:rgba(255,255,255,.38);text-align:center;margin-top:14px;line-height:1.5">No reemplaza la consulta médica. Si tenés apnea del sueño, trabajás en turnos rotativos o tenés somnolencia peligrosa al volante, consultá antes de restringir el sueño.</div>'+
     '</div>';
   document.body.appendChild(w);
@@ -20833,7 +20963,7 @@ function dmTcciRenderPrograma(){
     '<div class="sec-title" style="margin:0 0 4px;color:rgba(244,239,229,0.55)">Programa de 6 semanas</div>'+
     '<div style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.55;margin-bottom:12px">'+
       (empezado ? 'Vas por la semana '+actual+'. Cada semana se desbloquea sola a los 7 días.'
-                : 'Terapia cognitivo-conductual para el insomnio, paso a paso. Función premium — tu ventana de sueño de arriba es sin costo.')+'</div>';
+                : 'Terapia cognitivo-conductual para el insomnio, paso a paso. Función premium — tu horario de sueño recomendado de arriba es sin costo.')+'</div>';
   if(!empezado){
     html+='<button onclick="dmTcciEmpezar()" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:12px">Empezar el programa</button>';
   }
@@ -20892,12 +21022,12 @@ async function openPatientCbtiView(){
         '<div style="font-size:12.5px;color:rgba(255,255,255,0.72);line-height:1.55">Terapia cognitivo-conductual para el insomnio (TCC-I), el tratamiento de primera línea. Podés seguirlo por tu cuenta a partir de tu diario, o pedirle a un profesional que te acompañe.</div>'+
       '</div>';
       if(!sw || sw.error){
-        html+='<div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:16px;text-align:center;color:rgba(255,255,255,0.7);font-size:13px;line-height:1.6">📔 Para calcular tu <strong>ventana de sueño</strong> personalizada necesitamos al menos <strong>5 noches</strong> registradas en el diario'+(sw&&sw.n?' (tenés '+sw.n+')':'')+'.<br><br>Registrá tu sueño unos días y volvé — la restricción de sueño arranca desde tus datos reales.</div>'+
+        html+='<div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:16px;text-align:center;color:rgba(255,255,255,0.7);font-size:13px;line-height:1.6">📔 Para calcular tu <strong>horario de sueño recomendado</strong> personalizada necesitamos al menos <strong>5 noches</strong> registradas en el diario'+(sw&&sw.n?' (tenés '+sw.n+')':'')+'.<br><br>Registrá tu sueño unos días y volvé — la restricción de sueño arranca desde tus datos reales.</div>'+
           '<button onclick="navTo(\'diary\')" style="width:100%;margin-top:12px;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">Registrar mi noche</button>';
       } else {
         const effCol = sw.eff>=85?'#7EC8A4':sw.eff>=80?'#C8A96E':'#fca5a5';
         html+='<div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:16px;margin-bottom:14px">'+
-          '<div class="sec-title" style="margin:0 0 10px;color:rgba(244,239,229,0.55)">Tu ventana de sueño recomendada</div>'+
+          '<div class="sec-title" style="margin:0 0 10px;color:rgba(244,239,229,0.55)">Tu horario de sueño recomendado recomendada</div>'+
           '<div style="display:flex;gap:10px;margin-bottom:12px">'+
             '<div style="flex:1;background:rgba(126,200,164,0.1);border-radius:12px;padding:11px;text-align:center"><div style="font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:.06em">ACOSTARSE</div><div style="font-size:22px;font-weight:700;color:#fff">'+sw.fmt(sw.bedTarget)+'</div></div>'+
             '<div style="flex:1;background:rgba(126,200,164,0.1);border-radius:12px;padding:11px;text-align:center"><div style="font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:.06em">LEVANTARSE</div><div style="font-size:22px;font-weight:700;color:#fff">'+sw.fmt(sw.wakeTarget)+'</div></div>'+
@@ -20912,8 +21042,8 @@ async function openPatientCbtiView(){
           '<div style="font-weight:600;color:#fff;margin-bottom:6px">Cómo aplicarla esta semana</div>'+
           '1. Acostate <b>solo</b> a la hora indicada, aunque tengas sueño antes.<br>'+
           '2. Levantate a la hora fija <b>todos los días</b>, incluidos los fines de semana.<br>'+
-          '3. Si no dormís en ~20 min, levantate y volvé cuando tengas sueño (control de estímulos).<br>'+
-          '4. Nada de siestas. Seguí registrando: en 7 días recalculamos la ventana.'+
+          '3. Si no dormís en ~20 min, levantate y volvé cuando tengas sueño (volver a asociar la cama con dormir).<br>'+
+          '4. Nada de siestas. Seguí registrando: en 7 días recalculamos el horario.'+
         '</div>'+
         '<div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-top:12px;line-height:1.5">Herramienta de apoyo, no reemplaza la consulta. Si tenés apnea, trabajás en turnos rotativos o hay somnolencia peligrosa, consultá antes de restringir el sueño.</div>';
       }
