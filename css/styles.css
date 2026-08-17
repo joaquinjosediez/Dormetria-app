@@ -2983,3 +2983,75 @@ input, select, textarea{ color: inherit; }
     .ob-next.ready{opacity:1;pointer-events:auto;}
     .ob-skip{text-align:center;margin-top:14px;font-size:12px;color:rgba(255,255,255,0.3);cursor:pointer;font-family:-apple-system,sans-serif;}
   
+
+/* ══════════════════════════════════════════════════════════════════════
+   LEGIBILIDAD DEL PERFIL PROFESIONAL — AL FINAL A PROPOSITO
+   Estas reglas ya estaban mas arriba y no alcanzaban: mas abajo del archivo
+   hay reglas genericas con la misma especificidad que ganaban por orden de
+   aparicion. En CSS, a igual peso, gana la ultima. Por eso van aca.
+   ══════════════════════════════════════════════════════════════════════ */
+#screen-doctor-home .sec-title,
+#screen-doctor-home label,
+#screen-doctor-home .form-label{
+  color: rgba(255,255,255,0.78) !important;
+}
+#screen-doctor-home .form-label span,
+#screen-doctor-home label span{
+  color: rgba(255,255,255,0.55) !important;
+}
+/* El texto suelto dentro de la ficha (descripciones de escalas, ayudas) */
+#screen-doctor-home #dr-profile-form div,
+#screen-doctor-home #dr-scales-picker div,
+#screen-doctor-home #dr-scales-picker label{
+  color: rgba(244,239,229,0.72);
+}
+#screen-doctor-home #dr-scales-picker [style*="color:var(--label-3)"],
+#screen-doctor-home [style*="color:var(--label-3)"]{
+  color: rgba(244,239,229,0.5) !important;
+}
+/* Los campos: caja clara con texto oscuro, que es lo que ya se ve bien */
+#screen-doctor-home .form-input,
+#screen-doctor-home .form-select,
+#screen-doctor-home textarea.form-input{
+  background:#ffffff !important;
+  color:#10231c !important;
+  box-shadow: inset 0 0 0 1px rgba(126,200,164,0.28) !important;
+}
+#screen-doctor-home .form-input::placeholder,
+#screen-doctor-home textarea.form-input::placeholder{
+  color:#8a9691 !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   ETAPA 1 · ESCALA TIPOGRAFICA DEL PACIENTE
+   El cuerpo estaba en 12–13 px. A los 60 años eso se lee mal, y este
+   formulario lo completa gente de esa edad todas las mananas. Sube a 15–17.
+   No es solo tamanio: al crecer la letra, cada pantalla admite menos cosas,
+   y ese recorte es lo que produce la sensacion de agilidad.
+   Solo pantallas del PACIENTE. El panel del profesional queda igual.
+   ══════════════════════════════════════════════════════════════════════ */
+#screen-home .scroll,
+#screen-diary-home .scroll,
+#screen-mas .scroll,
+#screen-scales .scroll{ font-size:15.5px; }
+
+#screen-home [style*="font-size:12px"],
+#screen-diary-home [style*="font-size:12px"],
+#screen-mas [style*="font-size:12px"]{ font-size:13.5px !important; }
+
+#screen-home [style*="font-size:13px"],
+#screen-diary-home [style*="font-size:13px"],
+#screen-mas [style*="font-size:13px"]{ font-size:14.5px !important; }
+
+#screen-home [style*="font-size:11px"],
+#screen-diary-home [style*="font-size:11px"],
+#screen-mas [style*="font-size:11px"]{ font-size:12.5px !important; }
+
+#screen-home .sec-title,
+#screen-diary-home .sec-title,
+#screen-mas .sec-title{ font-size:13px; letter-spacing:.07em; }
+
+/* Los titulos de pantalla crecen y respiran */
+#screen-home #home-name{ font-size:19px !important; }
+#screen-home #home-greeting{ font-size:13.5px !important; }

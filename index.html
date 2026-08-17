@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy76-mod108">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod110">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -549,17 +549,11 @@
       <div id="home-fact-text" style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6"></div>
     </div>
 
-    <!-- 3) Diario de hoy — destacado: es la acción principal recurrente -->
-    <div style="background:linear-gradient(135deg,#C8A96E 0%,#a8893f 100%);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:16px 18px;cursor:pointer;box-shadow:0 6px 20px rgba(200,169,110,0.18)" onclick="showDiaryNew()">
-      <div style="font-size:10px;font-weight:700;color:rgba(15,40,32,0.7);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">📔 Diario de sueño · acción del día</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div style="flex:1">
-          <div id="home-diary-status" style="font-size:16px;font-weight:700;color:#0F2820;line-height:1.25">Registrá tu noche de ayer</div>
-          <div style="font-size:12px;color:rgba(15,40,32,0.65);margin-top:3px">Te lleva un minuto · acumular registros es lo que da información clínica</div>
-        </div>
-        <div style="background:#0F2820;color:#C8A96E;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:700;flex-shrink:0">Registrar →</div>
-      </div>
-    </div>
+    <!-- Aviso de rediseño. Se muestra una sola vez por dispositivo. -->
+    <div id="home-novedad" style="display:none"></div>
+
+    <!-- 3) La noche de ayer. Dos estados: pendiente y cargada. -->
+    <div id="home-noche-slot"></div>
 
     <!-- 4) Escala del día -->
     <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
@@ -1315,7 +1309,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod108"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod110"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1328,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy76-mod108';
+const APP_VERSION='hoy77-mod110';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -7315,7 +7309,79 @@ function _pickChild(encEmail){
   if(pop) pop.remove();
   if(email !== (S.user && S.user.email)) switchToChild(email);
 }
+// ── La tarjeta de la noche ────────────────────────────────────────────
+// Pendiente: una sola accion, grande, sin competencia visual.
+// Cargada: el resultado de anoche. Registrar y no recibir nada a cambio es
+// la razon mas comun por la que se abandona un diario de sueño.
+// Aviso de una sola vez para quien ya venia usando la version anterior. Un
+// rediseño sin explicacion se lee como que algo se rompio o se perdio.
+function dmAvisoRediseno(){
+  try{
+    if(localStorage.getItem('dm_visto_rediseno')==='1') return;
+    const el=document.getElementById('home-novedad');
+    if(!el) return;
+    el.style.display='';
+    el.innerHTML='<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.35);'+
+      'border-radius:16px;padding:15px 16px;position:relative">'+
+      '<div onclick="dmCerrarAvisoRediseno()" style="position:absolute;top:10px;right:13px;font-size:20px;color:rgba(244,239,229,.4);cursor:pointer;line-height:1">×</div>'+
+      '<div style="font-size:16px;font-weight:700;color:#C8A96E;margin-bottom:6px;padding-right:20px">✨ Cambiamos la app para hacértela más fácil</div>'+
+      '<div style="font-size:14px;color:rgba(244,239,229,.7);line-height:1.6">Menos cosas en cada pantalla y letra más grande. '+
+      '<b style="color:#F4EFE5">Todos tus registros están igual, no se perdió nada.</b></div></div>';
+  }catch(_){}
+}
+function dmCerrarAvisoRediseno(){
+  try{ localStorage.setItem('dm_visto_rediseno','1'); }catch(_){}
+  const el=document.getElementById('home-novedad'); if(el) el.style.display='none';
+}
+
+function dmTarjetaNoche(entry){
+  const slot=document.getElementById('home-noche-slot');
+  if(!slot) return;
+  if(!entry){
+    slot.innerHTML =
+      '<div onclick="showDiaryNew()" style="background:linear-gradient(135deg,#1f5c46,#16382c);'+
+      'border:1px solid rgba(126,200,164,0.22);border-radius:20px;padding:24px 20px;text-align:center;cursor:pointer">'+
+        '<div style="font-size:38px;line-height:1;margin-bottom:12px">🌙</div>'+
+        '<div style="font-size:20px;font-weight:700;color:#F4EFE5;margin-bottom:7px;line-height:1.25">Completá tu noche de ayer</div>'+
+        '<div style="font-size:14.5px;color:rgba(244,239,229,.66);line-height:1.5;margin-bottom:16px">Dos minutos. Es lo único pendiente de hoy.</div>'+
+        '<div style="background:#7EC8A4;color:#0F2820;border-radius:13px;padding:15px;font-size:16px;font-weight:700">Empezar</div>'+
+      '</div>';
+    return;
+  }
+  const min=entry.sleep_minutes||0;
+  const hs=Math.floor(min/60), mm=min%60;
+  const lat=(entry.sleep_latency_mins!=null && entry.sleep_latency_mins!=='')
+    ? ('te dormiste en '+parseInt(entry.sleep_latency_mins)+' min') : '';
+  const latN=parseInt(entry.sleep_latency_mins)||0;
+  slot.innerHTML =
+    '<div onclick="showDiaryHome()" style="background:linear-gradient(135deg,#1f5c46,#16382c);'+
+    'border:1px solid rgba(126,200,164,0.22);border-radius:20px;padding:20px;cursor:pointer">'+
+      '<div style="font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#7EC8A4;font-weight:700;margin-bottom:11px">Anoche</div>'+
+      '<div style="display:flex;align-items:flex-end;gap:14px">'+
+        '<div style="font-size:46px;font-weight:700;line-height:.92;color:#F4EFE5">'+hs+
+          '<span style="font-size:21px">h</span> '+String(mm).padStart(2,'0')+'<span style="font-size:21px">m</span></div>'+
+        '<div style="font-size:14px;color:rgba(244,239,229,.66);padding-bottom:6px;line-height:1.4">de sueño'+(lat?'<br>'+lat:'')+'</div>'+
+      '</div>'+
+      (min>0 ? '<div style="display:flex;gap:5px;height:8px;margin:14px 0 0">'+
+        (latN>0?'<div style="flex:'+latN+';background:rgba(126,200,164,.3);border-radius:4px"></div>':'')+
+        '<div style="flex:'+min+';background:#7EC8A4;border-radius:4px"></div></div>' : '')+
+    '</div>';
+}
+
 async function showHome(){
+  // La noche de ayer: se consulta y se pinta apenas entra, sin esperar al
+  // resto de la pantalla. Es lo primero que la persona vino a ver.
+  (async function(){
+    try{
+      if(!S.user || !S.user.email) return;
+      const _ayer=new Date(); _ayer.setDate(_ayer.getDate()-1);
+      const _f=_ayer.getFullYear()+'-'+String(_ayer.getMonth()+1).padStart(2,'0')+'-'+String(_ayer.getDate()).padStart(2,'0');
+      const _r=await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(S.user.email)+
+                            '&diary_date=eq.'+_f+'&select=sleep_minutes,sleep_latency_mins,no_sleep');
+      dmTarjetaNoche((_r && _r.length) ? _r[0] : null);
+      dmAvisoRediseno();
+    }catch(_){ try{ dmTarjetaNoche(null); }catch(__){} }
+  })();
   const _navEl=document.getElementById('main-nav');if(_navEl){_navEl.style.setProperty('display','flex','important');}
   try{ if(typeof updateNavTabs==='function') updateNavTabs(); }catch(e){}
   if(S.childMode){ showChildHome(); return; }
@@ -17911,7 +17977,12 @@ function showForgotPasswordPrompt(){
 //   5. Escalas con puntaje sobre total y corte
 //   6. Límites explícitos del informe
 // El principio: que cada número se pueda verificar sin confiar en la app.
-async function exportInformeParaProfesional(){
+async function exportInformeParaProfesional(modo){
+  // 'breve' es el informe gratuito: lo que un profesional necesita para
+  // orientarse en una hoja. El completo, con todas las escalas y todas las
+  // metricas, queda para la version paga — dos paginas de tablas no le sirven
+  // a nadie que no vaya a leerlas con tiempo.
+  const _breve = (modo!=='completo');
   try{
     if(!window.jspdf || !window.jspdf.jsPDF){ toast('El generador de PDF no cargó. Recargá la página.'); return; }
     const u = S.user;
@@ -18012,7 +18083,13 @@ async function exportInformeParaProfesional(){
       ['Hora media de despertar', met.avgWake!=null?met.fmtClock(met.avgWake):'—', ''],
       ['Jet lag social', met.socialJetLag!=null?met.fmtDur(met.socialJetLag):'—', 'relevante > 1 h (Wittmann 2006)'],
       ['Deuda de sueño (libres − laborables)', met.sleepDebt!=null?met.fmtDur(met.sleepDebt):'—', 'sugiere sueño insuficiente entre semana']
-    ];
+    ].filter(function(f,i){
+      // En el breve van las seis que cambian una conducta clinica. El resto
+      // son de contexto y alargan sin aportar a una primera lectura.
+      if(!_breve) return true;
+      return ['Noches registradas','Sueño total promedio','Latencia de inicio',
+              'Eficiencia de sueño','Hora media de acostarse','Jet lag social'].indexOf(f[0])>=0;
+    });
     const CX=[mg+2, mg+78, mg+108];
     doc.setFont('helvetica','bold'); doc.setFontSize(7.4); doc.setTextColor(120,130,140);
     salto(8); doc.text('PARÁMETRO',CX[0],y); doc.text('VALOR',CX[1],y); doc.text('REFERENCIA',CX[2],y); y+=1.5;
@@ -18045,7 +18122,16 @@ async function exportInformeParaProfesional(){
       doc.setFont('helvetica','bold'); doc.setFontSize(7.4); doc.setTextColor(120,130,140);
       salto(8); doc.text('ESCALA',EX[0],y); doc.text('PUNTAJE',EX[1],y); doc.text('INTERPRETACIÓN',EX[2],y); doc.text('FECHA',EX[3],y);
       y+=1.5; doc.setDrawColor(226,232,240); doc.line(mg,y,W-mg,y); y+=4;
-      escalas.forEach(function(e,idx){
+      // En el breve solo van las escalas con un resultado que amerita mirar:
+      // veinticinco filas de "sin alteraciones" son ruido, no informacion.
+      const _lista = _breve
+        ? escalas.filter(function(e){ return !/^sin |^normal|^m[ií]nimo|^bajo riesgo/i.test(String(e[2]||'').trim()); }).slice(0,8)
+        : escalas;
+      if(_breve && !_lista.length){
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.4); doc.setTextColor(80,90,100);
+        salto(7); doc.text('Todas las escalas respondidas dieron dentro de lo esperable.', mg+2, y); y+=4;
+      }
+      _lista.forEach(function(e,idx){
         salto(7);
         if(idx%2===0){ doc.setFillColor(249,250,251); doc.rect(mg,y-3.4,W-mg*2,6,'F'); }
         doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(55,65,81);
@@ -18060,6 +18146,16 @@ async function exportInformeParaProfesional(){
     }
 
     // ── Límites ──
+    if(_breve){
+      salto(16);
+      doc.setFillColor(248,250,252); doc.rect(mg,y-4,W-mg*2,13,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(26,74,58);
+      doc.text('Informe resumido', mg+3, y+0.5);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.6); doc.setTextColor(90,100,110);
+      doc.text('Incluye lo esencial de las ultimas semanas. La version completa suma todas las escalas respondidas,', mg+3, y+4.4);
+      doc.text('el detalle metrico noche a noche y el actograma.', mg+3, y+7.6);
+      y+=13;
+    }
     H2('Límites de este informe');
     P('· Los datos son autorreportados: dependen de la percepción y la constancia del paciente.',8.2,[100,110,120]);
     P('· No reemplaza polisomnografía ni poligrafía respiratoria. No permite descartar apnea del sueño ni movimientos periódicos.',8.2,[100,110,120]);
@@ -21662,7 +21758,7 @@ const DM_TOURS = {
         placement: 'bottom'
       },
       {
-        target: '#home-diary-status',
+        target: '#home-noche-slot',
         title: '📔 Registrá tu noche',
         body: 'Esta tarjeta es <strong>lo más importante</strong>. Cada mañana, cuando te levantes, tocá acá para registrar cómo dormiste. Te lleva un minuto y es lo que le da valor clínico a tu perfil.',
         placement: 'top',
