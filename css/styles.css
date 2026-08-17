@@ -3055,3 +3055,98 @@ input, select, textarea{ color: inherit; }
 /* Los titulos de pantalla crecen y respiran */
 #screen-home #home-name{ font-size:19px !important; }
 #screen-home #home-greeting{ font-size:13.5px !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   ETAPA 2b · EL DIARIO CON LA ESTETICA DEL PROTOTIPO
+   Agrupar en pasos no alcanzo: el formulario seguia con su maquetado viejo
+   —dos columnas apretadas, cajas de distinto alto, etiquetas corridas— y por
+   eso no se parecia a lo que habiamos acordado.
+   Esto lo reescribe visualmente SIN tocar el HTML ni los id de los campos,
+   que es lo que mantiene intacto el guardado.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1. Una sola columna. Dos campos al lado en 390 px es lo que producia las
+      cajas asimetricas y las etiquetas cortadas. */
+#screen-diary-new .form-row{
+  display:block !important;
+}
+#screen-diary-new .form-row .form-group{
+  width:100% !important;
+  margin-bottom:16px;
+}
+#screen-diary-new .form-row .form-group:last-child{ margin-bottom:0; }
+
+/* 2. Etiquetas: alineadas, sin altura minima que dejaba huecos. */
+#screen-diary-new .form-label{
+  min-height:0 !important;
+  text-align:left !important;
+  display:block !important;
+  font-size:13px !important;
+  letter-spacing:.03em;
+  color:rgba(244,239,229,0.62) !important;
+  margin-bottom:7px !important;
+  text-transform:none !important;
+}
+
+/* 3. Campos grandes, como en el prototipo. */
+#screen-diary-new .form-input,
+#screen-diary-new .form-select{
+  height:auto !important;
+  min-height:56px;
+  font-size:18px !important;
+  font-weight:600;
+  padding:16px 15px !important;
+  border-radius:14px !important;
+}
+
+/* 4. Las tarjetas de cada bloque: mas aire, borde suave. */
+#screen-diary-new .dm-diary-block{
+  background:rgba(255,255,255,0.045);
+  border:1px solid rgba(126,200,164,0.16);
+  border-radius:18px;
+  padding:18px 16px !important;
+  margin-bottom:14px;
+}
+#screen-diary-new .sec-title{
+  font-size:19px !important;
+  font-weight:700 !important;
+  text-transform:none !important;
+  letter-spacing:-.01em !important;
+  color:#F4EFE5 !important;
+  margin-bottom:14px !important;
+  padding:0 !important;
+}
+
+/* 5. Los botones de opcion, como las pastillas del prototipo. */
+#screen-diary-new .opt,
+#screen-diary-new .emoji-btn{
+  border-radius:14px !important;
+  padding:15px 10px !important;
+  font-size:15.5px !important;
+  font-weight:600 !important;
+  border:1.5px solid rgba(126,200,164,0.18) !important;
+  background:rgba(255,255,255,0.055) !important;
+  color:#F4EFE5 !important;
+  min-height:56px;
+}
+#screen-diary-new .opt.sel,
+#screen-diary-new .opt.active,
+#screen-diary-new .emoji-btn.sel{
+  background:#7EC8A4 !important;
+  border-color:#7EC8A4 !important;
+  color:#0F2820 !important;
+}
+#screen-diary-new .emoji-btn{ font-size:26px !important; padding:13px 4px !important; }
+#screen-diary-new .emoji-btn div{ font-size:11px !important; }
+
+/* 6. Los pasos, con aire arriba y abajo. */
+#screen-diary-new .dm-paso{ padding-bottom:4px; }
+#screen-diary-new #dm-paso-cab{ padding-top:6px; }
+
+/* 7. El eco de la hora, mas presente. */
+#screen-diary-new .dm-eco-hora{
+  font-size:14px !important;
+  color:#7EC8A4 !important;
+  margin-top:7px !important;
+}

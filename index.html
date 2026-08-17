@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod112">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod113">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1296,7 +1296,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod112"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod113"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1315,7 +1315,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod112';
+const APP_VERSION='hoy77-mod113';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -7326,12 +7326,24 @@ function dmDiarioEnPasos(){
     if(!cont || cont.querySelector('.dm-paso')) return;   // ya armado
     const bloques=[].slice.call(cont.querySelectorAll('.dm-diary-block'));
     // El "Tipo de día" no esta dentro de un dm-diary-block: se lo busca aparte.
+    // Se toma exactamente el contenedor del selector, no un ancestro lejano:
+    // subir "hasta el scroll" se llevaba tambien la medicacion y el boton de
+    // cerrar sesion, que aparecian dentro del paso 1.
     const tipoDia=(function(){
       const el=document.getElementById('d-daytype-work');
-      if(!el) return null;
-      let n=el; for(let k=0;k<5 && n && n.parentNode;k++){ n=n.parentNode;
-        if(n.parentNode===cont) return n; }
-      return null;
+      return el ? el.closest('div[style*="margin-bottom:12px"]') || el.parentNode.parentNode : null;
+    })();
+    // La fecha y la medicacion tienen su propio destino.
+    const fechaGrp = (function(){ const e=document.getElementById('d-date'); return e?e.closest('.form-group'):null; })();
+    const medGrp   = (function(){
+      const b=cont.querySelector('[onclick*="MedInline"],[onclick*="med-inline"],#med-inline-toggle');
+      return b ? b.closest('.form-group') || b.parentNode : null;
+    })();
+    // Cerrar sesion no tiene nada que hacer en el diario: se oculta.
+    (function(){
+      const s=[].slice.call(cont.querySelectorAll('button,div')).filter(function(x){
+        return /cerrar sesi/i.test((x.textContent||'').trim()) && (x.textContent||'').trim().length<20; });
+      s.forEach(function(x){ x.style.display='none'; });
     })();
     if(bloques.length<5) return;   // el formulario no es el que esperamos: no se toca
 
@@ -7351,7 +7363,9 @@ function dmDiarioEnPasos(){
     cab.id='dm-paso-cab';
     cont.insertBefore(cab, cont.firstChild);
 
-    if(tipoDia) cajas[1].appendChild(tipoDia);
+    if(fechaGrp) cajas[1].appendChild(fechaGrp);
+    if(tipoDia)  cajas[1].appendChild(tipoDia);
+    if(medGrp)   cajas[4].appendChild(medGrp);   // la medicación va con el día
     // Se ordena por la posicion en `titulos`, no por como venian en el HTML.
     // Importa: los despertares de la noche tienen que ir ANTES del despertar
     // de la mañana, que es como transcurrio. Agrupados al reves, el que
@@ -10535,10 +10549,9 @@ function showDiaryNew(){
         <label class="form-label">Horario</label>
         <select class="form-select" id="d-exercise-time">
           <option value="">—</option>
-          <option value="morning">Mañana (antes de 12h)</option>
-          <option value="afternoon">Tarde (12–18h)</option>
-          <option value="evening">Noche (18–21h)</option>
-          <option value="late">Tarde noche (&gt;21h)</option>
+          <option value="morning">Mañana · 7 a 13</option>
+          <option value="afternoon">Tarde · 13 a 19</option>
+          <option value="evening">Noche · 19 a 24</option>
         </select>
       </div>
     </div>
