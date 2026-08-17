@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod111">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod112">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1296,7 +1296,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod111"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod112"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1315,7 +1315,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod111';
+const APP_VERSION='hoy77-mod112';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -7304,6 +7304,123 @@ function _pickChild(encEmail){
 // rediseño sin explicacion se lee como que algo se rompio o se perdio.
 // Dos numeros y nada mas. La constancia es lo que hace que el resto exista,
 // y la variacion del horario es el pilar que mas se puede corregir.
+// ══════════════════════════════════════════════════════════════════════
+// ETAPA 2 · EL DIARIO EN PASOS
+// Decision deliberada: NO se toca el HTML del formulario ni saveDiary. Los
+// campos, sus id y el guardado quedan EXACTAMENTE como estaban. Lo unico
+// que hace esto es agrupar los bloques que ya existen en cinco pasos y
+// mostrarlos de a uno. Si algo falla, se ve el formulario completo como
+// antes y no se pierde ni un dato.
+// ══════════════════════════════════════════════════════════════════════
+const DM_PASOS = [
+  { n:1, rot:'Al acostarte',            titulos:['Tipo de día','Al acostarse'] },
+  { n:2, rot:'Durante la noche',        titulos:['Despertares','Al despertar'] },
+  { n:3, rot:'Cómo dormiste',           titulos:['Calidad del sueño','Cómo te sentiste','Siesta'] /* calidad primero: si va despues de la siesta, no se sabe cual se califica */ },
+  { n:4, rot:'Tu día de ayer',          titulos:['Actividad física','Cafeína','Tu propia variable','Tus variables'] },
+  { n:5, rot:'Algo más',                titulos:['Notas'] }
+];
+
+function dmDiarioEnPasos(){
+  try{
+    const cont=document.querySelector('#screen-diary-new .scroll');
+    if(!cont || cont.querySelector('.dm-paso')) return;   // ya armado
+    const bloques=[].slice.call(cont.querySelectorAll('.dm-diary-block'));
+    // El "Tipo de día" no esta dentro de un dm-diary-block: se lo busca aparte.
+    const tipoDia=(function(){
+      const el=document.getElementById('d-daytype-work');
+      if(!el) return null;
+      let n=el; for(let k=0;k<5 && n && n.parentNode;k++){ n=n.parentNode;
+        if(n.parentNode===cont) return n; }
+      return null;
+    })();
+    if(bloques.length<5) return;   // el formulario no es el que esperamos: no se toca
+
+    const tituloDe=function(b){
+      const t=b.querySelector('.sec-title');
+      return t ? t.textContent.trim() : '';
+    };
+    const cajas={};
+    DM_PASOS.forEach(function(p){
+      const d=document.createElement('div');
+      d.className='dm-paso'; d.setAttribute('data-paso',p.n);
+      d.style.display = (p.n===1?'':'none');
+      cajas[p.n]=d;
+    });
+    // El encabezado con el progreso, arriba de todo.
+    const cab=document.createElement('div');
+    cab.id='dm-paso-cab';
+    cont.insertBefore(cab, cont.firstChild);
+
+    if(tipoDia) cajas[1].appendChild(tipoDia);
+    // Se ordena por la posicion en `titulos`, no por como venian en el HTML.
+    // Importa: los despertares de la noche tienen que ir ANTES del despertar
+    // de la mañana, que es como transcurrio. Agrupados al reves, el que
+    // completa no sabe a cual de los dos se refiere cada campo.
+    const conDestino=bloques.map(function(b){
+      const t=tituloDe(b);
+      let destino=5, orden=99;
+      for(const p of DM_PASOS){
+        const k=p.titulos.findIndex(function(x){ return t.indexOf(x)===0; });
+        if(k>=0){ destino=p.n; orden=k; break; }
+      }
+      return {b:b, destino:destino, orden:orden};
+    });
+    DM_PASOS.forEach(function(p){
+      conDestino.filter(function(x){ return x.destino===p.n; })
+        .sort(function(a,b){ return a.orden-b.orden; })
+        .forEach(function(x){ cajas[p.n].appendChild(x.b); });
+    });
+    Object.keys(cajas).forEach(function(k){ cont.appendChild(cajas[k]); });
+
+    // La botonera vive al final y se mueve con el paso.
+    const pie=document.createElement('div');
+    pie.id='dm-paso-pie';
+    pie.style.cssText='display:flex;gap:10px;margin:18px 0 8px';
+    cont.appendChild(pie);
+
+    // El boton de guardar original se esconde: lo dispara el paso 5.
+    const guardar=cont.querySelector('[onclick*="saveDiary"]');
+    if(guardar) guardar.style.display='none';
+    window._dmGuardarOriginal=guardar;
+
+    window._dmPaso=1;
+    dmPintarPaso();
+  }catch(e){ console.warn('[DIARIO] pasos:', e && e.message); }
+}
+
+function dmPintarPaso(){
+  const n=window._dmPaso||1, total=DM_PASOS.length;
+  const p=DM_PASOS[n-1];
+  document.querySelectorAll('#screen-diary-new .dm-paso').forEach(function(d){
+    d.style.display = (parseInt(d.getAttribute('data-paso'))===n) ? '' : 'none';
+  });
+  const cab=document.getElementById('dm-paso-cab');
+  if(cab){
+    cab.innerHTML='<div style="height:5px;background:rgba(255,255,255,.09);border-radius:3px;overflow:hidden;margin-bottom:12px">'+
+      '<div style="height:100%;width:'+Math.round(n/total*100)+'%;background:#7EC8A4;border-radius:3px;transition:width .25s"></div></div>'+
+      '<div style="font-size:13px;color:#7EC8A4;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px">'+
+      'Paso '+n+' de '+total+' · '+p.rot+'</div>';
+  }
+  const pie=document.getElementById('dm-paso-pie');
+  if(pie){
+    pie.innerHTML =
+      (n>1 ? '<button onclick="dmPasoIr('+(n-1)+')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(126,200,164,.2);color:#F4EFE5;border-radius:14px;padding:16px 20px;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)">←</button>' : '')+
+      (n<total
+        ? '<button onclick="dmPasoIr('+(n+1)+')" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Siguiente</button>'
+        : '<button onclick="dmPasoGuardar()" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar mi noche</button>');
+  }
+  const sc=document.querySelector('#screen-diary-new .scroll');
+  if(sc) sc.scrollTop=0;
+}
+function dmPasoIr(n){ window._dmPaso=n; dmPintarPaso(); }
+function dmPasoGuardar(){
+  // Se dispara el boton original: toda la logica de guardado queda intacta.
+  try{
+    if(window._dmGuardarOriginal){ window._dmGuardarOriginal.click(); return; }
+  }catch(_){}
+  if(typeof saveDiary==='function') saveDiary();
+}
+
 async function dmCifrasInicio(){
   try{
     const el=document.getElementById('home-cifras');
@@ -10251,6 +10368,8 @@ async function editDiaryEntry(id){
 }
 
 function showDiaryNew(){
+  // Armar los pasos despues de que el formulario este en el DOM.
+  setTimeout(function(){ try{ dmDiarioEnPasos(); }catch(_){} }, 120);
   setTimeout(dmPintarVarsSlot, 60);
   // Recordar desde qué pantalla se abrió, para que "Volver" no adivine.
   try{
