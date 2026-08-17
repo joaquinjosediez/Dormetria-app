@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy76-mod107">
+<link rel="stylesheet" href="css/styles.css?v=hoy76-mod108">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1315,7 +1315,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod107"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy76-mod108"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1334,7 +1334,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy76-mod107';
+const APP_VERSION='hoy76-mod108';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2911,6 +2911,28 @@ function dmRefrescarEcosHora(){
 // llega a tener ancho, o si la creacion falla, escribe el motivo EN LA CAJA:
 // un rectangulo blanco sin texto no permite averiguar nada.
 // Ventanita con el comentario de esa noche. Se abre al tocar la fila.
+// La escala de horas vivia dentro del lienzo: al scrollear el actograma se iba
+// para arriba y quedabas mirando barras sin saber a que hora corresponden.
+// Ahora se dibuja aparte, debajo de la caja que scrollea, alineada al area
+// real del grafico (que Chart.js recalcula segun el ancho de las etiquetas).
+function dmReglaHoraria(chart, contenedorId){
+  try{
+    const cont=document.getElementById(contenedorId);
+    if(!cont || !chart || !chart.scales || !chart.scales.x) return;
+    const x=chart.scales.x;
+    const ancho=chart.canvas.clientWidth || chart.width || 1;
+    const horas=[0,4,8,12,16,20,24];
+    const rot=function(o){ const hh=((o+12)%24+24)%24; return String(Math.floor(hh)).padStart(2,'0')+':00'; };
+    cont.innerHTML='<div style="position:relative;height:16px;margin-top:2px">'+
+      horas.map(function(o){
+        const px=x.getPixelForValue(o);
+        if(px==null || isNaN(px)) return '';
+        return '<span style="position:absolute;left:'+((px/ancho)*100).toFixed(3)+'%;transform:translateX(-50%);'+
+          'font-size:10px;color:#6b7c74;white-space:nowrap">'+rot(o)+'</span>';
+      }).join('')+'</div>';
+  }catch(_){}
+}
+
 function dmVerNotaNoche(e, ev){
   if(!e) return;
   const t = (typeof dmLimpiarNota==='function') ? dmLimpiarNota(e.notes) : '';
@@ -5850,16 +5872,50 @@ function dmSelectorMesHtml(_ignorado, entries){
   const meses=dmMesesConDatos(window._dmTodasLasNoches||window._graficosSubjEntries||entries||[]);
   if(meses.length<2) return '';   // con un solo mes no hay nada que elegir
   const activo = window._dmMesActivo || '';
-  // Con fondo transparente y var(--label-2) quedaba texto claro sobre caja
-  // clara: el paciente no sabia que existia la opcion de ver un mes.
   const _act = !!activo;
-  return '<select id="score-period-mes" onchange="switchScoreMes(this.value)" '+
-    'style="padding:5px 11px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;'+
-    'background:'+(_act?'#1a4a3a':'#e8f0eb')+' !important;color:'+(_act?'#fff':'#1a4a3a')+' !important;'+
-    'border:none;font-family:var(--font);-webkit-appearance:none;appearance:none;padding-right:24px">'+
-    '<option value=""'+(activo?'':' selected')+'>📅 Ver un mes</option>'+
-    meses.map(function(m){ return '<option value="'+m.valor+'"'+(m.valor===activo?' selected':'')+'>'+m.label+' ('+m.n+')</option>'; }).join('')+
-    '</select>';
+  const _rot = _act ? (meses.filter(function(m){return m.valor===activo;})[0]||{}).label || 'Mes' : 'Ver un mes';
+  window._dmMesesDisponibles = meses;
+  return '<button id="score-period-mes" onclick="dmAbrirSelectorMes(event)" '+
+    'style="padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;'+
+    'background:'+(_act?'#1a4a3a':'#e8f0eb')+';color:'+(_act?'#fff':'#1a4a3a')+';'+
+    'border:none;font-family:var(--font)">📅 '+_rot+'</button>';
+}
+// Lista propia de meses. Un boton y un panel dibujados por nosotros: el
+// navegador del celular no interviene y no puede volver a quedar ilegible.
+function dmAbrirSelectorMes(ev){
+  try{ ev.stopPropagation(); }catch(_){}
+  const viejo=document.getElementById('dm-panel-meses'); if(viejo){ viejo.remove(); return; }
+  const meses=window._dmMesesDisponibles||[];
+  if(!meses.length) return;
+  const btn=document.getElementById('score-period-mes');
+  const r=btn?btn.getBoundingClientRect():{left:20,bottom:80};
+  const capa=document.createElement('div');
+  capa.id='dm-panel-meses';
+  capa.style.cssText='position:fixed;inset:0;z-index:10006';
+  capa.onclick=function(){ capa.remove(); };
+  const panel=document.createElement('div');
+  panel.style.cssText='position:absolute;background:#fff;border-radius:13px;padding:6px;'+
+    'box-shadow:0 14px 44px rgba(0,0,0,.34);min-width:186px;max-height:60vh;overflow:auto';
+  panel.onclick=function(e){ e.stopPropagation(); };
+  panel.innerHTML =
+    '<div onclick="dmElegirMes(\'\')" style="padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13.5px;color:#3f3f46">Ver todo el historial</div>'+
+    meses.map(function(m){
+      const on = (window._dmMesActivo===m.valor);
+      return '<div onclick="dmElegirMes(\''+m.valor+'\')" style="padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13.5px;'+
+        'background:'+(on?'#e8f0eb':'transparent')+';color:'+(on?'#1a4a3a':'#3f3f46')+';font-weight:'+(on?'700':'400')+'">'+
+        m.label+' <span style="color:#8a9691;font-size:11.5px">· '+m.n+' noches</span></div>';
+    }).join('');
+  capa.appendChild(panel);
+  document.body.appendChild(capa);
+  const alto=panel.getBoundingClientRect().height;
+  let top=r.bottom+7;
+  if(top+alto>window.innerHeight-10) top=Math.max(10, r.top-alto-7);
+  panel.style.top=top+'px';
+  panel.style.left=Math.max(10, Math.min(r.left, window.innerWidth-panel.getBoundingClientRect().width-10))+'px';
+}
+function dmElegirMes(v){
+  const c=document.getElementById('dm-panel-meses'); if(c) c.remove();
+  switchScoreMes(v);
 }
 function switchScoreMes(ym){
   if(!ym){ window._dmMesActivo=null; switchScorePeriod(30); if(typeof showDiaryTab_==='function') showDiaryTab_('graficos'); return; }
@@ -9363,6 +9419,7 @@ async function showDiaryTab_(tab){
         <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
         <div style="background:#fff;border-radius:14px;padding:12px 10px;padding-bottom:8px;max-height:62vh;overflow:auto;-webkit-overflow-scrolling:touch">
           <div id="pat-acto-inner"><canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas></div>
+          <div id="pat-acto-regla" style="position:sticky;bottom:0;background:#fff;padding-top:2px"></div>
         </div>
         <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:5px">Si hay muchas noches, el actograma se desplaza dentro del recuadro.</div>
         <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.86);margin:6px 0 14px;flex-wrap:wrap">
@@ -9864,6 +9921,7 @@ async function showDiaryTab_(tab){
           });
           buildPillarLegend('pat-pillar-legend','dp');
           });
+          setTimeout(function(){ try{ dmReglaHoraria(S.charts.acto, 'pat-acto-regla'); }catch(_){} }, 160);
         }
         }catch(_errPil){
           // El recuadro salio en blanco Y sin las tarjetas de arriba: la
@@ -10285,7 +10343,7 @@ function showDiaryNew(){
     <div id="caffeine-items"></div>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <select class="form-select" id="d-caff-type" style="flex:1" onchange="updateCaffPreview()">
-        <option value="ninguno|0">Ninguno</option><option value="espresso|80">Espresso (80mg)</option><option value="cafe_largo|120">Café largo (120mg)</option><option value="cortado|90">Cortado (90mg)</option><option value="cafe_leche|80">Café con leche (80mg)</option><option value="cappuccino|75">Cappuccino (75mg)</option><option value="mate|30">Mate cebado (30mg)</option><option value="mate_cocido|40">Mate cocido (40mg)</option><option value="terere|25">Tereré (25mg)</option><option value="te_negro|50">Té negro (50mg)</option><option value="te_verde|30">Té verde (30mg)</option><option value="coca|35">Coca-Cola 350ml (35mg)</option><option value="energizante|80">Energizante 250ml (80mg)</option><option value="instantaneo|65">Café instantáneo (65mg)</option>
+        <option value="ninguno|0">Ninguno</option><option value="espresso|80">Espresso (80mg)</option><option value="cafe_largo|120">Café largo (120mg)</option><option value="cortado|90">Cortado (90mg)</option><option value="cafe_leche|80">Café con leche (80mg)</option><option value="cappuccino|75">Cappuccino (75mg)</option><option value="mate_pocos|150">Mate · unos pocos (~½ L) — 150mg aprox.</option><option value="mate_mateada|250">Mate · una mateada entera (~1 L) — 250mg aprox.</option><option value="mate_varias|400">Mate · varias mateadas en el día — 400mg aprox.</option><option value="mate_cocido|40">Mate cocido (40mg)</option><option value="terere|25">Tereré (25mg)</option><option value="te_negro|50">Té negro (50mg)</option><option value="te_verde|30">Té verde (30mg)</option><option value="coca|35">Coca-Cola 350ml (35mg)</option><option value="energizante|80">Energizante 250ml (80mg)</option><option value="instantaneo|65">Café instantáneo (65mg)</option>
       </select>
       <input class="form-input" type="number" id="d-caff-qty" min="1" value="1" style="width:58px;flex-shrink:0" oninput="updateCaffPreview()">
       <button class="btn btn-s" style="width:auto;padding:10px 12px;flex-shrink:0" onclick="addCaffItem()">+</button>
@@ -11297,7 +11355,7 @@ async function pvtFinish(){
 
 // DOCTOR
 async function showDoctorHome(){const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
-  try{ dmBuildDoctorTopbar(); dmTopbarRefrescarAdmin(); }catch(_){}
+  try{ dmBuildDoctorTopbar(); dmTopbarRefrescarAdmin(); dmTopbarSaludo(); }catch(_){}
   // Sin esto, en el primer render el CSS no sabe que la pestaña activa es
   // Pacientes y esconde la columna izquierda con el listado.
   try{ if(!document.body.classList.contains('dr-metrics-view')) document.body.classList.add('dr-tab-patients'); }catch(_){}
@@ -11372,7 +11430,8 @@ function dmBuildDoctorTopbar(){
     const tb=document.createElement('div');
     tb.id='dr-topbar-desktop';
     tb.innerHTML=
-      '<div class="dr-tb-brand"><div data-dm-logo data-dm-h="20" data-dm-fill="#F4EFE5" style="display:inline-block;line-height:0"></div></div>'+
+      '<div class="dr-tb-brand"><div data-dm-logo data-dm-h="20" data-dm-fill="#F4EFE5" style="display:inline-block;line-height:0"></div>'+
+        '<span id="dr-tb-saludo" style="margin-left:12px;font-size:13.5px;color:rgba(244,239,229,.82);white-space:nowrap"></span></div>'+
       '<div class="dr-tb-tabs">'+
         '<button class="dr-tb-tab active" data-tab="patients" onclick="dmTopbarGo(\'patients\')">'+ic('M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z')+'Pacientes</button>'+
         '<button class="dr-tb-tab" data-tab="alerts" onclick="dmTopbarGo(\'alerts\')">'+ic('M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9')+'Alertas <span class="dr-tb-badge" id="dr-tb-alert-badge" style="display:none"></span></button>'+
@@ -11391,7 +11450,7 @@ function dmBuildDoctorTopbar(){
         '<button class="dr-tb-icon" title="Ayudanos a mejorar" aria-label="Ayudanos a mejorar" onclick="showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'</button>'+
         '<button class="dr-tb-icon" id="dr-tb-admin-quick" style="display:none" title="Panel Admin" aria-label="Panel Admin" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'</button>'+
       '</div>'+
-      '<div class="dr-tb-me" id="dr-tb-me" style="pointer-events:none">'+
+      '<div class="dr-tb-me" id="dr-tb-me" style="display:none">'+
         '<button class="dr-tb-me-btn" style="cursor:default" aria-label="Tu cuenta">'+
           '<span class="dr-tb-avatar" id="dr-tb-avatar">··</span>'+
 
@@ -11433,6 +11492,18 @@ function dmBuildDoctorTopbar(){
     });
     dmSyncTopbarBadge();
   }catch(e){ console.warn('[TOPBAR]', e.message); }
+}
+// Saludo segun la hora. En una app de sueño, que la barra sepa si es de dia o
+// de noche es coherente con lo que la app mira.
+function dmTopbarSaludo(){
+  try{
+    const el=document.getElementById('dr-tb-saludo');
+    if(!el) return;
+    const nom=String((S && S.user && S.user.name) || '').trim().split(' ')[0] || '';
+    const hh=new Date().getHours();
+    const franja = hh<6 ? 'Buenas noches' : hh<13 ? 'Buen día' : hh<20 ? 'Buenas tardes' : 'Buenas noches';
+    el.textContent = nom ? (franja+', '+nom) : franja;
+  }catch(_){}
 }
 function dmTopbarRefrescarAdmin(){
   try{
@@ -13180,9 +13251,10 @@ async function showDrPTab_(tab){
             <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
           </div>
           <div id="dr-habit-summary" style="font-size:11px;color:#6b6b76;margin-bottom:6px">Cargando hábitos…</div>
-          <div id="dr-acto-scroll" style="max-height:66vh;overflow:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch">
+          <div id="dr-acto-scroll" style="max-height:66vh;overflow:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch">
             <div id="dr-acto-inner"><canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas></div>
           </div>
+          <div id="dr-acto-regla"></div>
           <div style="display:flex;gap:16px;font-size:11.5px;color:#3f3f46;margin:6px 0 4px;flex-wrap:wrap">
             <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
             <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
@@ -13339,8 +13411,9 @@ async function showDrPTab_(tab){
               const ch=S.charts['dr-acto'];
               const sc=document.getElementById('dr-acto-scroll');
               if(ch && sc && sc.clientWidth>340) ch.resize(sc.clientWidth-2, H);
+              dmReglaHoraria(ch, 'dr-acto-regla');
             }catch(_){}
-          }, 120);
+          }, 140);
           // Discriminar días libres: igual lógica que el paciente. day_type==='free' OR sáb/dom.
           const drWeekendRows=sorted.map((e,i)=>{
             const d=new Date(e.diary_date+'T12:00:00');
