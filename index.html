@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod110">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod111">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -543,17 +543,16 @@
       </div>
     </div>
 
-    <!-- 2) Dato curioso del sueño -->
-    <div id="home-fact-card" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px">
-      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Dato del día</div>
-      <div id="home-fact-text" style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6"></div>
-    </div>
+        <!-- (movido a "Más" para despejar el inicio) -->
 
     <!-- Aviso de rediseño. Se muestra una sola vez por dispositivo. -->
     <div id="home-novedad" style="display:none"></div>
 
     <!-- 3) La noche de ayer. Dos estados: pendiente y cargada. -->
     <div id="home-noche-slot"></div>
+
+    <!-- Dos cifras: constancia y regularidad. Nada mas. -->
+    <div id="home-cifras" style="display:none;gap:11px"></div>
 
     <!-- 4) Escala del día -->
     <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
@@ -590,17 +589,7 @@
     <!-- 6) Escalas que te recomienda el profesional (sugerencias) -->
     <div id="home-doctor-suggestions" style="display:none"></div>
 
-    <!-- 7) Descubrir más cuestionarios — visible para todos los pacientes -->
-    <div onclick="showScalesScreen()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;cursor:pointer">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:20px;line-height:1">🔍</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:#fff;line-height:1.3">Explorá otras escalas</div>
-          <div style="font-size:11.5px;color:rgba(255,255,255,0.55);margin-top:2px;line-height:1.4">No tenés que esperar que te las pidan. Hay cuestionarios validados sobre insomnio, somnolencia, ánimo, ritmo circadiano y más.</div>
-        </div>
-        <div style="color:rgba(255,255,255,0.4);font-size:18px;flex-shrink:0">›</div>
-      </div>
-    </div>
+        <!-- (movido a "Más" para despejar el inicio) -->
 
     <!-- Perfil hijo (si corresponde) -->
     <div id="home-child-pill" style="display:none">
@@ -613,9 +602,7 @@
       </div>
     </div>
 
-    <!-- Accesos rápidos (test de alerta, etc.) — arriba de Mi especialista -->
-    <div id="home-quick" style="display:none"></div>
-
+        <!-- (movido a "Más" para despejar el inicio) -->
 
     <!-- Código profesional -->
     <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showPatientCode()">
@@ -1309,7 +1296,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod110"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod111"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1328,7 +1315,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod110';
+const APP_VERSION='hoy77-mod111';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -7315,6 +7302,40 @@ function _pickChild(encEmail){
 // la razon mas comun por la que se abandona un diario de sueño.
 // Aviso de una sola vez para quien ya venia usando la version anterior. Un
 // rediseño sin explicacion se lee como que algo se rompio o se perdio.
+// Dos numeros y nada mas. La constancia es lo que hace que el resto exista,
+// y la variacion del horario es el pilar que mas se puede corregir.
+async function dmCifrasInicio(){
+  try{
+    const el=document.getElementById('home-cifras');
+    if(!el || !S.user || !S.user.email) return;
+    const rows=await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(S.user.email)+
+                            '&order=diary_date.desc&limit=120&select=diary_date,bedtime,wake_time,sleep_minutes,notes');
+    if(!rows || !rows.length) return;
+    // Racha: dias consecutivos hacia atras desde ayer.
+    const set={}; rows.forEach(function(r){ set[r.diary_date]=1; });
+    let racha=0; const d=new Date(); d.setDate(d.getDate()-1);
+    for(let i=0;i<400;i++){
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(!set[k]) break;
+      racha++; d.setDate(d.getDate()-1);
+    }
+    let variacion=null;
+    try{
+      const reg=computeSleepRegularity(dmNochesValidas(rows));
+      if(reg && reg.sd_midpoint_min!=null) variacion=Math.round(reg.sd_midpoint_min);
+    }catch(_){}
+    const caja=function(v,rot,col){
+      return '<div style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.2);'+
+        'border-radius:16px;padding:14px 15px">'+
+        '<div style="font-size:23px;font-weight:700;color:'+col+'">'+v+'</div>'+
+        '<div style="font-size:12.5px;color:rgba(244,239,229,.66);line-height:1.35;margin-top:3px">'+rot+'</div></div>';
+    };
+    el.style.display='flex';
+    el.innerHTML = caja(racha||'—', racha===1?'día seguido registrando':'días seguidos registrando', '#7EC8A4')
+      + caja(variacion!=null?('±'+variacion+'<span style="font-size:13px">min</span>'):'—','variación de tu horario','#C8A96E');
+  }catch(_){}
+}
+
 function dmAvisoRediseno(){
   try{
     if(localStorage.getItem('dm_visto_rediseno')==='1') return;
@@ -7380,6 +7401,7 @@ async function showHome(){
                             '&diary_date=eq.'+_f+'&select=sleep_minutes,sleep_latency_mins,no_sleep');
       dmTarjetaNoche((_r && _r.length) ? _r[0] : null);
       dmAvisoRediseno();
+      dmCifrasInicio();
     }catch(_){ try{ dmTarjetaNoche(null); }catch(__){} }
   })();
   const _navEl=document.getElementById('main-nav');if(_navEl){_navEl.style.setProperty('display','flex','important');}
