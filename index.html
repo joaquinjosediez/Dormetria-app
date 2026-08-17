@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod114">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod116">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1296,7 +1296,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod114"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod116"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1315,7 +1315,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod114';
+const APP_VERSION='hoy77-mod116';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5057,6 +5057,11 @@ function updateClinicalMetrics(entries, todasLasNoches){
   try{
     const _hi = (typeof renderHabitsImpactHtml==='function') ? renderHabitsImpactHtml(_base, 'patient') : '';
     if(_hi) _destino.innerHTML = _hi;
+    const _cic=document.getElementById('diary-ciclo-slot');
+    if(_cic){
+      const _ch=(typeof renderCicloHtml==='function') ? renderCicloHtml(_base) : '';
+      _cic.innerHTML=_ch||'';
+    }
   }catch(_e){ console.warn('[habitos paciente]', _e); }
 }
 
@@ -5628,6 +5633,44 @@ function dmLimpiarNota(n){
   t=t.split('|').map(s=>s.trim()).filter(Boolean).join(' · ');
   return t.trim();
 }
+// ── Ciclo y sueño ────────────────────────────────────────────────────
+// Casi ninguna app de sueño separa la fase del ciclo, y el efecto sobre el
+// sueño de la fase lutea tardia esta bien descrito. Se apoya en el mismo
+// calculo que ya usa la comparacion de factores.
+function renderCicloHtml(entries){
+  try{
+    const R=computeHabitsImpact(entries);
+    if(!R || !R.habitos) return '';
+    const pre=R.habitos.filter(function(x){ return x.id==='premenstrual'; })[0];
+    const men=R.habitos.filter(function(x){ return x.id==='period'; })[0];
+    if(!pre && !men) return '';
+    const fila=function(hb,rot,col){
+      if(!hb) return '';
+      const e=hb.efectos.filter(function(x){ return x.signo!==0; })
+        .sort(function(a,b){ return Math.abs(b.diff/(b.mOff||1))-Math.abs(a.diff/(a.mOff||1)); })[0];
+      const txt = e
+        ? (e.id==='tst'  ? (e.diff>0?'dormís ':'dormís ')+Math.abs(Math.round(e.diff))+' minutos '+(e.diff>0?'más':'menos')
+          : e.id==='lat' ? 'tardás '+Math.abs(Math.round(e.diff))+' minutos '+(e.diff>0?'más':'menos')+' en dormirte'
+          : e.id==='awk' ? 'te despertás '+Math.abs(e.diff).toFixed(1)+' veces '+(e.diff>0?'más':'menos')
+          : 'la calidad cambia '+(e.diff>0?'+':'')+e.diff.toFixed(1))
+        : 'por ahora no se nota diferencia';
+      const c = e ? (e.signo>0?'#15803d':'#b91c1c') : '#6b7c74';
+      return '<div style="display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid #f0eee9">'+
+        '<span style="width:9px;height:9px;border-radius:50%;background:'+col+';flex-shrink:0;margin-top:6px"></span>'+
+        '<div style="flex:1"><div style="font-size:15px;line-height:1.5;color:#3f3f46">En <b>'+rot+'</b>, '+
+        '<b style="color:'+c+'">'+txt+'</b>.</div>'+
+        '<div style="font-size:12px;color:#8a9691;margin-top:3px">'+hb.nOn+' noches · comparado con el resto de tu ciclo</div></div></div>';
+    };
+    return '<div class="dm-card" style="background:#fff;border-radius:16px;padding:16px 17px">'+
+      '<div style="font-size:14px;font-weight:700;color:var(--label);margin-bottom:3px">🩸 Tu ciclo y tu sueño</div>'+
+      '<div style="font-size:12px;color:var(--label-3);margin-bottom:8px">Tu sueño no es igual en todas las fases, y eso no es impresión tuya.</div>'+
+      fila(pre,'los 5 días previos','#c2547d')+
+      fila(men,'los días de menstruación','#e88fb0')+
+      '<div style="font-size:11.5px;color:var(--label-3);margin-top:11px;line-height:1.5">Orienta a fase lútea tardía. No alcanza para hablar de síndrome premenstrual: eso necesita registrar síntomas durante dos ciclos con un profesional.</div>'+
+    '</div>';
+  }catch(_){ return ''; }
+}
+
 function renderNotasPacienteHtml(entries){
   const con=(entries||[])
     .filter(e=>e && e.notes && !String(e.notes).startsWith('Importado'))
@@ -7320,11 +7363,28 @@ const DM_PASOS = [
   { n:5, rot:'Algo más',                titulos:['Notas'] }
 ];
 
+// Deja marcadas las opciones donde "ninguno" es una respuesta legitima, no
+// una falta de respuesta: sin actividad, sin siesta, sin despertares, sin
+// alcohol. Asi el campo no queda vacio por olvido.
+// Las escalas subjetivas (calidad, animo, energia) NO se marcan solas: poner
+// un valor que la persona no eligio es inventar el dato, que es el error que
+// ya nos costo meses de cafeina y alcohol perdidos.
+function dmDiarioDefaults(){
+  try{
+    const clic=function(id){ const e=document.getElementById(id); if(e && !e.classList.contains('sel') && !e.classList.contains('active')) e.click(); };
+    if(!document.querySelector('#awk-yes-btn.sel, #awk-yes-btn.active')) clic('awk-no-btn');
+    if(!document.querySelector('#nap-yes-btn.sel, #nap-yes-btn.active')) clic('nap-no-btn');
+    const ex=document.getElementById('d-exercise-mins'); if(ex && !ex.value) ex.value='0';
+    const sc=document.getElementById('d-screen');        if(sc && sc.value==='') sc.value='0';
+  }catch(_){}
+}
+
 function dmDiarioEnPasos(){
   // El formulario ya se escribe en pasos: esto solo pinta el encabezado y la
   // botonera. El agrupador anterior quedo obsoleto y se desactiva.
   try{
     window._dmPaso=1;
+    dmDiarioDefaults();
     dmPintarPaso();
     return;
   }catch(e){ console.warn('[DIARIO]', e && e.message); }
@@ -7433,7 +7493,28 @@ function dmPintarPaso(){
   const sc=document.querySelector('#screen-diary-new .scroll');
   if(sc) sc.scrollTop=0;
 }
-function dmPasoIr(n){ window._dmPaso=n; dmPintarPaso(); }
+function dmPasoIr(n){
+  // Aviso suave al salir del paso de las escalas subjetivas. No bloquea: si la
+  // persona no se acuerda, prefiero el campo vacio a un dato inventado.
+  try{
+    if(window._dmPaso===3 && n>3){
+      const sin=['d-qual','d-mood','d-energy','d-energy-pm'].filter(function(id){
+        const e=document.getElementById(id); return !e || !e.value; });
+      if(sin.length && !window._dmAvisoP3){
+        window._dmAvisoP3=true;
+        const c=document.querySelector('.dm-paso[data-paso="3"]');
+        if(c){
+          const d=document.createElement('div');
+          d.style.cssText='background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.35);border-radius:14px;padding:14px 15px;margin-bottom:18px;font-size:14.5px;line-height:1.55;color:rgba(244,239,229,.82)';
+          d.innerHTML='Te faltan '+sin.length+' de estas cuatro. Si no te acordás bien, elegí la del medio: sirve más que dejarlo vacío.';
+          c.insertBefore(d, c.children[1] || null);
+        }
+        return;   // una sola vez: al segundo toque avanza igual
+      }
+    }
+  }catch(_){}
+  window._dmPaso=n; dmPintarPaso();
+}
 function dmPasoGuardar(){
   // El boton original sigue en el DOM, oculto: se lo dispara para que toda la
   // logica de guardado corra exactamente igual que antes.
@@ -9659,6 +9740,7 @@ async function showDiaryTab_(tab){
           <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
         </div>
         <div id="diary-habits-slot" style="margin-top:12px"></div>
+        <div id="diary-ciclo-slot" style="margin-top:12px"></div>
         <div style="height:16px"></div>`;
       setTimeout(()=>{
         try{
@@ -10513,7 +10595,7 @@ function showDiaryNew(){
     <div class="dm-campo">
       <label class="dm-lbl">¿Qué tan reparador sentís que fue tu sueño?</label>
       <div class="dm-ayuda">No cuántas horas dormiste, sino cómo te dejó.</div>
-      <div class="dm-emojis">
+      <div class="dm-emojis emoji-row">
         <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div>Muy mal</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="2">😕<div>Mal</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="3">😐<div>Regular</div></button>
@@ -10524,7 +10606,7 @@ function showDiaryNew(){
 
     <div class="dm-campo">
       <label class="dm-lbl">Tu ánimo al despertar</label>
-      <div class="dm-emojis">
+      <div class="dm-emojis emoji-row">
         <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="1">😫<div>Muy bajo</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="2">😕<div>Bajo</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="3">😐<div>Neutro</div></button>
@@ -10535,7 +10617,7 @@ function showDiaryNew(){
 
     <div class="dm-campo">
       <label class="dm-lbl">Tu energía al despertar</label>
-      <div class="dm-emojis">
+      <div class="dm-emojis emoji-row">
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="1">🪫<div>Sin energía</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="2">😴<div>Poca</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="3">⚡<div>Moderada</div></button>
@@ -10547,7 +10629,7 @@ function showDiaryNew(){
     <div class="dm-campo">
       <label class="dm-lbl">Y a media tarde</label>
       <div class="dm-ayuda">Entre las 14 y las 17 de ayer.</div>
-      <div class="dm-emojis">
+      <div class="dm-emojis emoji-row">
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="1">🪫<div>Sin energía</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="2">😴<div>Poca</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="3">⚡<div>Moderada</div></button>

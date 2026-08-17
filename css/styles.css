@@ -3143,3 +3143,44 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   color:rgba(244,239,229,.72) !important; letter-spacing:0 !important;
   margin:14px 0 8px !important; padding:0 !important;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   ETAPA 3 · GRAFICOS DEL PACIENTE
+   Los pilares estaban en tres columnas: en 390 px eso obliga a achicar el
+   numero y el rotulo hasta que no se leen. Apilados entran completos.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width:520px){
+  #diary-pillar-bars > div{
+    grid-template-columns:1fr !important;
+    gap:11px !important;
+  }
+  #diary-pillar-bars > div > div{
+    padding:15px 17px !important;
+    border-radius:15px !important;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  /* El rotulo y el numero en la misma linea: ocupa la mitad de alto. */
+  #diary-pillar-bars > div > div > div:nth-child(1){
+    font-size:12.5px !important; letter-spacing:.06em !important;
+    flex:1 0 100%; margin-bottom:0 !important;
+  }
+  #diary-pillar-bars > div > div > div:nth-child(2){
+    font-size:30px !important; margin:0 !important;
+  }
+  #diary-pillar-bars > div > div > div:nth-child(3){
+    font-size:14px !important; margin:0 0 0 auto !important;
+  }
+  #diary-pillar-bars > div > div > div:nth-child(4){ flex:1 0 100%; }
+}
+
+/* El score, mas presente */
+#screen-diary-home #score-panel-wrap [style*="font-size:44px"],
+#screen-diary-home #score-panel-wrap [style*="font-size:48px"]{
+  font-size:58px !important;
+}
+
+/* Los botones de periodo, con aire */
+#screen-diary-home [id^="score-period-"]{
+  min-height:38px; padding:8px 15px !important; font-size:13.5px !important;
+}
