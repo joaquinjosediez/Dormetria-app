@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod113">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod114">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1296,7 +1296,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod113"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod114"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1315,7 +1315,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod113';
+const APP_VERSION='hoy77-mod114';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -7321,9 +7321,16 @@ const DM_PASOS = [
 ];
 
 function dmDiarioEnPasos(){
+  // El formulario ya se escribe en pasos: esto solo pinta el encabezado y la
+  // botonera. El agrupador anterior quedo obsoleto y se desactiva.
+  try{
+    window._dmPaso=1;
+    dmPintarPaso();
+    return;
+  }catch(e){ console.warn('[DIARIO]', e && e.message); }
   try{
     const cont=document.querySelector('#screen-diary-new .scroll');
-    if(!cont || cont.querySelector('.dm-paso')) return;   // ya armado
+    if(!cont || cont.querySelector('.dm-paso')) return;
     const bloques=[].slice.call(cont.querySelectorAll('.dm-diary-block'));
     // El "Tipo de día" no esta dentro de un dm-diary-block: se lo busca aparte.
     // Se toma exactamente el contenedor del selector, no un ancestro lejano:
@@ -7416,7 +7423,7 @@ function dmPintarPaso(){
       'Paso '+n+' de '+total+' · '+p.rot+'</div>';
   }
   const pie=document.getElementById('dm-paso-pie');
-  if(pie){
+  if(pie){ pie.style.cssText='display:flex;gap:10px;margin:20px 0 10px';
     pie.innerHTML =
       (n>1 ? '<button onclick="dmPasoIr('+(n-1)+')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(126,200,164,.2);color:#F4EFE5;border-radius:14px;padding:16px 20px;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)">←</button>' : '')+
       (n<total
@@ -7428,10 +7435,10 @@ function dmPintarPaso(){
 }
 function dmPasoIr(n){ window._dmPaso=n; dmPintarPaso(); }
 function dmPasoGuardar(){
-  // Se dispara el boton original: toda la logica de guardado queda intacta.
-  try{
-    if(window._dmGuardarOriginal){ window._dmGuardarOriginal.click(); return; }
-  }catch(_){}
+  // El boton original sigue en el DOM, oculto: se lo dispara para que toda la
+  // logica de guardado corra exactamente igual que antes.
+  const b=document.getElementById('save-diary-btn');
+  if(b){ b.click(); return; }
   if(typeof saveDiary==='function') saveDiary();
 }
 
@@ -10423,144 +10430,164 @@ function showDiaryNew(){
   // Wake date = today (the date you woke up, not when you went to sleep)
   const n=new Date();const today=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
   document.getElementById('diary-form-content').innerHTML=`
-    <div class="sobre-claro" style="background:var(--g50);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--g800)">Campos con <span style="color:#dc2626;font-weight:600">*</span> son obligatorios</div>
-    <div class="form-group"><label class="form-label">Fecha de despertar <span style="color:#dc2626">*</span></label>
-      <div style="background:#eef8f5;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:13px;color:#2d6b56;line-height:1.5">💡 Ponés la fecha en que te <strong>despertaste</strong>. Dormiste martes 23:00 → despertaste miércoles 7:00 → ponés <strong>miércoles</strong>.</div>
-      <input class="form-input" type="date" id="d-date" value="${today}"></div>
-    <!-- Tipo de día: autodetectado por día de la semana, editable -->
-    <div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <label class="form-label" style="margin:0">Tipo de día · <span style="font-weight:400;opacity:.75">el de AYER</span></label>
-        <span id="d-daytype-auto-badge" style="font-size:10.5px;color:#1a4a3a;background:#dcfce7;padding:2px 8px;border-radius:10px;font-weight:600">Detectado automáticamente</span>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button id="d-daytype-work" onclick="setDayType('work',this,true)" style="flex:1;padding:11px;border:2px solid var(--border);border-radius:10px;background:none;color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font)">🏢 Día laboral</button>
-        <button id="d-daytype-free" onclick="setDayType('free',this,true)" style="flex:1;padding:11px;border:2px solid var(--border);border-radius:10px;background:none;color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font)">🏖 Día libre</button>
-      </div>
-      <div style="font-size:11px;color:var(--label-3);margin-top:6px;line-height:1.4">Si tu día no fue lo esperado para esta fecha, tocá el otro botón. Mejora el cálculo de jet lag social y deuda de sueño.</div>
-    </div>
-    <input type="hidden" id="d-daytype" value="">
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Al acostarse <span style="color:#dc2626">*</span></div>
-    <div class="form-row" style="margin-bottom:0">
-      <div class="form-group"><label class="form-label">Me acosté 🛏</label><input class="form-input" type="time" id="d-bed"></div>
-      <div class="form-group">
-        <label class="form-label">¿Cuánto tardé en dormirme? <span style="color:#dc2626">*</span></label>
-        <select class="form-select" id="d-latency" onchange="dmTogglearSinDormir()">
-          <option value=""></option>
-          <option value="3">&lt;5 min</option>
-          <option value="10">5–15 min</option>
-          <option value="22">15–30 min</option>
-          <option value="45">30–60 min</option>
-          <option value="90">1–2 hs</option>
-          <option value="150">&gt;2 hs</option>
-          <option value="-1">No me dormí en toda la noche</option>
-        </select>
-      </div>
-    </div>
-    </div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Al despertar <span style="color:#dc2626">*</span></div>
-    <div class="form-row" style="margin-bottom:0">
-      <div class="form-group"><label class="form-label">Me desperté ☀️<span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">Cuando abriste los ojos</span></label><input class="form-input" type="time" id="d-wake" onchange="updateAwakeInBed()"></div>
-      <div class="form-group"><label class="form-label">Salí de la cama ⏰<span style="font-size:11px;color:var(--label-3);font-weight:400;display:block;margin-top:2px">Si fue al toque, misma hora</span></label><input class="form-input" type="time" id="d-getup" onchange="updateAwakeInBed()"></div>
-    </div>
-    <div id="awake-in-bed-hint" style="font-size:11.5px;color:rgba(244,239,229,0.6);margin:8px 0 0;display:none"></div>
+  <div id="dm-paso-cab"></div>
+
+  <div class="dm-paso" data-paso="1" style="display:"><div class="dm-p-rot">Paso 1 de 5 · Al acostarte</div>
+    <div class="dm-campo">
+      <label class="dm-lbl">¿De qué noche estás hablando?</label>
+      <div class="dm-ayuda">Poné la fecha del día en que te <b>despertaste</b>.</div>
+      <input class="dm-inp" type="date" id="d-date" value="${today}">
     </div>
 
-<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Medicación (opcional)</div>
-    <div id="same-meds-banner" style="display:none"></div>
+    <div class="dm-campo">
+      <label class="dm-lbl">¿Ayer fue día laboral o libre?
+        <span id="d-daytype-auto-badge" class="dm-badge">detectado</span></label>
+      <div class="dm-ops">
+        <button id="d-daytype-work" class="dm-op" onclick="setDayType('work',this,true)">🏢 Laboral</button>
+        <button id="d-daytype-free" class="dm-op" onclick="setDayType('free',this,true)">🏖 Libre</button>
+      </div>
+      <input type="hidden" id="d-daytype" value="">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">¿A qué hora te acostaste?</label>
+      <input class="dm-inp" type="time" id="d-bed">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">Antes de acostarte, ¿tomaste alcohol?</label>
+      <div class="dm-ayuda">Lo que importa es cuánto tomaste cerca de la hora de dormir.</div>
+      <div id="alcohol-items"></div>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <select class="form-select" id="d-alc-type" style="flex:1">
+        <option value="ninguno|0">Ninguno</option><option value="copa_vino|1">Copa de vino (1 UA)</option><option value="cerveza_pinta|1">Pinta de cerveza (1 UA)</option><option value="cerveza_lata|0.9">Lata 355ml (0.9 UA)</option><option value="fernet|1.5">Fernet con cola (1.5 UA)</option><option value="whisky|1">Whisky (1 UA)</option><option value="shot|1">Shot (1 UA)</option><option value="champagne|1">Champagne (1 UA)</option><option value="aperol|0.8">Aperol spritz (0.8 UA)</option>
+      </select>
+      <input class="form-input" type="number" id="d-alc-qty" min="1" value="1" style="width:58px;flex-shrink:0">
+      <button class="btn btn-s" style="width:auto;padding:10px 12px;flex-shrink:0" onclick="addAlcItem()">+</button>
+    </div>
+    <div id="alc-total" style="font-size:13px;font-weight:500;margin-bottom:12px;min-height:18px"></div>
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">¿Tomaste alguna medicación?</label>
+      <div id="same-meds-banner" style="display:none"></div>
     <div id="med-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
     <div id="med-inline-picker" style="display:none;background:var(--bg-secondary);border-radius:12px;padding:12px;margin-bottom:8px">
       <div id="med-inline-content"></div>
     </div>
 <button type="button" id="med-toggle-btn" onclick="toggleMedPicker()" style="background:rgba(255,255,255,0.06);border:1.5px dashed rgba(126,200,164,0.45);border-radius:10px;padding:11px;width:100%;color:#F4EFE5;font-size:13.5px;font-weight:500;cursor:pointer;font-family:var(--font)">+ Agregar medicamento</button>
+    </div>
 
+    <div class="dm-campo">
+      <label class="dm-lbl">¿Cuánto tardaste en dormirte?</label>
+      <select class="dm-inp" id="d-latency" onchange="dmTogglearSinDormir()"><option value=""></option> <option value="3">&lt;5 min</option> <option value="10">5–15 min</option> <option value="22">15–30 min</option> <option value="45">30–60 min</option> <option value="90">1–2 hs</option> <option value="150">&gt;2 hs</option> <option value="-1">No me dormí en toda la noche</option></select>
+    </div>
+  </div>
 
-    <div class="dm-diary-block">
-        <div class="sec-title" style="margin-top:0">Despertares <span style="color:#dc2626">*</span></div>
-    <div style="display:flex;gap:10px;margin-bottom:10px">
-      <button id="awk-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNoAwakenings()">No me desperté</button>
-      <button id="awk-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setYesAwakenings()">Me desperté</button>
-    </div>
-    <div id="awakening-section" style="display:none"><div id="awakening-list"></div><button class="btn btn-s" style="width:auto;padding:8px 14px;font-size:13px;margin-bottom:12px" onclick="addAwakening()">+ Agregar despertar</button></div>
-    </div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Calidad del sueño de anoche</div>
-    <div class="emoji-row">
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Muy mal</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="2">😕<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Mal</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="3">😐<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Regular</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="4">🙂<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Bien</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="5">😊<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Muy bien</div></button>
-    </div><input type="hidden" id="d-qual" value="">
-    </div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Siesta de ayer</div>
-    <div style="display:flex;gap:10px;margin-bottom:10px">
-      <button id="nap-no-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(false)">No dormí siesta</button>
-      <button id="nap-yes-btn" class="opt" style="flex:1;padding:10px;text-align:center" onclick="setNap(true)">Dormí siesta</button>
-    </div>
-    <div id="nap-fields" style="display:none"><div class="form-row"><div class="form-group"><label class="form-label">Inicio</label><input class="form-input" type="time" id="d-nap-start"></div><div class="form-group"><label class="form-label">Duración (min)</label><input class="form-input" type="number" id="d-nap-dur" min="5" max="240" placeholder="30"></div></div></div>
-    </div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Cómo te sentiste al despertar</div>
-    <div style="font-size:11.5px;color:rgba(244,239,229,0.55);line-height:1.5;margin:-4px 0 10px">Referido al momento de levantarte hoy, no al día de ayer. Así se mide cómo repercutió <em>esta</em> noche.</div>
-    <label class="form-label">Estado de ánimo al despertar</label>
-    <div class="emoji-row">
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="1">😫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Muy bajo</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="2">😕<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Bajo</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="3">😐<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Neutro</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="4">🙂<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Bueno</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="5">😊<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Excelente</div></button>
-    </div><input type="hidden" id="d-mood" value="">
-    <label class="form-label" style="margin-top:14px">Energía al despertar</label>
-    <div class="emoji-row">
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="1">🪫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Sin energía</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="2">😴<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Poca</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="3">⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Moderada</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="4">⚡⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Buena</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="5">🔥<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Mucha</div></button>
-    </div><input type="hidden" id="d-energy" value="">
-    <label class="form-label" style="margin-top:14px">Energía a media tarde <span style="font-size:11px;font-weight:400;opacity:.75;display:block;margin-top:2px;letter-spacing:0">Entre las 14 y las 17 de AYER</span></label>
-    <div class="emoji-row">
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="1">🪫<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Sin energía</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="2">😴<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Poca</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="3">⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Moderada</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="4">⚡⚡<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Buena</div></button>
-      <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="5">🔥<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">Mucha</div></button>
-    </div><input type="hidden" id="d-energy-pm" value="">
-    </div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Actividad física de ayer 🏃</div>
-    <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
-      <div style="flex:1">
-        <label class="form-label">Duración</label>
-        <select class="form-select" id="d-exercise-mins">
-          <option value="0">Sin actividad</option>
-          <option value="15">15–20 min</option>
-          <option value="30">30–40 min</option>
-          <option value="45">45–60 min</option>
-          <option value="75">60–90 min</option>
-          <option value="105">&gt;90 min</option>
-        </select>
+  <div class="dm-paso" data-paso="2" style="display:none"><div class="dm-p-rot">Paso 2 de 5 · Durante la noche</div>
+    <div class="dm-campo">
+      <label class="dm-lbl">¿Te despertaste en el medio de la noche?</label>
+      <div class="dm-ayuda">Cortes después de haberte dormido, antes de levantarte.</div>
+      <div class="dm-ops">
+        <button id="awk-no-btn" class="dm-op" onclick="setNoAwakenings()">No me desperté</button>
+        <button id="awk-yes-btn" class="dm-op" onclick="setYesAwakenings()">Sí</button>
       </div>
-      <div style="flex:1">
-        <label class="form-label">Horario</label>
-        <select class="form-select" id="d-exercise-time">
-          <option value="">—</option>
-          <option value="morning">Mañana · 7 a 13</option>
-          <option value="afternoon">Tarde · 13 a 19</option>
-          <option value="evening">Noche · 19 a 24</option>
-        </select>
+      <div id="awakening-section" style="display:none"><div id="awakening-list"></div><button class="btn btn-s" style="width:auto;padding:8px 14px;font-size:13px;margin-bottom:12px" onclick="addAwakening()">+ Agregar despertar</button></div>
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">¿A qué hora te despertaste hoy?</label>
+      <div class="dm-ayuda">El despertar del final, del que ya no te volviste a dormir.</div>
+      <input class="dm-inp" type="time" id="d-wake" onchange="updateAwakeInBed()">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">¿A qué hora te levantaste de la cama?</label>
+      <div class="dm-ayuda">Si fue al toque, poné la misma hora.</div>
+      <input class="dm-inp" type="time" id="d-getup" onchange="updateAwakeInBed()">
+      <div id="awake-in-bed-hint" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="dm-paso" data-paso="3" style="display:none"><div class="dm-p-rot">Paso 3 de 5 · Cómo dormiste</div>
+    <div class="dm-campo">
+      <label class="dm-lbl">¿Qué tan reparador sentís que fue tu sueño?</label>
+      <div class="dm-ayuda">No cuántas horas dormiste, sino cómo te dejó.</div>
+      <div class="dm-emojis">
+        <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="1">😫<div>Muy mal</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="2">😕<div>Mal</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="3">😐<div>Regular</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="4">🙂<div>Bien</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-qual')" data-val="5">😊<div>Muy bien</div></button>
+      </div><input type="hidden" id="d-qual" value="">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">Tu ánimo al despertar</label>
+      <div class="dm-emojis">
+        <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="1">😫<div>Muy bajo</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="2">😕<div>Bajo</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="3">😐<div>Neutro</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="4">🙂<div>Bueno</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-mood')" data-val="5">😊<div>Excelente</div></button>
+      </div><input type="hidden" id="d-mood" value="">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">Tu energía al despertar</label>
+      <div class="dm-emojis">
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="1">🪫<div>Sin energía</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="2">😴<div>Poca</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="3">⚡<div>Moderada</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="4">⚡⚡<div>Buena</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy')" data-val="5">🔥<div>Mucha</div></button>
+      </div><input type="hidden" id="d-energy" value="">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">Y a media tarde</label>
+      <div class="dm-ayuda">Entre las 14 y las 17 de ayer.</div>
+      <div class="dm-emojis">
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="1">🪫<div>Sin energía</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="2">😴<div>Poca</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="3">⚡<div>Moderada</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="4">⚡⚡<div>Buena</div></button>
+        <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="5">🔥<div>Mucha</div></button>
+      </div><input type="hidden" id="d-energy-pm" value="">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">¿Dormiste siesta ayer?</label>
+      <div class="dm-ops">
+        <button id="nap-no-btn" class="dm-op" onclick="setNap(false)">No</button>
+        <button id="nap-yes-btn" class="dm-op" onclick="setNap(true)">Sí</button>
+      </div>
+      <div id="nap-fields" style="display:none;margin-top:12px">
+        <label class="dm-lbl">Empezó</label>
+        <input class="dm-inp" type="time" id="d-nap-start">
+        <label class="dm-lbl" style="margin-top:12px">Cuánto duró (min)</label>
+        <input class="dm-inp" type="number" id="d-nap-dur" min="0" placeholder="45">
       </div>
     </div>
-        <div class="sec-title">Pantallas antes de dormir 📱</div>
-    <div style="display:flex;align-items:center;gap:10px"><input class="form-input" type="number" id="d-screen" min="0" value="0" style="max-width:90px"><span style="font-size:13px;color:rgba(244,239,229,0.55)">minutos</span></div>
+  </div>
+
+  <div class="dm-paso" data-paso="4" style="display:none"><div class="dm-p-rot">Paso 4 de 5 · Tu día de ayer</div>
+    <div class="dm-campo">
+      <label class="dm-lbl">Actividad física</label>
+      <div class="dm-ayuda">Cuánto y a qué hora: el horario cambia el efecto sobre el sueño.</div>
+      <select class="dm-inp" id="d-exercise-mins"><option value="0">Sin actividad</option> <option value="15">15–20 min</option> <option value="30">30–40 min</option> <option value="45">45–60 min</option> <option value="75">60–90 min</option> <option value="105">&gt;90 min</option></select>
+      <select class="dm-inp" id="d-exercise-time" style="margin-top:10px"><option value="">—</option> <option value="morning">Mañana · 7 a 13</option> <option value="afternoon">Tarde · 13 a 19</option> <option value="evening">Noche · 19 a 24</option></select>
     </div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Cafeína del día ☕</div>
-    <div id="caffeine-items"></div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">Pantallas antes de dormir</label>
+      <div class="dm-ayuda">Desde que te metiste en la cama hasta que apagaste.</div>
+      <input class="dm-inp" type="number" id="d-screen" min="0" value="0" placeholder="minutos">
+    </div>
+
+    <div class="dm-campo">
+      <label class="dm-lbl">Café, mate o té del día</label>
+      <div id="caffeine-items"></div>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <select class="form-select" id="d-caff-type" style="flex:1" onchange="updateCaffPreview()">
         <option value="ninguno|0">Ninguno</option><option value="espresso|80">Espresso (80mg)</option><option value="cafe_largo|120">Café largo (120mg)</option><option value="cortado|90">Cortado (90mg)</option><option value="cafe_leche|80">Café con leche (80mg)</option><option value="cappuccino|75">Cappuccino (75mg)</option><option value="mate_pocos|150">Mate · unos pocos (~½ L) — 150mg aprox.</option><option value="mate_mateada|250">Mate · una mateada entera (~1 L) — 250mg aprox.</option><option value="mate_varias|400">Mate · varias mateadas en el día — 400mg aprox.</option><option value="mate_cocido|40">Mate cocido (40mg)</option><option value="terere|25">Tereré (25mg)</option><option value="te_negro|50">Té negro (50mg)</option><option value="te_verde|30">Té verde (30mg)</option><option value="coca|35">Coca-Cola 350ml (35mg)</option><option value="energizante|80">Energizante 250ml (80mg)</option><option value="instantaneo|65">Café instantáneo (65mg)</option>
@@ -10571,35 +10598,32 @@ function showDiaryNew(){
     <div id="caff-preview" style="font-size:12px;color:var(--ink3);margin-bottom:4px;min-height:16px"></div>
     <div id="caff-total" style="font-size:13px;font-weight:500;margin-bottom:12px;min-height:18px"></div>
     <input type="hidden" id="d-coffee" value="0">
-    <div class="sec-title">Alcohol 🍷</div>
-    <div id="alcohol-items"></div>
-    <div style="display:flex;gap:8px;margin-bottom:6px">
-      <select class="form-select" id="d-alc-type" style="flex:1">
-        <option value="ninguno|0">Ninguno</option><option value="copa_vino|1">Copa de vino (1 UA)</option><option value="cerveza_pinta|1">Pinta de cerveza (1 UA)</option><option value="cerveza_lata|0.9">Lata 355ml (0.9 UA)</option><option value="fernet|1.5">Fernet con cola (1.5 UA)</option><option value="whisky|1">Whisky (1 UA)</option><option value="shot|1">Shot (1 UA)</option><option value="champagne|1">Champagne (1 UA)</option><option value="aperol|0.8">Aperol spritz (0.8 UA)</option>
-      </select>
-      <input class="form-input" type="number" id="d-alc-qty" min="1" value="1" style="width:58px;flex-shrink:0">
-      <button class="btn btn-s" style="width:auto;padding:10px 12px;flex-shrink:0" onclick="addAlcItem()">+</button>
+    
     </div>
-    <div id="alc-total" style="font-size:13px;font-weight:500;margin-bottom:12px;min-height:18px"></div>
-    <input type="hidden" id="d-alc" value="0">
 
-    <div id="period-section" style="display:none;margin-bottom:14px">
+    <div class="dm-campo">
+      <label class="dm-lbl">Tu ciclo</label>
+      <div class="dm-ayuda">Los días de menstruación y los cinco previos se analizan por separado.</div>
+      <div id="period-section" style="display:none;margin-bottom:14px">
       <button type="button" id="period-btn" onclick="togglePeriod()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(225,29,72,0.12);border:1.5px solid rgba(225,29,72,0.45);border-radius:999px;padding:10px 16px;cursor:pointer;font-family:var(--font);width:100%;justify-content:flex-start"><span style="font-size:16px;line-height:1">🩸</span><span id="period-btn-label" style="font-size:13.5px;color:#F4EFE5;font-weight:600">Marcar período menstrual</span><span id="period-check" style="margin-left:auto;font-size:15px;line-height:1">⬜</span></button>
     </div>
     </div>
-    <div id="dm-vars-slot"></div>
-    <div class="dm-diary-block">
-    <div class="sec-title" style="margin-top:0">Notas (opcional)</div>
-    <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..."></textarea>
-    </div>
 
-    <button class="btn btn-g" onclick="saveDiary()" id="save-diary-btn" style="margin-bottom:28px">Guardar registro</button>
-    <div style="margin-top:24px;padding-bottom:8px">
-      <button onclick="doLogout()" style="width:100%;padding:14px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,80,80,0.08);border-radius:12px;color:rgba(255,120,120,0.9);font-size:14px;font-weight:500;cursor:pointer;font-family:-apple-system,sans-serif;">
-        Cerrar sesión
-      </button>
+    <input type="hidden" id="d-alc" value="0">
+    <div id="dm-vars-slot"></div>
+  </div>
+
+  <div class="dm-paso" data-paso="5" style="display:none"><div class="dm-p-rot">Paso 5 de 5 · Algo más</div>
+    <div class="dm-campo">
+      <label class="dm-lbl">¿Querés agregar algo?</label>
+      <div class="dm-ayuda">Lo que escribas acá lo ve tu profesional junto a esa noche. Un síntoma, una preocupación, algo que pasó.</div>
+      <textarea class="dm-inp" id="d-notes" rows="5" placeholder="Anoche me desperté transpirada dos veces…"></textarea>
     </div>
-  `;
+  </div>
+
+  <div id="dm-paso-pie"></div>
+  <button id="save-diary-btn" onclick="saveDiary()" style="display:none"></button>
+`;
 }
 
 

@@ -3057,96 +3057,89 @@ input, select, textarea{ color: inherit; }
 #screen-home #home-greeting{ font-size:13.5px !important; }
 
 
+
 /* ══════════════════════════════════════════════════════════════════════
-   ETAPA 2b · EL DIARIO CON LA ESTETICA DEL PROTOTIPO
-   Agrupar en pasos no alcanzo: el formulario seguia con su maquetado viejo
-   —dos columnas apretadas, cajas de distinto alto, etiquetas corridas— y por
-   eso no se parecia a lo que habiamos acordado.
-   Esto lo reescribe visualmente SIN tocar el HTML ni los id de los campos,
-   que es lo que mantiene intacto el guardado.
+   EL DIARIO · estilos propios del formulario nuevo
+   El formulario se reescribio con marcado propio (clases dm-*), no con las
+   clases genericas de la app. Eso evita que reglas pensadas para otras
+   pantallas lo deformen, que era lo que producia las cajas asimetricas.
    ══════════════════════════════════════════════════════════════════════ */
+#screen-diary-new .scroll{ padding:14px 18px 26px !important; }
 
-/* 1. Una sola columna. Dos campos al lado en 390 px es lo que producia las
-      cajas asimetricas y las etiquetas cortadas. */
-#screen-diary-new .form-row{
-  display:block !important;
+#dm-paso-cab{ padding-top:4px; margin-bottom:4px; }
+.dm-p-rot{
+  font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:#7EC8A4; margin-bottom:16px;
 }
-#screen-diary-new .form-row .form-group{
-  width:100% !important;
-  margin-bottom:16px;
-}
-#screen-diary-new .form-row .form-group:last-child{ margin-bottom:0; }
+.dm-paso{ animation:dmEntra .22s ease; }
+@keyframes dmEntra{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
-/* 2. Etiquetas: alineadas, sin altura minima que dejaba huecos. */
-#screen-diary-new .form-label{
-  min-height:0 !important;
-  text-align:left !important;
-  display:block !important;
-  font-size:13px !important;
-  letter-spacing:.03em;
-  color:rgba(244,239,229,0.62) !important;
-  margin-bottom:7px !important;
-  text-transform:none !important;
+.dm-campo{ margin-bottom:26px; }
+.dm-lbl{
+  display:block; font-size:19px; font-weight:700; color:#F4EFE5;
+  line-height:1.32; margin-bottom:6px; letter-spacing:-.01em;
+}
+.dm-ayuda{ font-size:14px; color:rgba(244,239,229,.62); line-height:1.5; margin-bottom:12px; }
+.dm-badge{
+  font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:none;
+  background:rgba(126,200,164,.16); color:#7EC8A4; border-radius:99px;
+  padding:3px 9px; margin-left:8px; vertical-align:middle;
 }
 
-/* 3. Campos grandes, como en el prototipo. */
-#screen-diary-new .form-input,
-#screen-diary-new .form-select{
-  height:auto !important;
-  min-height:56px;
-  font-size:18px !important;
-  font-weight:600;
-  padding:16px 15px !important;
-  border-radius:14px !important;
+.dm-inp{
+  width:100%; box-sizing:border-box;
+  background:rgba(255,255,255,.08) !important; color:#F4EFE5 !important;
+  border:none; border-radius:14px;
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,.18);
+  padding:16px 15px; font-size:18px; font-weight:600; font-family:var(--font);
+  -webkit-appearance:none; appearance:none;
+}
+.dm-inp::placeholder{ color:rgba(244,239,229,.35) !important; font-weight:500; }
+.dm-inp:focus{ outline:none; box-shadow:inset 0 0 0 2px #7EC8A4; }
+textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vertical; }
+
+.dm-ops{ display:flex; gap:10px; flex-wrap:wrap; }
+.dm-op{
+  flex:1; min-width:120px; box-sizing:border-box;
+  background:rgba(255,255,255,.055); color:#F4EFE5;
+  border:1.5px solid rgba(126,200,164,.18); border-radius:14px;
+  padding:16px 12px; font-size:16px; font-weight:600; font-family:var(--font);
+  cursor:pointer; min-height:58px;
+}
+.dm-op.sel, .dm-op.active{
+  background:#7EC8A4; border-color:#7EC8A4; color:#0F2820;
 }
 
-/* 4. Las tarjetas de cada bloque: mas aire, borde suave. */
-#screen-diary-new .dm-diary-block{
-  background:rgba(255,255,255,0.045);
-  border:1px solid rgba(126,200,164,0.16);
-  border-radius:18px;
-  padding:18px 16px !important;
-  margin-bottom:14px;
+.dm-emojis{ display:flex; gap:7px; }
+#screen-diary-new .emoji-btn{
+  flex:1; min-width:0; background:rgba(255,255,255,.055) !important;
+  border:1.5px solid rgba(126,200,164,.18) !important; border-radius:14px !important;
+  padding:13px 3px !important; font-size:25px !important; cursor:pointer;
+  color:#F4EFE5 !important;
+}
+#screen-diary-new .emoji-btn.sel{
+  background:#7EC8A4 !important; border-color:#7EC8A4 !important; color:#0F2820 !important;
+}
+#screen-diary-new .emoji-btn div{
+  font-size:10.5px !important; font-weight:500; margin-top:3px !important;
+  color:inherit !important; opacity:.75;
+}
+
+#screen-diary-new .dm-eco-hora{
+  font-size:14px !important; color:#7EC8A4 !important; margin-top:8px !important; font-weight:600;
+}
+
+/* Los fragmentos heredados (cafeina, alcohol, medicacion, periodo) se
+   normalizan para que no desentonen con el resto. */
+#screen-diary-new .form-select,
+#screen-diary-new .form-input{
+  background:rgba(255,255,255,.08) !important; color:#F4EFE5 !important;
+  border:none !important; border-radius:12px !important;
+  box-shadow:inset 0 0 0 1px rgba(126,200,164,.18) !important;
+  font-size:16px !important; padding:13px 14px !important; min-height:0 !important;
 }
 #screen-diary-new .sec-title{
-  font-size:19px !important;
-  font-weight:700 !important;
-  text-transform:none !important;
-  letter-spacing:-.01em !important;
-  color:#F4EFE5 !important;
-  margin-bottom:14px !important;
-  padding:0 !important;
-}
-
-/* 5. Los botones de opcion, como las pastillas del prototipo. */
-#screen-diary-new .opt,
-#screen-diary-new .emoji-btn{
-  border-radius:14px !important;
-  padding:15px 10px !important;
-  font-size:15.5px !important;
-  font-weight:600 !important;
-  border:1.5px solid rgba(126,200,164,0.18) !important;
-  background:rgba(255,255,255,0.055) !important;
-  color:#F4EFE5 !important;
-  min-height:56px;
-}
-#screen-diary-new .opt.sel,
-#screen-diary-new .opt.active,
-#screen-diary-new .emoji-btn.sel{
-  background:#7EC8A4 !important;
-  border-color:#7EC8A4 !important;
-  color:#0F2820 !important;
-}
-#screen-diary-new .emoji-btn{ font-size:26px !important; padding:13px 4px !important; }
-#screen-diary-new .emoji-btn div{ font-size:11px !important; }
-
-/* 6. Los pasos, con aire arriba y abajo. */
-#screen-diary-new .dm-paso{ padding-bottom:4px; }
-#screen-diary-new #dm-paso-cab{ padding-top:6px; }
-
-/* 7. El eco de la hora, mas presente. */
-#screen-diary-new .dm-eco-hora{
-  font-size:14px !important;
-  color:#7EC8A4 !important;
-  margin-top:7px !important;
+  font-size:15px !important; font-weight:600 !important; text-transform:none !important;
+  color:rgba(244,239,229,.72) !important; letter-spacing:0 !important;
+  margin:14px 0 8px !important; padding:0 !important;
 }
