@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod116">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod117">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -553,6 +553,9 @@
 
     <!-- Dos cifras: constancia y regularidad. Nada mas. -->
     <div id="home-cifras" style="display:none;gap:11px"></div>
+
+    <!-- Leer hoy: rota entre los temas de la biblioteca. -->
+    <div id="home-leer" style="display:none"></div>
 
     <!-- 4) Escala del día -->
     <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
@@ -1296,7 +1299,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod116"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod117"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1315,7 +1318,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod116';
+const APP_VERSION='hoy77-mod117';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5630,6 +5633,8 @@ function dmLimpiarNota(n){
   t=t.replace(/Contexto:[^|]*/gi,'');
   t=t.replace(/Jard[ií]n:[^|]*/gi,'');
   t=t.replace(/Estado al despertar:[^|]*/gi,'');
+  t=t.replace(/Lugar:[^|]*/gi,'');
+  t=t.replace(/Pase a cama:[^|]*/gi,'');
   t=t.split('|').map(s=>s.trim()).filter(Boolean).join(' · ');
   return t.trim();
 }
@@ -7555,6 +7560,35 @@ async function dmCifrasInicio(){
   }catch(_){}
 }
 
+// ── Leer hoy ──────────────────────────────────────────────────────────
+// Dos notas de la biblioteca, distintas cada dia. El objetivo es que la app
+// tenga algo para ofrecer aunque esa noche no haya pasado nada: es lo que
+// sostiene el habito de abrirla, y sin habito no hay registro.
+function dmLeerHoy(){
+  try{
+    const el=document.getElementById('home-leer');
+    if(!el || typeof PATIENT_EDU_TOPICS==='undefined' || !PATIENT_EDU_TOPICS.length) return;
+    const total=PATIENT_EDU_TOPICS.length;
+    // Rota por dia del anio: no se repite dos dias seguidos y no necesita estado.
+    const dia=Math.floor(Date.now()/86400000);
+    const a=PATIENT_EDU_TOPICS[dia%total];
+    const b=PATIENT_EDU_TOPICS[(dia+1+Math.floor(total/2))%total];
+    const lista=(a===b)?[a]:[a,b];
+    el.style.display='';
+    el.innerHTML =
+      '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:rgba(244,239,229,.5);font-weight:700;margin:22px 0 10px">Leer hoy</div>'+
+      lista.map(function(t){
+        return '<div onclick="showEduTopic(\''+t.id+'\')" style="display:flex;gap:14px;align-items:center;'+
+          'padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer">'+
+          '<div style="width:52px;height:52px;border-radius:14px;background:rgba(126,200,164,.14);'+
+          'display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">'+(t.icon||'📖')+'</div>'+
+          '<div style="flex:1;min-width:0"><div style="font-size:15.5px;font-weight:600;color:#F4EFE5;line-height:1.4">'+t.title+'</div></div>'+
+          '<span style="color:rgba(244,239,229,.3);font-size:19px">›</span></div>';
+      }).join('')+
+      '<div onclick="showScreen(\'edu\')" style="font-size:14.5px;color:#7EC8A4;font-weight:600;padding:13px 0;cursor:pointer">Ver todo lo que hay para leer →</div>';
+  }catch(e){ console.warn('[LEER]', e && e.message); }
+}
+
 function dmAvisoRediseno(){
   try{
     if(localStorage.getItem('dm_visto_rediseno')==='1') return;
@@ -7621,6 +7655,7 @@ async function showHome(){
       dmTarjetaNoche((_r && _r.length) ? _r[0] : null);
       dmAvisoRediseno();
       dmCifrasInicio();
+      dmLeerHoy();
     }catch(_){ try{ dmTarjetaNoche(null); }catch(__){} }
   })();
   const _navEl=document.getElementById('main-nav');if(_navEl){_navEl.style.setProperty('display','flex','important');}
@@ -17204,9 +17239,9 @@ function showChildDiaryNew(){
           // Escolar y adolescente: rutinas y factores propios de esas edades.
           let opts;
           if(ag === 'infant' || ag === 'preschool'){
-            opts = [['teta','🤱 Teta'],['mamadera','🍼 Mamadera'],['upa','🤗 En brazos'],['mecedora','🪑 Meciendo'],['cuna','🛏 En cuna solo/a'],['colecho','👨‍👩‍👧 Colecho'],['chupete','🍬 Chupete'],['otro','✏️ Otro']];
+            opts = [['teta','🤱 Teta'],['mamadera','🍼 Mamadera'],['upa','🤗 En brazos'],['mecedora','🪑 Meciendo'],['cancion','🎵 Con una canción'],['padre_madre','👤 Con mamá o papá al lado'],['chupete','🍬 Chupete'],['otro','✏️ Otro']];
           } else if(ag === 'school'){
-            opts = [['solo','🛏 Se durmió solo/a'],['acompanado','👪 Con un adulto al lado'],['colecho','🛌 En la cama de los padres'],['cuento','📖 Con cuento/lectura'],['luz','💡 Con luz o velador'],['objeto','🧸 Con objeto de apego'],['pantalla','📱 Con pantalla'],['otro','✏️ Otro']];
+            opts = [['solo','🛏 Se durmió solo/a'],['acompanado','👪 Con un adulto al lado'],['cuento','📖 Con cuento/lectura'],['cancion','🎵 Con una canción'],['luz','💡 Con luz o velador'],['objeto','🧸 Con objeto de apego'],['pantalla','📱 Con pantalla'],['otro','✏️ Otro']];
           } else { // teen
             opts = [['solo','🛏 Se durmió solo/a'],['musica','🎧 Con música/podcast'],['pantalla','📱 Con pantalla'],['luz','💡 Con luz'],['companiaFamiliar','👪 Acompañado por un familiar'],['dificultad','😣 Le costó dormirse'],['otro','✏️ Otro']];
           }
@@ -17214,7 +17249,40 @@ function showChildDiaryNew(){
         })()}
       </div>
       <input type="hidden" id="d-sleep-ctx" value="">
+      <div style="font-size:12px;color:var(--label-3);margin-top:8px">Podés marcar más de uno.</div>
     </div>
+
+    ${(function(){
+      // Dónde duerme se pregunta hasta los 5 años: despues deja de ser un dato
+      // clinico y pasa a sonar a reproche.
+      const ag=S.ageGroup||'school';
+      if(ag!=='infant' && ag!=='preschool') return '';
+      return '<div class="form-group" style="margin-bottom:12px">'+
+        '<label class="form-label">¿Dónde empezó la noche?</label>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        [['cuna','🛏 Cuna'],['cuna_colecho','🛏 Cuna colecho'],['colecho','🛌 Colecho'],['propia','🚪 Su habitación'],['otro_lugar','↔️ Se despertó en otro lugar']]
+        .map(function(o){ return '<button type="button" data-lugar="'+o[0]+'" onclick="dmElegirLugar(this)" '+
+          'style="padding:11px 8px;border:2px solid var(--border);border-radius:10px;background:none;cursor:pointer;'+
+          'font-size:12.5px;font-family:var(--font);color:inherit">'+o[1]+'</button>'; }).join('')+
+        '</div><input type="hidden" id="d-sleep-place" value=""></div>';
+    })()}
+
+    ${(function(){
+      // El pase a la cama de los padres sigue siendo frecuente y relevante
+      // hasta los 10: ahi si se deja de preguntar.
+      const ed=(S.viewData&&S.viewData.age)||S.childAge||null;
+      if(ed!=null && ed>10) return '';
+      return '<div class="form-group" style="margin-bottom:12px">'+
+        '<label class="form-label">¿Se pasó a tu cama de madrugada?</label>'+
+        '<div style="display:flex;gap:8px;margin-bottom:8px">'+
+          '<button type="button" onclick="dmPaseCama(false,this)" style="flex:1;padding:11px;border:2px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:13px;font-family:var(--font);color:inherit">No</button>'+
+          '<button type="button" onclick="dmPaseCama(true,this)" style="flex:1;padding:11px;border:2px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:13px;font-family:var(--font);color:inherit">Sí</button>'+
+        '</div>'+
+        '<div id="d-pase-hora-wrap" style="display:none">'+
+          '<label class="form-label">¿A qué hora?</label>'+
+          '<input class="form-input" type="time" id="d-pase-hora"></div>'+
+        '<input type="hidden" id="d-pase-cama" value=""></div>';
+    })()}
 
     <div class="form-group" style="margin-bottom:14px">
       <label class="form-label">Tiempo hasta dormirse (latencia)</label>
@@ -17280,6 +17348,22 @@ function selectMood(inputId, val, btn){
   });
   btn.style.borderColor = '#1a4a3a';
   btn.style.background = '#1a4a3a18';
+}
+
+function dmElegirLugar(btn){
+  const cont=btn.parentNode;
+  cont.querySelectorAll('[data-lugar]').forEach(function(b){
+    b.style.background='none'; b.style.borderColor='var(--border)'; b.style.color='inherit'; });
+  btn.style.background='#7EC8A4'; btn.style.borderColor='#7EC8A4'; btn.style.color='#0F2820';
+  const h=document.getElementById('d-sleep-place'); if(h) h.value=btn.getAttribute('data-lugar');
+}
+function dmPaseCama(si, btn){
+  const cont=btn.parentNode;
+  [].slice.call(cont.children).forEach(function(b){
+    b.style.background='none'; b.style.borderColor='var(--border)'; b.style.color='inherit'; });
+  btn.style.background='#7EC8A4'; btn.style.borderColor='#7EC8A4'; btn.style.color='#0F2820';
+  const h=document.getElementById('d-pase-cama'); if(h) h.value = si?'1':'0';
+  const w=document.getElementById('d-pase-hora-wrap'); if(w) w.style.display = si?'':'none';
 }
 
 function toggleSleepCtx(val, btn){
@@ -17398,6 +17482,14 @@ async function saveChildDiary(){
       sleep_latency_mins:latency,
       notes:[
         ctx?'Contexto: '+ctx:'',
+        (function(){ const e=document.getElementById('d-sleep-place'); return (e&&e.value)?('Lugar: '+e.value):''; })(),
+        (function(){
+          const p=document.getElementById('d-pase-cama');
+          if(!p || p.value==='') return '';
+          if(p.value!=='1') return 'Pase a cama: no';
+          const hh=document.getElementById('d-pase-hora');
+          return 'Pase a cama: '+((hh&&hh.value)?hh.value:'sí');
+        })(),
         school?'Jardín: '+school+(schoolTime?' ('+schoolTime+')':''):'',
         moodNight?'Estado al despertar: '+moodNight:'',
         napData!=='[]'?'Siestas: '+napData:'',
