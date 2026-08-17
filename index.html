@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod117">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod118">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1299,7 +1299,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod117"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod118"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1318,7 +1318,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod117';
+const APP_VERSION='hoy77-mod118';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -17714,14 +17714,14 @@ async function showConsultDir(fromResult, childMode){
     try{
       // Try DB listed=true (works if column exists)
       // Try listed=true filter first
-      let dbDocs=await db.get('doctors?listed=eq.true&select=name,lname,email,specialty,gender,mat,city,country,bio&order=name.asc').catch(()=>[]);
+      let dbDocs=await db.get('doctors?listed=eq.true&select=name,lname,email,specialty,gender,mat,city,country,bio,photo_url,training,associations,address,phone,modality,fee&order=name.asc').catch(()=>[]);
       if(dbDocs&&dbDocs.length){docs=dbDocs;}
       // Filter by child population if in child mode
       if(childMode&&docs) docs=docs.filter(d=>d.population&&d.population.includes('child'));
       else{
         // Fallback: show all doctors (listed column may not be populated)
         // filter by localStorage approved list OR show all with specialty
-        const allD=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio&order=name.asc').catch(()=>[]);
+        const allD=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio,photo_url,training,associations,address,phone,modality,fee&order=name.asc').catch(()=>[]);
         const _ap=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
         const apEmails=Object.keys(_ap).filter(e=>_ap[e]);
         // Show: DB-approved OR localStorage-approved OR any doctor with specialty
@@ -17735,7 +17735,7 @@ async function showConsultDir(fromResult, childMode){
     }catch(e){}
     if(!docs.length){
       // Column doesn't exist OR no one approved yet: get all doctors with a specialty filled
-      const allDoctors=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio&order=name.asc').catch(()=>[]);
+      const allDoctors=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio,photo_url,training,associations,address,phone,modality,fee&order=name.asc').catch(()=>[]);
       const _approved=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _approvedEmails=Object.keys(_approved).filter(e=>_approved[e]);
       if(_approvedEmails.length){
@@ -17765,6 +17765,61 @@ function filterConsultDirs(){
     (d.name+' '+d.lname+' '+(d.specialty||'')+' '+(d.institution||'')+' '+(d.city||'')).toLowerCase().includes(q)
   );
   renderConsultList(filtered);
+}
+
+// Ficha del profesional. Hasta ahora el directorio mostraba una linea por
+// persona y no habia forma de ver nada mas: quien busca profesional necesita
+// saber donde atiende, como contactarlo y cuanto sale antes de decidir.
+function dmFichaProfesional(email){
+  const d=(_consultDoctorsCache||[]).filter(function(x){ return x.email===email; })[0];
+  if(!d) return;
+  const SPEC={'psychiatry':'Psiquiatría','neurology':'Neurología','pneumology':'Neumonología','ent':'Otorrinolaringología','pediatrics':'Pediatría','psychology':'Psicología','dentistry':'Odontología','nutrition':'Nutrición','kinesiology':'Kinesiología','general':'Clínica general','other_health':'Otra profesión de la salud','physician':'Medicina'};
+  const FLAGS={'Argentina':'🇦🇷','Uruguay':'🇺🇾','Chile':'🇨🇱','Brasil':'🇧🇷','Colombia':'🇨🇴','México':'🇲🇽','España':'🇪🇸','Perú':'🇵🇪','Paraguay':'🇵🇾','Bolivia':'🇧🇴'};
+  const tit=d.gender==='Masculino'?'Dr.':d.gender==='Femenino'?'Dra.':'';
+  const ini=((d.name||'?')[0]||'')+((d.lname||'')[0]||'');
+  const esc=function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  const MOD={presencial:'Solo presencial',online:'Solo por videollamada',ambas:'Presencial y videollamada'};
+  const fila=function(rot,val){ return val ? '<div style="display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid rgba(255,255,255,.08);font-size:15px">'+
+      '<span style="color:rgba(244,239,229,.6);flex-shrink:0">'+rot+'</span>'+
+      '<b style="text-align:right;color:#F4EFE5;font-weight:600">'+esc(val)+'</b></div>' : ''; };
+  const capa=document.createElement('div');
+  capa.id='dm-ficha-pro';
+  capa.style.cssText='position:fixed;inset:0;background:#0F2820;z-index:10007;overflow-y:auto;padding:22px 18px 40px';
+  capa.innerHTML=
+    '<div style="max-width:520px;margin:0 auto">'+
+    '<div onclick="document.getElementById(\'dm-ficha-pro\').remove()" style="font-size:15px;color:#7EC8A4;font-weight:600;cursor:pointer;margin-bottom:14px">← Volver</div>'+
+    '<div style="display:flex;gap:15px;align-items:center;margin-bottom:18px">'+
+      (d.photo_url
+        ? '<img src="'+esc(d.photo_url)+'" alt="" style="width:70px;height:70px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'">'
+        : '<div style="width:70px;height:70px;border-radius:50%;background:rgba(126,200,164,.18);color:#7EC8A4;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;flex-shrink:0">'+esc(ini.toUpperCase())+'</div>')+
+      '<div><div style="font-size:21px;font-weight:700;color:#F4EFE5;line-height:1.2">'+esc((tit?tit+' ':'')+d.name+' '+(d.lname||''))+' '+(FLAGS[d.country]||'')+'</div>'+
+      '<div style="font-size:14.5px;color:#7EC8A4;margin-top:3px">'+esc(SPEC[d.specialty]||d.specialty||'')+'</div>'+
+      (d.mat?'<div style="font-size:13.5px;color:rgba(244,239,229,.5);margin-top:3px">'+esc(d.mat)+'</div>':'')+'</div></div>'+
+    (d.bio?'<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:16px;padding:16px;font-size:15px;line-height:1.7;color:rgba(244,239,229,.88);margin-bottom:14px">'+esc(d.bio)+'</div>':'')+
+    ((d.training||d.associations)
+      ? '<div style="font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(244,239,229,.5);font-weight:700;margin:18px 0 9px">Formación</div>'+
+        '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:16px;padding:16px;font-size:14.5px;line-height:1.7;color:rgba(244,239,229,.75)">'+
+        (d.training?esc(d.training):'')+((d.training&&d.associations)?'<br>':'')+(d.associations?esc(d.associations):'')+'</div>'
+      : '')+
+    '<div style="font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(244,239,229,.5);font-weight:700;margin:18px 0 9px">Dónde atiende</div>'+
+    '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:16px;padding:4px 16px 14px">'+
+      fila('Dirección', d.address)+
+      fila('Ciudad', [d.city,d.country].filter(Boolean).join(', '))+
+      fila('Modalidad', MOD[d.modality])+
+      fila('Valor de la consulta', d.fee)+
+    '</div>'+
+    (d.phone
+      ? '<div style="font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(244,239,229,.5);font-weight:700;margin:18px 0 9px">Contacto</div>'+
+        '<a href="https://wa.me/'+String(d.phone).replace(/[^0-9]/g,'')+'" target="_blank" rel="noopener" '+
+        'style="display:block;background:#7EC8A4;color:#0F2820;border-radius:14px;padding:16px;text-align:center;'+
+        'font-size:16.5px;font-weight:700;text-decoration:none">Escribirle por WhatsApp</a>'
+      : '')+
+    '<div id="dm-ficha-op" style="margin-top:18px"></div>'+
+    '<div style="border-left:3px solid #C8A96E;padding:11px 0 11px 14px;margin-top:20px;font-size:13.5px;line-height:1.55;color:rgba(244,239,229,.62)">'+
+      'El valor y la disponibilidad los carga cada profesional. Dormetria no cobra ni intermedia el turno.</div>'+
+    '</div>';
+  document.body.appendChild(capa);
+  try{ if(typeof renderDoctorRatings==='function') renderDoctorRatings('dm-ficha-op', d.email); }catch(_){}
 }
 
 function renderConsultList(docs){
@@ -17806,7 +17861,11 @@ function renderConsultList(docs){
       (phone?'<a href="https://wa.me/'+phone.replace(/[^0-9]/g,'')+'" target="_blank" style="flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px;border-radius:10px;background:#dcfce7;color:#15803d;text-decoration:none;font-size:12px;font-weight:600">💬 WhatsApp</a>':'')+
       (emailPub?'<a href="mailto:'+emailPub+'" style="flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px;border-radius:10px;background:#eff6ff;color:#1d4ed8;text-decoration:none;font-size:12px;font-weight:600">📧 Email</a>':'')+
       '<button data-email="'+d.email+'" data-name="'+d.name+' '+(d.lname||'')+'" class="consult-req-btn" style="flex:2;min-width:120px;padding:9px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:12px;font-weight:600;cursor:pointer">🩺 Solicitar consulta</button>'+
-      '</div></div>';
+      '</div>'+
+      // Ver la ficha completa antes de decidir: reseña, formación, dónde
+      // atiende, contacto y valor si lo cargó.
+      '<div onclick="dmFichaProfesional('+JSON.stringify(d.email)+')" style="text-align:center;padding:10px 0 2px;font-size:13.5px;color:#7EC8A4;font-weight:600;cursor:pointer">Ver perfil completo →</div>'+
+      '</div>';
   }).join('');
   // Attach consult request listeners
   list.querySelectorAll('.consult-req-btn').forEach(b=>b.addEventListener('click',()=>sendConsultRequest(b.dataset.email,b.dataset.name)));
