@@ -3396,3 +3396,79 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 #screen-edu #edu-screen-body strong{ color:#F4EFE5; font-weight:650; }
 #screen-edu #edu-screen-body em{ color:rgba(244,239,229,.78); }
 #screen-edu #edu-screen-title{ font-size:23px !important; line-height:1.25 !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   GRAFICOS · clases propias, como en el diario. Antes eran estilos en linea
+   heredados y por eso ninguna regla los alcanzaba del todo.
+   ══════════════════════════════════════════════════════════════════════ */
+#screen-diary-home .scroll{ padding:12px 18px 26px !important; }
+
+.dm-h1{
+  font-size:25px; font-weight:700; letter-spacing:-.02em; color:#F4EFE5;
+  padding:6px 0 15px; line-height:1.2;
+}
+.dm-sec{
+  font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+  color:rgba(244,239,229,.5); font-weight:700; margin:26px 0 11px;
+}
+.dm-ayuda2{ font-size:14px; color:rgba(244,239,229,.62); line-height:1.55; margin:-4px 0 12px; }
+
+.dm-periodos{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
+.dm-per{
+  flex:0 0 auto; background:rgba(255,255,255,.055); color:#F4EFE5;
+  border:1.5px solid rgba(126,200,164,.18); border-radius:14px;
+  padding:10px 16px; font-size:14px; font-weight:600; font-family:var(--font);
+  cursor:pointer; white-space:nowrap;
+}
+.dm-per-on{ background:#7EC8A4 !important; border-color:#7EC8A4 !important; color:#0F2820 !important; }
+.dm-per-off{ opacity:.4; }
+#score-period-mes{
+  flex:0 0 auto; background:rgba(255,255,255,.055) !important; color:#F4EFE5 !important;
+  border:1.5px solid rgba(126,200,164,.18) !important; border-radius:14px !important;
+  padding:10px 16px !important; font-size:14px !important; font-weight:600 !important;
+}
+
+.dm-acto-caja{
+  background:#fff; border-radius:18px; padding:12px 10px 8px;
+  max-height:62vh; overflow:auto; -webkit-overflow-scrolling:touch;
+}
+.dm-refs{
+  display:flex; gap:14px; flex-wrap:wrap; margin:12px 0 0;
+  font-size:13px; color:rgba(244,239,229,.78); line-height:1.5;
+}
+.dm-refs span{ display:inline-flex; align-items:center; gap:5px; }
+.dm-refs i{ display:inline-block; width:11px; height:11px; border-radius:3px; flex-shrink:0; }
+
+/* El panel del score, como la tarjeta del prototipo */
+#score-panel-wrap > div:first-child{
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(126,200,164,.18) !important;
+  border-radius:20px !important;
+  padding:22px 20px !important;
+}
+/* Los pilares: tres columnas compactas */
+#diary-pillar-bars > div{
+  display:grid !important; grid-template-columns:1fr 1fr 1fr !important; gap:9px !important;
+}
+#diary-pillar-bars > div > div{
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(126,200,164,.16) !important;
+  border-top-width:1px !important;
+  border-radius:15px !important;
+  padding:13px 11px !important;
+}
+/* Las metricas, como una lista limpia */
+#diary-clinical-metrics > div{
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(126,200,164,.16) !important;
+  border-radius:17px !important;
+  padding:6px 17px 12px !important;
+  box-shadow:none !important;
+}
+#diary-clinical-metrics [style*="border-bottom:0.5px solid var(--sep)"]{
+  border-bottom:1px solid rgba(255,255,255,.07) !important;
+  padding:12px 0 !important;
+}
+#diary-clinical-metrics [style*="font-size:13.5px"]{ font-size:15px !important; }
+#diary-clinical-metrics [style*="font-size:14px;font-weight:600"]{ font-size:16px !important; }

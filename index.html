@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy78-mod127">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod128">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1292,7 +1292,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy78-mod127"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod128"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1311,7 +1311,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy78-mod127';
+const APP_VERSION='hoy79-mod128';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -9752,41 +9752,51 @@ async function showDiaryTab_(tab){
       // una pantalla vacia.
       const scoreEntries = entries30.length>=3 ? entries30 : subjEntries;
       window._dmPeriodoInicial = entries30.length>=3 ? 30 : 0;
-      cont.innerHTML='<div style="display:flex;gap:8px;margin:8px 0 4px;align-items:center">'+
-        '<span style="font-size:12px;color:var(--label-2);font-weight:600">Score:</span>'+
-        '<button id="score-period-7" onclick="switchScorePeriod(7)" style="padding:5px 13px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:'+(entries7.length>=3?'#1a4a3a':'#e5e7eb')+';color:'+(entries7.length>=3?'#fff':'#9ca3af')+'">7 días</button>'+
-        '<button id="score-period-30" onclick="switchScorePeriod(30)" style="padding:5px 13px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#e8f0eb;color:#1a4a3a">30 días</button>'+
-        dmSelectorMesHtml(entries7.length?null:null, scoreEntries)+
-        '<button id="score-period-all" onclick="switchScorePeriod(0)" style="padding:5px 13px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;background:transparent;color:var(--label-2)">Todo</button>'+
+      // ══════════════════════════════════════════════════════════════
+      // GRAFICOS · marcado nuevo, el del prototipo.
+      // Se conservan todos los id (score-panel-wrap, diary-pillar-bars,
+      // diary-clinical-metrics, diary-chart-actogram, pat-acto-inner,
+      // pat-acto-regla, diary-habits-slot, diary-ciclo-slot) porque el resto
+      // del codigo escribe ahi. Lo que cambia es la envoltura.
+      // ══════════════════════════════════════════════════════════════
+      cont.innerHTML =
+        '<h2 class="dm-h1">Tu sueño</h2>'+
+        '<div class="dm-periodos">'+
+          '<button id="score-period-7"  onclick="switchScorePeriod(7)"  class="dm-per'+(entries7.length>=3?'':' dm-per-off')+'">7 d</button>'+
+          '<button id="score-period-30" onclick="switchScorePeriod(30)" class="dm-per dm-per-on">30 d</button>'+
+          '<button id="score-period-all" onclick="switchScorePeriod(0)" class="dm-per">Todo</button>'+
+          dmSelectorMesHtml(null, scoreEntries)+
         '</div>'+
         '<div id="score-panel-wrap">'+renderSleepScorePanel(scoreEntries,(function(){try{const _d=S.user&&S.user.dob?new Date(S.user.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())+'</div>'
       +`
-        <div id="pat-weekly-prog" style="margin-top:12px;display:none"></div>
-        <div class="sec-title" style="margin-top:12px;color:#fff">Pilares del sueño</div>
-        <div id="diary-pillar-bars" style="margin-bottom:6px"></div>
+        <div id="pat-weekly-prog" style="margin-top:16px;display:none"></div>
+
+        <div class="dm-sec">Pilares</div>
+        <div id="diary-pillar-bars"></div>
         <div style="display:none"><div class="chart-wrap"><canvas id="diary-chart-pillars"></canvas></div><div id="pat-pillar-legend"></div></div>
-        <div style="height:8px"></div>
-        <div id="diary-clinical-metrics" style="margin:8px 0"></div>
-        <div class="sec-title" style="margin-top:12px;color:#fff">Actograma — horarios de sueño</div>
-        <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px">La medianoche queda al centro. Cada fila es un día.</p>
-        <div style="background:#fff;border-radius:14px;padding:12px 10px;padding-bottom:8px;max-height:62vh;overflow:auto;-webkit-overflow-scrolling:touch">
+
+        <div class="dm-sec">Actograma</div>
+        <div class="dm-ayuda2">Cada fila es una noche, la medianoche al centro. Tocá una para ver el detalle y lo que escribiste.</div>
+        <div class="dm-acto-caja">
           <div id="pat-acto-inner"><canvas id="diary-chart-actogram" aria-label="Actograma" style="min-width:340px"></canvas></div>
           <div id="pat-acto-regla" style="position:sticky;bottom:0;background:#fff;padding-top:2px"></div>
         </div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:5px">Si hay muchas noches, el actograma se desplaza dentro del recuadro.</div>
-        <div style="display:flex;gap:16px;font-size:11px;color:rgba(255,255,255,0.86);margin:6px 0 14px;flex-wrap:wrap">
-          <span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sueño nocturno</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#185fa5;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Siesta</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#fff;border-top:2px solid #ea580c;border-bottom:2px solid #ea580c;margin-right:3px;vertical-align:middle"></span>Despertar</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:rgba(100,120,200,0.25);border:1px solid rgba(100,120,200,0.6);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Día libre</span>
-          <span id="acto-period-legend" style="display:none"><span style="display:inline-block;width:10px;height:10px;background:#c2547d;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Noche con menstruación</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(to right,rgba(26,74,58,0.25),#1a4a3a,rgba(26,74,58,0.25));border-radius:2px;margin-right:3px;vertical-align:middle"></span>Tramos tenues: en cama sin dormir</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:#16a34a;margin-right:3px;vertical-align:middle"></span>🏃 Ejercicio (ancho = duración)</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
+        <div class="dm-refs">
+          <span><i style="background:#1a4a3a"></i>Sueño nocturno</span>
+          <span><i style="background:#185fa5"></i>Siesta</span>
+          <span><i style="background:rgba(26,74,58,.25)"></i>En cama sin dormir</span>
+          <span><i style="background:#16a34a;height:3px"></i>🏃 Ejercicio</span>
+          <span><i style="background:#7c3aed;height:3px"></i>📱 Pantallas</span>
+          <span>📝 Comentario de esa noche</span>
         </div>
-        <div id="diary-habits-slot" style="margin-top:12px"></div>
+
+        <div class="dm-sec">Así impactan tus hábitos</div>
+        <div id="diary-habits-slot"></div>
         <div id="diary-ciclo-slot" style="margin-top:12px"></div>
-        <div style="height:16px"></div>`;
+
+        <div class="dm-sec">Tus números</div>
+        <div id="diary-clinical-metrics"></div>
+        <div style="height:20px"></div>`;
       setTimeout(()=>{
         try{
         console.log('[GRAFICOS] setTimeout corriendo. Chart=',typeof Chart,'entries=',entries.length);
