@@ -3252,3 +3252,78 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   color:#7EC8A4 !important; font-weight:600 !important;
 }
 #main-nav .bnav svg{ width:22px !important; height:22px !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   BARRIDO FINAL · NADA CLARO EN LAS PANTALLAS DEL PACIENTE
+   El contenido de estas pantallas se genera por JavaScript con estilos en
+   linea heredados de la version anterior —tarjetas blancas, var(--paper),
+   var(--bg-secondary)—. Reescribir cada uno seria tocar decenas de lugares
+   y volver a romper cosas. Se normalizan aca, en un solo sitio.
+   Los graficos (canvas) y sus contenedores blancos quedan como estan: ahi
+   el blanco es funcional, Chart.js dibuja sobre claro.
+   ══════════════════════════════════════════════════════════════════════ */
+#screen-diary-home [style*="background:var(--bg-secondary)"]:not(.chart-wrap):not(canvas),
+#screen-diary-home [style*="background:var(--paper)"],
+#screen-home [style*="background:var(--bg-secondary)"],
+#screen-home [style*="background:var(--paper)"],
+#screen-mas [style*="background:var(--bg-secondary)"],
+#screen-mas [style*="background:var(--paper)"],
+#screen-scales [style*="background:var(--bg-secondary)"],
+#screen-scales [style*="background:var(--paper)"],
+#screen-edu [style*="background:var(--bg-secondary)"],
+#screen-docs [style*="background:var(--bg-secondary)"],
+#screen-profile [style*="background:var(--bg-secondary)"],
+#screen-profile [style*="background:var(--paper)"]{
+  background:rgba(255,255,255,0.05) !important;
+  border:1px solid rgba(126,200,164,0.16) !important;
+  border-radius:16px !important;
+  color:#F4EFE5 !important;
+}
+
+/* Los botones claros sueltos de la lista de registros */
+#screen-diary-home [style*="background:#e8f0eb"],
+#screen-diary-home [style*="background:#eef8f5"],
+#screen-diary-home [style*="background:#fffbeb"]{
+  background:rgba(255,255,255,0.07) !important;
+  color:#F4EFE5 !important;
+}
+
+/* El texto que venia pensado para fondo claro */
+#screen-diary-home [style*="color:var(--label)"],
+#screen-home [style*="color:var(--label)"],
+#screen-mas [style*="color:var(--label)"],
+#screen-scales [style*="color:var(--label)"],
+#screen-docs [style*="color:var(--label)"]{
+  color:#F4EFE5 !important;
+}
+#screen-diary-home [style*="color:var(--label-2)"],
+#screen-home [style*="color:var(--label-2)"],
+#screen-mas [style*="color:var(--label-2)"],
+#screen-scales [style*="color:var(--label-2)"],
+#screen-docs [style*="color:var(--label-2)"]{
+  color:rgba(244,239,229,0.66) !important;
+}
+#screen-diary-home [style*="color:var(--label-3)"],
+#screen-home [style*="color:var(--label-3)"],
+#screen-mas [style*="color:var(--label-3)"],
+#screen-scales [style*="color:var(--label-3)"],
+#screen-docs [style*="color:var(--label-3)"]{
+  color:rgba(244,239,229,0.45) !important;
+}
+
+/* Dentro de una tarjeta blanca de grafico, el texto vuelve a ser oscuro:
+   ahi el blanco si corresponde y forzar crema lo haria ilegible. */
+#screen-diary-home .dm-card [style*="color:var(--label)"],
+#screen-diary-home .blanca [style*="color:var(--label)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label)"]{
+  color:#10231c !important;
+}
+#screen-diary-home .dm-card [style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-2)"]{
+  color:#3f3f46 !important;
+}
+#screen-diary-home .dm-card [style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-3)"]{
+  color:#8a9691 !important;
+}
