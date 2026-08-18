@@ -3383,3 +3383,16 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 #screen-docs [style*="background:#eef8f5"]{
   background:rgba(126,200,164,.16) !important; color:#7EC8A4 !important; border:none !important;
 }
+
+
+/* El cuerpo de los articulos: linea mas larga, mas aire entre parrafos.
+   Un texto divulgativo apretado se lee como un prospecto. */
+#screen-edu #edu-screen-body p{
+  font-size:16.5px !important;
+  line-height:1.75 !important;
+  color:rgba(244,239,229,.88) !important;
+  margin-bottom:15px;
+}
+#screen-edu #edu-screen-body strong{ color:#F4EFE5; font-weight:650; }
+#screen-edu #edu-screen-body em{ color:rgba(244,239,229,.78); }
+#screen-edu #edu-screen-title{ font-size:23px !important; line-height:1.25 !important; }

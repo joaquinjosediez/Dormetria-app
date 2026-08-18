@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy78-mod125">
+<link rel="stylesheet" href="css/styles.css?v=hoy78-mod126">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1290,7 +1290,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy78-mod125"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy78-mod126"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1309,7 +1309,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy78-mod125';
+const APP_VERSION='hoy78-mod126';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -6128,220 +6128,70 @@ function startScaleOfDay(){
 // Fichas concisas, pensadas para que el profesional las revise o las
 // repase con el paciente. Ampliable: agregar entradas al array.
 const PATIENT_EDU_TOPICS=[
-  {id:'higiene',icon:'🛏',title:'Higiene del sueño: 10 hábitos clave',body:`
-    <p>Cuando alguien dice «higiene del sueño» está hablando de algo bastante simple: las costumbres del día y los horarios que hacen más fácil dormir bien. No es un tratamiento —si hay un insomnio instalado, esto solo no alcanza—, pero es el piso sobre el que se apoya todo lo demás.</p>
-    <ol style="margin-top:10px;padding-left:18px;line-height:1.7">
-      <li><strong>Intentar mantener horarios regulares.</strong> Acostarse y levantarse a la misma hora todos los días, incluso los fines de semana. Si un día te levantás a las 7 y al otro a las 10, tu cuerpo deja de anticipar cuándo toca dormir.</li>
-      <li><strong>Es buena la luz natural por la mañana.</strong> 10–15 min de luz al aire libre en la primera hora luego de despertar refuerza el reloj biológico.</li>
-      <li><strong>Evitar cafeína después del mediodía.</strong> La vida media es de 5–6 h. Un café a las 16 h tiene aún la mitad activa a las 22 h.</li>
-      <li><strong>Limitar el alcohol.</strong> Sedante de inicio pero da un sueño de muy mala calidad, fragmentado, y bloquea el sueño REM.</li>
-      <li><strong>Cortar pantallas 30–60 min antes.</strong> La luz brillante de noche atrasa la liberación de melatonina, y además generan activación según el contenido.</li>
-      <li><strong>Buscá que tu habitación esté fresca, oscura y silenciosa.</strong> Encontrar una configuración de temperatura y oscuridad cómoda, y mantener la habitación bien ventilada.</li>
-      <li><strong>Usar la cama solo para dormir (y sexo).</strong> Asociar la cama con vigilia activa la configura para lo contrario al sueño.</li>
-      <li><strong>No quedarse despierto/a en la cama más de 20 min.</strong> Si no podés dormir, levantate, hacé algo tranquilo con luz tenue, y volvé cuando tengas sueño.</li>
-      <li><strong>Es bueno hacer ejercicio, pero no nocturno.</strong> Mejora el sueño, pero idealmente antes de 3 h de acostarse.</li>
-      <li><strong>Buscar que la cena sea liviana y temprana.</strong> Comidas pesadas o tarde dificultan el inicio del sueño.</li>
-    </ol>
-    <p style="margin-top:14px;font-size:12.5px;color:rgba(255,255,255,0.6)"><em>Si pese a aplicar estos hábitos persisten dificultades por más de 3 meses, evaluar TCC-I.</em></p>
+  {id:'higiene',icon:'🛏',title:'Higiene del sueño: qué es y qué no',body:`
+    <p>Cuando alguien dice «higiene del sueño» está hablando de algo bastante simple: las costumbres del día y los horarios que hacen más fácil dormir bien. El nombre suena técnico pero no lo es.</p>
+    <p>Conviene saber una cosa desde el principio: <strong>esto no es un tratamiento</strong>. Si ya tenés un insomnio instalado, hacer todo bien acá probablemente no alcance. Es el piso sobre el que se apoya lo demás, no la solución.</p>
+    <p>Dicho eso, hay cosas que ayudan más que otras. Estas son las que más pesan:</p>
+    <p><strong>Levantarte siempre a la misma hora.</strong> Es la más importante de todas y la que menos se cumple. Si un día te levantás a las 7 y al otro a las 10, tu cuerpo deja de anticipar cuándo toca dormir. Y sí: incluye los fines de semana.</p>
+    <p><strong>Salir a la luz por la mañana.</strong> Quince o veinte minutos afuera, aunque esté nublado. La luz de la mañana es la señal más fuerte que recibe tu reloj interno; sin ella, se atrasa solo.</p>
+    <p><strong>No usar la cama para otra cosa.</strong> Ni trabajar, ni mirar el teléfono, ni dar vueltas despierto una hora. Cuanto más tiempo pasás en la cama sin dormir, más aprende tu cabeza que la cama es un lugar donde uno se queda pensando.</p>
+    <p><strong>Cortar la cafeína temprano.</strong> Más abajo hay una nota entera sobre esto, pero la idea corta es que dura mucho más de lo que uno cree.</p>
+    <p><strong>Cuidar el cuarto.</strong> Fresco, oscuro y en silencio. Suena obvio y sin embargo es lo primero que se descuida.</p>
+    <div style="background:rgba(200,169,110,.12);border-left:3px solid #C8A96E;border-radius:0 10px 10px 0;padding:12px 14px;margin:16px 0">
+      <strong style="color:#C8A96E">Lo que no funciona:</strong> quedarse en la cama «para descansar aunque no duerma». Es lo más intuitivo y lo que más sostiene el problema.
+    </div>
   `},
-  {id:'tcci',icon:'🌿',title:'¿Qué es la TCC-I?',body:`
-    <p>La <strong>Terapia Cognitivo-Conductual para el Insomnio (TCC-I)</strong> es el <strong>tratamiento de primera línea</strong> para el insomnio crónico según todas las guías internacionales (AASM, ESRS, NICE). Más eficaz a largo plazo que los hipnóticos y sin efectos adversos relevantes.</p>
-    <p style="margin-top:12px"><strong>Componentes principales:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li><strong>Restricción de sueño:</strong> reducir el tiempo en cama al tiempo realmente dormido. Aumenta la presión de sueño y consolida los ciclos.</li>
-      <li><strong>Control de estímulos:</strong> reasociar la cama con el sueño. Levantarse si no se duerme en 20 min.</li>
-      <li><strong>Reestructuración cognitiva:</strong> trabajar los pensamientos catastróficos sobre el dormir y el descanso.</li>
-      <li><strong>Higiene del sueño:</strong> hábitos diurnos que favorecen el descanso (es <em>una parte</em> del tratamiento, no toda).</li>
-      <li><strong>Técnicas de relajación:</strong> respiración diafragmática, relajación muscular progresiva.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Duración:</strong> protocolos clásicos de 6–8 sesiones. Mejoría observable desde la 3.ª–4.ª semana.</p>
-    <p style="margin-top:12px"><strong>Eficacia:</strong> alrededor del <strong>70–80%</strong> de los pacientes mejora significativamente. Los efectos se mantienen 6–12 meses post-tratamiento, a diferencia de los hipnóticos.</p>
+  {id:'tcci',icon:'🌿',title:'¿Qué es la TCC-I y por qué se recomienda primero?',body:`
+    <p>TCC-I son las iniciales de «terapia cognitivo-conductual para el insomnio». Es un nombre largo para algo que se entiende rápido: un programa de cuatro a ocho semanas donde se trabajan dos cosas a la vez, <strong>lo que hacés</strong> y <strong>lo que pensás</strong> alrededor de dormir.</p>
+    <p>Las guías clínicas de casi todos los países la ponen como primera opción para el insomnio crónico, antes que la medicación. No es una preferencia ideológica: es que los efectos duran más. La pastilla funciona mientras la tomás; esto sigue funcionando después.</p>
+    <p><strong>Qué incluye, en criollo:</strong></p>
+    <p>Ajustar el tiempo que pasás en la cama para que se parezca al que realmente dormís. Suena al revés —y la primera semana cuesta— pero es lo que más rinde.</p>
+    <p>Volver a asociar la cama con dormir: si no te dormís, te levantás; si te desvelás, te levantás.</p>
+    <p>Revisar las ideas que aparecen a la noche. «Si no duermo ocho horas mañana no funciono» es una de las más comunes, y casi nunca resiste una mirada tranquila.</p>
+    <p>Sumar algo para bajar la activación: respiración, relajación muscular, lo que te sirva.</p>
+    <div style="background:rgba(126,200,164,.12);border-left:3px solid #7EC8A4;border-radius:0 10px 10px 0;padding:12px 14px;margin:16px 0">
+      <strong style="color:#7EC8A4">Si estás tomando medicación para dormir:</strong> esto no la reemplaza de un día para el otro. Cualquier cambio se hace con quien te la indicó.
+    </div>
   `},
-  {id:'cafe-alcohol',icon:'☕',title:'Cafeína, alcohol y sueño',body:`
-    <p><strong>Cafeína</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Vida media: <strong>5–6 horas</strong> (más larga en metabolizadores lentos y embarazo).</li>
-      <li>Una taza de café (~100 mg) a las 16 h deja ~50 mg activos a las 22 h.</li>
-      <li>Bloquea los receptores de adenosina: no "te da energía", oculta el cansancio.</li>
-      <li><strong>Recomendación clínica:</strong> evitar después del mediodía en personas con insomnio. En sensibles, suspender después de las 10 h.</li>
-      <li>Atención a fuentes ocultas: mate, té verde/negro, chocolate amargo, gaseosas cola, bebidas energéticas, algunos analgésicos.</li>
-    </ul>
-    <p style="margin-top:14px"><strong>Alcohol</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Sedante en la primera mitad de la noche, fragmenta y empobrece la segunda.</li>
-      <li>Suprime el sueño REM en las primeras horas y produce rebote más tarde (pesadillas, despertares).</li>
-      <li>Empeora el ronquido y la apnea obstructiva del sueño.</li>
-      <li>Aunque "ayuda a dormirse", la calidad global del sueño es peor.</li>
-      <li><strong>Recomendación:</strong> evitar al menos 3 h antes de acostarse. En insomnio o apnea, idealmente no consumir.</li>
-    </ul>
+  {id:'cafe-alcohol',icon:'☕',title:'Café y alcohol: los dos que más sorprenden',body:`
+    <p>Estos dos aparecen todo el tiempo en los diarios de sueño, y casi siempre por el mismo motivo: hacen algo distinto de lo que uno espera.</p>
+    <p><strong>La cafeína dura mucho más de lo que parece.</strong> A las seis horas de haberla tomado, todavía tenés la mitad dando vueltas. Un café de las 17 sigue haciendo efecto a las 23. No siempre te impide dormirte —mucha gente se duerme igual— pero achica el sueño profundo, que es el que repara.</p>
+    <p>Y no está solo en el café. El mate tiene bastante, y ahí hay un detalle importante: <strong>los primeros mates de una mateada concentran la mayor parte</strong>. El segundo termo suma mucho menos que el primero. También hay en el té, en las gaseosas cola, en el chocolate y en los energizantes.</p>
+    <p><strong>El alcohol es más traicionero</strong>, porque hace las dos cosas. Te duerme más rápido, eso es cierto y por eso mucha gente lo usa. Pero cuando el cuerpo lo metaboliza, unas horas después, produce el efecto contrario: te despierta.</p>
+    <p>Por eso el patrón típico de quien toma a la noche es dormirse enseguida y desvelarse a las tres o cuatro de la mañana. En el diario se ve clarísimo: menos tiempo para dormirse y más despertares en la misma noche.</p>
+    <div style="background:rgba(200,169,110,.12);border-left:3px solid #C8A96E;border-radius:0 10px 10px 0;padding:12px 14px;margin:16px 0">
+      <strong style="color:#C8A96E">Para probar:</strong> corté la cafeína a las 14 durante dos semanas y mirá tus propios números. La app te va a mostrar si en tu caso cambió algo.
+    </div>
   `},
-  {id:'pantallas',icon:'📱',title:'Pantallas, luz azul y melatonina',body:`
-    <p>La luz, especialmente la de longitud de onda corta (azul, ~480 nm), <strong>suprime la secreción nocturna de melatonina</strong> y le señala al cerebro que todavía es de día. El efecto es proporcional a la intensidad y al tiempo de exposición.</p>
-    <p style="margin-top:12px"><strong>Lo que la evidencia muestra:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Uso de pantallas brillantes en la hora previa retrasa el inicio del sueño 15–60 min.</li>
-      <li>Reduce el sueño REM y disminuye la sensación de descanso al día siguiente.</li>
-      <li>El contenido también importa: redes sociales y noticias activan tanto como la luz.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Recomendaciones prácticas:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Cortar pantallas 30–60 min antes de acostarse.</li>
-      <li>Modo nocturno / filtros cálidos ayudan pero no son suficientes por sí solos.</li>
-      <li>Si se usa, brillo al mínimo y nada de scroll activo en redes.</li>
-      <li>En la habitación, fuera del alcance de la mano. No usar el celular como despertador si genera el reflejo de mirarlo.</li>
-    </ul>
+  {id:'pantallas',icon:'📱',title:'Pantallas: qué se probó de verdad',body:`
+    <p>Sobre esto se dicen muchas cosas, algunas bastante exageradas. Vale separar lo que está bien establecido de lo que se repite sin demasiado respaldo.</p>
+    <p><strong>Lo que sí está claro:</strong> la luz —cualquier luz, no solo la azul— le avisa al cerebro que todavía es de día y retrasa la melatonina, que es la hormona que anuncia la noche. Con luz intensa cerca de la hora de dormir, el sueño se corre para más tarde.</p>
+    <p><strong>Lo que está menos claro:</strong> que los filtros de luz azul de los teléfonos resuelvan algo. Los estudios que los probaron encuentran efectos chicos o directamente ninguno.</p>
+    <p><strong>Y lo que casi nadie menciona</strong>, que probablemente sea lo que más pesa: no es tanto la luz sino <em>qué</em> estás haciendo. Discutir por WhatsApp, revisar el trabajo o engancharte con una serie te activa mucho más de lo que te desvela la pantalla en sí. El teléfono es sobre todo una máquina de posponer la hora de dormir.</p>
+    <div style="background:rgba(126,200,164,.12);border-left:3px solid #7EC8A4;border-radius:0 10px 10px 0;padding:12px 14px;margin:16px 0">
+      <strong style="color:#7EC8A4">Más útil que el filtro:</strong> dejar el teléfono fuera del cuarto. Si lo usás de despertador, un reloj barato resuelve el problema.
+    </div>
   `},
   {id:'horas',icon:'⏱',title:'¿Cuántas horas hay que dormir?',body:`
-    <p>Las necesidades de sueño varían por edad y, en menor medida, entre individuos. Más importante que el número absoluto es el <strong>funcionamiento diurno</strong>: si la persona rinde bien, mantiene atención y ánimo estables, está durmiendo lo suficiente.</p>
-    <p style="margin-top:12px"><strong>Rangos recomendados (National Sleep Foundation, AASM):</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Recién nacidos (0–3 m): 14–17 h</li>
-      <li>Bebés (4–11 m): 12–15 h</li>
-      <li>Niños pequeños (1–2 años): 11–14 h</li>
-      <li>Preescolares (3–5): 10–13 h</li>
-      <li>Escolares (6–13): 9–11 h</li>
-      <li>Adolescentes (14–17): 8–10 h</li>
-      <li>Adultos jóvenes (18–25): 7–9 h</li>
-      <li>Adultos (26–64): 7–9 h</li>
-      <li>Adultos mayores (65+): 7–8 h</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Datos importantes:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Dormir habitualmente menos de 7 h se asocia con mayor riesgo cardiovascular, metabólico y cognitivo.</li>
-      <li>Existe un pequeño grupo genético (menos del 1%) que funciona bien con 4–6 h — extremadamente raro.</li>
-      <li>"Recuperar el sueño" los fines de semana no compensa por completo la deuda crónica.</li>
-    </ul>
+    <p>La respuesta corta es que depende de la edad y de la persona. La respuesta útil es un poco más larga.</p>
+    <p>Para un adulto, lo esperable son <strong>entre siete y nueve horas</strong>. Hay quienes funcionan bien con algo menos y quienes necesitan algo más; las dos cosas son normales. En chicos y adolescentes la cifra es bastante mayor, y baja de a poco con los años.</p>
+    <p>Ahora, el número de horas es solo una parte. Podés dormir ocho horas cortadas en pedazos y levantarte peor que alguien que durmió siete de corrido. Por eso en esta app mirás tres cosas y no una sola: <strong>cuánto</strong> dormiste, <strong>qué tan seguido</strong> fue ese sueño y <strong>qué tan parejo</strong> es tu horario de un día a otro.</p>
+    <p>Y hay una prueba mucho mejor que cualquier tabla: cómo estás durante el día. Si te dormís en el colectivo, si necesitás café para arrancar, si el fin de semana dormís tres horas de más — ahí tenés la respuesta, sin necesidad de contar.</p>
+    <div style="background:rgba(200,169,110,.12);border-left:3px solid #C8A96E;border-radius:0 10px 10px 0;padding:12px 14px;margin:16px 0">
+      <strong style="color:#C8A96E">Ojo con esto:</strong> dormir mucho más de lo habitual de forma sostenida tampoco es buena señal. Si te pasa, conviene consultarlo.
+    </div>
   `},
-  {id:'despertares',icon:'🌙',title:'Despertar de noche: cuándo es normal y cuándo no',body:`
-    <p>Despertarse 1–2 veces por noche, especialmente entre ciclos de sueño o al cambiar de etapa, es <strong>fisiológico</strong>. La mayoría de las personas no lo recuerda al día siguiente. El problema aparece cuando:</p>
-    <ul style="margin-top:8px;padding-left:18px;line-height:1.7">
-      <li>Hay <strong>dificultad para retomar el sueño</strong> (más de 20 min despierto).</li>
-      <li>Los despertares son <strong>frecuentes</strong> (más de 2–3 por noche varias veces por semana).</li>
-      <li>Generan ansiedad sobre el dormir.</li>
-      <li>Repercuten en el funcionamiento diurno.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Causas frecuentes a explorar:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Insomnio de mantenimiento (psicofisiológico, ansiedad).</li>
-      <li>Apnea obstructiva del sueño (microdespertares por colapso de vía aérea).</li>
-      <li>Síndrome de piernas inquietas, movimientos periódicos.</li>
-      <li>Nicturia (próstata, diabetes, diuréticos).</li>
-      <li>Reflujo gastroesofágico.</li>
-      <li>Consumo de alcohol antes de acostarse.</li>
-      <li>Cambios hormonales (perimenopausia).</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Conducta recomendada al paciente:</strong> si se despierta y no concilia en 15–20 min, levantarse, hacer algo tranquilo con luz tenue, y volver a acostarse cuando aparezca sueño. Quedarse en la cama mirando el reloj refuerza el insomnio.</p>
-  `},
-  {id:'embarazo',icon:'🤰',pop:'Embarazo',title:'Sueño durante el embarazo',body:`
-    <p>Los trastornos del sueño afectan a más del <strong>75% de las embarazadas</strong>. Cada trimestre tiene desafíos distintos y la mayoría son tratables.</p>
-    <p style="margin-top:12px"><strong>Primer trimestre:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Somnolencia diurna intensa (progesterona elevada).</li>
-      <li>Despertares por necesidad de orinar.</li>
-      <li>Náuseas que interfieren con el inicio del sueño.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Segundo trimestre:</strong> suele ser el de mejor descanso, aunque pueden aparecer reflujo, calambres en las piernas y síndrome de piernas inquietas.</p>
-    <p style="margin-top:12px"><strong>Tercer trimestre:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Dificultad para encontrar una posición cómoda.</li>
-      <li>Despertares frecuentes por presión sobre la vejiga.</li>
-      <li>Insomnio anticipatorio.</li>
-      <li>Mayor riesgo de apnea del sueño — atención a ronquidos nuevos o pausas observadas por la pareja.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Recomendaciones:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Dormir <strong>de costado izquierdo</strong> a partir del 2.º trimestre — mejora el retorno venoso y la oxigenación fetal.</li>
-      <li>Almohada entre las rodillas y bajo el abdomen.</li>
-      <li>Hidratarse durante el día, reducir líquidos 2–3 h antes de acostarse.</li>
-      <li>Siestas cortas, no muy tarde, para no afectar la noche.</li>
-      <li><strong>Evitar hipnóticos.</strong> En insomnio severo, priorizar TCC-I. Consultar siempre antes de tomar cualquier medicación.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Señales de alerta:</strong> ronquidos nuevos y fuertes, somnolencia diurna extrema, sensación de ahogo nocturno, movimientos involuntarios intensos en piernas. Pueden indicar apnea o piernas inquietas que requieren tratamiento específico.</p>
-  `},
-  {id:'mayores',icon:'👴',pop:'Adultos mayores',title:'Sueño en adultos mayores',body:`
-    <p>El sueño cambia con la edad. <strong>No es que necesitemos menos sueño</strong>, sino que mantenerlo en un solo bloque se vuelve más difícil. Muchas quejas en mayores de 65 son tratables y no deben tomarse como "es la edad".</p>
-    <p style="margin-top:12px"><strong>Cambios fisiológicos normales:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Adelanto de fase: tendencia a acostarse y levantarse más temprano.</li>
-      <li>Menos sueño profundo (N3), más sueño superficial.</li>
-      <li>Más despertares nocturnos breves (3–4 vs 1–2 en jóvenes).</li>
-      <li>Mayor sensibilidad al ruido y a la luz.</li>
-      <li>Siestas diurnas más frecuentes.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Lo que NO es normal y debe estudiarse:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Insomnio que afecta el funcionamiento diurno.</li>
-      <li>Somnolencia diurna excesiva.</li>
-      <li>Ronquidos fuertes o pausas respiratorias — descartar apnea (muy frecuente en esta edad).</li>
-      <li>"Actuar" los sueños (gritos, movimientos bruscos): puede ser <strong>trastorno conductual del sueño REM</strong>, marcador temprano de Parkinson o demencia.</li>
-      <li>Confusión nocturna marcada.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Recomendaciones específicas:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Horarios regulares y exposición a luz natural diurna.</li>
-      <li>Siestas de 20–30 min antes de las 15 h.</li>
-      <li>Actividad física diurna (caminar es ideal).</li>
-      <li>Evitar pasar tiempo en cama despierto/a.</li>
-      <li><strong>Precaución con hipnóticos:</strong> en adultos mayores aumentan riesgo de caídas, deterioro cognitivo y dependencia. La TCC-I es primera línea también acá.</li>
-      <li>Revisar medicación habitual (diuréticos, corticoides, betabloqueantes, broncodilatadores pueden alterar el sueño).</li>
-    </ul>
-  `},
-  {id:'turnos',icon:'🌗',pop:'Trabajo por turnos',title:'Trabajo por turnos: cómo proteger tu sueño',body:`
-    <p>El trabajo por turnos —especialmente nocturno o rotativo— va a contramano del ritmo circadiano natural. Aumenta el riesgo de insomnio, somnolencia, accidentes, problemas cardiovasculares y metabólicos. Aunque no se puede evitar el desfase, hay estrategias que reducen su impacto.</p>
-    <p style="margin-top:12px"><strong>Para el turno nocturno:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li><strong>Dormir apenas llegás:</strong> idealmente acostarse dentro de las 2 horas posteriores al fin del turno, antes de que el cuerpo se despabile.</li>
-      <li>Cuarto totalmente <strong>oscuro</strong> (cortinas blackout) y silencioso (tapones, ruido blanco).</li>
-      <li>Anteojos oscuros al volver: minimiza la señal de "es de día" al cerebro.</li>
-      <li>Apuntar a 7–8 h en un solo bloque, no dividido.</li>
-      <li>Cafeína al inicio del turno; evitarla en las últimas 4–5 h.</li>
-      <li>Siesta estratégica de 20–30 min antes del turno si es posible.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Para turnos rotativos:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Rotación <strong>en sentido horario</strong> (mañana → tarde → noche) es más tolerable que la antihoraria.</li>
-      <li>Rotaciones rápidas (cada 2–3 días) o muy lentas (cada 3–4 semanas) son mejores que cambios semanales.</li>
-      <li>En los días libres, mantener un horario "transitorio" que no se desvíe más de 4 h del biológico.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Señales de alerta — consultar:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Somnolencia que interfiere con el trabajo o el manejo.</li>
-      <li>Insomnio que persiste en los días libres.</li>
-      <li>Episodios de microsueño (perder consciencia unos segundos).</li>
-      <li>Síntomas de depresión o irritabilidad marcada.</li>
-    </ul>
-  `},
-  {id:'guardias',icon:'🩺',pop:'Guardias médicas',title:'Sobrevivir las guardias: estrategias para profesionales de la salud',body:`
-    <p>Las guardias de 24 h o más combinan privación de sueño aguda con alta demanda cognitiva. La performance al final de una guardia equivale a la de una alcoholemia ≥0,5 g/L. Estas estrategias no eliminan el efecto, pero ayudan a sostener el rendimiento y minimizar el daño.</p>
-    <p style="margin-top:12px"><strong>Antes de la guardia:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Llegar bien dormido/a — evitar deudas de sueño los días previos.</li>
-      <li><strong>Siesta profiláctica</strong> de 1–2 h durante la tarde previa si la guardia empieza de noche.</li>
-      <li>Comida liviana antes de empezar; hidratación.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Durante la guardia:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li><strong>Power naps</strong> de 20–30 min cuando se pueda — recuperan alerta sin generar inercia profunda. Evitar siestas de 45–90 min (peor inercia al despertar).</li>
-      <li>Cafeína estratégica: 100–200 mg cada 4 h, no en las últimas 4 h antes de irte a dormir.</li>
-      <li>Mantenerse hidratado/a, comer cada 4–5 h aunque no haya hambre.</li>
-      <li>Luz brillante en momentos críticos para sostener alerta.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Después de la guardia:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li><strong>NO manejar largas distancias</strong> al salir. Si es posible, siesta corta antes de conducir, o usar transporte.</li>
-      <li>Llegar a casa, comer algo liviano, y dormir lo antes posible.</li>
-      <li>Cortina blackout, tapones, anteojos oscuros en el trayecto.</li>
-      <li>Dormir un bloque largo (no múltiples siestas cortas).</li>
-      <li>Al despertar, exposición a luz natural — ayuda a resincronizar.</li>
-    </ul>
-    <p style="margin-top:12px"><strong>Recuperación a mediano plazo:</strong></p>
-    <ul style="margin-top:6px;padding-left:18px;line-height:1.7">
-      <li>Se necesitan <strong>2–3 noches normales</strong> para recuperar tras una guardia de 24 h.</li>
-      <li>Limitar otros estresores cognitivos en el día post-guardia.</li>
-      <li>Si las guardias son frecuentes: trabajar la TCC-I para que el sueño en los días entre guardias sea de la mejor calidad posible.</li>
-    </ul>
+  {id:'despertares',icon:'🌙',title:'Despertarse de noche: cuándo preocuparse',body:`
+    <p>Casi todo el mundo se despierta durante la noche. La diferencia está en que muchas veces ni te enterás: el despertar dura segundos y volvés a dormirte sin registrarlo.</p>
+    <p><strong>Es esperable</strong> despertarse una o dos veces, sobre todo en la segunda mitad de la noche, y volver a dormirse en pocos minutos. También es esperable que aumente con los años: a los sesenta uno se despierta más que a los veinte, y eso no es una enfermedad.</p>
+    <p><strong>Conviene mirarlo con más atención</strong> cuando el despertar es largo —más de veinte o treinta minutos— y pasa la mayoría de las noches. O cuando te despertás siempre a la misma hora, que a veces tiene que ver con el reloj interno más que con el sueño. O cuando lo acompaña algo más: ahogo, ronquido fuerte que tu pareja escucha, ganas de mover las piernas, transpiración.</p>
+    <p>Y hay algo que empeora las cosas sin que uno lo note: <strong>mirar el reloj</strong>. Saber que son las 3:40 y que en tres horas suena el despertador activa la cabeza justo cuando necesitás lo contrario. Dar vuelta el reloj es de las cosas más simples y más efectivas.</p>
+    <div style="background:rgba(220,38,38,.12);border-left:3px solid #fca5a5;border-radius:0 10px 10px 0;padding:12px 14px;margin:16px 0">
+      <strong style="color:#fca5a5">Consultá</strong> si te despertás con ahogo o sensación de falta de aire, si te dicen que dejás de respirar mientras dormís, o si la somnolencia de día te afecta al manejar.
+    </div>
   `}
 ];
+
 
 function showEduLibrary(){
   const body=document.getElementById('edu-screen-body');
@@ -6374,7 +6224,11 @@ function showEduTopic(id){
   const title=document.getElementById('edu-screen-title');
   if(title) title.textContent=t.title;
   if(!body) return;
-  body.innerHTML='<button onclick="showEduLibrary()" style="background:none;border:none;color:#7ec8a4;font-size:13px;padding:0 0 12px;cursor:pointer;font-family:inherit">← Volver al índice</button>'+
+  body.innerHTML='<button onclick="showEduLibrary()" style="background:none;border:none;color:#7ec8a4;font-size:14px;padding:0 0 12px;cursor:pointer;font-family:inherit">← Volver</button>'+
+    // La ilustracion del tema, arriba de todo: es lo que le da aire al texto
+    // y lo diferencia de un documento.
+    '<div style="height:170px;border-radius:18px;overflow:hidden;margin-bottom:16px">'+
+      (typeof dmIlustracion==='function' ? dmIlustracion(t.id) : '')+'</div>'+
     '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px 16px;font-size:13.5px;color:rgba(255,255,255,0.85);line-height:1.6">'+
     '<div style="font-size:32px;text-align:center;margin-bottom:8px">'+t.icon+'</div>'+
     '<div style="font-size:18px;font-weight:700;color:#fff;text-align:center;margin-bottom:14px">'+t.title+'</div>'+
