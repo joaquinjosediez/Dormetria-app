@@ -3472,3 +3472,50 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 }
 #diary-clinical-metrics [style*="font-size:13.5px"]{ font-size:15px !important; }
 #diary-clinical-metrics [style*="font-size:14px;font-weight:600"]{ font-size:16px !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   YO y MAS · misma familia visual que Diario y Graficos.
+   Estas dos pantallas ya estaban cerca del prototipo: lo que faltaba era
+   el tamanio de letra, el radio de las tarjetas y el aire entre filas.
+   ══════════════════════════════════════════════════════════════════════ */
+#screen-profile #profile-content,
+#screen-mas .scroll{ padding:14px 18px 26px !important; }
+
+#screen-profile #profile-content > div{ gap:12px !important; }
+
+/* Cada fila como tarjeta del prototipo */
+#screen-profile #profile-content > div > div,
+#screen-mas .scroll > div > div{
+  border-radius:17px !important;
+  padding:16px 17px !important;
+  border:1px solid rgba(126,200,164,.18) !important;
+  background:rgba(255,255,255,.05) !important;
+}
+#screen-profile #profile-content [style*="font-size:15px;font-weight:600"],
+#screen-mas [style*="font-size:15px;font-weight:600"]{
+  font-size:16.5px !important; color:#F4EFE5 !important;
+}
+#screen-profile #profile-content [style*="font-size:12px"],
+#screen-mas [style*="font-size:12px"]{ font-size:13.5px !important; }
+#screen-profile #profile-content [style*="font-size:11px"],
+#screen-mas [style*="font-size:11px"]{ font-size:12.5px !important; }
+
+/* El circulito del icono, un poco mas grande y con el verde del prototipo */
+#screen-profile #profile-content svg,
+#screen-mas svg{ width:22px !important; height:22px !important; }
+
+/* Los titulos de seccion de "Mas" */
+#screen-mas .sec-title{
+  font-size:13px !important; letter-spacing:.08em !important;
+  color:rgba(244,239,229,.5) !important; margin:24px 0 11px !important;
+  text-transform:uppercase !important;
+}
+#screen-profile #profile-header-title,
+#screen-mas .topbar [style*="font-size:17px"]{ font-size:20px !important; }
+
+/* Las hojas modales del paciente, todas en verde */
+#screen-profile [style*="background:#fff"]:not(button),
+#screen-mas [style*="background:#fff"]:not(button){
+  background:rgba(255,255,255,.06) !important; color:#F4EFE5 !important;
+}
