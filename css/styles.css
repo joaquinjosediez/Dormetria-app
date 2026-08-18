@@ -3486,11 +3486,22 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 
 /* Cada fila como tarjeta del prototipo */
 #screen-profile #profile-content > div > div,
-#screen-mas .scroll > div > div{
+#screen-mas .scroll > div[onclick],
+#screen-mas .scroll > div[id$="-card"]{
   border-radius:17px !important;
   padding:16px 17px !important;
   border:1px solid rgba(126,200,164,.18) !important;
   background:rgba(255,255,255,.05) !important;
+}
+/* y lo de adentro no lleva marco propio */
+#screen-mas .scroll > div[onclick] > div,
+#screen-mas .scroll > div[id$="-card"] > div{
+  border:none !important; background:none !important;
+  padding:0 !important; border-radius:0 !important;
+}
+#screen-mas .scroll > div[onclick] > div:first-child{
+  width:40px !important; height:40px !important; border-radius:11px !important;
+  background:rgba(126,200,164,.14) !important;
 }
 #screen-profile #profile-content [style*="font-size:15px;font-weight:600"],
 #screen-mas [style*="font-size:15px;font-weight:600"]{
@@ -3518,4 +3529,116 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 #screen-profile [style*="background:#fff"]:not(button),
 #screen-mas [style*="background:#fff"]:not(button){
   background:rgba(255,255,255,.06) !important; color:#F4EFE5 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod131 · Secciones plegables, métricas y factores en la familia oscura
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── El botón que abre y cierra una sección ───────────────────────────── */
+.dm-plegar{
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin:22px 0 0; padding:15px 17px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(126,200,164,.18); border-radius:17px;
+  font-family:inherit; font-size:15.5px; font-weight:600; color:#F4EFE5;
+  text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.dm-plegar:active{ background:rgba(255,255,255,.09); }
+.dm-plegar-f{
+  font-size:15px; color:rgba(126,200,164,.85); flex-shrink:0;
+  transition:transform .18s ease;
+}
+.dm-plegar[aria-expanded="true"]{
+  border-bottom-left-radius:0; border-bottom-right-radius:0;
+  border-bottom-color:transparent;
+}
+.dm-plegar[aria-expanded="true"] .dm-plegar-f{ transform:rotate(180deg); }
+
+.dm-plegable{ display:none; }
+.dm-plegable.dm-abierta{
+  display:block; padding:2px 0 0;
+  animation:dmAbrir .2s ease;
+}
+@keyframes dmAbrir{ from{opacity:0; transform:translateY(-5px)} to{opacity:1; transform:none} }
+
+/* ── Métricas clínicas ────────────────────────────────────────────────── */
+.dm-metricas{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(126,200,164,.18);
+  border-radius:17px;
+  padding:6px 17px 16px; color:#F4EFE5;
+}
+.dm-metricas-h{
+  font-size:12px; font-weight:600; letter-spacing:.07em; text-transform:uppercase;
+  color:rgba(244,239,229,.5); padding:12px 0 4px;
+}
+.dm-metricas-h span{ text-transform:none; letter-spacing:0; font-weight:400; }
+/* Las filas de adentro las dibuja row(): se les da color legible acá */
+.dm-metricas > div{ color:#F4EFE5; }
+.dm-metricas [style*="color:var(--label-3)"],
+.dm-metricas [style*="color:var(--label-2)"]{ color:rgba(244,239,229,.6) !important; }
+.dm-metricas [style*="color:var(--label)"],
+.dm-metricas [style*="color:var(--ink)"]{ color:#F4EFE5 !important; }
+.dm-metricas [style*="border-top"],
+.dm-metricas [style*="border-bottom"]{ border-color:rgba(126,200,164,.14) !important; }
+
+/* ── Así impactan tus hábitos ─────────────────────────────────────────── */
+.dm-factores{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(126,200,164,.18);
+  border-radius:17px;
+  padding:14px 17px 16px; margin-bottom:2px; color:#F4EFE5;
+}
+.dm-factores-h{ font-size:15px; font-weight:700; color:#F4EFE5; margin-bottom:3px; }
+.dm-factores-sub{
+  font-size:12.5px; color:rgba(244,239,229,.55); line-height:1.5; margin-bottom:10px;
+}
+.dm-fac-fila{
+  display:flex; gap:12px; align-items:flex-start; padding:12px 0;
+  border-top:1px solid rgba(126,200,164,.14);
+}
+.dm-fac-ico{ font-size:21px; flex-shrink:0; line-height:1.2; }
+.dm-fac-txt{ font-size:14.5px; color:rgba(244,239,229,.92); line-height:1.55; }
+.dm-fac-txt b{ color:#F4EFE5; font-weight:600; }
+.dm-fac-n{ font-size:12px; color:rgba(244,239,229,.5); margin-top:4px; }
+.dm-fac-pie{
+  font-size:12px; color:rgba(244,239,229,.5); line-height:1.5;
+  margin-top:12px; padding-top:12px; border-top:1px solid rgba(126,200,164,.14);
+}
+/* El bloque del ciclo comparte la misma caja */
+#diary-ciclo-slot > div{
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(126,200,164,.18) !important;
+  border-radius:17px !important; color:#F4EFE5 !important;
+}
+#diary-ciclo-slot [style*="color:var(--label-3)"]{ color:rgba(244,239,229,.55) !important; }
+#diary-ciclo-slot [style*="color:var(--label)"]{ color:#F4EFE5 !important; }
+
+/* ── Mis estudios: la barra de pestañas venía clara sobre pantalla verde ─ */
+#screen-docs .tab-bar{
+  background:transparent !important;
+  border-bottom:1px solid rgba(126,200,164,.16) !important;
+}
+#screen-docs .tab{ color:rgba(244,239,229,.55) !important; font-size:14.5px !important; }
+#screen-docs .tab.active{
+  color:#7ec8a4 !important; border-bottom-color:#7ec8a4 !important;
+}
+#screen-docs .topbar [style*="color:var(--label)"]{ color:#F4EFE5 !important; }
+/* La ficha de cada estudio: el "· 17 de may · 1158 KB" era ilegible */
+#screen-docs [style*="color:var(--label-3)"],
+#screen-docs [style*="color:var(--label-2)"]{ color:rgba(244,239,229,.6) !important; }
+#screen-docs [style*="color:var(--label)"],
+#screen-docs [style*="color:var(--ink)"]{ color:#F4EFE5 !important; }
+#screen-docs [style*="background:var(--bg-secondary)"],
+#screen-docs [style*="background:#fff"]:not(button){
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(126,200,164,.16) !important;
+  border-radius:15px !important;
+}
+
+/* Pegada al botón cuando cuelga de una sección plegable */
+.dm-plegable .dm-metricas,
+.dm-plegable .dm-factores{
+  border-top:none !important; border-radius:0 0 17px 17px !important;
 }

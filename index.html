@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod130">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod131">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1292,7 +1292,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod130"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod131"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1311,7 +1311,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod130';
+const APP_VERSION='hoy79-mod131';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5514,25 +5514,26 @@ function renderHabitsImpactHtml(entries, audiencia){
       if(e.id==='tst' && !mejor) return Math.abs(Math.round(e.diff))+' minutos menos de sueño';
       return cuanto;
     };
-    return '<div class="dm-card" style="background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:12px">'+
-      '<div style="font-size:13.5px;font-weight:700;color:var(--label);margin-bottom:3px">Lo que se nota en tus noches</div>'+
-      '<div style="font-size:11.5px;color:var(--label-3);margin-bottom:11px">Comparado con tus propias noches, no con un promedio general.</div>'+
+    return '<div class="dm-factores">'+
+      '<div class="dm-factores-h">Lo que se nota en tus noches</div>'+
+      '<div class="dm-factores-sub">Comparado con tus propias noches, no con un promedio general.</div>'+
       conEfecto.map(function(hb){
         const hay = hb.efectos.some(function(e){ return e.signo!==0; });
         const bueno = hb.veredicto==='positivo';
-        const col = bueno ? '#15803d' : '#b91c1c';
+        // Sobre verde oscuro, #15803d y #b91c1c no llegan a 4,5:1. Estos si.
+        const col = bueno ? '#5ee08a' : '#ff9d9d';
         const texto = hay
           ? 'Las noches <b>'+hb.onTxt+'</b> tenés <b style="color:'+col+'">'+frase(hb)+'</b>.'
-          : 'Entre las noches <b>'+hb.onTxt+'</b> y el resto, <b style="color:#6b7c74">por ahora no se nota diferencia</b>.';
-        return '<div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid #f0eee9">'+
-          '<span style="font-size:19px;flex-shrink:0;line-height:1.2'+(hay?'':';opacity:.5')+'">'+hb.icon+'</span>'+
+          : 'Entre las noches <b>'+hb.onTxt+'</b> y el resto, <b style="color:rgba(244,239,229,.62)">por ahora no se nota diferencia</b>.';
+        return '<div class="dm-fac-fila">'+
+          '<span class="dm-fac-ico"'+(hay?'':' style="opacity:.5"')+'>'+hb.icon+'</span>'+
           '<div style="flex:1;min-width:0">'+
-            '<div style="font-size:13.5px;color:#3f3f46;line-height:1.5">'+texto+'</div>'+
-            '<div style="font-size:10.5px;color:var(--label-3);margin-top:3px">'+hb.nOn+' noches con · '+hb.nOff+' sin'+
+            '<div class="dm-fac-txt">'+texto+'</div>'+
+            '<div class="dm-fac-n">'+hb.nOn+' noches con · '+hb.nOff+' sin'+
               (hb.preliminar?' · todavía son pocas noches':'')+'</div>'+
           '</div></div>';
       }).join('')+
-      '<div style="font-size:10.5px;color:var(--label-3);margin-top:10px;line-height:1.5">Son coincidencias en tus registros, no una causa comprobada. Sirven para probar cambios y ver qué pasa.</div>'+
+      '<div class="dm-fac-pie">Son coincidencias en tus registros, no una causa comprobada. Sirven para probar cambios y ver qué pasa.</div>'+
     '</div>';
   }
   const fmtDif=(ef)=>{
@@ -5809,8 +5810,8 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     reg.sd_midpoint_min<120?'#dc2626':'#991b1b';
 
   // Sección común a ambas audiencias
-  let html = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
-    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:6px">Métricas clínicas <span style="font-weight:400;color:var(--label-3);font-size:11px">· '+m.n+' noches</span></div>'+
+  let html = '<div class="dm-metricas">'+
+    '<div class="dm-metricas-h">Métricas clínicas <span>· '+m.n+' noches</span></div>'+
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
     row('Sueño total promedio', m.fmtDur(m.avgTotal))+
@@ -7377,6 +7378,20 @@ function dmPasoIr(n){
   }catch(_){}
   window._dmPaso=n; dmPintarPaso();
 }
+// Abre y cierra una seccion. El contenido se dibuja igual aunque este
+// cerrado, asi ya esta listo cuando el paciente lo abre.
+function dmPlegar(btn){
+  if(!btn) return;
+  const caja = btn.nextElementSibling;
+  const abierto = btn.getAttribute('aria-expanded')==='true';
+  btn.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+  if(caja) caja.classList.toggle('dm-abierta', !abierto);
+  if(!abierto && window.Chart && Chart.instances){
+    setTimeout(function(){ try{ Object.values(Chart.instances||{}).forEach(function(c){ if(c&&c.resize) c.resize(); }); }catch(_){} }, 210);
+  }
+}
+window.dmPlegar = dmPlegar;
+
 function dmPasoGuardar(){
   // El boton original sigue en el DOM, oculto: se lo dispara para que toda la
   // logica de guardado corra exactamente igual que antes.
@@ -8494,7 +8509,17 @@ function dmCalificarProfesional(email, nombre){
     '<div id="dm-cal-estrellas" style="display:flex;gap:9px;justify-content:center;margin-bottom:18px">'+
       [1,2,3,4,5].map(function(n){ return '<span data-n="'+n+'" style="font-size:36px;cursor:pointer;opacity:.3;line-height:1">⭐</span>'; }).join('')+
     '</div>'+
-    '<textarea id="dm-cal-txt" rows="3" placeholder="Si querés, contá brevemente cómo fue la atención (opcional)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:none;box-shadow:inset 0 0 0 1px rgba(126,200,164,.22);border-radius:12px;padding:13px;font-size:15px;color:#F4EFE5;font-family:var(--font);resize:vertical;margin-bottom:16px"></textarea>'+
+    '<textarea id="dm-cal-txt" rows="3" placeholder="Si querés, contá brevemente cómo fue la atención (opcional)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:none;box-shadow:inset 0 0 0 1px rgba(126,200,164,.22);border-radius:12px;padding:13px;font-size:15px;color:#F4EFE5;font-family:var(--font);resize:vertical;margin-bottom:12px"></textarea>'+
+    // Publicar el comentario es decision de quien lo escribe. Si lo comparte,
+    // se firma con el nombre y la inicial del apellido: se lee como una
+    // persona real sin identificarla.
+    '<label style="display:flex;gap:11px;align-items:flex-start;cursor:pointer;margin-bottom:16px">'+
+      '<input type="checkbox" id="dm-cal-publico" style="margin-top:3px;width:19px;height:19px;flex-shrink:0">'+
+      '<span style="font-size:14px;color:rgba(244,239,229,.72);line-height:1.5">Mostrar mi comentario a otros pacientes que miren su perfil'+
+      (function(){ var n=(S.user&&S.user.name)||'', ap=(S.user&&S.user.lname)||'';
+        return (n||ap) ? '<br><span style="font-size:12.5px;color:rgba(244,239,229,.5)">Va a figurar como <b>'+n+' '+(ap?ap[0].toUpperCase()+'.':'')+'</b></span>' : ''; })()+
+      '</span></label>'+
+    '<div id="dm-cal-error" style="font-size:13.5px;color:#fca5a5;line-height:1.5;margin-bottom:10px"></div>'+
     '<button onclick="dmGuardarCalificacion('+JSON.stringify(email)+')" style="width:100%;background:#7EC8A4;border:none;border-radius:13px;padding:15px;color:#0F2820;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font)">Enviar</button>'+
     '<div onclick="document.getElementById(\'dm-calificar\').remove()" style="text-align:center;font-size:14px;color:rgba(244,239,229,.5);margin-top:12px;cursor:pointer">Cancelar</div>'+
   '</div>';
@@ -8510,17 +8535,34 @@ function dmCalificarProfesional(email, nombre){
   });
 }
 async function dmGuardarCalificacion(email){
-  if(!window._dmCalValor){ toast('Elegí de una a cinco estrellas'); return; }
+  const err=document.getElementById('dm-cal-error');
+  const decir=function(t){ if(err) err.textContent=t; };
+  if(!window._dmCalValor){ decir('Elegí de una a cinco estrellas.'); return; }
   try{
+    decir('');
     const txt=document.getElementById('dm-cal-txt');
-    await db.patch('doctor_patients?doctor_email=eq.'+encodeURIComponent(email)+
-                   '&patient_email=eq.'+encodeURIComponent(S.user.email),
-                   { rating: window._dmCalValor, comment: (txt && txt.value) ? txt.value.trim() : null });
+    const pub=document.getElementById('dm-cal-publico');
+    const datos={ rating: window._dmCalValor,
+                  comment: (txt && txt.value) ? txt.value.trim() : null,
+                  comment_public: !!(pub && pub.checked) };
+    const url='doctor_patients?doctor_email=eq.'+encodeURIComponent(email)+
+              '&patient_email=eq.'+encodeURIComponent(S.user.email);
+    try{
+      await db.patch(url, datos);
+    }catch(e1){
+      // Si la columna comment_public todavia no existe, se reintenta sin ella:
+      // la calificacion importa mas que ese detalle.
+      if(/comment_public|column/i.test(String(e1 && e1.message))){
+        delete datos.comment_public;
+        await db.patch(url, datos);
+      } else { throw e1; }
+    }
     const w=document.getElementById('dm-calificar'); if(w) w.remove();
     toast('¡Gracias! Tu calificación se envió');
   }catch(e){
     console.error('[CALIFICAR]', e);
-    toast('No se pudo enviar: '+((e&&e.message)||''));
+    // El motivo, en pantalla. "No pasa nada" no permite averiguar nada.
+    decir('No se pudo enviar. '+String((e && e.message) || e));
   }
 }
 
@@ -9334,7 +9376,7 @@ function openMiPerfil(){
   var modal=document.createElement('div');
   modal.id='mp-modal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
-  modal.innerHTML='<div data-mp="1" style="background:var(--bg);border-radius:20px 20px 0 0;padding:22px 20px 32px;width:100%;max-width:480px;max-height:88vh;overflow:auto"></div>';
+  modal.innerHTML='<div data-mp="1" style="background:#12302a;border:1px solid rgba(126,200,164,.2);color:#F4EFE5;border-radius:22px 22px 0 0;padding:24px 20px 34px;width:100%;max-width:480px;max-height:88vh;overflow:auto"></div>';
   modal.onclick=function(e){ if(e.target===modal) modal.remove(); };
   document.body.appendChild(modal);
   renderMiPerfilView(modal.querySelector('[data-mp]'));
@@ -9791,12 +9833,18 @@ async function showDiaryTab_(tab){
           <span>📝 Comentario de esa noche</span>
         </div>
 
-        <div class="dm-sec">Así impactan tus hábitos</div>
-        <div id="diary-habits-slot"></div>
-        <div id="diary-ciclo-slot" style="margin-top:12px"></div>
+        <button class="dm-plegar" onclick="dmPlegar(this)" aria-expanded="false">
+          <span>Así impactan tus hábitos</span><span class="dm-plegar-f">▾</span></button>
+        <div class="dm-plegable">
+          <div id="diary-habits-slot"></div>
+          <div id="diary-ciclo-slot" style="margin-top:12px"></div>
+        </div>
 
-        <div class="dm-sec">Tus números</div>
-        <div id="diary-clinical-metrics"></div>
+        <button class="dm-plegar" onclick="dmPlegar(this)" aria-expanded="false">
+          <span>Tus números</span><span class="dm-plegar-f">▾</span></button>
+        <div class="dm-plegable">
+          <div id="diary-clinical-metrics"></div>
+        </div>
         <div style="height:20px"></div>`;
       setTimeout(()=>{
         try{
@@ -12585,28 +12633,71 @@ function drToggleAlta(email){
   try{ renderDoctorAdherence(); }catch(_){}
 }
 // Calificaciones que los pacientes le dejaron al profesional.
-async function renderDoctorRatings(containerId){
+// Las opiniones de un profesional, con dos lectores distintos:
+//  · el propio profesional en su panel: ve todo, con nombre completo, y ve
+//    marcado cual comentario es privado.
+//  · un paciente en el directorio: ve solo los comentarios que su autor
+//    eligio compartir, firmados "Joaquin D.".
+// El paciente NO consulta doctor_patients: esa tabla tiene el mail de los
+// demas pacientes. Lee la vista opiniones_publicas, que ya devuelve la firma.
+async function renderDoctorRatings(containerId, doctorEmail){
   const el=document.getElementById(containerId||'dr-ratings-panel');
   if(!el||!S.user) return;
+  const email = doctorEmail || S.user.email;
+  const esPropio = (email === S.user.email);
   try{
-    const rows=await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&select=patient_email,rating,comment').catch(()=>[]);
-    const rated=(rows||[]).filter(r=>r.rating);
+    let rows;
+    if(esPropio){
+      rows=await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(email)+
+                        '&select=patient_email,rating,comment,comment_public').catch(function(){ return null; });
+      if(rows===null) rows=await db.get('doctor_patients?doctor_email=eq.'+encodeURIComponent(email)+
+                        '&select=patient_email,rating,comment').catch(function(){ return []; });
+    }else{
+      rows=await db.get('opiniones_publicas?doctor_email=eq.'+encodeURIComponent(email)+
+                        '&select=rating,comment,firma').catch(function(){ return []; });
+    }
+    const rated=(rows||[]).filter(function(r){ return r.rating; });
     if(!rated.length){
-      el.innerHTML='<div style="font-size:12.5px;color:rgba(255,255,255,0.62);line-height:1.55">Todavía no recibiste calificaciones.<br>Tus pacientes las dejan desde <b style="color:#7EC8A4">Más → Mi especialista</b> en su app.</div>';
+      el.innerHTML = esPropio
+        ? '<div style="font-size:13.5px;color:rgba(244,239,229,.62);line-height:1.55">Todavía no recibiste calificaciones.<br>Tus pacientes las dejan desde <b style="color:#7EC8A4">Yo → Mi código</b> en su app.</div>'
+        : '<div style="font-size:13.5px;color:rgba(244,239,229,.5);line-height:1.55">Todavía no tiene opiniones publicadas.</div>';
       return;
     }
-    const avg=(rated.reduce((a,b)=>a+(b.rating||0),0)/rated.length);
-    const stars=n=>'★★★★★'.slice(0,Math.round(n))+'☆☆☆☆☆'.slice(0,5-Math.round(n));
-    el.innerHTML='<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-bottom:10px;text-align:center">'+
-        '<div style="font-size:26px;font-weight:700;color:#C8A96E">'+avg.toFixed(1)+'</div>'+
-        '<div style="font-size:16px;color:#C8A96E;letter-spacing:2px">'+stars(avg)+'</div>'+
-        '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:3px">'+rated.length+' calificación(es)</div></div>'+
-      rated.filter(r=>r.comment&&r.comment.trim()).map(r=>
-        '<div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:9px 12px;margin-bottom:6px">'+
-        '<div style="font-size:12px;color:#C8A96E">'+stars(r.rating)+'</div>'+
-        '<div style="font-size:12.5px;color:rgba(255,255,255,0.8);margin-top:3px;line-height:1.45;font-style:italic">"'+String(r.comment).replace(/</g,'&lt;')+'"</div></div>'
-      ).join('');
-  }catch(e){ el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.45)">No se pudieron cargar las calificaciones.</div>'; }
+    const avg=(rated.reduce(function(a,b){ return a+(b.rating||0); },0)/rated.length);
+    const stars=function(n){ n=Math.round(n); return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n); };
+    const esc=function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+    const visibles = rated.filter(function(r){ return r.comment && String(r.comment).trim(); });
+
+    let nombres={};
+    if(esPropio && visibles.length){
+      try{
+        const ems=visibles.map(function(r){ return encodeURIComponent(r.patient_email); }).join(',');
+        const ps=await db.get('patients?email=in.('+ems+')&select=email,name,lname').catch(function(){ return []; });
+        (ps||[]).forEach(function(p){ nombres[p.email]=((p.name||'')+' '+(p.lname||'')).trim(); });
+      }catch(_){}
+    }
+
+    el.innerHTML =
+      '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:16px;padding:15px;margin-bottom:11px;text-align:center">'+
+        '<div style="font-size:31px;font-weight:700;color:#C8A96E;line-height:1.1">'+avg.toFixed(1)+'</div>'+
+        '<div style="font-size:18px;color:#C8A96E;letter-spacing:3px">'+stars(avg)+'</div>'+
+        '<div style="font-size:12.5px;color:rgba(244,239,229,.5);margin-top:4px">'+rated.length+(rated.length===1?' calificación':' calificaciones')+'</div>'+
+      '</div>'+
+      visibles.map(function(r){
+        const quien = (esPropio ? nombres[r.patient_email] : r.firma) || 'Un paciente';
+        return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.14);border-radius:14px;padding:13px 15px;margin-bottom:8px">'+
+          '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">'+
+            '<span style="font-size:14px;color:#C8A96E;letter-spacing:1px">'+stars(r.rating)+'</span>'+
+            '<span style="font-size:12.5px;color:rgba(244,239,229,.5)">'+esc(quien)+'</span></div>'+
+          '<div style="font-size:14px;color:rgba(244,239,229,.85);margin-top:6px;line-height:1.55">'+esc(r.comment)+'</div>'+
+          (esPropio && r.comment_public!==true
+            ? '<div style="font-size:11.5px;color:rgba(244,239,229,.4);margin-top:6px">Privado · solo lo ves vos</div>' : '')+
+        '</div>';
+      }).join('');
+  }catch(e){
+    console.error('[OPINIONES]', e);
+    el.innerHTML='<div style="font-size:13px;color:#fca5a5">No se pudieron cargar las opiniones. '+String((e&&e.message)||e)+'</div>';
+  }
 }
 async function renderDoctorAdherence(){
   const el=document.getElementById('dr-adherence-panel');
@@ -17844,7 +17935,8 @@ function dmFichaProfesional(email){
         'style="display:block;background:#7EC8A4;color:#0F2820;border-radius:14px;padding:16px;text-align:center;'+
         'font-size:16.5px;font-weight:700;text-decoration:none">Escribirle por WhatsApp</a>'
       : '')+
-    '<div id="dm-ficha-op" style="margin-top:18px"></div>'+
+    '<div style="font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(244,239,229,.5);font-weight:700;margin:20px 0 9px">Lo que dicen sus pacientes</div>'+
+    '<div id="dm-ficha-op"></div>'+
     '<div style="border-left:3px solid #C8A96E;padding:11px 0 11px 14px;margin-top:20px;font-size:13.5px;line-height:1.55;color:rgba(244,239,229,.62)">'+
       'El valor y la disponibilidad los carga cada profesional. Dormetria no cobra ni intermedia el turno.</div>'+
     '</div>';
