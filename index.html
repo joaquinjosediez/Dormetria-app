@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod118">
+<link rel="stylesheet" href="css/styles.css?v=hoy77-mod119">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1299,7 +1299,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod118"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod119"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1318,7 +1318,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod118';
+const APP_VERSION='hoy77-mod119';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -9754,7 +9754,7 @@ async function showDiaryTab_(tab){
         <div id="pat-weekly-prog" style="margin-top:12px;display:none"></div>
         <div class="sec-title" style="margin-top:12px;color:#fff">Pilares del sueño</div>
         <div id="diary-pillar-bars" style="margin-bottom:6px"></div>
-        <div style="background:#fff;border-radius:14px;padding:6px 10px 10px;margin-top:6px"><div class="chart-wrap" style="height:180px;padding:6px 4px"><canvas id="diary-chart-pillars"></canvas></div><div id="pat-pillar-legend"></div></div>
+        <div style="display:none"><div class="chart-wrap"><canvas id="diary-chart-pillars"></canvas></div><div id="pat-pillar-legend"></div></div>
         <div style="height:8px"></div>
         <div id="diary-clinical-metrics" style="margin:8px 0"></div>
         <div class="sec-title" style="margin-top:12px;color:#fff">Actograma — horarios de sueño</div>
@@ -10549,7 +10549,7 @@ function showDiaryNew(){
   document.getElementById('diary-form-content').innerHTML=`
   <div id="dm-paso-cab"></div>
 
-  <div class="dm-paso" data-paso="1" style="display:"><div class="dm-p-rot">Paso 1 de 5 · Al acostarte</div>
+  <div class="dm-paso" data-paso="1" style="display:">
     <div class="dm-campo">
       <label class="dm-lbl">¿De qué noche estás hablando?</label>
       <div class="dm-ayuda">Poné la fecha del día en que te <b>despertaste</b>.</div>
@@ -10601,7 +10601,7 @@ function showDiaryNew(){
     </div>
   </div>
 
-  <div class="dm-paso" data-paso="2" style="display:none"><div class="dm-p-rot">Paso 2 de 5 · Durante la noche</div>
+  <div class="dm-paso" data-paso="2" style="display:none">
     <div class="dm-campo">
       <label class="dm-lbl">¿Te despertaste en el medio de la noche?</label>
       <div class="dm-ayuda">Cortes después de haberte dormido, antes de levantarte.</div>
@@ -10626,7 +10626,7 @@ function showDiaryNew(){
     </div>
   </div>
 
-  <div class="dm-paso" data-paso="3" style="display:none"><div class="dm-p-rot">Paso 3 de 5 · Cómo dormiste</div>
+  <div class="dm-paso" data-paso="3" style="display:none">
     <div class="dm-campo">
       <label class="dm-lbl">¿Qué tan reparador sentís que fue tu sueño?</label>
       <div class="dm-ayuda">No cuántas horas dormiste, sino cómo te dejó.</div>
@@ -10688,7 +10688,7 @@ function showDiaryNew(){
     </div>
   </div>
 
-  <div class="dm-paso" data-paso="4" style="display:none"><div class="dm-p-rot">Paso 4 de 5 · Tu día de ayer</div>
+  <div class="dm-paso" data-paso="4" style="display:none">
     <div class="dm-campo">
       <label class="dm-lbl">Actividad física</label>
       <div class="dm-ayuda">Cuánto y a qué hora: el horario cambia el efecto sobre el sueño.</div>
@@ -10718,19 +10718,19 @@ function showDiaryNew(){
     
     </div>
 
-    <div class="dm-campo">
+    ${((S.user&&S.user.sex)==='F') ? `<div class="dm-campo">
       <label class="dm-lbl">Tu ciclo</label>
       <div class="dm-ayuda">Los días de menstruación y los cinco previos se analizan por separado.</div>
-      <div id="period-section" style="display:none;margin-bottom:14px">
+      <div id="period-section" style="margin-bottom:4px">
       <button type="button" id="period-btn" onclick="togglePeriod()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(225,29,72,0.12);border:1.5px solid rgba(225,29,72,0.45);border-radius:999px;padding:10px 16px;cursor:pointer;font-family:var(--font);width:100%;justify-content:flex-start"><span style="font-size:16px;line-height:1">🩸</span><span id="period-btn-label" style="font-size:13.5px;color:#F4EFE5;font-weight:600">Marcar período menstrual</span><span id="period-check" style="margin-left:auto;font-size:15px;line-height:1">⬜</span></button>
     </div>
-    </div>
+    </div>` : ``}
 
     <input type="hidden" id="d-alc" value="0">
     <div id="dm-vars-slot"></div>
   </div>
 
-  <div class="dm-paso" data-paso="5" style="display:none"><div class="dm-p-rot">Paso 5 de 5 · Algo más</div>
+  <div class="dm-paso" data-paso="5" style="display:none">
     <div class="dm-campo">
       <label class="dm-lbl">¿Querés agregar algo?</label>
       <div class="dm-ayuda">Lo que escribas acá lo ve tu profesional junto a esa noche. Un síntoma, una preocupación, algo que pasó.</div>
@@ -11190,8 +11190,9 @@ async function saveDiary(){
     showDiaryHome();
     setTimeout(function(){
       try{
-        const t=document.querySelector('#screen-diary .tab[onclick*="graphs"], [onclick*="showDiaryTab_(\'graphs\')"]');
-        if(t) t.click(); else if(typeof showDiaryTab_==='function') showDiaryTab_('graphs');
+        // La pestaña se llama 'graficos'. Con 'graphs' no coincidia con ninguna
+        // rama y la vista quedaba en "Cargando…" para siempre.
+        if(typeof showDiaryTab_==='function') showDiaryTab_('graficos');
       }catch(_){}
     }, 320);
   }catch(e){
