@@ -3333,3 +3333,53 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 #screen-diary-home [style*="border-bottom:0.5px solid var(--sep)"]{
   color:rgba(244,239,229,.72) !important;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   TEXTO OSCURO SOBRE VERDE · el barrido anterior solo cubria --label*.
+   Las pantallas del paciente tambien usan --ink, --g600/700/800 y colores
+   fijos pensados para fondo claro. Son los que quedaban invisibles.
+   ══════════════════════════════════════════════════════════════════════ */
+#screen-home [style*="color:var(--ink)"],  #screen-diary-home [style*="color:var(--ink)"],
+#screen-mas  [style*="color:var(--ink)"],  #screen-scales [style*="color:var(--ink)"],
+#screen-docs [style*="color:var(--ink)"],  #screen-profile [style*="color:var(--ink)"],
+#screen-edu  [style*="color:var(--ink)"]{ color:#F4EFE5 !important; }
+
+#screen-home [style*="color:var(--ink2)"], #screen-diary-home [style*="color:var(--ink2)"],
+#screen-mas  [style*="color:var(--ink2)"], #screen-scales [style*="color:var(--ink2)"],
+#screen-docs [style*="color:var(--ink2)"], #screen-profile [style*="color:var(--ink2)"]{
+  color:rgba(244,239,229,.66) !important; }
+
+#screen-home [style*="color:var(--ink3)"], #screen-diary-home [style*="color:var(--ink3)"],
+#screen-mas  [style*="color:var(--ink3)"], #screen-scales [style*="color:var(--ink3)"],
+#screen-docs [style*="color:var(--ink3)"], #screen-profile [style*="color:var(--ink3)"]{
+  color:rgba(244,239,229,.48) !important; }
+
+#screen-diary-home [style*="color:var(--g800)"], #screen-diary-home [style*="color:var(--g700)"],
+#screen-docs [style*="color:var(--g800)"], #screen-home [style*="color:var(--g800)"]{
+  color:#F4EFE5 !important; }
+#screen-diary-home [style*="color:var(--g600)"], #screen-docs [style*="color:var(--g600)"]{
+  color:rgba(244,239,229,.6) !important; }
+
+/* El panel del score venia con tarjeta blanca. */
+#screen-diary-home #score-panel-wrap > div,
+#screen-diary-home #score-panel-wrap [style*="background:#f"],
+#screen-diary-home #score-panel-wrap [style*="background:#eef"]{
+  background:rgba(255,255,255,0.05) !important;
+  border:1px solid rgba(126,200,164,0.18) !important;
+  color:#F4EFE5 !important;
+}
+#screen-diary-home #score-panel-wrap [style*="color:#1a4a3a"],
+#screen-diary-home #score-panel-wrap [style*="color:#0F2820"]{ color:#7EC8A4 !important; }
+
+/* Los subtitulos junto a un titulo, que quedaban del mismo tono que el fondo */
+#screen-diary-home [style*="color:var(--sep)"],
+#screen-diary-home [style*="color:#6b7c74"],
+#screen-docs [style*="color:#6b7c74"]{ color:rgba(244,239,229,.5) !important; }
+
+/* Estudios: la miniatura y los botones claros */
+#screen-docs [style*="background:#fff"]:not(button){ background:rgba(255,255,255,.08) !important; }
+#screen-docs button[style*="background:#fff"],
+#screen-docs [style*="background:#eef8f5"]{
+  background:rgba(126,200,164,.16) !important; color:#7EC8A4 !important; border:none !important;
+}
