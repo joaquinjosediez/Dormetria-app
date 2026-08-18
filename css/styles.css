@@ -3642,3 +3642,14 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 .dm-plegable .dm-factores{
   border-top:none !important; border-radius:0 0 17px 17px !important;
 }
+
+
+/* ══ mod132 · El selector de período entra en una sola fila ══════════════
+   Con "Ver un mes" eran cuatro botones y se partía en dos. Ahora la fila
+   se desliza en horizontal en vez de romperse. */
+.dm-periodos{
+  flex-wrap:nowrap !important; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  padding-bottom:2px; scrollbar-width:none;
+}
+.dm-periodos::-webkit-scrollbar{ display:none; }
+.dm-per, #score-period-mes{ padding:10px 15px !important; font-size:14px !important; }

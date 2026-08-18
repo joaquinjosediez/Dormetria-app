@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod131">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod133">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1214,7 +1214,7 @@
 
     <!-- TCC-I para paciente (oculto por default, visible solo si tiene protocolo activo) -->
     <div id="patient-tcci-card" onclick="openPatientCbtiView()" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:16px;cursor:pointer;position:relative;margin-bottom:4px">
-      <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:8px;letter-spacing:0.06em">TU TRATAMIENTO</div>
+      <div style="display:inline-block;background:#C8A96E;color:#0F2820;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:8px;letter-spacing:0.06em;margin-bottom:10px;white-space:nowrap">TU TRATAMIENTO</div>
       <div style="display:flex;align-items:center;gap:14px">
         <div style="font-size:32px;line-height:1">🌿</div>
         <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Mi Protocolo TCC-I</div>
@@ -1292,7 +1292,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod131"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod133"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1311,7 +1311,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod131';
+const APP_VERSION='hoy79-mod133';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2599,6 +2599,24 @@ function computePillarScore(e, ageYears){
   return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
 }
 function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
+
+// Traduce cualquier color clinico pensado para fondo blanco a su equivalente
+// legible sobre el verde oscuro de la app (todos por encima de 4,5:1).
+var DM_CLAROS = {
+  '#14532d':'#6ee7a0','#1a4a3a':'#7ec8a4','#166534':'#6ee7a0','#15803d':'#5ee08a',
+  '#16a34a':'#5ee08a','#2d9e6b':'#5ee08a','#22c55e':'#5ee08a','#059669':'#5ee08a',
+  '#d97706':'#fbbf24','#ea580c':'#fdba74','#b45309':'#fbbf24','#f59e0b':'#fbbf24',
+  '#dc2626':'#ff9d9d','#b91c1c':'#ff9d9d','#991b1b':'#ff7b7b','#ef4444':'#ff9d9d',
+  '#185fa5':'#7fb8ff','#1d4ed8':'#93c5fd','#2563eb':'#93c5fd','#0369a1':'#7fb8ff',
+  '#6b7280':'rgba(244,239,229,.55)','#888':'rgba(244,239,229,.55)',
+  '#3f3f46':'rgba(244,239,229,.85)','#4b5563':'rgba(244,239,229,.7)'
+};
+function dmClaro(c){
+  if(!c) return c;
+  var k=String(c).trim().toLowerCase();
+  return DM_CLAROS[k] || c;
+}
+window.dmClaro = dmClaro;
 function pillarBar(v,color){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+color+';width:'+v+'%;transition:width .6s ease"></div></div>';}
 
 // ───────────────────────────────────────────────────────────────────────
@@ -4686,11 +4704,13 @@ function updatePillarBars(entries){
   let _ageOwn=null; try{ const _d=S.user&&S.user.dob?new Date(S.user.dob):null; if(_d) _ageOwn=Math.floor((Date.now()-_d)/31557600000); }catch(_){}
   const _pedOwn=isPediatric(_ageOwn);
   const _optOwn=optimalSleepHours(_ageOwn);
-  const cardHtml=(label,valHtml,color,status,sub,pillarC)=>'<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+pillarC+'">'+
-    '<div style="font-size:10px;font-weight:700;color:'+pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+label+'</div>'+
-    '<div style="font-size:22px;font-weight:700;color:'+color+';margin:2px 0">'+valHtml+'</div>'+
-    '<div style="font-size:10px;font-weight:600;color:'+color+';margin-bottom:4px">'+status+'</div>'+
-    '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+sub+'</div></div>';
+  const cardHtml=(label,valHtml,color,status,sub,pillarC)=>{
+    const cP=dmClaro((pillarC||'').trim()), cV=dmClaro(color);
+    return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-top:3px solid '+cP+';border-radius:15px;padding:13px 14px">'+
+    '<div style="font-size:11px;font-weight:700;color:'+cP+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+label+'</div>'+
+    '<div style="font-size:25px;font-weight:700;color:'+cV+';margin:3px 0;line-height:1.1">'+valHtml+'</div>'+
+    '<div style="font-size:11.5px;font-weight:600;color:'+cV+';margin-bottom:5px">'+status+'</div>'+
+    '<div style="font-size:11px;color:rgba(244,239,229,.5);margin-top:6px;line-height:1.35">'+sub+'</div></div>'; };
   let cardsOwn;
   if(_pedOwn){
     const _sjlOwn=socialJetLagMin(sorted);
@@ -4699,9 +4719,9 @@ function updatePillarBars(entries){
     const cQ=pillarColor(avgQtyP);
     const stQ=avgQtyP>=90?'Muy bien':avgQtyP>=80?'Bien':avgQtyP>=70?'Mejorable':avgQtyP>=60?'Regular':'Requiere atención';
     cardsOwn=
-      cardHtml('Cantidad',avgQtyP+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span>',cQ,stQ,_optOwn.lo+'–'+_optOwn.hi+'h para tu edad',' #2d9e6b'.trim())+
-      cardHtml('Fragmentación',(_awkOwn>0?_awkOwn.toFixed(1):'0')+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> desp/noche</span>','#44403c','Informativo','En chicos los despertares se sobreestiman; se muestra como dato, no como nota.','#0e7490')+
-      cardHtml('Regularidad',(_sjlOwn==null?'—':_sjlOwn+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> min</span>'),_st.c,_st.t,'Diferencia de horario entre semana y fin de semana.','#e67e22');
+      cardHtml('Cantidad',avgQtyP+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span>',cQ,stQ,_optOwn.lo+'–'+_optOwn.hi+'h para tu edad',' #2d9e6b'.trim())+
+      cardHtml('Fragmentación',(_awkOwn>0?_awkOwn.toFixed(1):'0')+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.5)"> desp/noche</span>','#44403c','Informativo','En chicos los despertares se sobreestiman; se muestra como dato, no como nota.','#0e7490')+
+      cardHtml('Regularidad',(_sjlOwn==null?'—':_sjlOwn+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.5)"> min</span>'),_st.c,_st.t,'Diferencia de horario entre semana y fin de semana.','#e67e22');
   } else {
     cardsOwn=[{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:_optOwn.lo+'–'+_optOwn.hi+'h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
@@ -4709,7 +4729,7 @@ function updatePillarBars(entries){
     ].map(p=>{const c=pillarColor(p.val);const status=(p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
       return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.color+'">'+
         '<div style="font-size:10px;font-weight:700;color:'+p.color+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.label+'</div>'+
-        '<div style="font-size:22px;font-weight:700;color:'+c+';margin:2px 0">'+p.val+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div>'+
+        '<div style="font-size:22px;font-weight:700;color:'+c+';margin:2px 0">'+p.val+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span></div>'+
         '<div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+status+'</div>'+pillarBar(p.val,c)+
         '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+p.sub+'</div></div>';
     }).join('');
@@ -5799,7 +5819,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   const awakSub = m.nightsWithAwak>0 ? m.nightsWithAwak+' noches con despertares' : 'Sin despertares registrados';
   const row=(label,val,color,sub)=>'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:0.5px solid var(--sep)">'+
     '<span style="font-size:13.5px;color:var(--label-2)">'+label+(sub?'<br><span style="font-size:11px;color:var(--label-3)">'+sub+'</span>':'')+'</span>'+
-    '<span style="font-size:14px;font-weight:600;color:'+(color||'var(--label)')+';text-align:right;white-space:nowrap">'+val+'</span></div>';
+    '<span style="font-size:14px;font-weight:600;color:'+(color?dmClaro(color):'#F4EFE5')+';text-align:right;white-space:nowrap">'+val+'</span></div>';
 
   // Color del SD midpoint según los mismos cortes del score
   const sdMidColor = reg.sd_midpoint_min==null?'var(--label-2)':
@@ -9336,7 +9356,7 @@ function toggleProfileEdit(){
 }
 
 /* ── MI PERFIL: ver datos cargados + editar (autónomo) ── */
-function _mpRow(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.08)"><span style="font-size:13px;color:#6b7280">'+l+'</span><span style="font-size:14px;color:#10231c;font-weight:500;text-align:right">'+(v||'—')+'</span></div>';}
+function _mpRow(l,v){return '<div style="display:flex;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid rgba(126,200,164,.14)"><span style="font-size:14.5px;color:rgba(244,239,229,.62)">'+l+'</span><span style="font-size:15px;color:#F4EFE5;font-weight:600;text-align:right">'+(v||'—')+'</span></div>';}
 // Edad legible: por debajo de 2 años un "0 años" no dice nada. En pediatría
 // del sueño los meses son la unidad relevante (un bebé de 3 meses y uno de
 // 20 no tienen nada que ver).
@@ -9384,7 +9404,7 @@ function openMiPerfil(){
 
 function renderMiPerfilView(card){
   if(!card)return; var u=S.user||{};
-  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#10231c">Mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer">✕</button></div>'
+  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:20px;font-weight:700;color:#F4EFE5">Mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:rgba(244,239,229,.55);font-size:24px;cursor:pointer">✕</button></div>'
    +_mpRow('Nombre',((u.name||'')+' '+(u.lname||'')).trim())
    +_mpRow('Fecha de nacimiento',u.dob)
    +_mpRow('Edad',_mpAge(u.dob))
@@ -9408,9 +9428,9 @@ function renderMiPerfilView(card){
 
 function renderMiPerfilEdit(card){
   if(!card)return; var u=S.user||{};
-  var inp=function(id,lbl,val,type){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6b7280;margin-bottom:5px">'+lbl+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+_mpEsc(val)+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px"></div>';};
-  var sel=function(id,lbl,val,opts){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6b7280;margin-bottom:5px">'+lbl+'</label><select id="'+id+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>';};
-  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#10231c">Editar mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer">✕</button></div>'
+  var inp=function(id,lbl,val,type){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(244,239,229,.62);margin-bottom:5px">'+lbl+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+_mpEsc(val)+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px"></div>';};
+  var sel=function(id,lbl,val,opts){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(244,239,229,.62);margin-bottom:5px">'+lbl+'</label><select id="'+id+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>';};
+  card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#F4EFE5">Editar mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:rgba(244,239,229,.5);font-size:22px;cursor:pointer">✕</button></div>'
    +'<div style="margin-bottom:18px;text-align:center">'
      +'<div id="prof-photo-preview" style="width:96px;height:96px;border-radius:50%;margin:0 auto 8px;background:#1a4a3a;border:3px solid #C8A96E;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:32px;color:#fff;font-weight:500">'
        +(u.photo_url?'<img src="'+u.photo_url+'" style="width:100%;height:100%;object-fit:cover">':((u.name||'?')[0]||'?').toUpperCase())
@@ -9418,14 +9438,14 @@ function renderMiPerfilEdit(card){
      +'<input type="hidden" id="prof-photo-data" value="'+_mpEsc(u.photo_url||'')+'">'
      +'<label for="mp-photo-upload" style="display:inline-block;padding:7px 16px;background:#2D6B55;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500">📷 '+(u.photo_url?'Cambiar foto':'Agregar foto')+'</label>'
      +'<input type="file" id="mp-photo-upload" accept="image/*" onchange="previewPhoto(this)" style="display:none">'
-     +'<div style="font-size:11px;color:#9ca3af;margin-top:6px">Tu profesional también la verá</div>'
+     +'<div style="font-size:11px;color:rgba(244,239,229,.5);margin-top:6px">Tu profesional también la verá</div>'
    +'</div>'
    +inp('mp-name','Nombre',u.name)
    +inp('mp-lname','Apellido',u.lname)
    +inp('mp-dob','Fecha de nacimiento',u.dob,'date')
    +sel('mp-sex','Sexo biológico',u.sex,[['','—'],['M','Masculino'],['F','Femenino']])
    +sel('mp-country','País',u.country,DM_NACIONALIDADES.map(function(x){return [x,x];}))
-   +'<div style="margin-bottom:12px"><label style="font-size:12px;color:#6b7280;display:block;margin-bottom:5px">Ocupación</label>'
+   +'<div style="margin-bottom:12px"><label style="font-size:12px;color:rgba(244,239,229,.62);display:block;margin-bottom:5px">Ocupación</label>'
    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px">'
    + DM_OCUPACIONES.map(function(o){
        var v=(Array.isArray(u.activity_type)?u.activity_type.join(', '):(u.activity_type||''));
@@ -9443,19 +9463,19 @@ function renderMiPerfilEdit(card){
      var m=pRaw.match(/^(\+\d{1,4})\s*(.*)$/);
      if(m){ ccDetected=m[1]; numDetected=m[2]; }
      var ccOpts=[['+54','🇦🇷 +54 Argentina'],['+598','🇺🇾 +598 Uruguay'],['+595','🇵🇾 +595 Paraguay'],['+56','🇨🇱 +56 Chile'],['+591','🇧🇴 +591 Bolivia'],['+51','🇵🇪 +51 Perú'],['+593','🇪🇨 +593 Ecuador'],['+57','🇨🇴 +57 Colombia'],['+58','🇻🇪 +58 Venezuela'],['+55','🇧🇷 +55 Brasil'],['+507','🇵🇦 +507 Panamá'],['+506','🇨🇷 +506 Costa Rica'],['+52','🇲🇽 +52 México'],['+34','🇪🇸 +34 España'],['+1','🇺🇸 +1 EE.UU./Canadá'],['+other','Otro país']];
-     return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:#6b7280;margin-bottom:5px">📱 WhatsApp / Teléfono</label>'+
+     return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(244,239,229,.62);margin-bottom:5px">📱 WhatsApp / Teléfono</label>'+
        '<div style="display:flex;gap:6px">'+
          '<select id="mp-cc" style="flex:0 0 150px;padding:11px 6px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:13px">'+
            ccOpts.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===ccDetected?' selected':'')+'>'+o[1]+'</option>';}).join('')+
          '</select>'+
          '<input id="mp-phone-number" type="tel" placeholder="11 1234 5678" value="'+_mpEsc(numDetected)+'" style="flex:1;min-width:0;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px;box-sizing:border-box">'+
        '</div>'+
-       '<div style="font-size:11px;color:#9ca3af;margin-top:4px;line-height:1.4">Sin código de país. Si usás WhatsApp con este número, tu profesional podrá contactarte por ahí.</div>'+
+       '<div style="font-size:11px;color:rgba(244,239,229,.5);margin-top:4px;line-height:1.4">Sin código de país. Si usás WhatsApp con este número, tu profesional podrá contactarte por ahí.</div>'+
      '</div>';
    })()
    +inp('mp-paths','Patologías (separadas por coma)',Array.isArray(u.pathologies)?u.pathologies.join(', '):(u.pathologies||''))
    +inp('mp-meds','Medicación',u.medications)
-   +'<div style="margin-bottom:12px"><label style="font-size:12px;color:#6b7280;display:block;margin-bottom:5px">Antecedentes clínicos</label>'
+   +'<div style="margin-bottom:12px"><label style="font-size:12px;color:rgba(244,239,229,.62);display:block;margin-bottom:5px">Antecedentes clínicos</label>'
    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px">'
    + DM_ANTECEDENTES.map(function(a){
        var puesto=(u.medical_history||'').toLowerCase().indexOf(a.toLowerCase())>=0;
@@ -10288,7 +10308,7 @@ async function showDiaryTab_(tab){
               const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
               return `<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid ${pillarC}">
                 <div style="font-size:10px;font-weight:700;color:${pillarC};text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${p.label}</div>
-                <div style="font-size:22px;font-weight:700;color:${c};margin:2px 0">${p.val}<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span></div>
+                <div style="font-size:22px;font-weight:700;color:${c};margin:2px 0">${p.val}<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span></div>
                 <div style="font-size:10px;font-weight:600;color:${c};margin-bottom:4px">${status}</div>
                 ${pillarBar(p.val,c)}
               </div>`;
@@ -14327,14 +14347,14 @@ async function showDrPTab_(tab){
             const cQ=pColor(avgQtyP);
             const stQ=avgQtyP>=90?'Muy bien':avgQtyP>=80?'Bien':avgQtyP>=70?'Mejorable':avgQtyP>=60?'Regular':'Requiere atención';
             cards =
-              pillarCard('Cantidad', avgQtyP+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span>', cQ, stQ, _optH.lo+'–'+_optH.hi+'h recomendado'+(_ageForPillar!=null?' (para '+_ageForPillar+' años)':'')+' · Paruthi/AASM 2016', '#1a4a3a')+
-              pillarCard('Fragmentación', (_awakAvg>0?_awakAvg.toFixed(1):'0')+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> desp/noche</span>', '#44403c', 'Descriptivo', 'En niños la fragmentación por diario/actigrafía se sobreestima y no tiene cortes clínicos validados. Se informa como observación, no puntúa.', '#0e7490')+
-              pillarCard('Regularidad', (_sjlP==null?'—':_sjlP+'<span style="font-size:12px;font-weight:400;color:var(--label-3)"> min</span>'), _sjlStatus.c, _sjlStatus.t, 'Jet lag social (finde vs. semana). Es la métrica de regularidad con respaldo pediátrico (Sun 2019). Este pilar SÍ pesa en el puntaje.', '#e67e22');
+              pillarCard('Cantidad', avgQtyP+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span>', cQ, stQ, _optH.lo+'–'+_optH.hi+'h recomendado'+(_ageForPillar!=null?' (para '+_ageForPillar+' años)':'')+' · Paruthi/AASM 2016', '#1a4a3a')+
+              pillarCard('Fragmentación', (_awakAvg>0?_awakAvg.toFixed(1):'0')+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.5)"> desp/noche</span>', '#44403c', 'Descriptivo', 'En niños la fragmentación por diario/actigrafía se sobreestima y no tiene cortes clínicos validados. Se informa como observación, no puntúa.', '#0e7490')+
+              pillarCard('Regularidad', (_sjlP==null?'—':_sjlP+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.5)"> min</span>'), _sjlStatus.c, _sjlStatus.t, 'Jet lag social (finde vs. semana). Es la métrica de regularidad con respaldo pediátrico (Sun 2019). Este pilar SÍ pesa en el puntaje.', '#e67e22');
           } else {
             cards = [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22'}].map(p=>{
               const c=pColor(p.v);const st=(p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');
               const sub=({Cantidad:_optH.lo+'–'+_optH.hi+'h recomendado',Fragmentación:(_awakAvg>0?_awakAvg.toFixed(1)+' despertares/noche':'Sin despertares registrados'),Regularidad:(regResult.sd_midpoint_min!==null?('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')):'Variabilidad del horario')})[p.l]||'';
-              return pillarCard(p.l, p.v+'<span style="font-size:13px;font-weight:400;color:var(--label-3)">%</span>', c, st, sub, p.pillarC);
+              return pillarCard(p.l, p.v+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span>', c, st, sub, p.pillarC);
             }).join('');
           }
           pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+cards+'</div>'+
@@ -15532,19 +15552,19 @@ async function loadDocs(cat){
       const icon = catLabels[d.category] || '📄 Otro';
       const date = new Date(d.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
       const size = d.file_data ? Math.round(d.file_data.length * 0.75 / 1024) + ' KB' : '';
-      return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">' +
-        '<div style="width:44px;height:44px;border-radius:10px;background:#eef8f5;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' +
+      return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-radius:15px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px">' +
+        '<div style="width:44px;height:44px;border-radius:11px;background:rgba(126,200,164,.14);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' +
         (d.file_type && d.file_type.includes('pdf') ? '📋' : d.file_type && d.file_type.includes('image') ? '🖼️' : '📄') +
         '</div>' +
         '<div style="flex:1;min-width:0">' +
-        '<div style="font-size:15px;font-weight:500;color:var(--label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+d.title+'</div>' +
-        '<div style="font-size:12px;color:var(--label-2);margin-top:2px">'+icon+' · '+date+(size?' · '+size:'')+'</div>' +
-        (d.description ? '<div style="font-size:12px;color:var(--label-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+d.description+'</div>' : '') +
+        '<div style="font-size:16px;font-weight:600;color:#F4EFE5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+d.title+'</div>' +
+        '<div style="font-size:13px;color:rgba(244,239,229,.6);margin-top:3px">'+icon+' · '+date+(size?' · '+size:'')+'</div>' +
+        (d.description ? '<div style="font-size:13px;color:rgba(244,239,229,.6);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+d.description+'</div>' : '') +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-shrink:0">' +
-        (d.file_data ? '<button data-did="'+d.id+'" onclick="viewDoc(this.dataset.did)" style="border:none;background:#eef8f5;color:#1a4a3a;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:500">Ver</button>' : '') +
+        (d.file_data ? '<button data-did="'+d.id+'" onclick="viewDoc(this.dataset.did)" style="border:1px solid rgba(126,200,164,.3);background:rgba(126,200,164,.14);color:#7EC8A4;border-radius:10px;padding:8px 13px;font-size:13px;cursor:pointer;font-weight:600">Ver</button>' : '') +
         (d.file_data && (d.file_type||'').includes('pdf') ? '<button data-did="'+d.id+'" data-title="'+d.title+'" data-cat="'+d.category+'" onclick="analyzeDocWithAI(this.dataset.did,this.dataset.title,this.dataset.cat)" style="border:none;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600">🤖 IA</button>' : '') +
-        '<button data-did="'+d.id+'" onclick="deleteDoc(this.dataset.did)" style="border:none;background:none;color:var(--label-3);cursor:pointer;font-size:18px;padding:4px">🗑</button>'
+        '<button data-did="'+d.id+'" onclick="deleteDoc(this.dataset.did)" style="border:none;background:none;color:rgba(244,239,229,.5);cursor:pointer;font-size:18px;padding:4px">🗑</button>'
       + '</div></div>';
     }).join('');
   }catch(e){
@@ -16213,7 +16233,7 @@ function renderWeeklyProgressionHtml(allDiary){
     if(blocks.length < 2) return '';
     blocks.reverse();
     const barsHtml = blocks.map((b,i)=>{
-      const h = Math.max(8, Math.round((b.score||0) / 100 * 60));
+      const h = Math.max(10, Math.round((b.score||0) / 100 * 84));
       const prev = i>0 ? blocks[i-1] : null;
       const delta = prev ? (b.score - prev.score) : null;
       const tooltipText = b.start.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) + '–' +
@@ -16222,16 +16242,18 @@ function renderWeeklyProgressionHtml(allDiary){
         (delta!==null ? ' · ' + (delta>=0?'+':'') + delta + ' vs anterior' : '');
       const isLast = i === blocks.length - 1;
       const weekLbl = isLast ? 'Esta sem.' : ('−' + (blocks.length - 1 - i) + ' sem.');
-      return '<div title="'+tooltipText.replace(/"/g,'&quot;')+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:28px;cursor:help">'+
-        '<div style="font-size:10px;font-weight:600;color:'+b.color+'">'+b.score+'</div>'+
-        '<div style="width:16px;height:'+h+'px;background:'+b.color+';border-radius:3px 3px 0 0;border:'+(isLast?'2px solid #C8A96E':'none')+'"></div>'+
-        '<div style="font-size:9px;color:#666;white-space:nowrap">'+weekLbl+'</div>'+
+      const cB = (typeof dmClaro==='function') ? dmClaro(b.color) : b.color;
+      return '<div title="'+tooltipText.replace(/"/g,'&quot;')+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;cursor:help">'+
+        '<div style="font-size:12.5px;font-weight:700;color:'+cB+'">'+b.score+'</div>'+
+        '<div style="width:100%;max-width:44px;height:'+h+'px;background:'+cB+';border-radius:7px 7px 0 0;'+
+          (isLast?'box-shadow:inset 0 0 0 2px #C8A96E;':'')+'"></div>'+
+        '<div style="font-size:11px;color:rgba(244,239,229,.5);white-space:nowrap">'+weekLbl+'</div>'+
       '</div>';
     }).join('');
     const bestBlock = blocks.reduce((a,b)=>(!a||b.score>a.score)?b:a, null);
     const worstBlock = blocks.reduce((a,b)=>(!a||b.score<a.score)?b:a, null);
-    return '<div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:10px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
-      '<div style="display:flex;align-items:flex-end;gap:4px;height:78px;margin-bottom:8px">'+barsHtml+'</div>'+
+    return '<div style="font-size:12px;color:rgba(244,239,229,.5);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:12px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
+      '<div style="display:flex;align-items:flex-end;gap:8px;height:108px;margin-bottom:8px">'+barsHtml+'</div>'+
       '<div style="font-size:11px;color:#444;line-height:1.5">'+
         ''+   // Mejor y peor semana: se saco. La barra de arriba ya muestra la
         ''+   // evolucion, y un dato aislado de hace cinco semanas no orienta.
@@ -17901,7 +17923,7 @@ function dmFichaProfesional(email){
   const esc=function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   const MOD={presencial:'Solo presencial',online:'Solo por videollamada',ambas:'Presencial y videollamada'};
   const fila=function(rot,val){ return val ? '<div style="display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid rgba(255,255,255,.08);font-size:15px">'+
-      '<span style="color:rgba(244,239,229,.6);flex-shrink:0">'+rot+'</span>'+
+      '<span style="color:rgba(244,239,229,.62);flex-shrink:0">'+rot+'</span>'+
       '<b style="text-align:right;color:#F4EFE5;font-weight:600">'+esc(val)+'</b></div>' : ''; };
   const capa=document.createElement('div');
   capa.id='dm-ficha-pro';
