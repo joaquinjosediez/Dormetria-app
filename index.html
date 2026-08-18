@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy78-mod126">
+<link rel="stylesheet" href="css/styles.css?v=hoy78-mod127">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -611,13 +611,15 @@
 <div id="screen-diary-home" class="screen">
   <div class="topbar">
     <span class="topbar-btn" style="visibility:hidden;pointer-events:none" aria-hidden="true">←</span>
-    <div style="font-size:17px;font-weight:600;color:var(--label)">Diario de sueño</div>
+    <div id="diary-topbar-title" style="font-size:17px;font-weight:600;color:var(--label)">Diario de sueño</div>
     <div style="display:flex;gap:4px">
       <button class="topbar-btn" onclick="showReminderSettings('diary')" style="font-size:13px" title="Configurar recordatorio">🔔</button>
       <button class="topbar-btn" onclick="showDiaryNew()">+ Nuevo</button>
     </div>
   </div>
-  <div class="tab-bar">
+  <!-- La barra Registros/Gráficos se saco: son dos destinos de la barra de
+       abajo. Tenerlos duplicados obligaba a elegir dos veces lo mismo. -->
+  <div class="tab-bar" style="display:none">
     <button class="tab active" onclick="showDiaryTab('list',this)">Registros</button>
     <button class="tab" onclick="showDiaryTab('graficos',this)">Gráficos</button>
   </div>
@@ -1290,7 +1292,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy78-mod126"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy78-mod127"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1309,7 +1311,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy78-mod126';
+const APP_VERSION='hoy78-mod127';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -8236,7 +8238,56 @@ async function openChildPicker(){
 function dmIrAGraficos(){
   try{
     if(typeof showDiaryHome==='function') showDiaryHome();
-    setTimeout(function(){ try{ showDiaryTab_('graficos'); }catch(_){} }, 120);
+    setTimeout(function(){
+      try{ showDiaryTab_('graficos'); }catch(_){}
+      const t=document.getElementById('diary-topbar-title'); if(t) t.textContent='Tu sueño';
+      dmMarcarPestana('bnav-graficos');
+    }, 120);
+  }catch(_){}
+}
+// La barra de abajo no marcaba cual estaba activa: sin eso uno no sabe donde
+// esta parado. Se pinta a mano porque las pantallas no coinciden una a una
+// con las pestañas.
+// Volver con el gesto de arrastrar desde el borde izquierdo, como en
+// cualquier app nativa. Solo cuenta si empieza pegado al borde: si no,
+// cualquier scroll horizontal dentro del actograma dispararia el retroceso.
+(function(){
+  let x0=null, y0=null, t0=0;
+  document.addEventListener('touchstart', function(e){
+    const t=e.touches && e.touches[0];
+    if(!t) return;
+    x0 = (t.clientX < 28) ? t.clientX : null;   // borde izquierdo
+    y0 = t.clientY; t0 = Date.now();
+  }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if(x0===null) return;
+    const t=e.changedTouches && e.changedTouches[0];
+    if(!t){ x0=null; return; }
+    const dx = t.clientX - x0, dy = Math.abs(t.clientY - y0), ms = Date.now()-t0;
+    x0=null;
+    // Horizontal, hacia la derecha, largo y rapido: eso es "volver".
+    if(dx > 70 && dy < 60 && ms < 600) dmVolverAtras();
+  }, {passive:true});
+})();
+function dmVolverAtras(){
+  try{
+    // Si hay una capa abierta (globo, ficha, modal), se cierra esa primero.
+    const capa=document.querySelector('#dm-ficha-pro,#dm-calificar,#dm-nota-noche,#dm-panel-meses,#dm-tcci-sem,#dm-datos-basicos');
+    if(capa){ capa.remove(); return; }
+    const btn=document.querySelector('.screen.active .topbar-btn[onclick],.screen.active .back');
+    if(btn && /volver|←/i.test(btn.textContent||'')){ btn.click(); return; }
+    if(S && S.role==='doctor'){ if(typeof dmVolverAlPanel==='function') dmVolverAlPanel(); return; }
+    if(typeof showHome==='function') showHome();
+  }catch(_){}
+}
+
+function dmMarcarPestana(id){
+  try{
+    document.querySelectorAll('#main-nav .bnav').forEach(function(b){
+      const on = (b.id===id);
+      b.classList.toggle('active', on);
+      b.style.color = on ? '#7EC8A4' : 'rgba(244,239,229,.45)';
+    });
   }catch(_){}
 }
 
@@ -9544,6 +9595,11 @@ function goHomeCtx(){
 async function showDiaryHome(){showScreen('diary-home');showDiaryTab_('list');}
 function showDiaryTab(tab,el){document.querySelectorAll('#screen-diary-home .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDiaryTab_(tab);}
 async function showDiaryTab_(tab){
+  try{
+    const t=document.getElementById('diary-topbar-title');
+    if(t) t.textContent = (tab==='graficos') ? 'Tu sueño' : 'Tus registros';
+    dmMarcarPestana(tab==='graficos' ? 'bnav-graficos' : 'bnav-diario');
+  }catch(_){}
   // El redibujado estaba enganchado solo al cambio de PANTALLA. Los graficos
   // de esta vista se crean al cambiar de PESTAÑA, con la pestaña todavia
   // oculta: ancho cero, lienzo en blanco. Por eso seguia pasando en el celular.
