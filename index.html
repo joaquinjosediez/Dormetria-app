@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy77-mod122">
+<link rel="stylesheet" href="css/styles.css?v=hoy78-mod123">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -557,17 +557,7 @@
     <!-- Leer hoy: rota entre los temas de la biblioteca. -->
     <div id="home-leer" style="display:none"></div>
 
-    <!-- 4) Escala del día -->
-    <div id="home-scale-card" style="background:#1a4a3a;border:1px solid rgba(126,200,164,0.2);border-radius:14px;padding:14px 16px;cursor:pointer" onclick="startScaleOfDay()">
-      <div style="font-size:10px;font-weight:600;color:#7ec8a4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Escala del día</div>
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div id="home-scale-name" style="font-size:14px;font-weight:600;color:#fff"></div>
-          <div id="home-scale-sub" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px"></div>
-        </div>
-        <div style="background:rgba(126,200,164,0.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:#7ec8a4">Completar →</div>
-      </div>
-    </div>
+        <!-- (movido a "Yo" / "Más": el inicio muestra solo la noche) -->
 
     <!-- 4b) TCC-I — debajo de la escala del día, no arriba de todo:
          la acción principal del inicio es el diario, no el programa. -->
@@ -583,8 +573,7 @@
       </div>
     </div>
 
-    <!-- 5) Material educativo asignado por el profesional -->
-    <div id="home-edu-card" style="display:none"></div>
+        <!-- (movido a "Yo" / "Más": el inicio muestra solo la noche) -->
 
     <!-- Diagnóstico temporal (se oculta solo si todo está OK) -->
     <div id="home-diag" style="display:none"></div>
@@ -607,17 +596,7 @@
 
         <!-- (movido a "Más" para despejar el inicio) -->
 
-    <!-- Código profesional -->
-    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="showPatientCode()">
-      <div style="width:32px;height:32px;border-radius:8px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-      </div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:500;color:#fff">Mi especialista</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px">Tu código · Directorio · Profesionales conectados</div>
-      </div>
-      <div style="color:rgba(255,255,255,0.2);font-size:18px">›</div>
-    </div>
+        <!-- (movido a "Yo" / "Más": el inicio muestra solo la noche) -->
 
     <!-- Escalas list (oculto por defecto, solo placeholder) -->
     <div id="scales-list" style="display:none"></div>
@@ -1311,7 +1290,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy77-mod122"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy78-mod123"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1330,7 +1309,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy77-mod122';
+const APP_VERSION='hoy78-mod123';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -9645,32 +9624,29 @@ async function showDiaryTab_(tab){
     }
     if(tab==='list'){
       if(!entries||!entries.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📔</div>Aún no tenés registros.<br>Tocá <b>+ Nuevo</b> para empezar.</div>';return;}
-      cont.innerHTML='<div style="height:8px"></div>'+entries.map(e=>{
-        const mins=e.sleep_minutes||0;const hrs=Math.floor(mins/60);const m=mins%60;
-        const moodEmoji=['','😞','😕','😐','🙂','😊'][e.mood||0];
-        const energyEmoji=['','🔋','🔋','⚡','⚡','🔥'][e.energy||0];
-        const qualBar=`<div class="sleep-bar-outer"><div class="sleep-bar-inner" style="width:${(e.sleep_quality||0)*20}%"></div></div>`;
-        return`<div class="diary-day">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
-            <div class="diary-date" style="margin-bottom:0">${new Date(e.diary_date).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
-            <div style="display:flex;gap:6px">
-              <button onclick="editDiaryEntry('${e.id}')" style="border:none;background:rgba(26,74,58,0.1);color:#1a4a3a;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">✏️ Editar</button>
-              <button onclick="deleteDiaryEntry('${e.id}')" style="border:none;background:rgba(220,38,38,0.1);color:#dc2626;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">🗑</button>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><span style="font-size:20px;font-weight:500;color:var(--g800)">${hrs}h ${m>0?m+'min':''}</span></div>
-            <div style="font-size:18px">${moodEmoji} ${energyEmoji}</div>
-          </div>
-          ${qualBar}
-          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--ink3)">
-            ${e.bedtime?'<span>🛏 '+e.bedtime.slice(0,5)+'</span>':''}
-            ${e.wake_time?'<span>⏰ '+e.wake_time.slice(0,5)+'</span>':''}
-            ${e.awakenings?'<span>🌙 '+e.awakenings+' desp.</span>':''}
-            ${e.coffee_cups?'<span>☕ '+e.coffee_cups+'mg</span>':''}
-            ${e.alcohol_drinks?'<span>🍷 '+e.alcohol_drinks+' UA</span>':''}
-          </div>
-        </div>`;
+      // Tarjeta del prototipo: fondo verde, emoji a la izquierda, el dato en
+      // una linea. Las tarjetas blancas con botones "Editar" y el tacho rosa
+      // eran del diseño anterior.
+      cont.innerHTML='<div style="height:10px"></div>'+entries.map(function(e){
+        const mins=e.sleep_minutes||0, hrs=Math.floor(mins/60), m=mins%60;
+        const cara=['😶','😫','😕','😐','🙂','😊'][e.sleep_quality||0];
+        const lat=(e.sleep_latency_mins!=null && e.sleep_latency_mins!=='')
+          ? ('tardó '+parseInt(e.sleep_latency_mins)+' min') : '';
+        const dur = e.no_sleep===true ? 'no durmió'
+                  : (mins>0 ? (hrs+' h '+String(m).padStart(2,'0')+' m') : 'sin datos');
+        let fecha=e.diary_date;
+        try{ fecha=new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}); }catch(_){}
+        return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);'+
+          'border-radius:17px;padding:15px 16px;margin-bottom:11px;display:flex;align-items:center;gap:14px">'+
+          '<div style="font-size:26px;flex-shrink:0;line-height:1">'+cara+'</div>'+
+          '<div style="flex:1;min-width:0" onclick="editDiaryEntry(\''+e.id+'\')">'+
+            '<div style="font-size:16px;font-weight:600;color:#F4EFE5;text-transform:capitalize">'+fecha+'</div>'+
+            '<div style="font-size:13.5px;color:rgba(244,239,229,.62);margin-top:3px">Durmió '+dur+(lat?' · '+lat:'')+'</div>'+
+          '</div>'+
+          '<div onclick="event.stopPropagation();deleteDiaryEntry(\''+e.id+'\')" '+
+            'style="flex-shrink:0;color:rgba(244,239,229,.28);font-size:19px;cursor:pointer;padding:4px 2px">🗑</div>'+
+          '<div style="flex-shrink:0;color:rgba(244,239,229,.3);font-size:19px">›</div>'+
+        '</div>';
       }).join('');
     }else{
       if(tab==='wearable'){
@@ -17151,8 +17127,8 @@ async function renderChildDiaryList(){
         <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           ${hrs?'<div style="font-size:18px;font-weight:700;color:'+hrsColor+'">'+hrs+'h<span style="font-size:10px;font-weight:400;color:var(--label-3)"> total</span></div>'+_breakdown:'<div style="font-size:12px;color:var(--label-3)">—</div>'}
           <div style="display:flex;gap:6px">
-            <button onclick="editDiaryEntry('${e.id}')" style="font-size:11px;color:#1a4a3a;background:rgba(26,74,58,0.1);border:none;border-radius:6px;padding:4px 10px;font-weight:600;cursor:pointer">✏️ Editar</button>
-            <button onclick="deleteDiaryEntry('${e.id}')" style="font-size:11px;color:#dc2626;background:rgba(220,38,38,0.1);border:none;border-radius:6px;padding:4px 8px;cursor:pointer">🗑</button>
+            <span onclick="editDiaryEntry('${e.id}')" style="font-size:18px;color:rgba(244,239,229,.45);cursor:pointer;padding:2px 6px">✎</span>
+            <span onclick="deleteDiaryEntry('${e.id}')" style="font-size:16px;color:rgba(244,239,229,.28);cursor:pointer;padding:2px 4px">🗑</span>
           </div>
         </div>
       </div>`;

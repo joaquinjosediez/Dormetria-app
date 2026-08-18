@@ -3312,18 +3312,24 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   color:rgba(244,239,229,0.45) !important;
 }
 
-/* Dentro de una tarjeta blanca de grafico, el texto vuelve a ser oscuro:
-   ahi el blanco si corresponde y forzar crema lo haria ilegible. */
-#screen-diary-home .dm-card [style*="color:var(--label)"],
-#screen-diary-home .blanca [style*="color:var(--label)"],
-#screen-diary-home [style*="background:#fff"] [style*="color:var(--label)"]{
+
+/* Solo el texto que esta REALMENTE sobre blanco vuelve a oscuro. Se apunta a
+   los contenedores que conservan fondo blanco explicito, no a .dm-card, que
+   ahora tiene fondo verde y quedaba con letra negra ilegible. */
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--label)"]{
   color:#10231c !important;
 }
-#screen-diary-home .dm-card [style*="color:var(--label-2)"],
-#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-2)"]{
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-2)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--label-2)"]{
   color:#3f3f46 !important;
 }
-#screen-diary-home .dm-card [style*="color:var(--label-3)"],
-#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-3)"]{
+#screen-diary-home [style*="background:#fff"] [style*="color:var(--label-3)"],
+#screen-diary-home [style*="background:#ffffff"] [style*="color:var(--label-3)"]{
   color:#8a9691 !important;
+}
+/* Las filas de metricas: la etiqueta tiene que leerse sobre el verde. */
+#screen-diary-home [style*="border-bottom:0.5px solid var(--sep)"] span:first-child,
+#screen-diary-home [style*="border-bottom:0.5px solid var(--sep)"]{
+  color:rgba(244,239,229,.72) !important;
 }
