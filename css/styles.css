@@ -3682,3 +3682,109 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 
 /* El título "Tu sueño" queda arriba del selector pegajoso */
 .dm-h1{ margin-bottom:10px; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod139-142 · Despertares, alcohol, ayudas plegables y contraste
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Despertares: misma familia que el resto del diario ──────────────── */
+.dm-despertar{
+  display:flex; gap:10px; align-items:flex-end; margin-bottom:10px;
+  padding:13px 14px; background:rgba(255,255,255,.05);
+  border:1px solid rgba(126,200,164,.18); border-radius:16px;
+}
+.dm-despertar-lbl{
+  display:block; margin-bottom:6px; font-size:12px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase; color:rgba(244,239,229,.55);
+}
+.dm-despertar .dm-inp{ margin:0; }
+.dm-despertar-x{
+  flex-shrink:0; border:none; background:rgba(255,255,255,.06);
+  color:rgba(244,239,229,.6); border-radius:11px; width:42px; height:46px;
+  font-size:17px; cursor:pointer; font-family:inherit;
+}
+.dm-despertar-x:active{ background:rgba(255,157,157,.18); color:#ff9d9d; }
+
+.dm-agregar{
+  width:100%; padding:13px; margin-bottom:6px;
+  background:rgba(255,255,255,.04);
+  border:1.5px dashed rgba(126,200,164,.45); border-radius:13px;
+  color:#7EC8A4; font-size:14.5px; font-weight:600;
+  font-family:inherit; cursor:pointer;
+}
+.dm-agregar:active{ background:rgba(126,200,164,.12); }
+
+/* ── Alcohol ─────────────────────────────────────────────────────────── */
+.dm-alc-fila{ display:flex; gap:9px; margin-bottom:8px; align-items:center; }
+.dm-alc-fila .dm-inp{ margin:0; }
+.dm-alc-mas{
+  flex-shrink:0; width:50px; height:50px; border:none; border-radius:13px;
+  background:rgba(126,200,164,.16); color:#7EC8A4;
+  font-size:22px; font-weight:600; cursor:pointer; font-family:inherit;
+}
+.dm-alc-total{
+  font-size:14px; font-weight:600; color:rgba(244,239,229,.8);
+  min-height:18px; margin-bottom:10px;
+}
+.dm-alc-nunca{
+  width:100%; padding:11px; background:none; border:none;
+  color:rgba(244,239,229,.5); font-size:13.5px; font-family:inherit;
+  cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+}
+.dm-alc-oculto{ display:none !important; }
+.dm-alc-aviso{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:13px 15px; margin-bottom:16px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(126,200,164,.14);
+  border-radius:14px; font-size:14px; color:rgba(244,239,229,.6);
+}
+.dm-alc-aviso button{
+  background:none; border:none; color:#7EC8A4; font-size:14px;
+  font-weight:600; cursor:pointer; font-family:inherit;
+  text-decoration:underline; text-underline-offset:3px;
+}
+
+/* ── "¿qué es esto?" ─────────────────────────────────────────────────── */
+.dm-quees{ display:block; margin-top:3px; }
+.dm-quees button{
+  background:none; border:none; padding:0; cursor:pointer;
+  font-family:inherit; font-size:13px; color:#7EC8A4; font-weight:600;
+  text-decoration:underline; text-underline-offset:3px;
+}
+.dm-quees-txt{
+  display:none; margin-top:7px; padding:11px 13px;
+  background:rgba(126,200,164,.09); border-left:2px solid rgba(126,200,164,.4);
+  border-radius:0 10px 10px 0;
+  font-size:13.5px; line-height:1.6; color:rgba(244,239,229,.78);
+}
+.dm-quees-txt.dm-abierto{ display:block; }
+
+/* ── La explicación del score ────────────────────────────────────────── */
+.dm-expli{
+  background:rgba(255,255,255,.05); border:1px solid rgba(126,200,164,.18);
+  border-radius:16px; margin-bottom:14px; overflow:hidden;
+}
+.dm-expli summary{
+  padding:15px 17px; font-size:15.5px; font-weight:600; color:#F4EFE5;
+  cursor:pointer; list-style:none; display:flex;
+  justify-content:space-between; align-items:center;
+}
+.dm-expli summary::-webkit-details-marker{ display:none; }
+.dm-expli-f{ color:#7EC8A4; font-size:15px; transition:transform .18s; }
+.dm-expli[open] .dm-expli-f{ transform:rotate(180deg); }
+.dm-expli-cuerpo{ padding:0 17px 16px; }
+.dm-expli-cuerpo p{
+  margin:0 0 9px; font-size:14.5px; line-height:1.65;
+  color:rgba(244,239,229,.8);
+}
+.dm-expli-cuerpo b{ color:#F4EFE5; }
+.dm-expli-nota{
+  margin-top:12px !important; padding-top:12px;
+  border-top:1px solid rgba(126,200,164,.14);
+  font-size:13.5px !important; color:rgba(244,239,229,.6) !important;
+}
+
+/* ── Pilares: el subtítulo bajo el porcentaje era casi invisible ─────── */
+#diary-pillar-bars [style*="color:var(--label-3)"]{ color:rgba(244,239,229,.55) !important; }
+#diary-pillar-bars{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }

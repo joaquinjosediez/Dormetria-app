@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod138">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod142">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1293,7 +1293,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod138"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod142"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1312,7 +1312,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod138';
+const APP_VERSION='hoy79-mod142';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4540,7 +4540,24 @@ async function requestAIAnalysis(docId, docCategory, mode, btn){
   btn.style.cssText='flex:1;padding:10px;border:2px solid #1a4a3a;border-radius:10px;background:#1a4a3a;color:#fff;font-size:13px;font-weight:600;cursor:pointer';
   
   const resultArea = document.getElementById('ai-result-area');
-  resultArea.innerHTML = '<div style="text-align:center;padding:30px"><div class="spinner"></div><div style="font-size:13px;color:#888;margin-top:12px">Analizando con IA...<br><span style="font-size:11px">Esto puede tardar 15-30 segundos</span></div></div>';
+  resultArea.innerHTML =
+    '<div style="background:#eef8f5;border:1.5px solid #7EC8A4;border-radius:16px;padding:24px 20px;text-align:center">'+
+      '<div class="spinner" style="margin:0 auto 14px"></div>'+
+      '<div style="font-size:17px;font-weight:700;color:#1a4a3a;margin-bottom:6px">Estamos leyendo tu estudio</div>'+
+      '<div style="font-size:14.5px;color:#2d6b56;line-height:1.55">Suele tardar entre 20 y 40 segundos.<br>'+
+        '<b>No cierres esta ventana.</b></div>'+
+      '<div id="ai-reloj" style="font-size:13px;color:#2d6b56;margin-top:12px;font-variant-numeric:tabular-nums">0 s</div>'+
+    '</div>';
+  // El contador es la señal de que sigue trabajando, no de cuánto falta.
+  try{ clearInterval(window._aiReloj); }catch(_){}
+  window._aiRelojT = 0;
+  window._aiReloj = setInterval(function(){
+    window._aiRelojT++;
+    const el = document.getElementById('ai-reloj');
+    if(!el){ clearInterval(window._aiReloj); return; }
+    el.textContent = window._aiRelojT + ' s';
+    if(window._aiRelojT === 45) el.textContent = 'Está tardando más de lo habitual, seguimos…';
+  }, 1000);
   
   const catContext = {lab:'laboratorio clínico',estudio:'estudio de sueño (polisomnografía o similar)',cpap:'seguimiento de CPAP/BPAP',otro:'estudio clínico general'}[docCategory]||'estudio clínico';
   const patientInfo = S.viewData || S.user || {};
@@ -4569,7 +4586,26 @@ Sé preciso, clínico y conciso.`
     // Sacar la cabecera "data:...;base64," antes de mandarlo.
     const _b64 = String(doc.file_data || '').replace(/^data:[^;]*;base64,/, '');
     const data = await dmInvocarFuncion('analizar-estudio', { pdf: _b64, prompt: prompt });
-    const text = data.texto || 'Sin respuesta';
+    try{ clearInterval(window._aiReloj); }catch(_){}
+    const text = data.texto || '';
+    if(!text.trim()){
+      resultArea.innerHTML = '<div style="padding:16px;background:#fef3c7;border-radius:12px;font-size:14px;color:#92400e;line-height:1.55">'+
+        'La IA respondió sin texto. Probá de nuevo en un momento.'+
+        (data.detalle ? '<div style="margin-top:9px;font-size:11.5px;font-family:monospace;opacity:.8;word-break:break-word">'+String(data.detalle).replace(/</g,'&lt;')+'</div>' : '')+
+        '</div>';
+      return;
+    }
+    // Queda guardado para no tener que volver a pedirlo (ni pagarlo).
+    if(typeof dmGuardarSalidaIA==='function'){
+      dmGuardarSalidaIA({
+        patient_email: (S.viewEmail || (S.user && S.user.email) || null),
+        doctor_email: (S.role==='doctor' && S.user) ? S.user.email : null,
+        tipo: 'estudio',
+        titulo: 'Análisis · ' + (window._aiDocTitle || 'Estudio'),
+        texto: text,
+        doc_id: docId || null
+      });
+    }
     
     // Format the response
     const formatted = text
@@ -4583,6 +4619,7 @@ Sé preciso, clínico y conciso.`
         <button onclick="copyAIResult()" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:13px;cursor:pointer">📋 Copiar</button>
       </div>`;
   }catch(e){
+    try{ clearInterval(window._aiReloj); }catch(_){}
     const errMsg = e.message||String(e);
     const isCors = errMsg.toLowerCase().includes('load') || errMsg.toLowerCase().includes('cors') || errMsg.toLowerCase().includes('fetch') || errMsg.toLowerCase().includes('network');
     // El detalle tecnico solo para quien puede hacer algo con el.
@@ -5815,6 +5852,23 @@ async function dmCorregirNoche(id){
   }
 }
 
+// Un "¿qué es esto?" chiquito en vez de tres renglones de explicacion
+// debajo de cada numero: la pantalla se lee, y quien no sabe lo abre.
+var _dmQueEsN = 0;
+function dmQueEs(texto){
+  const id = 'qe' + (++_dmQueEsN);
+  return '<span class="dm-quees">'+
+    '<button type="button" onclick="dmTogglearQueEs(\''+id+'\',event)">¿qué es esto?</button>'+
+    '<span id="'+id+'" class="dm-quees-txt">'+texto+'</span>'+
+  '</span>';
+}
+function dmTogglearQueEs(id, ev){
+  if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+  const el = document.getElementById(id);
+  if(el) el.classList.toggle('dm-abierto');
+}
+window.dmQueEs = dmQueEs; window.dmTogglearQueEs = dmTogglearQueEs;
+
 function renderClinicalMetricsHtml(entries, audience, ageYears){
   // ── Menores de 3 años ──
   // Varias métricas de este bloque son conceptos de sueño ADULTO y no aplican:
@@ -5878,11 +5932,14 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   html += (_bebe ? '' :
     row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
     row('Promedio días no laborables', m.fmtDur(m.avgWe), null, m.nWe+' noches')+
-    row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Cuánto MÁS dormís los días libres. Si es mucho, entre semana estás durmiendo de menos.'))+
-    row('Desajuste de horario (jet lag social)', sjlStr, sjlColor,
-        'Cuánto se corre tu horario de sueño los días libres respecto de los días de trabajo. '+
-        'Es distinto de la deuda de sueño: acá no importa cuánto dormís, sino a qué hora.')+
-    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor);
+    row('Deuda de sueño', debtStr, debtColor,
+        dmQueEs('Cuánto MÁS dormís los días libres que los días de trabajo. Si la diferencia es grande, entre semana estás durmiendo de menos y lo recuperás el fin de semana.'))+
+    // El parentesis cerraba aca arriba, asi que estas dos filas se colaban
+    // en la vista de un bebe, donde "dia laboral" y el corte de 7 horas no
+    // significan nada. Ahora quedan dentro del mismo guardado por edad.
+    row('Desajuste de horario', sjlStr, sjlColor,
+        dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
+    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor));
 
   // Bloque adicional para el paciente: versión amigable de la variación
   if(audience === 'patient' && reg.sd_midpoint_min !== null){
@@ -10427,19 +10484,53 @@ function dmPintarVarsSlot(){
 }
 function selEmoji(el,targetId){const row=el.closest('.emoji-row');row.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');document.getElementById(targetId).value=el.dataset.val;}
 function selNum(el,targetId){selEmoji(el,targetId);}
+// Quien no toma alcohol no tiene por que ver la pregunta cada noche. Se
+// guarda en el dispositivo y se responde "ninguno" sola.
+function dmNoTomoAlcohol(){
+  try{ localStorage.setItem('dm_sin_alcohol','1'); }catch(_){}
+  dmAplicarSinAlcohol();
+  if(typeof toast==='function') toast('Listo, no te la pregunto más');
+}
+function dmVuelvoATomar(){
+  try{ localStorage.removeItem('dm_sin_alcohol'); }catch(_){}
+  const c=document.getElementById('dm-campo-alcohol');
+  if(c) c.classList.remove('dm-alc-oculto');
+  const a=document.getElementById('dm-alc-aviso'); if(a) a.remove();
+}
+function dmAplicarSinAlcohol(){
+  let sin=false;
+  try{ sin = localStorage.getItem('dm_sin_alcohol')==='1'; }catch(_){}
+  const campo=document.getElementById('dm-campo-alcohol');
+  if(!campo || !sin) return;
+  campo.classList.add('dm-alc-oculto');
+  if(!document.getElementById('dm-alc-aviso')){
+    const av=document.createElement('div');
+    av.id='dm-alc-aviso';
+    av.className='dm-alc-aviso';
+    av.innerHTML='Alcohol: ninguno <button onclick="dmVuelvoATomar()">cambiar</button>';
+    campo.parentNode.insertBefore(av, campo.nextSibling);
+  }
+}
+window.dmNoTomoAlcohol=dmNoTomoAlcohol; window.dmVuelvoATomar=dmVuelvoATomar;
+window.dmAplicarSinAlcohol=dmAplicarSinAlcohol;
+
 function addAwakening(){awakeningList.push({time:'',duration:''});renderAwakenings();}
 function removeAwakening(i){awakeningList.splice(i,1);renderAwakenings();}
 function updateAwakening(i,field,val){if(awakeningList[i])awakeningList[i][field]=val;}
 function renderAwakenings(){
   const cont=document.getElementById('awakening-list');if(!cont)return;
-  if(!awakeningList.length){cont.innerHTML='<div style="font-size:13px;color:var(--ink4);margin-bottom:8px;padding:4px 0">Ningún despertar agregado aún</div>';return;}
+  // Estos campos venian de la version vieja, con clases del tema claro
+  // (form-input, --paper, --ink3). Ahora usan el mismo dm-inp que el resto.
+  if(!awakeningList.length){cont.innerHTML='<div class="dm-ayuda" style="padding:2px 0 10px">Todavía no agregaste ninguno.</div>';return;}
   cont.innerHTML=awakeningList.map((a,i)=>`
-    <div class="sobre-claro" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;padding:10px;background:var(--paper);border-radius:var(--r)">
-      <div style="flex:1"><label style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Horario</label>
-        <input class="form-input" type="time" value="${a.time}" oninput="updateAwakening(${i},'time',this.value)" style="padding:8px 10px;font-size:13px"></div>
-      <div style="flex:1"><label style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Duración (min)</label>
-        <input class="form-input" type="number" min="1" max="120" value="${a.duration}" placeholder="ej: 20" oninput="updateAwakening(${i},'duration',this.value)" style="padding:8px 10px;font-size:13px"></div>
-      <button onclick="removeAwakening(${i})" style="border:none;background:none;color:var(--ink4);cursor:pointer;font-size:20px;padding:6px;line-height:1">✕</button>
+    <div class="dm-despertar">
+      <div style="flex:1;min-width:0">
+        <label class="dm-despertar-lbl">Horario</label>
+        <input class="dm-inp" type="time" value="${a.time}" oninput="updateAwakening(${i},'time',this.value)"></div>
+      <div style="flex:1;min-width:0">
+        <label class="dm-despertar-lbl">Duración (min)</label>
+        <input class="dm-inp" type="number" min="1" max="120" value="${a.duration}" placeholder="ej: 20" oninput="updateAwakening(${i},'duration',this.value)"></div>
+      <button class="dm-despertar-x" onclick="removeAwakening(${i})" aria-label="Quitar">✕</button>
     </div>`).join('');
 }
 function setNoAwakenings(){hasAwakenings=false;document.getElementById('awk-no-btn').classList.add('sel');document.getElementById('awk-yes-btn').classList.remove('sel');document.getElementById('awakening-section').style.display='none';awakeningList=[];}
@@ -10641,6 +10732,8 @@ function showDiaryNew(){
       dEl._daytypeWired=true;
     }
   },180);
+  setTimeout(function(){ try{ dmAplicarSinAlcohol(); }catch(_){} }, 220);
+
   // ── Medicación habitual ───────────────────────────────────────────────
   // Quien toma tres remedios todas las noches no los va a cargar de a uno
   // cada dia: abandona el diario. Se ofrece la ultima que cargó, con un toque.
@@ -10705,19 +10798,6 @@ function showDiaryNew(){
       <input class="dm-inp" type="time" id="d-bed">
     </div>
 
-    <div class="dm-campo">
-      <label class="dm-lbl">Antes de acostarte, ¿tomaste alcohol?</label>
-      <div class="dm-ayuda">Lo que importa es cuánto tomaste cerca de la hora de dormir.</div>
-      <div id="alcohol-items"></div>
-    <div style="display:flex;gap:8px;margin-bottom:6px">
-      <select class="form-select" id="d-alc-type" style="flex:1">
-        <option value="ninguno|0">Ninguno</option><option value="copa_vino|1">Copa de vino (1 UA)</option><option value="cerveza_pinta|1">Pinta de cerveza (1 UA)</option><option value="cerveza_lata|0.9">Lata 355ml (0.9 UA)</option><option value="fernet|1.5">Fernet con cola (1.5 UA)</option><option value="whisky|1">Whisky (1 UA)</option><option value="shot|1">Shot (1 UA)</option><option value="champagne|1">Champagne (1 UA)</option><option value="aperol|0.8">Aperol spritz (0.8 UA)</option>
-      </select>
-      <input class="form-input" type="number" id="d-alc-qty" min="1" value="1" style="width:58px;flex-shrink:0">
-      <button class="btn btn-s" style="width:auto;padding:10px 12px;flex-shrink:0" onclick="addAlcItem()">+</button>
-    </div>
-    <div id="alc-total" style="font-size:13px;font-weight:500;margin-bottom:12px;min-height:18px"></div>
-    </div>
 
     <div class="dm-campo">
       <label class="dm-lbl">¿Tomaste alguna medicación?</label>
@@ -10733,6 +10813,20 @@ function showDiaryNew(){
       <label class="dm-lbl">¿Cuánto tardaste en dormirte?</label>
       <select class="dm-inp" id="d-latency" onchange="dmTogglearSinDormir()"><option value=""></option> <option value="3">&lt;5 min</option> <option value="10">5–15 min</option> <option value="22">15–30 min</option> <option value="45">30–60 min</option> <option value="90">1–2 hs</option> <option value="150">&gt;2 hs</option> <option value="-1">No me dormí en toda la noche</option></select>
     </div>
+    <div class="dm-campo" id="dm-campo-alcohol">
+      <label class="dm-lbl">Antes de acostarte, ¿tomaste alcohol?</label>
+      <div class="dm-ayuda">Lo que importa es cuánto tomaste cerca de la hora de dormir.</div>
+      <div id="alcohol-items"></div>
+      <div class="dm-alc-fila">
+        <select class="dm-inp" id="d-alc-type" style="flex:1;min-width:0">
+          <option value="ninguno|0">Ninguno</option><option value="copa_vino|1">Copa de vino (1 UA)</option><option value="cerveza_pinta|1">Pinta de cerveza (1 UA)</option><option value="cerveza_lata|0.9">Lata 355ml (0.9 UA)</option><option value="fernet|1.5">Fernet con cola (1.5 UA)</option><option value="whisky|1">Whisky (1 UA)</option><option value="shot|1">Shot (1 UA)</option><option value="champagne|1">Champagne (1 UA)</option><option value="aperol|0.8">Aperol spritz (0.8 UA)</option>
+        </select>
+        <input class="dm-inp" type="number" id="d-alc-qty" min="1" value="1" style="width:64px;flex-shrink:0">
+        <button class="dm-alc-mas" onclick="addAlcItem()">+</button>
+      </div>
+      <div id="alc-total" class="dm-alc-total"></div>
+      <button class="dm-alc-nunca" onclick="dmNoTomoAlcohol()">No tomo alcohol · no me preguntes más</button>
+    </div>
   </div>
 
   <div class="dm-paso" data-paso="2" style="display:none">
@@ -10743,7 +10837,7 @@ function showDiaryNew(){
         <button id="awk-no-btn" class="dm-op" onclick="setNoAwakenings()">No me desperté</button>
         <button id="awk-yes-btn" class="dm-op" onclick="setYesAwakenings()">Sí</button>
       </div>
-      <div id="awakening-section" style="display:none"><div id="awakening-list"></div><button class="btn btn-s" style="width:auto;padding:8px 14px;font-size:13px;margin-bottom:12px" onclick="addAwakening()">+ Agregar despertar</button></div>
+      <div id="awakening-section" style="display:none"><div id="awakening-list"></div><button class="dm-agregar" onclick="addAwakening()">+ Agregar despertar</button></div>
     </div>
 
     <div class="dm-campo">
@@ -13452,6 +13546,7 @@ function dmPanelInformeHtml(){
       '<textarea id="dm-inf-notas" rows="2" placeholder="Ej: viene con CPAP hace 3 meses, refiere mejoría subjetiva" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(126,200,164,.2);border-radius:12px;padding:12px;font-size:14px;color:#F4EFE5;font-family:var(--font);resize:vertical"></textarea>'+
     '</div>'+
     '<div id="dm-inf-salida" style="margin-top:16px"></div>'+
+    '<div id="dm-inf-previos"></div>'+
     '<div style="border-left:3px solid #C8A96E;padding:10px 0 10px 14px;margin-top:20px;font-size:13px;line-height:1.55;color:rgba(244,239,229,.6)">'+
       'El informe lo redacta un modelo de lenguaje a partir de los números del registro. '+
       'Revisalo antes de firmarlo o entregarlo: la responsabilidad clínica es tuya.</div>'+
@@ -13477,6 +13572,63 @@ function dmEngancharInforme(cont){
   unaVez('.dm-inf-copiar',  function(){ dmCopiarInforme(); });
 }
 window.dmEngancharInforme = dmEngancharInforme;
+
+// Guardar lo que genera la IA. Sin esto, cada informe se pierde al cerrar
+// la pestaña y hay que pagarlo de nuevo para volver a leerlo.
+async function dmGuardarSalidaIA(datos){
+  try{
+    await db.post('ai_reports', datos);
+    return true;
+  }catch(e){
+    console.warn('[IA] no se pudo guardar:', e && e.message);
+    return false;   // que no se guarde NO puede romper la pantalla
+  }
+}
+window.dmGuardarSalidaIA = dmGuardarSalidaIA;
+
+// Listado de lo ya generado para un paciente
+async function dmListaInformes(email){
+  try{
+    return await db.get('ai_reports?patient_email=eq.'+encodeURIComponent(email)+
+                        '&order=created_at.desc&select=*&limit=50');
+  }catch(e){ return []; }
+}
+
+function dmInformesGuardadosHtml(filas){
+  if(!filas || !filas.length) return '';
+  const NOM = { evolucion:'Nota de evolución', interconsulta:'Interconsulta',
+                paciente:'Resumen para el paciente', estudio:'Análisis de estudio' };
+  return '<div style="font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(244,239,229,.5);font-weight:700;margin:24px 0 10px">Generados antes</div>'+
+    filas.map(function(f){
+      const fecha = new Date(f.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+      const hora  = new Date(f.created_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      return '<div class="dm-inf-guardado" data-id="'+f.id+'" style="background:rgba(255,255,255,.04);border:1px solid rgba(126,200,164,.14);border-radius:14px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:15px;font-weight:600;color:#F4EFE5">'+(f.titulo || NOM[f.tipo] || 'Informe')+'</div>'+
+          '<div style="font-size:12.5px;color:rgba(244,239,229,.5);margin-top:2px">'+fecha+' · '+hora+'</div>'+
+        '</div><span style="color:#7EC8A4;font-size:18px">›</span></div>';
+    }).join('');
+}
+
+async function dmAbrirInformeGuardado(id){
+  const salida = document.getElementById('dm-inf-salida');
+  if(!salida) return;
+  try{
+    const f = (await db.get('ai_reports?id=eq.'+encodeURIComponent(id)+'&select=*'))[0];
+    if(!f) return;
+    window._dmInformeTexto = f.texto || '';
+    salida.innerHTML =
+      '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.2);border-radius:16px;padding:18px">'+
+        '<div style="font-size:12.5px;color:rgba(244,239,229,.5);margin-bottom:10px">Generado el '+
+          new Date(f.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'})+'</div>'+
+        '<div style="font-size:15px;color:#F4EFE5;line-height:1.7;white-space:pre-wrap">'+
+          String(f.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div></div>'+
+      '<div style="display:flex;gap:9px;margin-top:11px">'+
+        '<button class="dm-inf-copiar" style="flex:1;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Copiar</button></div>';
+    dmEngancharInforme(document.getElementById('drp-content'));
+  }catch(e){ console.error('[INFORME]', e); }
+}
+window.dmAbrirInformeGuardado = dmAbrirInformeGuardado;
 
 async function dmGenerarInforme(tipo){
   console.log('[INFORME] pedido:', tipo);
@@ -13517,7 +13669,22 @@ async function dmGenerarInforme(tipo){
     });
 
     const texto = resp.texto || '';
+    if(!texto.trim()){
+      salida.innerHTML = '<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.35);border-radius:14px;padding:15px;font-size:14px;color:rgba(244,239,229,.85);line-height:1.55">'+
+        'La IA respondió sin texto. Probá de nuevo; si se repite, revisá los logs de la función <b>informe-clinico</b> en Supabase.'+
+        (resp.detalle ? '<div style="margin-top:9px;font-size:12px;font-family:monospace;opacity:.75;word-break:break-word">'+String(resp.detalle).replace(/</g,'&lt;')+'</div>' : '')+
+        '</div>';
+      return;
+    }
     window._dmInformeTexto = texto;
+    const NOMBRES = { evolucion:'Nota de evolución', interconsulta:'Interconsulta', paciente:'Resumen para el paciente' };
+    dmGuardarSalidaIA({
+      patient_email: email,
+      doctor_email: S.user ? S.user.email : null,
+      tipo: tipo,
+      titulo: NOMBRES[tipo] || 'Informe',
+      texto: texto
+    });
     salida.innerHTML =
       '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.2);border-radius:16px;padding:18px">'+
         '<div id="dm-inf-txt" style="font-size:15px;color:#F4EFE5;line-height:1.7;white-space:pre-wrap">'+
@@ -13547,7 +13714,20 @@ function dmCopiarInforme(){
 async function showDrPTab_(tab){
   const cont=document.getElementById('drp-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';const email=S.viewEmail;
   cont.dataset.tab=tab; // hook para CSS por pestaña (ver body.dr-desktop #drp-content[data-tab=...])
-  if(tab==='informe'){ cont.innerHTML = dmPanelInformeHtml(); dmEngancharInforme(cont); return; }
+  if(tab==='informe'){
+    cont.innerHTML = dmPanelInformeHtml();
+    dmEngancharInforme(cont);
+    // La lista de lo ya generado se carga aparte para no demorar el panel
+    dmListaInformes(email).then(function(filas){
+      const c = document.getElementById('dm-inf-previos');
+      if(!c) return;
+      c.innerHTML = dmInformesGuardadosHtml(filas);
+      c.querySelectorAll('.dm-inf-guardado').forEach(function(el){
+        el.addEventListener('click', function(){ dmAbrirInformeGuardado(el.dataset.id); });
+      });
+    });
+    return;
+  }
   try{
     if(tab==='summary'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);S.viewRecs=recs||[];
@@ -16554,17 +16734,14 @@ function renderSleepScorePanel(entries, ageYears){
       <div style="font-size:11px;color:#77776e;margin-top:8px">Basado en ${sc.nNights} noches de registro</div>
     </div>
 
-    <details style="background:#eef8f5;border-radius:12px;margin-bottom:12px;overflow:hidden">
-      <summary style="padding:12px 16px;font-size:13px;font-weight:600;color:#1a4a3a;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
-        ¿Cómo se calcula este score?
-        <span style="font-size:11px;opacity:0.6">▼</span>
-      </summary>
-      <div style="padding:0 16px 14px;font-size:13px;color:#2d6b56;line-height:1.7">
-        El score combina los tres pilares del sueño saludable que ves abajo:<br>
-        <strong>Cantidad:</strong> óptimo entre 7 y 9 horas. Por debajo de 7h baja gradualmente; por encima de 9h también decrece.<br>
-        <strong>Fragmentación:</strong> se reduce por cada despertar nocturno reportado.<br>
-        <strong>Regularidad:</strong> consistencia en el horario de acostarse y levantarse (Sleep Regularity Index, Phillips et al. 2017).<br><br>
-        <em style="font-size:12px;color:#555">⚠️ El tiempo entre acostarse y levantarse sobrestima el sueño real — el registro incluye tiempo en cama pero no necesariamente dormido.</em>
+    <details class="dm-expli">
+      <summary>¿Cómo se calcula este score?<span class="dm-expli-f">▾</span></summary>
+      <div class="dm-expli-cuerpo">
+        <p>Combina los tres pilares que ves abajo.</p>
+        <p><b>Cantidad.</b> Lo óptimo está entre 7 y 9 horas. Menos de 7 baja el puntaje de a poco; más de 9 también lo baja.</p>
+        <p><b>Fragmentación.</b> Baja con cada despertar que anotás durante la noche.</p>
+        <p><b>Regularidad.</b> Qué tan parecidos son tus horarios de una noche a la otra.</p>
+        <p class="dm-expli-nota">El registro mide el tiempo entre que te acostás y te levantás, así que incluye los ratos en cama sin dormir. El sueño real suele ser algo menor.</p>
       </div>
     </details>`;
   setTimeout(initProfileEditExtras,0);
