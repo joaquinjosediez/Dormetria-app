@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod136">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod137">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1293,7 +1293,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod136"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod137"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1312,7 +1312,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod136';
+const APP_VERSION='hoy79-mod137';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4471,7 +4471,9 @@ async function dmInvocarFuncion(nombre, cuerpo){
     // 404 significa que la función todavía no se desplegó. Decirlo así
     // evita media hora buscando el error en el lugar equivocado.
     if(r.status===404) throw new Error('La función "'+nombre+'" no está desplegada en Supabase todavía.');
-    throw new Error(datos.error || ('Error '+r.status));
+    const e = new Error(datos.error || ('Error '+r.status));
+    e.detalle = datos.detalle || null;
+    throw e;
   }
   return datos;
 }
@@ -4564,7 +4566,9 @@ Sé preciso, clínico y conciso.`
     : `Sos un especialista en medicina del sueño. Analizá este ${catContext} y explicalo en lenguaje clínico claro para un médico, destacando los aspectos más relevantes para el manejo del paciente. ${patientContext}. Sé directo y práctico.`;
   
   try{
-    const data = await dmInvocarFuncion('analizar-estudio', { pdf: doc.file_data, prompt: prompt });
+    // Sacar la cabecera "data:...;base64," antes de mandarlo.
+    const _b64 = String(doc.file_data || '').replace(/^data:[^;]*;base64,/, '');
+    const data = await dmInvocarFuncion('analizar-estudio', { pdf: _b64, prompt: prompt });
     const text = data.texto || 'Sin respuesta';
     
     // Format the response
@@ -4581,10 +4585,13 @@ Sé preciso, clínico y conciso.`
   }catch(e){
     const errMsg = e.message||String(e);
     const isCors = errMsg.toLowerCase().includes('load') || errMsg.toLowerCase().includes('cors') || errMsg.toLowerCase().includes('fetch') || errMsg.toLowerCase().includes('network');
+    // El detalle tecnico solo para quien puede hacer algo con el.
+    const _esPro = (S.role==='doctor') || (S.user && S.user.email==='drjoaquindiez@gmail.com');
+    const _det = (e && e.detalle) ? '<div style="margin-top:10px;font-size:11.5px;opacity:.8;font-family:monospace;word-break:break-word">'+String(e.detalle).replace(/</g,'&lt;')+'</div>' : '';
     resultArea.innerHTML = '<div style="padding:14px;background:#fee2e2;border-radius:10px;font-size:13px;color:#991b1b;line-height:1.5">'+(
       isCors ? '⚠️ <strong>El análisis no está disponible en este momento.</strong><br><br>Volvé a intentar en un rato. Si sigue igual, avisale a tu profesional.'
       : 'Error al analizar: '+errMsg
-    )+'</div>';
+    )+(_esPro ? _det : '')+'</div>';
   }
 }
 
