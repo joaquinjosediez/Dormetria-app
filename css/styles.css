@@ -3653,3 +3653,32 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 }
 .dm-periodos::-webkit-scrollbar{ display:none; }
 .dm-per, #score-period-mes{ padding:10px 15px !important; font-size:14px !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod135 · Selector de período: parejo y fijo al desplazar
+   Los tres botones tenían tonos distintos entre sí; el único que debe
+   diferenciarse es el elegido. Y queda pegado arriba para poder cambiar
+   la ventana sin volver al principio de la pantalla.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-periodos{
+  position:sticky; top:0; z-index:40;
+  background:#132c24;
+  margin-left:-18px; margin-right:-18px;
+  padding:12px 18px 12px; margin-bottom:14px;
+  border-bottom:1px solid rgba(126,200,164,.14);
+}
+.dm-per, #score-period-mes{
+  background:rgba(255,255,255,.055) !important;
+  border:1.5px solid rgba(126,200,164,.18) !important;
+  color:#F4EFE5 !important;
+  opacity:1 !important;
+}
+.dm-per-on, .dm-per.dm-per-on{
+  background:#7EC8A4 !important; border-color:#7EC8A4 !important; color:#0F2820 !important;
+}
+/* "Sin datos suficientes" se marca con el texto, no bajando el contraste */
+.dm-per-off{ opacity:1 !important; color:rgba(244,239,229,.4) !important; }
+
+/* El título "Tu sueño" queda arriba del selector pegajoso */
+.dm-h1{ margin-bottom:10px; }

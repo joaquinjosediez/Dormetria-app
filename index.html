@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod133">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod135">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1292,7 +1292,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod133"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod135"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1311,7 +1311,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod133';
+const APP_VERSION='hoy79-mod135';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4534,21 +4534,13 @@ Sé preciso, clínico y conciso.`
     : `Sos un especialista en medicina del sueño. Analizá este ${catContext} y explicalo en lenguaje clínico claro para un médico, destacando los aspectos más relevantes para el manejo del paciente. ${patientContext}. Sé directo y práctico.`;
   
   try{
-    const response = await fetch('https://api.anthropic.com/v1/messages',{
-      mode:'cors',
+    // La clave vive en Netlify, nunca en el navegador.
+    let _tok=null;
+    try{ const _s=await sb.auth.getSession(); _tok=_s&&_s.data&&_s.data.session?_s.data.session.access_token:null; }catch(_){}
+    const response = await fetch('https://dormetria.com/.netlify/functions/analizar-estudio',{
       method:'POST',
-      headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1500,
-        messages:[{
-          role:'user',
-          content:[
-            {type:'document',source:{type:'base64',media_type:'application/pdf',data:doc.file_data}},
-            {type:'text',text:prompt}
-          ]
-        }]
-      })
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_tok||'')},
+      body:JSON.stringify({ pdf: doc.file_data, prompt: prompt })
     });
     const data = await response.json();
     if(data.error){throw new Error(data.error.message||'Error de API');}
@@ -4569,7 +4561,7 @@ Sé preciso, clínico y conciso.`
     const errMsg = e.message||String(e);
     const isCors = errMsg.toLowerCase().includes('load') || errMsg.toLowerCase().includes('cors') || errMsg.toLowerCase().includes('fetch') || errMsg.toLowerCase().includes('network');
     resultArea.innerHTML = '<div style="padding:14px;background:#fee2e2;border-radius:10px;font-size:13px;color:#991b1b;line-height:1.5">'+(
-      isCors ? '⚠️ <strong>Error al conectar con la IA</strong><br><br>El análisis requiere configuración de servidor.<br><br>Descargá el PDF y arrastralo a <a href="https://claude.ai" target="_blank" style="color:#1a4a3a;font-weight:600">claude.ai</a> para analizarlo.'
+      isCors ? '⚠️ <strong>El análisis no está disponible en este momento.</strong><br><br>Volvé a intentar en un rato. Si sigue igual, avisale a tu profesional.'
       : 'Error al analizar: '+errMsg
     )+'</div>';
   }
@@ -5858,8 +5850,10 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   html += (_bebe ? '' :
     row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
     row('Promedio días no laborables', m.fmtDur(m.avgWe), null, m.nWe+' noches')+
-    row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Más sueño los días libres sugiere insuficiencia entre semana'))+
-    row('Jet lag social', sjlStr, sjlColor, 'Desfase del punto medio del sueño entre semana y fin de semana')+
+    row('Diferencia (deuda de sueño)', debtStr, debtColor, 'Cuánto MÁS dormís los días libres. Si es mucho, entre semana estás durmiendo de menos.'))+
+    row('Desajuste de horario (jet lag social)', sjlStr, sjlColor,
+        'Cuánto se corre tu horario de sueño los días libres respecto de los días de trabajo. '+
+        'Es distinto de la deuda de sueño: acá no importa cuánto dormís, sino a qué hora.')+
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor);
 
   // Bloque adicional para el paciente: versión amigable de la variación
@@ -6217,6 +6211,8 @@ const PATIENT_EDU_TOPICS=[
 
 
 function showEduLibrary(){
+  window._dmLeyendoArticulo = false;
+  try{ const _t=document.getElementById('edu-screen-title'); if(_t) _t.textContent='Para leer'; }catch(_){}
   const body=document.getElementById('edu-screen-body');
   const title=document.getElementById('edu-screen-title');
   if(title) title.textContent='Material educativo';
@@ -6245,9 +6241,11 @@ function showEduTopic(id){
   try{ showScreen('edu'); }catch(_){}
   const body=document.getElementById('edu-screen-body');
   const title=document.getElementById('edu-screen-title');
-  if(title) title.textContent=t.title;
+  // El titulo largo va en el cuerpo, no en la barra: ahi entra completo.
+  if(title) title.textContent='Para leer';
+  window._dmLeyendoArticulo = true;
   if(!body) return;
-  body.innerHTML='<button onclick="showEduLibrary()" style="background:none;border:none;color:#7ec8a4;font-size:14px;padding:0 0 12px;cursor:pointer;font-family:inherit">← Volver</button>'+
+  body.innerHTML=
     // La ilustracion del tema, arriba de todo: es lo que le da aire al texto
     // y lo diferencia de un documento.
     '<div style="height:170px;border-radius:18px;overflow:hidden;margin-bottom:16px">'+
@@ -6258,6 +6256,8 @@ function showEduTopic(id){
     t.body+'</div>';
 }
 function closeEduLibrary(){
+  // Si esta leyendo un articulo, "Volver" lo devuelve al listado, no al inicio.
+  if(window._dmLeyendoArticulo){ window._dmLeyendoArticulo=false; showEduLibrary(); return; }
   if(S.role==='doctor'){ showDoctorHome(); return; }
   // El paciente entra desde el inicio ("Leer hoy"): vuelve ahi.
   showHome();
@@ -10613,24 +10613,41 @@ function showDiaryNew(){
       dEl._daytypeWired=true;
     }
   },180);
-  // Check if yesterday had medications and offer to copy
+  // ── Medicación habitual ───────────────────────────────────────────────
+  // Quien toma tres remedios todas las noches no los va a cargar de a uno
+  // cada dia: abandona el diario. Se ofrece la ultima que cargó, con un toque.
+  // Antes miraba SOLO el ultimo registro; si esa noche no habia tomado nada,
+  // no aparecia. Ahora busca hacia atras la ultima noche que tuvo medicación.
   setTimeout(()=>{
-    const recs=S.records||[];
-    const yesterday=recs[recs.length-1];
-    if(yesterday&&yesterday.medications&&yesterday.medications!=='[]'&&yesterday.medications!==''){
-      try{
-        const yMeds=JSON.parse(yesterday.medications);
-        if(Array.isArray(yMeds)&&yMeds.length>0){
-          const banner=document.getElementById('same-meds-banner');
-          if(banner){
-            const names=yMeds.map(m=>m.name||(typeof m==='string'?m:'')).filter(Boolean).join(', ');
-            banner.innerHTML='<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:13px;color:#166534;display:flex;align-items:center;gap:10px"><span style="flex:1">💊 Ayer tomaste: <strong>'+names+'</strong><br><span style="font-size:12px;color:#15803d">¿Tomaste la misma medicación esta noche?</span></span><button type="button" onclick="copySameMeds()" style="background:#1a4a3a;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap">Sí, copiar</button></div>';
-            banner.style.display='block';
-            window._yesterdayMeds=yMeds;
-          }
-        }
-      }catch(e){}
-    }
+    try{
+      const recs=(S.records||[]).slice().sort(function(a,b){
+        return String(a.diary_date||'') < String(b.diary_date||'') ? 1 : -1; });
+      let ultima=null, cuando=null;
+      for(let i=0;i<recs.length && i<30;i++){
+        const e=recs[i];
+        if(!e || !e.medications || e.medications==='[]' || e.medications==='') continue;
+        const arr = typeof e.medications==='string' ? JSON.parse(e.medications) : e.medications;
+        if(Array.isArray(arr) && arr.length){ ultima=arr; cuando=e.diary_date; break; }
+      }
+      if(!ultima) return;
+      const banner=document.getElementById('same-meds-banner');
+      if(!banner) return;
+      const nombres=ultima.map(function(m){
+        const n=m.name||(typeof m==='string'?m:'');
+        return n + (m.dose?' '+m.dose:'');
+      }).filter(Boolean);
+      window._yesterdayMeds=ultima;
+      banner.innerHTML=
+        '<div style="background:rgba(126,200,164,.1);border:1px solid rgba(126,200,164,.3);border-radius:14px;padding:14px 15px;margin-bottom:10px">'+
+          '<div style="font-size:14.5px;color:#F4EFE5;font-weight:600;margin-bottom:4px">💊 Tu medicación habitual</div>'+
+          '<div style="font-size:14px;color:rgba(244,239,229,.78);line-height:1.5;margin-bottom:11px">'+
+            nombres.join(' · ')+'</div>'+
+          '<button type="button" onclick="copySameMeds()" style="width:100%;background:#7EC8A4;color:#0F2820;border:none;border-radius:11px;padding:12px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">'+
+            'Tomé lo mismo anoche</button>'+
+          '<div style="font-size:12px;color:rgba(244,239,229,.5);margin-top:8px;text-align:center">O agregá abajo si cambió algo</div>'+
+        '</div>';
+      banner.style.display='block';
+    }catch(e){ console.warn('[MED-HABITUAL]', e); }
   },200);
   
   // Wake date = today (the date you woke up, not when you went to sleep)
@@ -21490,7 +21507,7 @@ function dmTcciTareasHtml(s){
   const m=dmTcciHechos();
   const p=dmTcciProgresoSemana(s);
   return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">'+
-      '<span style="font-size:10px;letter-spacing:.07em;color:rgba(255,255,255,.5);font-weight:700">TU TAREA ESTA SEMANA</span>'+
+      '<span style="font-size:11.5px;letter-spacing:.07em;color:rgba(244,239,229,.55);font-weight:700">TU TAREA ESTA SEMANA</span>'+
       '<span style="font-size:11px;font-weight:700;color:'+(p.pct===100?'#7EC8A4':'rgba(255,255,255,.55)')+'">'+p.hechas+' de '+p.total+'</span>'+
     '</div>'+
     '<div style="height:5px;background:rgba(255,255,255,.09);border-radius:3px;overflow:hidden;margin-bottom:10px">'+
@@ -21589,9 +21606,8 @@ function dmTcciAbrirSemana(n){
       '<div style="background:rgba(126,200,164,.1);border-left:3px solid #7EC8A4;border-radius:8px;padding:12px 14px;margin-bottom:16px">'+
         '<div style="font-size:10px;letter-spacing:.07em;color:#7EC8A4;font-weight:700;margin-bottom:4px">OBJETIVO</div>'+
         '<div style="font-size:13.5px;color:rgba(255,255,255,.88);line-height:1.55">'+s.objetivo+'</div></div>'+
-      '<div onclick="var c=document.getElementById(\'dm-tcci-texto\');var b=document.getElementById(\'dm-tcci-texto-btn\');var v=c.style.display===\'none\';c.style.display=v?\'\':\'none\';b.textContent=v?\'▲ Ocultar\':\'📖 Lo que tenés que saber esta semana\';" id="dm-tcci-texto-btn" style="background:rgba(255,255,255,.06);border:1px solid rgba(126,200,164,.22);border-radius:12px;padding:14px;text-align:center;font-size:15px;font-weight:600;color:#F4EFE5;cursor:pointer;margin-bottom:14px">📖 Lo que tenés que saber esta semana</div>'+'<div id="dm-tcci-texto" style="display:none;font-size:15px;color:rgba(255,255,255,.86);line-height:1.75;white-space:pre-line;margin-bottom:18px">'+s.contenido+'</div>'+s.contenido+'</div>'+
-      '<div style="background:rgba(255,255,255,.05);border-radius:14px;padding:14px 16px">'+
-        '<div style="font-size:10px;letter-spacing:.07em;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:10px">TU TAREA ESTA SEMANA</div>'+
+      '<div onclick="var c=document.getElementById(\'dm-tcci-texto\');var b=document.getElementById(\'dm-tcci-texto-btn\');var v=c.style.display===\'none\';c.style.display=v?\'\':\'none\';b.textContent=v?\'▲ Ocultar\':\'📖 Lo que tenés que saber esta semana\';" id="dm-tcci-texto-btn" style="background:rgba(255,255,255,.06);border:1px solid rgba(126,200,164,.22);border-radius:12px;padding:14px;text-align:center;font-size:15px;font-weight:600;color:#F4EFE5;cursor:pointer;margin-bottom:14px">📖 Lo que tenés que saber esta semana</div>'+'<div id="dm-tcci-texto" style="display:none;font-size:15.5px;color:rgba(255,255,255,.88);line-height:1.75;white-space:pre-line;margin-bottom:18px">'+s.contenido+'</div>'+
+      '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-radius:16px;padding:16px 17px">'+
         '<div id="dm-tcci-tareas-'+s.n+'">'+dmTcciTareasHtml(s)+'</div>'+
       '</div>'+
       '<div id="dm-tcci-cierre-'+s.n+'" style="margin-top:14px">'+dmTcciCierreHtml(s)+'</div>'+
