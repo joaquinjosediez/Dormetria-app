@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod137">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod138">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1293,7 +1293,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod137"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod138"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1312,7 +1312,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod137';
+const APP_VERSION='hoy79-mod138';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -13442,7 +13442,7 @@ function dmPanelInformeHtml(){
       '<b style="color:rgba(244,239,229,.8)">No se envía el nombre, el mail ni la fecha de nacimiento</b> del paciente: solo edad, sexo y números.'+
     '</div>'+
     tipos.map(function(x){
-      return '<div onclick="dmGenerarInforme(\''+x.id+'\')" style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:16px;padding:15px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:13px">'+
+      return '<div class="dm-inf-op" data-tipo="'+x.id+'" style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:16px;padding:15px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:13px">'+
         '<div style="flex:1"><div style="font-size:16px;font-weight:600;color:#F4EFE5">'+x.t+'</div>'+
         '<div style="font-size:13.5px;color:rgba(244,239,229,.55);margin-top:3px;line-height:1.45">'+x.d+'</div></div>'+
         '<span style="color:#7EC8A4;font-size:19px">›</span></div>';
@@ -13458,9 +13458,39 @@ function dmPanelInformeHtml(){
   '</div>';
 }
 
+// Engancha los clics del panel. Se llama cada vez que se repinta.
+function dmEngancharInforme(cont){
+  if(!cont) cont = document.getElementById('drp-content');
+  if(!cont) { console.error('[INFORME] no existe el contenedor'); return; }
+  // Se marca lo ya enganchado. Sin esto, cada repintado suma otro oyente
+  // sobre las mismas tarjetas y un solo clic dispara dos consultas a la API
+  // (dos veces el costo, dos informes distintos pisandose).
+  const unaVez = function(sel, fn){
+    cont.querySelectorAll(sel).forEach(function(el){
+      if(el.dataset.enganchado === '1') return;
+      el.dataset.enganchado = '1';
+      el.addEventListener('click', fn.bind(null, el));
+    });
+  };
+  unaVez('.dm-inf-op',      function(el){ dmGenerarInforme(el.dataset.tipo); });
+  unaVez('.dm-inf-rehacer', function(el){ dmGenerarInforme(el.dataset.tipo); });
+  unaVez('.dm-inf-copiar',  function(){ dmCopiarInforme(); });
+}
+window.dmEngancharInforme = dmEngancharInforme;
+
 async function dmGenerarInforme(tipo){
-  const salida = document.getElementById('dm-inf-salida');
-  if(!salida) return;
+  console.log('[INFORME] pedido:', tipo);
+  let salida = document.getElementById('dm-inf-salida');
+  // Antes acá había un "return" mudo: si el div no estaba, no pasaba nada y
+  // no quedaba rastro. Ahora se crea el lugar donde mostrar el resultado.
+  if(!salida){
+    const cont = document.getElementById('drp-content');
+    if(!cont){ alert('No se encontró el panel del paciente.'); return; }
+    salida = document.createElement('div');
+    salida.id = 'dm-inf-salida';
+    salida.style.marginTop = '16px';
+    cont.appendChild(salida);
+  }
   salida.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div>Redactando el informe…</div>';
   try{
     const email = S.viewEmail;
@@ -13494,9 +13524,10 @@ async function dmGenerarInforme(tipo){
           String(texto).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>'+
       '</div>'+
       '<div style="display:flex;gap:9px;margin-top:11px">'+
-        '<button onclick="dmCopiarInforme()" style="flex:1;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Copiar</button>'+
-        '<button onclick="dmGenerarInforme(\''+tipo+'\')" style="flex:1;background:rgba(255,255,255,.07);color:#F4EFE5;border:1px solid rgba(126,200,164,.25);border-radius:12px;padding:13px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:var(--font)">Rehacer</button>'+
+        '<button class="dm-inf-copiar" style="flex:1;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Copiar</button>'+
+        '<button class="dm-inf-rehacer" data-tipo="'+tipo+'" style="flex:1;background:rgba(255,255,255,.07);color:#F4EFE5;border:1px solid rgba(126,200,164,.25);border-radius:12px;padding:13px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:var(--font)">Rehacer</button>'+
       '</div>';
+    dmEngancharInforme(document.getElementById('drp-content'));
   }catch(e){
     console.error('[INFORME]', e);
     salida.innerHTML = '<div style="background:rgba(220,38,38,.12);border:1px solid rgba(255,157,157,.35);border-radius:14px;padding:15px;font-size:14px;color:#ff9d9d;line-height:1.55">'+
@@ -13516,7 +13547,7 @@ function dmCopiarInforme(){
 async function showDrPTab_(tab){
   const cont=document.getElementById('drp-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';const email=S.viewEmail;
   cont.dataset.tab=tab; // hook para CSS por pestaña (ver body.dr-desktop #drp-content[data-tab=...])
-  if(tab==='informe'){ cont.innerHTML = dmPanelInformeHtml(); return; }
+  if(tab==='informe'){ cont.innerHTML = dmPanelInformeHtml(); dmEngancharInforme(cont); return; }
   try{
     if(tab==='summary'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);S.viewRecs=recs||[];
