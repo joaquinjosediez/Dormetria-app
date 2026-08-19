@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod135">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod136">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1092,6 +1092,7 @@
     <button class="tab" onclick="showDrPTab('summary',this)">Resumen</button>
     <button class="tab" onclick="showDrPTab('diary',this)">Diario sueño</button>
     <button class="tab" onclick="showDrPTab('docs',this)">Estudios</button>
+    <button class="tab" onclick="showDrPTab('informe',this)">📄 Informe</button>
     <button class="tab" onclick="showDrPTab('notes',this)">📝 Notas</button>
     <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
     <button class="tab" onclick="showDrPTab('suggest',this)">Sugerir escalas</button>
@@ -1292,7 +1293,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod135"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod136"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1311,7 +1312,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod135';
+const APP_VERSION='hoy79-mod136';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4447,6 +4448,35 @@ async function submitSuggestion(){
 }
 
 
+// Llama a una Edge Function de Supabase con la sesión del usuario.
+// Las claves de la IA viven allá; acá nunca hay ninguna.
+async function dmInvocarFuncion(nombre, cuerpo){
+  let token=null;
+  try{
+    const s = await supa.auth.getSession();
+    token = s && s.data && s.data.session ? s.data.session.access_token : null;
+  }catch(_){}
+  if(!token) throw new Error('Tu sesión venció. Volvé a entrar.');
+
+  const r = await fetch(SU + '/functions/v1/' + nombre, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey': SK },
+    body: JSON.stringify(cuerpo)
+  });
+
+  let datos={};
+  try{ datos = await r.json(); }catch(_){}
+
+  if(!r.ok){
+    // 404 significa que la función todavía no se desplegó. Decirlo así
+    // evita media hora buscando el error en el lugar equivocado.
+    if(r.status===404) throw new Error('La función "'+nombre+'" no está desplegada en Supabase todavía.');
+    throw new Error(datos.error || ('Error '+r.status));
+  }
+  return datos;
+}
+window.dmInvocarFuncion = dmInvocarFuncion;
+
 async function analyzeDocWithAI(docId, docTitle, docCategory, isDoctor=false){
   // Get the doc from DB
   const email = isDoctor ? S.viewEmail : S.user?.email;
@@ -4534,17 +4564,8 @@ Sé preciso, clínico y conciso.`
     : `Sos un especialista en medicina del sueño. Analizá este ${catContext} y explicalo en lenguaje clínico claro para un médico, destacando los aspectos más relevantes para el manejo del paciente. ${patientContext}. Sé directo y práctico.`;
   
   try{
-    // La clave vive en Netlify, nunca en el navegador.
-    let _tok=null;
-    try{ const _s=await sb.auth.getSession(); _tok=_s&&_s.data&&_s.data.session?_s.data.session.access_token:null; }catch(_){}
-    const response = await fetch('https://dormetria.com/.netlify/functions/analizar-estudio',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_tok||'')},
-      body:JSON.stringify({ pdf: doc.file_data, prompt: prompt })
-    });
-    const data = await response.json();
-    if(data.error){throw new Error(data.error.message||'Error de API');}
-    const text = data.content?.[0]?.text||'Sin respuesta';
+    const data = await dmInvocarFuncion('analizar-estudio', { pdf: doc.file_data, prompt: prompt });
+    const text = data.texto || 'Sin respuesta';
     
     // Format the response
     const formatted = text
@@ -13301,9 +13322,194 @@ function drArchiveFromProfile(email){
   }catch(_){ toast('No se pudo cambiar el estado'); }
 }
 function showDrPTab(tab,el){document.querySelectorAll('#screen-doctor-patient .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDrPTab_(tab);}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INFORMES CLÍNICOS
+// ═══════════════════════════════════════════════════════════════════════
+//  Lo que sale de la app son NÚMEROS, no una persona. Ni nombre, ni mail,
+//  ni fecha de nacimiento: solo edad, sexo y las métricas que ya calculó
+//  Dormetria. El texto vuelve, se muestra, y no se guarda en ningún lado
+//  salvo que el profesional lo pegue en la historia clínica.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Arma el paquete anonimizado. Todo lo que no esté acá, no viaja.
+function dmDatosParaInforme(entries, evals, edad, sexo){
+  const validas = (typeof dmNochesValidas==='function') ? dmNochesValidas(entries) : (entries||[]);
+  const m   = (typeof computeDiaryMetrics==='function')   ? computeDiaryMetrics(validas)   : null;
+  const reg = (typeof computeSleepRegularity==='function')? computeSleepRegularity(validas): null;
+  const sc  = (typeof calcSleepScore==='function')        ? calcSleepScore(validas, edad)  : null;
+
+  const fechas = validas.map(function(e){ return e.diary_date; }).filter(Boolean).sort();
+
+  const paquete = {
+    edad_anios: edad != null ? edad : null,
+    sexo_biologico: sexo || null,
+    periodo: {
+      desde: fechas[0] || null,
+      hasta: fechas[fechas.length-1] || null,
+      noches_validas: validas.length,
+      noches_cargadas: (entries||[]).length,
+      noches_descartadas: (entries||[]).length - validas.length
+    }
+  };
+
+  if(m){
+    paquete.metricas = {
+      hora_promedio_acostarse: m.fmtClock ? m.fmtClock(m.avgBed) : null,
+      hora_promedio_despertar: m.fmtClock ? m.fmtClock(m.avgWake) : null,
+      sueno_total_promedio_min: m.avgTotal != null ? Math.round(m.avgTotal) : null,
+      latencia_promedio_min: m.avgLatency != null ? Math.round(m.avgLatency) : null,
+      noches_con_dato_de_latencia: m.nLatency,
+      duracion_promedio_despertares_min: m.avgAwakDur != null ? Math.round(m.avgAwakDur) : null,
+      noches_con_despertares: m.nightsWithAwak,
+      tiempo_en_cama_promedio_min: m.avgTIB != null ? Math.round(m.avgTIB) : null,
+      eficiencia_de_sueno_pct: m.sleepEfficiency,
+      promedio_dias_laborables_min: m.avgWd != null ? Math.round(m.avgWd) : null,
+      promedio_dias_libres_min: m.avgWe != null ? Math.round(m.avgWe) : null,
+      deuda_de_sueno_min: m.sleepDebt != null ? Math.round(m.sleepDebt) : null,
+      jet_lag_social_min: m.socialJetLag,
+      pct_noches_menos_de_7h: m.under7Pct
+    };
+  }
+  if(reg){
+    paquete.regularidad = {
+      desvio_del_punto_medio_min: reg.sd_midpoint_min,
+      indice: reg.index != null ? reg.index : null
+    };
+  }
+  if(sc){
+    paquete.score = {
+      total: sc.total, interpretacion: sc.label,
+      pilar_cantidad: sc.avgQty, pilar_fragmentacion: sc.avgFrag, pilar_regularidad: sc.regularity,
+      noches_usadas: sc.nNights
+    };
+  }
+
+  // Factores: solo el resultado estadístico, sin volver a mandar el diario
+  try{
+    if(typeof computeHabitsImpact === 'function'){
+      const hb = computeHabitsImpact(validas) || [];
+      paquete.factores = hb.map(function(f){
+        return {
+          factor: f.label,
+          noches_con: f.nOn, noches_sin: f.nOff,
+          veredicto: f.veredicto,
+          efectos: (f.efectos||[]).map(function(e){
+            return { variable: e.label,
+                     diferencia: Math.round(e.diff*10)/10,
+                     unidad: e.unit,
+                     p: e.p != null ? Number(e.p.toFixed(4)) : null,
+                     alcanza_umbral_clinico_y_significacion: e.signo !== 0 };
+          })
+        };
+      });
+    }
+  }catch(_){}
+
+  // Escalas: nombre, puntaje e interpretación. Sin fecha exacta de carga.
+  try{
+    const ult = {};
+    (evals||[]).forEach(function(r){ ult[r.scale_id] = r; });
+    paquete.escalas = Object.values(ult).map(function(r){
+      const s = (typeof SCALES!=='undefined') ? SCALES.find(function(x){ return x.id===r.scale_id; }) : null;
+      const i = s && s.interp ? s.interp(r.score) : null;
+      return { escala: s ? s.name : r.scale_id,
+               puntaje: r.score, maximo: r.max_score,
+               interpretacion: i ? i.l : null };
+    });
+  }catch(_){}
+
+  return paquete;
+}
+
+function dmPanelInformeHtml(){
+  const tipos = [
+    { id:'evolucion',     t:'Nota de evolución',  d:'Telegráfica, para pegar en la historia clínica.' },
+    { id:'interconsulta', t:'Interconsulta',      d:'Completa, para un colega que no vio al paciente.' },
+    { id:'paciente',      t:'Resumen para el paciente', d:'En lenguaje cotidiano, para que se lo lleve.' }
+  ];
+  return '<div style="padding:4px 0 20px">'+
+    '<div style="font-size:19px;font-weight:700;color:#F4EFE5;margin-bottom:5px">Generar informe</div>'+
+    '<div style="font-size:14px;color:rgba(244,239,229,.6);line-height:1.55;margin-bottom:16px">'+
+      'Se redacta con las métricas que ya calculó Dormetria. '+
+      '<b style="color:rgba(244,239,229,.8)">No se envía el nombre, el mail ni la fecha de nacimiento</b> del paciente: solo edad, sexo y números.'+
+    '</div>'+
+    tipos.map(function(x){
+      return '<div onclick="dmGenerarInforme(\''+x.id+'\')" style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:16px;padding:15px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:13px">'+
+        '<div style="flex:1"><div style="font-size:16px;font-weight:600;color:#F4EFE5">'+x.t+'</div>'+
+        '<div style="font-size:13.5px;color:rgba(244,239,229,.55);margin-top:3px;line-height:1.45">'+x.d+'</div></div>'+
+        '<span style="color:#7EC8A4;font-size:19px">›</span></div>';
+    }).join('')+
+    '<div style="margin-top:14px">'+
+      '<label style="font-size:13.5px;color:rgba(244,239,229,.6);display:block;margin-bottom:6px">Algo que quieras que tenga en cuenta (opcional)</label>'+
+      '<textarea id="dm-inf-notas" rows="2" placeholder="Ej: viene con CPAP hace 3 meses, refiere mejoría subjetiva" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(126,200,164,.2);border-radius:12px;padding:12px;font-size:14px;color:#F4EFE5;font-family:var(--font);resize:vertical"></textarea>'+
+    '</div>'+
+    '<div id="dm-inf-salida" style="margin-top:16px"></div>'+
+    '<div style="border-left:3px solid #C8A96E;padding:10px 0 10px 14px;margin-top:20px;font-size:13px;line-height:1.55;color:rgba(244,239,229,.6)">'+
+      'El informe lo redacta un modelo de lenguaje a partir de los números del registro. '+
+      'Revisalo antes de firmarlo o entregarlo: la responsabilidad clínica es tuya.</div>'+
+  '</div>';
+}
+
+async function dmGenerarInforme(tipo){
+  const salida = document.getElementById('dm-inf-salida');
+  if(!salida) return;
+  salida.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div>Redactando el informe…</div>';
+  try{
+    const email = S.viewEmail;
+    const d = S.viewData || {};
+    let edad = null;
+    try{ if(d.dob) edad = Math.floor((Date.now() - new Date(d.dob)) / 31557600000); }catch(_){}
+
+    const [entries, evals] = await Promise.all([
+      db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+'&order=diary_date.asc&select=*&limit=400').catch(function(){ return []; }),
+      db.get('evaluations?patient_email=eq.'+encodeURIComponent(email)+'&order=created_at.asc&select=*').catch(function(){ return []; })
+    ]);
+
+    if(!entries || entries.length < 3){
+      salida.innerHTML = '<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.3);border-radius:14px;padding:15px;font-size:14px;color:rgba(244,239,229,.85);line-height:1.55">Este paciente tiene '+((entries||[]).length)+' noches cargadas. Con menos de 3 no hay métricas para informar.</div>';
+      return;
+    }
+
+    const datos = dmDatosParaInforme(entries, evals, edad, d.sex || null);
+    const notasEl = document.getElementById('dm-inf-notas');
+    const resp = await dmInvocarFuncion('informe-clinico', {
+      tipo: tipo,
+      datos: datos,
+      notas: notasEl ? notasEl.value.trim() : ''
+    });
+
+    const texto = resp.texto || '';
+    window._dmInformeTexto = texto;
+    salida.innerHTML =
+      '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.2);border-radius:16px;padding:18px">'+
+        '<div id="dm-inf-txt" style="font-size:15px;color:#F4EFE5;line-height:1.7;white-space:pre-wrap">'+
+          String(texto).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:9px;margin-top:11px">'+
+        '<button onclick="dmCopiarInforme()" style="flex:1;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Copiar</button>'+
+        '<button onclick="dmGenerarInforme(\''+tipo+'\')" style="flex:1;background:rgba(255,255,255,.07);color:#F4EFE5;border:1px solid rgba(126,200,164,.25);border-radius:12px;padding:13px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:var(--font)">Rehacer</button>'+
+      '</div>';
+  }catch(e){
+    console.error('[INFORME]', e);
+    salida.innerHTML = '<div style="background:rgba(220,38,38,.12);border:1px solid rgba(255,157,157,.35);border-radius:14px;padding:15px;font-size:14px;color:#ff9d9d;line-height:1.55">'+
+      String((e && e.message) || e)+'</div>';
+  }
+}
+
+function dmCopiarInforme(){
+  const t = window._dmInformeTexto || '';
+  if(!t) return;
+  try{
+    navigator.clipboard.writeText(t).then(function(){ toast('Informe copiado'); },
+                                          function(){ toast('No se pudo copiar'); });
+  }catch(_){ toast('No se pudo copiar'); }
+}
+
 async function showDrPTab_(tab){
   const cont=document.getElementById('drp-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';const email=S.viewEmail;
   cont.dataset.tab=tab; // hook para CSS por pestaña (ver body.dr-desktop #drp-content[data-tab=...])
+  if(tab==='informe'){ cont.innerHTML = dmPanelInformeHtml(); return; }
   try{
     if(tab==='summary'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);S.viewRecs=recs||[];
