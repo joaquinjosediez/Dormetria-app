@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod147">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod149">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1305,7 +1305,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod147"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod149"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1324,7 +1324,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod147';
+const APP_VERSION='hoy79-mod149';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -13203,7 +13203,12 @@ async function dmCrearPacienteGuardar(){
     const cuerpo = { name:v('ap-name'), lname:v('ap-lname'), email, code:genCode(), dob:v('ap-dob')||null,
                      sex:v('ap-sex')||null,
                      weight_kg:v('ap-weight')?parseFloat(v('ap-weight')):null,
-                     height_cm:v('ap-height')?parseFloat(v('ap-height')):null };
+                     height_cm:v('ap-height')?parseFloat(v('ap-height')):null,
+                     // Queda registrado QUIÉN dio el alta. Sin esto, si el
+                     // vínculo falla no hay manera de saber de qué profesional
+                     // era la ficha, y con varios profesionales en la base eso
+                     // se vuelve imposible de reparar sin preguntar.
+                     created_by: S.user ? S.user.email : null };
     const r = await db.post('patients', cuerpo);
     // El codigo lo generamos nosotros antes de guardar, asi que no hace falta
     // que el servidor nos devuelva la fila: si las reglas de acceso permiten
@@ -19168,12 +19173,24 @@ function handleAuthRedirect(){
         const { error } = await supa.auth.verifyOtp({ token_hash: th, type: tp });
         if(error){
           console.warn('[AUTH-REDIRECT] verifyOtp falló:', error.message);
+          if(tp === 'signup'){
+            showScreen('login');
+            const e3=document.getElementById('login-error');
+            if(e3){ e3.textContent='Este enlace de confirmación ya venció o fue usado. Probá entrar con tu mail y contraseña.'; e3.classList.add('show'); }
+            return;
+          }
           showSetPasswordScreen(tp==='invite'?'invite':'recovery');
           const e2=document.getElementById('sp-error');
           if(e2){ e2.textContent='Este enlace ya venció o fue usado. Pedí uno nuevo desde "Olvidé mi contraseña".'; e2.classList.add('show'); }
           return;
         }
         sessionStorage.removeItem('dm_auth_intent');
+        // signup = confirmación de un registro normal. La contraseña ya la
+        // eligió la persona: pedírsela de nuevo es el bug que estamos sacando.
+        if(tp === 'signup'){
+          const { data: { session: s2 } } = await supa.auth.getSession();
+          if(s2){ await dmEntrarTrasConfirmar(s2); return; }
+        }
         showSetPasswordScreen(tp==='invite'?'invite':'recovery');
       }catch(e){ console.warn('[AUTH-REDIRECT] token_hash:', e.message); }
     })();
@@ -19193,7 +19210,12 @@ function handleAuthRedirect(){
       if(storedIntent === 'recovery'){
         sessionStorage.removeItem('dm_auth_intent');
         showSetPasswordScreen('recovery');
-      } else if(storedIntent === 'invite' || storedIntent === 'signup'){
+      } else if(storedIntent === 'signup'){
+        // Registro confirmado: adentro, sin pedirle nada.
+        sessionStorage.removeItem('dm_auth_intent');
+        dmEntrarTrasConfirmar(session);
+      } else if(storedIntent === 'invite'){
+        // Invitación: acá SÍ hay que crear contraseña, nunca tuvo una.
         sessionStorage.removeItem('dm_auth_intent');
         showSetPasswordScreen('invite');
       } else {
@@ -19214,7 +19236,10 @@ function handleAuthRedirect(){
         if(session && storedIntent === 'recovery'){
           sessionStorage.removeItem('dm_auth_intent');
           showSetPasswordScreen('recovery');
-        } else if(session && (storedIntent === 'invite' || storedIntent === 'signup')){
+        } else if(session && storedIntent === 'signup'){
+          sessionStorage.removeItem('dm_auth_intent');
+          dmEntrarTrasConfirmar(session);
+        } else if(session && storedIntent === 'invite'){
           sessionStorage.removeItem('dm_auth_intent');
           showSetPasswordScreen('invite');
         }
@@ -19223,6 +19248,81 @@ function handleAuthRedirect(){
     }, 1500);
   }
 }
+
+// Alguien que confirma su mail YA tiene contraseña: no hay nada que
+// pedirle. Solo hay que resolverle el perfil y dejarlo adentro.
+async function dmEntrarTrasConfirmar(session){
+  try{
+    window._dmInPasswordFlow = false;
+    window._dmForcePasswordScreen = false;
+    try{ sessionStorage.removeItem('dm_auth_intent'); }catch(_){}
+    if(window.history && window.history.replaceState){
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+
+    const authUid = session.user.id;
+    const email = String(session.user.email||'').toLowerCase();
+    const md = (session.user && session.user.user_metadata) || {};
+    let profile = null, role = null;
+
+    // 1. ¿Ya tiene ficha suya?
+    try{
+      const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&parent_email=is.null&select=*');
+      if(p && p.length){ profile = p[0]; role = 'patient'; }
+    }catch(_){}
+    if(!profile){
+      try{
+        const dr = await db.get('doctors?auth_id=eq.'+encodeURIComponent(authUid)+'&select=*');
+        if(dr && dr.length){ profile = dr[0]; role = 'doctor'; }
+      }catch(_){}
+    }
+
+    // 2. ¿Hay una ficha esperándola, creada por su profesional?
+    if(!profile && (md.role||'patient') !== 'doctor'){
+      try{
+        const previo = await dmAdoptarPerfilExistente(email, authUid);
+        if(previo){ profile = previo; role = 'patient'; }
+      }catch(_){}
+    }
+
+    // 3. Si no hay nada, se crea con lo que cargó al registrarse.
+    if(!profile){
+      try{
+        if((md.role||'patient') === 'doctor'){
+          const d = await db.post('doctors', { name: md.name||'', lname: md.lname||'', email, auth_id: authUid });
+          profile = Array.isArray(d)?d[0]:d; role = 'doctor';
+        }else{
+          const d = await db.post('patients', { name: md.name||'', lname: md.lname||'', email,
+                                                code: genCode(), auth_id: authUid });
+          profile = Array.isArray(d)?d[0]:d; role = 'patient';
+        }
+      }catch(e){
+        console.error('[CONFIRMAR] no se pudo crear el perfil:', e);
+        showScreen('login');
+        const er = document.getElementById('login-error');
+        if(er){
+          er.textContent = 'Tu cuenta quedó confirmada, pero no se pudo abrir tu perfil: '+
+                           ((e && e.message) || e) + '. Entrá con tu mail y contraseña.';
+          er.classList.add('show');
+        }
+        return;
+      }
+    }
+
+    S.user = profile; S.role = role;
+    if(role === 'patient'){
+      try{ setPatientMode(profile.dob); }catch(_){}
+      showHome();
+    }else{
+      showDoctorHome();
+    }
+    toast('¡Listo! Tu cuenta quedó confirmada');
+  }catch(e){
+    console.error('[CONFIRMAR]', e);
+    showScreen('login');
+  }
+}
+window.dmEntrarTrasConfirmar = dmEntrarTrasConfirmar;
 
 async function checkIfNeedsPasswordSetup(session){
   // Solo actuar si el usuario fue creado hace menos de 5 minutos (recién confirmó invite)
@@ -19239,8 +19339,16 @@ async function checkIfNeedsPasswordSetup(session){
     const p = await db.get('patients?auth_id=eq.'+encodeURIComponent(authUid)+'&select=id');
     const dr = await db.get('doctors?auth_id=eq.'+encodeURIComponent(authUid)+'&select=id');
     if((!p || !p.length) && (!dr || !dr.length)){
-      // Sin perfil — es un invitado que necesita crear contraseña + perfil
-      showSetPasswordScreen('invite');
+      // Sin perfil. Si venía de confirmar su registro, ya tiene contraseña:
+      // se le arma el perfil y entra. Solo el invitado de verdad (que nunca
+      // eligió una) va a la pantalla de crear contraseña.
+      let _intento = null;
+      try{ _intento = sessionStorage.getItem('dm_auth_intent'); }catch(_){}
+      if(_intento === 'signup' || window._dmLinkType === 'signup'){
+        await dmEntrarTrasConfirmar(session);
+      }else{
+        showSetPasswordScreen('invite');
+      }
     }
     // Si tiene perfil, no hacemos nada (tryAutoLogin ya lo va a procesar)
   }catch(e){
