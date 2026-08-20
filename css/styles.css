@@ -3788,3 +3788,78 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 /* ── Pilares: el subtítulo bajo el porcentaje era casi invisible ─────── */
 #diary-pillar-bars [style*="color:var(--label-3)"]{ color:rgba(244,239,229,.55) !important; }
 #diary-pillar-bars{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod143 · Maquetado de lo que devuelve la IA
+   Las mismas clases sirven en el panel oscuro del profesional y en la
+   hoja clara del paciente: lo único que cambia son los colores, que se
+   redefinen dentro de .dm-ia-papel.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.dm-ia{ --ia-txt:#F4EFE5; --ia-sec:rgba(244,239,229,.55); --ia-caja:rgba(255,255,255,.05);
+        --ia-borde:rgba(126,200,164,.18); --ia-acento:#7EC8A4; }
+
+.dm-ia-titulo{ font-size:20px; font-weight:700; color:var(--ia-txt); line-height:1.25; }
+.dm-ia-sub{ font-size:13.5px; color:var(--ia-sec); margin-top:3px; }
+
+.dm-ia-resumen{
+  margin:14px 0 4px; padding:15px 16px;
+  background:rgba(126,200,164,.1); border-left:3px solid var(--ia-acento);
+  border-radius:0 13px 13px 0;
+  font-size:15.5px; line-height:1.6; color:var(--ia-txt);
+}
+
+.dm-ia-sec{ margin-top:22px; }
+.dm-ia-sec-t{
+  font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ia-acento); margin-bottom:10px;
+  padding-bottom:7px; border-bottom:1px solid var(--ia-borde);
+}
+
+.dm-ia-p{ font-size:15px; line-height:1.7; color:var(--ia-txt); margin:0 0 10px; opacity:.92; }
+
+/* Lista y hallazgos */
+.dm-ia-item{ display:flex; gap:11px; align-items:flex-start; padding:9px 0; }
+.dm-ia-punto{
+  flex-shrink:0; width:7px; height:7px; border-radius:50%;
+  background:var(--ia-acento); margin-top:8px;
+}
+.dm-ia-item-t{ flex:1; font-size:15px; line-height:1.6; color:var(--ia-txt); opacity:.92; }
+.dm-ia-item-t b{ font-weight:700; opacity:1; }
+
+/* Datos: rótulo a la izquierda, valor a la derecha */
+.dm-ia-dato{
+  display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+  padding:11px 0; border-bottom:1px solid var(--ia-borde);
+}
+.dm-ia-dato:last-child{ border-bottom:none; }
+.dm-ia-dato-t{ font-size:14.5px; color:var(--ia-txt); opacity:.8; }
+.dm-ia-dato-v{ font-size:16px; font-weight:700; color:var(--ia-txt); white-space:nowrap; }
+
+/* Lo que se descarta: es la sección que más tranquiliza, va destacada */
+.dm-ia-descartes{
+  display:flex; flex-direction:column; gap:8px;
+  padding:14px 15px; border-radius:14px;
+  background:rgba(94,224,138,.09); border:1px solid rgba(94,224,138,.25);
+}
+.dm-ia-descarte{
+  display:flex; gap:11px; align-items:flex-start;
+  font-size:15px; line-height:1.55; color:var(--ia-txt);
+}
+.dm-ia-descarte span{
+  flex-shrink:0; width:21px; height:21px; border-radius:50%;
+  background:rgba(94,224,138,.2); color:#5ee08a;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; margin-top:1px;
+}
+
+/* ── La misma estructura sobre hoja clara (modal del paciente) ───────── */
+.dm-ia-papel .dm-ia{
+  --ia-txt:#1f2d28; --ia-sec:#6b7c74; --ia-caja:#f4f8f6;
+  --ia-borde:#dce8e2; --ia-acento:#1a4a3a;
+}
+.dm-ia-papel .dm-ia-resumen{ background:#eef8f5; color:#14332a; }
+.dm-ia-papel .dm-ia-descartes{ background:#f0fdf4; border-color:#bbf7d0; }
+.dm-ia-papel .dm-ia-descarte span{ background:#dcfce7; color:#15803d; }
+.dm-ia-papel .dm-ia-punto{ background:#1a4a3a; }
