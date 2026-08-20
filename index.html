@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod145">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod147">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1242,6 +1242,15 @@
       <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
     </div>
 
+    <!-- Ayudanos a mejorar -->
+    <div onclick="showFeedbackModal()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Ayudanos a mejorar</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Contanos qué te falta o qué no funciona</div></div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
+    </div>
+
     <!-- Higiene del sueño -->
     <div onclick="showHygieneChecklist()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
       <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -1286,6 +1295,7 @@
     <button class="tab active" id="admin-tab-pending" onclick="loadAdminTab('pending')" style="color:#1a4a3a">Pendientes</button>
     <button class="tab" id="admin-tab-doctors" onclick="loadAdminTab('doctors')" style="color:#1a4a3a">Profesionales</button>
     <button class="tab" id="admin-tab-patients" onclick="loadAdminTab('patients')" style="color:#1a4a3a">Pacientes</button>
+    <button class="tab" id="admin-tab-escuchar" onclick="loadAdminTab('escuchar')" style="color:#1a4a3a">Lo que dicen</button>
     <button class="tab" id="admin-tab-stats" onclick="loadAdminTab('stats')" style="color:#1a4a3a">Estadísticas</button>
     <button class="tab" id="admin-tab-preview" onclick="loadAdminTab('preview')" style="color:#1a4a3a">Vista previa</button>
     <span style="margin-left:auto;align-self:center;font-size:11px;color:#8a8a8a;padding-right:12px" id="admin-version"></span>
@@ -1295,7 +1305,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod145"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod147"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1314,7 +1324,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod145';
+const APP_VERSION='hoy79-mod147';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3142,20 +3152,45 @@ function dismissPVTBanner(){
 // `patients` sin auth_id: es una ficha sin cuenta. Cuando la persona se
 // registra con el mismo mail, hay que ADOPTAR esa ficha en vez de crear una
 // nueva, si no queda un perfil vacio y los datos clinicos huerfanos.
+// Cuando el profesional da de alta a un paciente, crea su ficha SIN auth_id
+// (la persona todavía no tiene cuenta). Al registrarse, hay que "adoptar"
+// esa ficha: encontrarla por mail y ponerle el auth_id.
+//
+// Acá estaba el problema: si la política de acceso de patients solo deja
+// ver las filas donde auth_id = el usuario, una ficha con auth_id NULL es
+// INVISIBLE para la persona que tiene que adoptarla. La busca, no la
+// encuentra, intenta crear una nueva, choca con el mail repetido, y termina
+// en "tu cuenta existe pero el perfil quedó sin vincular".
+window._dmAdopcionMotivo = null;
 async function dmAdoptarPerfilExistente(email, authUid){
+  window._dmAdopcionMotivo = null;
   if(!email || !authUid) return null;
+  let filas;
   try{
-    const filas = await db.get('patients?email=eq.'+encodeURIComponent(String(email).toLowerCase())+'&select=*');
-    const previo = (filas||[])[0];
-    if(!previo) return null;
-    if(previo.auth_id && previo.auth_id !== authUid) return null;  // es de otra cuenta
-    if(!previo.auth_id){
+    filas = await db.get('patients?email=eq.'+encodeURIComponent(String(email).toLowerCase())+'&select=*');
+  }catch(e){
+    window._dmAdopcionMotivo = 'no se pudo leer la ficha: '+((e && e.message)||e);
+    console.warn('[ALTA] adoptar · lectura:', e && e.message);
+    return null;
+  }
+  const previo = (filas||[])[0];
+  if(!previo){ window._dmAdopcionMotivo = 'no hay ninguna ficha con ese mail visible'; return null; }
+  if(previo.auth_id && previo.auth_id !== authUid){
+    window._dmAdopcionMotivo = 'la ficha ya pertenece a otra cuenta';
+    return null;
+  }
+  if(!previo.auth_id){
+    try{
       await db.patch('patients?id=eq.'+encodeURIComponent(previo.id), { auth_id: authUid });
-      previo.auth_id = authUid;
+    }catch(e){
+      window._dmAdopcionMotivo = 'no se pudo tomar la ficha: '+((e && e.message)||e);
+      console.warn('[ALTA] adoptar · escritura:', e && e.message);
+      return null;
     }
-    console.log('[ALTA] perfil preexistente adoptado:', previo.id);
-    return previo;
-  }catch(e){ console.warn('[ALTA] adoptar:', e && e.message); return null; }
+    previo.auth_id = authUid;
+  }
+  console.log('[ALTA] perfil preexistente adoptado:', previo.id);
+  return previo;
 }
 
 function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase();}
@@ -3248,8 +3283,10 @@ async function doLogin(){
       }catch(createErr){
         console.error('[LOGIN] auto-crear perfil:', createErr);
         const msg=(createErr&&createErr.message)||'';
+        const _motivo = window._dmAdopcionMotivo ? ' (' + window._dmAdopcionMotivo + ')' : '';
         errEl.textContent=(msg.includes('duplicate')||msg.includes('unique'))
-          ? 'Tu cuenta existe pero el perfil quedó sin vincular. Avisale a tu profesional para vincularla.'
+          ? 'Ya existe una ficha con este mail, pero tu cuenta no pudo tomarla' + _motivo +
+            '. Avisale a tu profesional.'
           : 'Tu cuenta está autenticada pero no se pudo crear el perfil. Probá de nuevo o contactanos.';
         errEl.classList.add('show');
         await supa.auth.signOut();
@@ -3817,6 +3854,94 @@ async function showAdminPanel(){
   document.getElementById('admin-content').innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   loadAdminTab('pending');
 }
+// ── Lo que dicen los usuarios ─────────────────────────────────────────
+// Las sugerencias y el interés en el TCC-I se estaban guardando (mal) y
+// nadie los leía nunca. Acá se leen.
+async function dmAdminEscuchar(){
+  const cont = document.getElementById('admin-content');
+  if(!cont) return;
+
+  const [sug, tcci] = await Promise.all([
+    db.get('app_sugerencias?order=created_at.desc&select=*&limit=200').catch(function(e){ return {err:e}; }),
+    db.get('tcci_interes?order=created_at.desc&select=*&limit=200').catch(function(e){ return {err:e}; })
+  ]);
+
+  const aviso = function(nombre, r){
+    if(!r || !r.err) return '';
+    return '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:13px 15px;margin-bottom:12px;font-size:13.5px;color:#92400e;line-height:1.55">'+
+      'No se pudo leer <b>'+nombre+'</b>. '+String((r.err && r.err.message) || r.err)+
+      '<br>Si dice que la tabla no existe, corré el SQL de creación.</div>';
+  };
+
+  const fecha = function(d){
+    try{ const x=new Date(d);
+      return x.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' '+
+             x.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
+    catch(_){ return '—'; }
+  };
+  const esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+
+  const TIPOS = { idea:'💡 Idea', bug:'🐛 Error', correction:'✏️ Corrección',
+                  ux:'🎨 Interfaz', other:'Otro' };
+
+  // ── Interés en el TCC-I: lo primero, porque es la señal de mercado ──
+  let htmlT = '';
+  const filasT = Array.isArray(tcci) ? tcci : [];
+  if(filasT.length){
+    const cuenta = {};
+    filasT.forEach(function(f){ const k=f.precio_elegido||'—'; cuenta[k]=(cuenta[k]||0)+1; });
+    const total = filasT.length;
+    const orden = Object.keys(cuenta).sort(function(a,b){ return cuenta[b]-cuenta[a]; });
+    htmlT =
+      '<div style="font-size:15px;font-weight:700;color:#0F2820;margin:4px 0 10px">Interés en el programa TCC-I · '+total+(total===1?' respuesta':' respuestas')+'</div>'+
+      '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;margin-bottom:10px">'+
+        orden.map(function(k){
+          const n = cuenta[k], pct = Math.round(n/total*100);
+          return '<div style="margin-bottom:9px">'+
+            '<div style="display:flex;justify-content:space-between;font-size:13.5px;color:#374151;margin-bottom:4px">'+
+              '<span>'+esc(k)+'</span><b>'+n+' · '+pct+'%</b></div>'+
+            '<div style="height:7px;background:#f1f5f4;border-radius:4px;overflow:hidden">'+
+              '<div style="height:100%;width:'+pct+'%;background:#1a4a3a;border-radius:4px"></div></div>'+
+          '</div>';
+        }).join('')+
+      '</div>'+
+      '<details style="margin-bottom:22px"><summary style="cursor:pointer;font-size:13px;color:#1a4a3a;font-weight:600">Ver quién respondió qué</summary>'+
+        '<div style="margin-top:8px">'+filasT.map(function(f){
+          return '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0ee;font-size:13px">'+
+            '<span style="color:#374151">'+esc(f.patient_email||'—')+'</span>'+
+            '<span style="color:#6b7280;white-space:nowrap">'+esc(f.precio_elegido||'—')+' · '+fecha(f.created_at)+'</span></div>';
+        }).join('')+'</div></details>';
+  }else if(!tcci || !tcci.err){
+    htmlT = '<div style="font-size:15px;font-weight:700;color:#0F2820;margin:4px 0 8px">Interés en el programa TCC-I</div>'+
+      '<div style="background:#f8faf9;border:1px solid #e5e7eb;border-radius:14px;padding:16px;font-size:13.5px;color:#6b7280;line-height:1.55;margin-bottom:22px">Todavía no respondió nadie. La encuesta aparece cuando un paciente intenta abrir una semana bloqueada del programa.</div>';
+  }
+
+  // ── Sugerencias ──
+  let htmlS = '';
+  const filasS = Array.isArray(sug) ? sug : [];
+  if(filasS.length){
+    htmlS = '<div style="font-size:15px;font-weight:700;color:#0F2820;margin:4px 0 10px">Sugerencias · '+filasS.length+'</div>'+
+      filasS.map(function(f){
+        const esPro = f.rol === 'profesional';
+        return '<div style="background:#fff;border:1px solid #e5e7eb;border-left:3px solid '+(esPro?'#1a4a3a':'#C8A96E')+';border-radius:12px;padding:13px 15px;margin-bottom:9px">'+
+          '<div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#6b7280;margin-bottom:6px">'+
+            '<span><b style="color:'+(esPro?'#1a4a3a':'#8B6F3D')+'">'+(esPro?'PROFESIONAL':'PACIENTE')+'</b> · '+esc(f.autor_email||'anónimo')+'</span>'+
+            '<span style="white-space:nowrap">'+(f.tipo?esc(TIPOS[f.tipo]||f.tipo)+' · ':'')+fecha(f.created_at)+'</span></div>'+
+          '<div style="font-size:14.5px;color:#1f2937;line-height:1.6;white-space:pre-wrap">'+esc(f.texto)+'</div>'+
+          (f.version_app?'<div style="font-size:11px;color:#9ca3af;margin-top:6px">'+esc(f.version_app)+'</div>':'')+
+        '</div>';
+      }).join('');
+  }else if(!sug || !sug.err){
+    htmlS = '<div style="font-size:15px;font-weight:700;color:#0F2820;margin:4px 0 8px">Sugerencias</div>'+
+      '<div style="background:#f8faf9;border:1px solid #e5e7eb;border-radius:14px;padding:16px;font-size:13.5px;color:#6b7280;line-height:1.55">Todavía no llegó ninguna.</div>';
+  }
+
+  cont.innerHTML = '<div style="padding:4px 0 24px">'+
+    aviso('app_sugerencias', sug) + aviso('tcci_interes', tcci) +
+    htmlT + htmlS + '</div>';
+}
+window.dmAdminEscuchar = dmAdminEscuchar;
+
 async function loadAdminTab(tab){
   document.querySelectorAll('#screen-admin .tab').forEach(t=>t.classList.remove('active'));
   const activeBtn=document.getElementById('admin-tab-'+tab);
@@ -3824,6 +3949,7 @@ async function loadAdminTab(tab){
   const cont=document.getElementById('admin-content');
   cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
+    if(tab==='escuchar'){ await dmAdminEscuchar(); return; }
     if(tab==='pending'){
       // Solo los que solicitaron entrar al directorio (listed='pending') o tienen CV subido
       const pending=await db.get("doctors?select=name,lname,email,specialty,mat,city,country,bio,cv_url,listed,phone,email_public,created_at&order=created_at.desc");
@@ -4424,30 +4550,9 @@ async function unlinkDoctor(email){
   }catch(e){ toast('Error al desvincular'); }
 }
 
-async function submitSuggestion(){
-  const text=document.getElementById('suggestion-text')?.value?.trim();
-  if(!text){toast('Escribí tu sugerencia primero');return;}
-  // Save locally
-  const suggestions=JSON.parse(localStorage.getItem('dm_suggestions')||'[]');
-  const entry={text,email:S.user?.email||'anon',role:S.role||'?',date:new Date().toISOString()};
-  suggestions.push(entry);
-  localStorage.setItem('dm_suggestions',JSON.stringify(suggestions));
-  // Try to save to DB (doctor_alerts table or suggestions table)
-  try{
-    await db.post('doctor_alerts',{
-      patient_email:S.user?.email||'anon',
-      doctor_email:'admin',
-      scale_name:'Sugerencia de usuario',
-      scale_id:'suggestion',
-      message:'['+( S.role==='doctor'?'PROFESIONAL':'PACIENTE')+'] '+(S.user?.email||'anon')+': '+text,
-      score:0,
-      label:'suggestion',
-      created_at:new Date().toISOString()
-    });
-  }catch(e){/* silent - already saved locally */}
-  if(_activeReminderModal){_activeReminderModal.remove();_activeReminderModal=null;}
-  showSuccessBanner('¡Gracias! Tu sugerencia fue enviada.');
-}
+// submitSuggestion se eliminó: era código muerto (nada la llamaba y el
+// campo suggestion-text no existía en ninguna pantalla). El camino real
+// para las dos audiencias es showFeedbackModal → submitFeedback.
 
 
 // Llama a una Edge Function de Supabase con la sesión del usuario.
@@ -13105,7 +13210,17 @@ async function dmCrearPacienteGuardar(){
     // escribir pero no leer, igual podemos mostrarlo.
     const nuevo = (Array.isArray(r)?r[0]:r) || { code: cuerpo.code };
     // Queda vinculado al profesional desde el momento cero.
-    try{ await db.post('doctor_patients', { doctor_email:S.user.email, patient_email:email }); }catch(_){}
+    // Antes esto tenía un catch vacío: si el vínculo fallaba, la ficha se
+    // creaba igual, el alta decía "listo" y el paciente no aparecía nunca
+    // en el listado. El síntoma no daba ninguna pista de la causa.
+    let vinculoOk = false, vinculoErr = null;
+    try{
+      await db.post('doctor_patients', { doctor_email:S.user.email, patient_email:email });
+      vinculoOk = true;
+    }catch(e){
+      vinculoErr = (e && e.message) || String(e);
+      console.error('[ALTA] no se pudo vincular:', vinculoErr);
+    }
     // Escalas elegidas: quedan esperandola en su app desde la primera entrada.
     const _esc=[].slice.call(document.querySelectorAll('.ap-escala:checked')).map(function(c){ return c.value; });
     let _escOk=0;
@@ -13124,6 +13239,10 @@ async function dmCrearPacienteGuardar(){
       }catch(_){}
     }
     window._dmUltimaAlta = { email:email, name:cuerpo.name, lname:cuerpo.lname };
+    if(!vinculoOk){
+      poner('La ficha se creó, pero NO se pudo vincular a tu cuenta: '+vinculoErr+
+            ' · Falta la política de acceso en doctor_patients.');
+    }
     const texto = 'Te creé tu perfil en Dormetria con tus datos ya cargados.\n\n'+
       '1) Entrá a app.dormetria.com\n'+
       '2) Registrate como paciente con este mismo mail: '+email+'\n'+
@@ -21700,22 +21819,31 @@ async function submitFeedback(){
     fecha:new Date().toLocaleString('es-AR')
   };
   try{
-    const res=await fetch('https://formspree.io/f/mykvzkqk',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify(payload)
+    // Lo que manda es la base: queda guardado, se puede ordenar y buscar.
+    await db.post('app_sugerencias', {
+      autor_email: u.email || null,
+      rol: (S.role === 'doctor') ? 'profesional' : 'paciente',
+      tipo: type,
+      texto: text,
+      version_app: (typeof APP_VERSION !== 'undefined') ? APP_VERSION : null
     });
-    if(res.ok){
-      status.textContent='✓ Gracias. Tu feedback fue enviado.';
-      status.style.color='#14532d';status.style.display='block';
-      document.getElementById('fb-text').value='';
-      setTimeout(()=>{document.getElementById('feedback-modal')?.remove();},1800);
-    } else {
-      throw new Error('Formspree '+res.status);
-    }
+
+    // El mail es solo un aviso. Si falla, la sugerencia ya está a salvo.
+    try{
+      await fetch('https://formspree.io/f/mykvzkqk',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify(payload)
+      });
+    }catch(_){}
+
+    status.textContent='✓ Gracias. Lo leemos todo.';
+    status.style.color='#14532d';status.style.display='block';
+    document.getElementById('fb-text').value='';
+    setTimeout(()=>{const m=document.getElementById('feedback-modal'); if(m) m.remove();},1800);
   }catch(err){
     console.error('feedback error:',err);
-    status.textContent='⚠ No se pudo enviar. Revisá tu conexión y reintentá.';
+    status.textContent='⚠ No se pudo enviar. ' + String((err && err.message) || err);
     status.style.color='#dc2626';status.style.display='block';
     btn.disabled=false; btn.textContent='Enviar feedback';
   }
@@ -22423,15 +22551,27 @@ function dmTcciPasoInteres(){
 async function dmTcciGuardarInteres(precio){
   const email=(S.user&&S.user.email)||'';
   try{ localStorage.setItem('dm_tcci_interes', JSON.stringify({precio:precio, fecha:new Date().toISOString()})); }catch(_){}
+  let guardado = false;
   try{
     await db.post('tcci_interes',{
       patient_email: email,
       precio_elegido: precio,
-      semana_bloqueada: (window._dmTcciSemanaIntento||null),
-      created_at: new Date().toISOString()
-    },'').catch(function(){});
-  }catch(_){}
+      semana_bloqueada: (window._dmTcciSemanaIntento||null)
+    });
+    guardado = true;
+  }catch(e){
+    // Este dato es el que te dice si el programa se puede cobrar y a qué
+    // precio. Perderlo en silencio es perder la única señal de mercado que
+    // tenés, así que si falla se ve.
+    console.error('[TCCI-INTERES]', e);
+  }
   const box=document.getElementById('dm-tcci-pay-box');
+  if(box && !guardado){
+    box.innerHTML='<div style="text-align:center;padding:14px 0">'+
+      '<div style="font-size:15px;color:#fca5a5;line-height:1.6;margin-bottom:14px">No se pudo registrar tu respuesta. Probá de nuevo en un rato.</div>'+
+      '<button onclick="document.getElementById(\'dm-tcci-pay\').remove()" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px;color:#fff;font-size:14px;cursor:pointer;font-family:var(--font)">Cerrar</button></div>';
+    return;
+  }
   if(box){
     box.innerHTML='<div style="text-align:center;padding:10px 0">'+
       '<div style="font-size:34px;margin-bottom:10px">✓</div>'+
