@@ -3915,3 +3915,24 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   color:#F4EFE5 !important;
 }
 #med-inline-picker input::placeholder{ color:rgba(244,239,229,.42) !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod154 · Las métricas en el panel del profesional vuelven a hoja clara
+   El mismo bloque se muestra sobre verde oscuro (app del paciente) y
+   sobre blanco (panel del profesional). La variante clara deshace lo
+   que la oscura fuerza.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-metricas.dm-metricas-claro{
+  background:#fff !important;
+  border:1px solid var(--sep-opaque) !important;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+  color:var(--label) !important;
+}
+.dm-metricas-claro .dm-metricas-h{ color:var(--label-2) !important; }
+.dm-metricas-claro > div{ color:var(--label) !important; }
+.dm-metricas-claro [style*="color:var(--label-2)"]{ color:var(--label-2) !important; }
+.dm-metricas-claro [style*="color:var(--label-3)"]{ color:var(--label-3) !important; }
+.dm-metricas-claro [style*="color:var(--label)"]{ color:var(--label) !important; }
+.dm-metricas-claro [style*="border-top"],
+.dm-metricas-claro [style*="border-bottom"]{ border-color:var(--sep) !important; }

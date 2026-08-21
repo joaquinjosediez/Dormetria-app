@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod153">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod155">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1307,7 +1307,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod153"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod155"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1326,7 +1326,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod153';
+const APP_VERSION='hoy79-mod155';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -6103,9 +6103,16 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   // Duración promedio de despertares (solo se calcula en noches CON despertares)
   const awakColor = m.avgAwakDur==null?'var(--label-2)':m.avgAwakDur<=10?'#14532d':m.avgAwakDur<=20?'#d97706':'#dc2626';
   const awakSub = m.nightsWithAwak>0 ? m.nightsWithAwak+' noches con despertares' : 'Sin despertares registrados';
+  // En el panel del profesional (hoja clara) los colores van como vinieron;
+  // en la app del paciente (fondo verde) pasan por el traductor.
+  const _oscuro = (audience !== 'doctor');
+  const _col = function(c){
+    if(!c) return _oscuro ? '#F4EFE5' : 'var(--label)';
+    return _oscuro ? dmClaro(c) : c;
+  };
   const row=(label,val,color,sub)=>'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:0.5px solid var(--sep)">'+
     '<span style="font-size:13.5px;color:var(--label-2)">'+label+(sub?'<br><span style="font-size:11px;color:var(--label-3)">'+sub+'</span>':'')+'</span>'+
-    '<span style="font-size:14px;font-weight:600;color:'+(color?dmClaro(color):'#F4EFE5')+';text-align:right;white-space:nowrap">'+val+'</span></div>';
+    '<span style="font-size:14px;font-weight:600;color:'+_col(color)+';text-align:right;white-space:nowrap">'+val+'</span></div>';
 
   // Color del SD midpoint según los mismos cortes del score
   const sdMidColor = reg.sd_midpoint_min==null?'var(--label-2)':
@@ -6116,7 +6123,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     reg.sd_midpoint_min<120?'#dc2626':'#991b1b';
 
   // Sección común a ambas audiencias
-  let html = '<div class="dm-metricas">'+
+  let html = '<div class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'">'+
     '<div class="dm-metricas-h">Métricas clínicas <span>· '+m.n+' noches</span></div>'+
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
@@ -14237,8 +14244,16 @@ async function dmGenerarInforme(tipo){
     dmEngancharInforme(document.getElementById('drp-content'));
   }catch(e){
     console.error('[INFORME]', e);
-    salida.innerHTML = '<div style="background:rgba(220,38,38,.12);border:1px solid rgba(255,157,157,.35);border-radius:14px;padding:15px;font-size:14px;color:#ff9d9d;line-height:1.55">'+
-      String((e && e.message) || e)+'</div>';
+    // El detalle técnico venía en e.detalle desde hace varias versiones, pero
+    // esta pantalla nunca lo mostraba: se veía el mensaje corto y nada más,
+    // que es justo lo que no permite averiguar qué pasó.
+    const det = (e && e.detalle) ? String(e.detalle) : '';
+    salida.innerHTML =
+      '<div style="background:rgba(220,38,38,.12);border:1px solid rgba(255,157,157,.35);border-radius:14px;padding:15px;font-size:14px;color:#ff9d9d;line-height:1.55">'+
+        '<div style="font-weight:600">'+String((e && e.message) || e).replace(/</g,'&lt;')+'</div>'+
+        (det ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,157,157,.25);font-size:12px;font-family:monospace;opacity:.85;word-break:break-word">'+det.replace(/</g,'&lt;')+'</div>' : '')+
+        '<div style="margin-top:11px;font-size:12.5px;opacity:.75">Si el detalle no alcanza, mirá Supabase → Edge Functions → <b>informe-clinico</b> → Logs.</div>'+
+      '</div>';
   }
 }
 
