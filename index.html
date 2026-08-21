@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod155">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod156">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1307,7 +1307,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod155"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod156"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1326,7 +1326,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod155';
+const APP_VERSION='hoy79-mod156';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -6110,9 +6110,16 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     if(!c) return _oscuro ? '#F4EFE5' : 'var(--label)';
     return _oscuro ? dmClaro(c) : c;
   };
-  const row=(label,val,color,sub)=>'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:0.5px solid var(--sep)">'+
-    '<span style="font-size:13.5px;color:var(--label-2)">'+label+(sub?'<br><span style="font-size:11px;color:var(--label-3)">'+sub+'</span>':'')+'</span>'+
-    '<span style="font-size:14px;font-weight:600;color:'+_col(color)+';text-align:right;white-space:nowrap">'+val+'</span></div>';
+  // Colores escritos a mano, sin variables. Las variables de CSS resuelven
+  // distinto según la pantalla, y eso ya nos dejó dos veces texto invisible:
+  // primero claro sobre claro en la app, ahora blanco sobre blanco acá.
+  const C = _oscuro
+    ? { rot:'rgba(244,239,229,.78)', sub:'rgba(244,239,229,.55)', val:'#F4EFE5', linea:'rgba(126,200,164,.14)' }
+    : { rot:'#3f4b45',               sub:'#5c6b63',               val:'#10231c', linea:'#e6ece9' };
+
+  const row=(label,val,color,sub)=>'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:9px 0;border-bottom:1px solid '+C.linea+'">'+
+    '<span style="font-size:13.5px;color:'+C.rot+'">'+label+(sub?'<br><span style="font-size:11px;color:'+C.sub+'">'+sub+'</span>':'')+'</span>'+
+    '<span style="font-size:14px;font-weight:600;color:'+(color?_col(color):C.val)+';text-align:right;white-space:nowrap">'+val+'</span></div>';
 
   // Color del SD midpoint según los mismos cortes del score
   const sdMidColor = reg.sd_midpoint_min==null?'var(--label-2)':
@@ -6124,7 +6131,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
 
   // Sección común a ambas audiencias
   let html = '<div class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'">'+
-    '<div class="dm-metricas-h">Métricas clínicas <span>· '+m.n+' noches</span></div>'+
+    '<div class="dm-metricas-h" style="color:'+C.sub+'">Métricas clínicas <span>· '+m.n+' noches</span></div>'+
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
     row('Sueño total promedio', m.fmtDur(m.avgTotal))+
@@ -13330,6 +13337,28 @@ function dmCrearPacienteModal(){
   document.body.appendChild(w);
 }
 
+// Termina un alta que quedó a medias: la ficha existe pero sin vínculo.
+async function dmTomarFichaHuerfana(){
+  const f = window._dmFichaHuerfana;
+  if(!f) return;
+  const cont = document.getElementById('ap-resultado');
+  try{
+    await db.post('doctor_patients', { doctor_email: S.user.email, patient_email: f.email });
+    if(cont){
+      cont.innerHTML = '<div style="background:rgba(126,200,164,.12);border:1px solid rgba(126,200,164,.35);border-radius:14px;padding:15px;font-size:15px;color:#F4EFE5;line-height:1.6">'+
+        '<b>'+f.nombre+'</b> ya está en tu listado. Cerrá esta ventana y refrescá la lista.</div>';
+    }
+    if(typeof loadDoctorPatients==='function'){ try{ loadDoctorPatients(); }catch(_){} }
+  }catch(e){
+    if(cont){
+      cont.innerHTML = '<div style="background:rgba(220,38,38,.12);border:1px solid rgba(255,157,157,.35);border-radius:14px;padding:15px;font-size:14px;color:#ff9d9d;line-height:1.55">'+
+        'No se pudo vincular: '+String((e&&e.message)||e)+
+        '<div style="margin-top:8px;font-size:12.5px;opacity:.8">Si dice algo de "row-level security", falta la política <b>dp_medico_vincula</b> en Supabase.</div></div>';
+    }
+  }
+}
+window.dmTomarFichaHuerfana = dmTomarFichaHuerfana;
+
 async function dmCrearPacienteGuardar(){
   const v=id=>{ const el=document.getElementById(id); return el?String(el.value||'').trim():''; };
   const errEl=document.getElementById('ap-err');
@@ -13340,8 +13369,45 @@ async function dmCrearPacienteGuardar(){
   if(!v('ap-dob')){ poner('Falta la fecha de nacimiento'); return; }
   poner('');
   try{
-    const previas = await db.get('patients?email=eq.'+encodeURIComponent(email)+'&select=id,name,lname');
-    if(previas && previas.length){ poner('Ya existe una ficha con ese mail. Vinculala con su código.'); return; }
+    const previas = await db.get('patients?email=eq.'+encodeURIComponent(email)+'&select=id,name,lname,auth_id,created_at,created_by');
+    if(previas && previas.length){
+      const f = previas[0];
+      const quien = ((f.name||'')+' '+(f.lname||'')).trim() || email;
+      const cuando = f.created_at ? new Date(f.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '';
+
+      // ¿Está vinculada a alguien?
+      let vinculos = [];
+      try{
+        vinculos = await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(email)+'&select=doctor_email') || [];
+      }catch(_){}
+      const mia = vinculos.some(function(v){ return String(v.doctor_email||'').toLowerCase() === String(S.user.email||'').toLowerCase(); });
+
+      if(mia){
+        poner('Ya tenés a '+quien+' en tu listado'+(cuando?' (ficha del '+cuando+')':'')+'. Buscala en la lista de la izquierda.');
+        return;
+      }
+      if(vinculos.length){
+        poner('Ya existe una ficha de '+quien+' vinculada a otro profesional. Pedile el código para vincularla también a vos.');
+        return;
+      }
+
+      // Ficha libre: casi siempre es un alta tuya anterior cuyo vínculo falló.
+      // No tiene sentido negarse: se ofrece terminar lo que quedó a medias.
+      window._dmFichaHuerfana = { email: email, nombre: quien };
+      const cont0 = document.getElementById('ap-resultado');
+      if(cont0){
+        cont0.innerHTML =
+          '<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.35);border-radius:14px;padding:15px">'+
+            '<div style="font-size:15px;font-weight:700;color:#F4EFE5;margin-bottom:6px">La ficha de '+quien+' ya está creada</div>'+
+            '<div style="font-size:14px;color:rgba(244,239,229,.75);line-height:1.6;margin-bottom:13px">'+
+              'Se creó'+(cuando?' el '+cuando:'')+' pero quedó sin vincular a ningún profesional. '+
+              'Es lo que pasaba cuando el alta fallaba a mitad de camino. Podés tomarla ahora sin volver a cargar los datos.</div>'+
+            '<button onclick="dmTomarFichaHuerfana()" style="width:100%;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">Vincularla a mi cuenta</button>'+
+          '</div>';
+      }
+      poner('');
+      return;
+    }
     const cuerpo = { name:v('ap-name'), lname:v('ap-lname'), email, code:genCode(), dob:v('ap-dob')||null,
                      sex:v('ap-sex')||null,
                      weight_kg:v('ap-weight')?parseFloat(v('ap-weight')):null,
@@ -22129,9 +22195,12 @@ function showDrQrPrint(){
   const specLabels = {psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General'};
   const drSpec = specLabels[u.specialty] || u.specialty || '';
   const drMat = u.mat || '';
-  const appBase = 'https://joaquinjosediez.github.io/Dormetria-app/';
-  const loginUrl = appBase + '?v=' + APP_VERSION;
-  const drLinkUrl = appBase + '?v=' + APP_VERSION + '&dr=' + encodeURIComponent(u.email||'');
+  // Apuntaba a la dirección vieja de GitHub Pages. Un QR impreso y pegado en
+  // la pared se queda años: tiene que ir al dominio propio y, además, entrar
+  // directo a CREAR CUENTA, que es lo que va a hacer quien lo escanee.
+  const appBase = 'https://app.dormetria.com/';
+  const loginUrl = appBase + '?crear=1';
+  const drLinkUrl = appBase + '?crear=1&dr=' + encodeURIComponent(u.email||'');
   const qrLogin = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(loginUrl);
   const qrDoctor = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(drLinkUrl);
 

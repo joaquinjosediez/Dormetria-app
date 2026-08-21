@@ -3929,10 +3929,7 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   box-shadow:0 1px 3px rgba(0,0,0,.06);
   color:var(--label) !important;
 }
-.dm-metricas-claro .dm-metricas-h{ color:var(--label-2) !important; }
-.dm-metricas-claro > div{ color:var(--label) !important; }
-.dm-metricas-claro [style*="color:var(--label-2)"]{ color:var(--label-2) !important; }
-.dm-metricas-claro [style*="color:var(--label-3)"]{ color:var(--label-3) !important; }
-.dm-metricas-claro [style*="color:var(--label)"]{ color:var(--label) !important; }
-.dm-metricas-claro [style*="border-top"],
-.dm-metricas-claro [style*="border-bottom"]{ border-color:var(--sep) !important; }
+/* Los colores del texto los pone el JS con valores explícitos, según la
+   audiencia. Acá solo va la caja: reaplicar una variable que ya resolvía
+   claro no cambiaba nada, y por eso quedó blanco sobre blanco. */
+.dm-metricas-claro{ color:#10231c !important; }
