@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod151">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod152">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1305,7 +1305,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod151"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod152"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1324,7 +1324,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod151';
+const APP_VERSION='hoy79-mod152';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3999,10 +3999,8 @@ async function loadAdminTab(tab){
         const _yo = String((S.user&&S.user.email)||'').toLowerCase();
         window._admConteoParcial = (_claves.length <= 1 && _claves[0] === _yo);
       }catch(_){ window._admVincPorDoc = {}; window._admConteoParcial = true; }
-      // Actividad real de cada profesional. No guardamos ingresos, asi que lo
-      // ultimo que se sabe de alguien es la ultima escala que sugirio. Se
-      // rotula como "última actividad" y no como "último ingreso", que seria
-      // decir algo que no medimos.
+      // Actividad: la última escala sugerida. Se conserva porque es lo único
+      // que existe hacia atrás, pero ya no es la fuente principal.
       try{
         const _sg = await db.get('doctor_suggestions?select=doctor_email,created_at&limit=5000');
         const _ult = {};
@@ -4013,17 +4011,41 @@ async function loadAdminTab(tab){
         });
         window._admUltDoc = _ult;
       }catch(_){ window._admUltDoc = {}; }
+
+      // Ingresos de verdad: una fila por persona y por día.
+      try{
+        const _ac = await db.get('accesos_diarios?select=email,dia,veces,ultimo&order=dia.desc&limit=20000');
+        const _dias = {}, _ultAcc = {};
+        (_ac||[]).forEach(function(r){
+          if(!r || !r.email) return;
+          const k = String(r.email).toLowerCase();
+          _dias[k] = (_dias[k]||0) + 1;
+          if(!_ultAcc[k] || (r.ultimo||r.dia) > _ultAcc[k]) _ultAcc[k] = r.ultimo || r.dia;
+        });
+        window._admDiasDoc = _dias;
+        window._admUltIngreso = _ultAcc;
+        window._admHayAccesos = (_ac||[]).length > 0;
+      }catch(e){
+        window._admDiasDoc = {}; window._admUltIngreso = {}; window._admHayAccesos = false;
+        console.warn('[ADMIN] accesos_diarios:', e && e.message);
+      }
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state">Sin profesionales registrados.</div>';return;}
       // Qué mide realmente cada columna. Sin esto, un "sin registro" se lee
       // como "no entró nunca" y se toman decisiones sobre un dato que no es.
       const _notaColumnas =
+        (window._admHayAccesos === false
+          ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:11px 14px;margin-top:14px;font-size:12.5px;color:#92400e;line-height:1.55">'+
+            '<b>Todavía no hay ingresos anotados.</b> El registro empieza a contar desde que se instaló: '+
+            'los días anteriores no se pueden recuperar. Si esto sigue vacío mañana, revisá que la función '+
+            '<code>registrar_acceso</code> esté creada en Supabase.</div>'
+          : '')+
         '<div style="margin-top:14px;font-size:11.5px;color:var(--label-3);line-height:1.6">'+
           '<b>Cómo leer esta tabla.</b> '+
-          '<b>Último ingreso</b> sale de una marca que se escribe en cada login, y esa marca existe desde hace pocos días: '+
-          '"sin registro" quiere decir que no entró desde entonces, no que no haya entrado nunca. '+
-          '<b>Última actividad</b> es lo último que se sabe con certeza y hoy solo mira las escalas sugeridas; '+
-          'alguien puede haber entrado y mirado sus pacientes sin dejar rastro. '+
-          '<b>Tiempo de uso</b> es la distancia entre el alta y esa última señal.'+
+          '<b>Días que entró</b> cuenta días distintos, no veces: entrar cinco veces el martes es un día. '+
+          '<b>Último ingreso</b> es la última vez que abrió la app. '+
+          'Ambos empiezan a contar desde que se instaló el registro, así que lo anterior no aparece. '+
+          '<b>Última actividad</b> mira solo las escalas sugeridas: sirve como referencia histórica, '+
+          'pero alguien puede entrar y trabajar sin sugerir ninguna.'+
         '</div>';
       const _appList3=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
@@ -4043,9 +4065,10 @@ async function loadAdminTab(tab){
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Especialidad</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Estado</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Pacientes</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Días que entró</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Último ingreso</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Tiempo de uso</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Última actividad</th>'+
-        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Último ingreso</th>'+
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Alta</th>'+
         '</tr></thead><tbody>'+
         docs.map(d=>{
@@ -4065,9 +4088,22 @@ async function loadAdminTab(tab){
               if(n) return n;
               return window._admConteoParcial ? '<span style="color:#b45309;font-weight:400" title="No se puede contar: falta el permiso de lectura">?</span>' : '0';
             })()}</td>
-            <td style="padding:8px;text-align:center;color:var(--label-3)">${dmTiempoDeUso(d.created_at, d.last_seen || (window._admUltDoc||{})[String(d.email||'').toLowerCase()])}</td>
+            <td style="padding:8px;text-align:center;font-weight:700;color:var(--label)">${(function(){
+              const k = String(d.email||'').toLowerCase();
+              const n = (window._admDiasDoc||{})[k] || 0;
+              if(n) return n + (n===1?' día':' días');
+              return '<span style="color:var(--label-3);font-weight:400">—</span>';
+            })()}</td>
+            <td style="padding:8px;text-align:center">${(function(){
+              const k = String(d.email||'').toLowerCase();
+              const u = (window._admUltIngreso||{})[k] || d.last_seen;
+              if(!u) return '<span style="color:var(--label-3)">sin registro</span>';
+              const dias = Math.floor((Date.now() - new Date(u)) / 86400000);
+              const col = dias <= 2 ? '#15803d' : dias <= 14 ? '#b45309' : '#991b1b';
+              return '<span style="color:'+col+';font-weight:600">'+dmDesdeCuando(u)+'</span>';
+            })()}</td>
+            <td style="padding:8px;text-align:center;color:var(--label-3)">${dmTiempoDeUso(d.created_at, (window._admUltIngreso||{})[String(d.email||'').toLowerCase()] || d.last_seen || (window._admUltDoc||{})[String(d.email||'').toLowerCase()])}</td>
             <td style="padding:8px;text-align:center;color:var(--label-3)">${dmFechaCorta((window._admUltDoc||{})[String(d.email||'').toLowerCase()])}</td>
-            <td style="padding:8px;text-align:center;color:${d.last_seen?'var(--label-2)':'var(--label-3)'};font-weight:${d.last_seen?'600':'400'}">${dmDesdeCuando(d.last_seen)}</td>
             <td style="padding:8px;color:var(--label-3)">${d.created_at?new Date(d.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'—'}</td>
           </tr>`;
         }).join('')+'</tbody></table></div>'+ _notaColumnas +
@@ -6380,8 +6416,40 @@ function trackUsage(){
   if(!usage.days.includes(today)) usage.days.push(today);
   if(usage.days.length>90) usage.days=usage.days.slice(-90);
   localStorage.setItem(key,JSON.stringify(usage));
-  // Usage tracking in localStorage only (DB columns not available)
+
+  // Lo de arriba vive en el aparato de cada uno: sirve para mostrarle su
+  // propia racha, pero es invisible desde el panel. El ingreso real se
+  // anota en la base, una fila por persona y por día.
+  dmAnotarIngreso();
 }
+
+// Llama a la función registrar_acceso de Supabase. Una vez por sesión:
+// recargar la página no tiene por qué contar como un ingreso nuevo.
+async function dmAnotarIngreso(){
+  try{
+    if(window._dmIngresoAnotado) return;
+    window._dmIngresoAnotado = true;
+
+    let token = null;
+    try{
+      const s = await supa.auth.getSession();
+      token = s && s.data && s.data.session ? s.data.session.access_token : null;
+    }catch(_){}
+    if(!token) return;
+
+    const r = await fetch(SU + '/rest/v1/rpc/registrar_acceso', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey': SK, 'Authorization':'Bearer '+token },
+      body: JSON.stringify({ p_rol: (S.role === 'doctor') ? 'profesional' : 'paciente' })
+    });
+    if(!r.ok){
+      // No rompe nada si falla, pero queda en la consola: si la función no
+      // está creada, la tabla de uso va a estar vacía y hay que saber por qué.
+      console.warn('[ACCESO] no se pudo anotar el ingreso:', r.status);
+    }
+  }catch(e){ console.warn('[ACCESO]', e && e.message); }
+}
+window.dmAnotarIngreso = dmAnotarIngreso;
 
 
 function startScaleOfDay(){
