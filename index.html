@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod152">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod153">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -556,6 +556,11 @@
     <!-- Dos cifras: constancia y regularidad. Nada mas. -->
     <div id="home-cifras" style="display:none;gap:11px"></div>
 
+    <!-- Escalas que le pidió el profesional. Van acá, entre el diario y
+         las lecturas: si hay algo pendiente que le indicaron, importa más
+         que una nota para leer. Antes quedaban al final de todo. -->
+    <div id="home-doctor-suggestions" style="display:none"></div>
+
     <!-- Leer hoy: rota entre los temas de la biblioteca. -->
     <div id="home-leer" style="display:none"></div>
 
@@ -579,9 +584,6 @@
 
     <!-- Diagnóstico temporal (se oculta solo si todo está OK) -->
     <div id="home-diag" style="display:none"></div>
-
-    <!-- 6) Escalas que te recomienda el profesional (sugerencias) -->
-    <div id="home-doctor-suggestions" style="display:none"></div>
 
         <!-- (movido a "Más" para despejar el inicio) -->
 
@@ -1305,7 +1307,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod152"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod153"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1324,7 +1326,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod152';
+const APP_VERSION='hoy79-mod153';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3884,6 +3886,17 @@ async function dmAdminEscuchar(){
   const TIPOS = { idea:'💡 Idea', bug:'🐛 Error', correction:'✏️ Corrección',
                   ux:'🎨 Interfaz', other:'Otro' };
 
+  // La encuesta guarda un código ('a','b','no'). Mostrarlo tal cual no dice
+  // nada: hay que traducirlo al rango de precio que eligió la persona.
+  const PRECIOS = {};
+  try{
+    (typeof DM_TCCI_PRECIOS!=='undefined' ? DM_TCCI_PRECIOS : []).forEach(function(x){
+      PRECIOS[x.id] = x.txt + (x.nota ? ' ('+x.nota+')' : '');
+    });
+  }catch(_){}
+  PRECIOS['skip'] = 'Prefirió no responder';
+  const precioTxt = function(id){ return PRECIOS[id] || ('Sin identificar: '+String(id||'—')); };
+
   // ── Interés en el TCC-I: lo primero, porque es la señal de mercado ──
   let htmlT = '';
   const filasT = Array.isArray(tcci) ? tcci : [];
@@ -3898,8 +3911,8 @@ async function dmAdminEscuchar(){
         orden.map(function(k){
           const n = cuenta[k], pct = Math.round(n/total*100);
           return '<div style="margin-bottom:9px">'+
-            '<div style="display:flex;justify-content:space-between;font-size:13.5px;color:#374151;margin-bottom:4px">'+
-              '<span>'+esc(k)+'</span><b>'+n+' · '+pct+'%</b></div>'+
+            '<div style="display:flex;justify-content:space-between;gap:14px;font-size:13.5px;color:#374151;margin-bottom:4px">'+
+              '<span>'+esc(precioTxt(k))+'</span><b style="white-space:nowrap">'+n+' · '+pct+'%</b></div>'+
             '<div style="height:7px;background:#f1f5f4;border-radius:4px;overflow:hidden">'+
               '<div style="height:100%;width:'+pct+'%;background:#1a4a3a;border-radius:4px"></div></div>'+
           '</div>';
@@ -3907,9 +3920,10 @@ async function dmAdminEscuchar(){
       '</div>'+
       '<details style="margin-bottom:22px"><summary style="cursor:pointer;font-size:13px;color:#1a4a3a;font-weight:600">Ver quién respondió qué</summary>'+
         '<div style="margin-top:8px">'+filasT.map(function(f){
-          return '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0ee;font-size:13px">'+
-            '<span style="color:#374151">'+esc(f.patient_email||'—')+'</span>'+
-            '<span style="color:#6b7280;white-space:nowrap">'+esc(f.precio_elegido||'—')+' · '+fecha(f.created_at)+'</span></div>';
+          return '<div style="display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid #f0f0ee;font-size:13px">'+
+            '<div style="min-width:0"><div style="color:#374151">'+esc(f.patient_email||'—')+'</div>'+
+            '<div style="color:#111827;font-weight:600;margin-top:2px">'+esc(precioTxt(f.precio_elegido))+'</div></div>'+
+            '<span style="color:#6b7280;white-space:nowrap">'+fecha(f.created_at)+'</span></div>';
         }).join('')+'</div></details>';
   }else if(!tcci || !tcci.err){
     htmlT = '<div style="font-size:15px;font-weight:700;color:#0F2820;margin:4px 0 8px">Interés en el programa TCC-I</div>'+
@@ -6135,7 +6149,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     // El parentesis cerraba aca arriba, asi que estas dos filas se colaban
     // en la vista de un bebe, donde "dia laboral" y el corte de 7 horas no
     // significan nada. Ahora quedan dentro del mismo guardado por edad.
-    row('Desajuste de horario', sjlStr, sjlColor,
+    row('Jet lag social', sjlStr, sjlColor,
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor));
 
@@ -6277,8 +6291,11 @@ function switchScorePeriod(days){
     const btn=document.getElementById('score-period-'+p);
     if(!btn) return;
     const isActive=(p==='all'&&days===0)||(p===String(days));
-    if(isActive){ btn.style.background='#1a4a3a'; btn.style.color='#fff'; }
-    else { btn.style.background= p==='all'?'transparent':'#e8f0eb'; btn.style.color=p==='all'?'var(--label-2)':'#1a4a3a'; }
+    // Se mueve la CLASE, no el estilo en línea: el estilo en línea pierde
+    // contra el !important del CSS y el botón quedaba marcado en 30 d para
+    // siempre aunque la ventana sí cambiara.
+    btn.classList.toggle('dm-per-on', isActive);
+    btn.style.background=''; btn.style.color='';
   });
   window._dmMesActivo=null;
   const _selMes=document.getElementById('score-period-mes');
@@ -7742,12 +7759,16 @@ async function dmCifrasInicio(){
     const rows=await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(S.user.email)+
                             '&order=diary_date.desc&limit=120&select=diary_date,bedtime,wake_time,sleep_minutes,notes');
     if(!rows || !rows.length) return;
-    // Racha: dias consecutivos hacia atras desde ayer.
+    // Racha: días consecutivos. Si todavía no cargó la noche de HOY, la
+    // cuenta arranca en ayer: mostrar un guión hace parecer que empezó de
+    // cero, justo cuando la persona abrió la app para registrar.
     const set={}; rows.forEach(function(r){ set[r.diary_date]=1; });
-    let racha=0; const d=new Date();
+    const clave=function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+    const d=new Date();
+    if(!set[clave(d)]) d.setDate(d.getDate()-1);   // hoy todavía está pendiente
+    let racha=0;
     for(let i=0;i<400;i++){
-      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-      if(!set[k]) break;
+      if(!set[clave(d)]) break;
       racha++; d.setDate(d.getDate()-1);
     }
     let variacion=null;
@@ -7762,7 +7783,7 @@ async function dmCifrasInicio(){
         '<div style="font-size:12.5px;color:rgba(244,239,229,.66);line-height:1.35;margin-top:3px">'+rot+'</div></div>';
     };
     el.style.display='flex';
-    el.innerHTML = caja(racha||'—', racha===1?'día seguido registrando':'días seguidos registrando', '#7EC8A4')
+    el.innerHTML = caja(racha, racha===1?'día seguido registrando':'días seguidos registrando', '#7EC8A4')
       + caja(variacion!=null?('±'+variacion+'<span style="font-size:13px">min</span>'):'—','variación de tu horario','#C8A96E');
   }catch(_){}
 }
@@ -7863,7 +7884,7 @@ function dmTarjetaNoche(entry){
       'border:1px solid rgba(126,200,164,0.22);border-radius:20px;padding:24px 20px;text-align:center;cursor:pointer">'+
         '<div style="font-size:38px;line-height:1;margin-bottom:12px">🌙</div>'+
         '<div style="font-size:20px;font-weight:700;color:#F4EFE5;margin-bottom:7px;line-height:1.25">Completá tu noche de ayer</div>'+
-        '<div style="font-size:14.5px;color:rgba(244,239,229,.66);line-height:1.5;margin-bottom:16px">Dos minutos. Es lo único pendiente de hoy.</div>'+
+        '<div style="font-size:14.5px;color:rgba(244,239,229,.66);line-height:1.5;margin-bottom:16px">Te lleva dos minutos.</div>'+
         '<div style="background:#7EC8A4;color:#0F2820;border-radius:13px;padding:15px;font-size:16px;font-weight:700">Empezar</div>'+
       '</div>';
     return;
@@ -10516,10 +10537,14 @@ async function showDiaryTab_(tab){
                   }
                   // ── Summary box: side by side, full width ──
                   if(bedStats||wakeStats){
-                    const bxH=34;
                     const dpr=window.devicePixelRatio||1;
                     const canvW=(chart.canvas.clientWidth||chart.canvas.width/dpr);
-                    const bxLeft=0,bxRight=canvW;
+                    // Angosto: uno debajo del otro. Ancho: los dos en una fila.
+                    // Antes iban siempre a las dos puntas y en el celular el de
+                    // la derecha se salía de la pantalla.
+                    const dosFilas = canvW < 420;
+                    const bxH = dosFilas ? 42 : 34;
+                    const bxLeft=0, bxRight=canvW;
                     const bxY=Math.max(2,ca.top-bxH-4);
                     cx.save();
                     cx.fillStyle='#f8fafc';
@@ -10528,20 +10553,30 @@ async function showDiaryTab_(tab){
                     else{cx.rect(bxLeft,bxY,canvW,bxH);}
                     cx.fill();cx.stroke();
                     cx.font='600 11px system-ui';cx.textBaseline='middle';
-                    const mid=bxY+bxH/2;
+
+                    const yAcostarse  = dosFilas ? bxY+12 : bxY+bxH/2;
+                    const yLevantarse = dosFilas ? bxY+29 : bxY+bxH/2;
+
                     if(bedStats&&bedStats.m!=null){
                       cx.fillStyle='#d97706';
-                      cx.beginPath();cx.arc(bxLeft+14,mid,4,0,Math.PI*2);cx.fill();
+                      cx.beginPath();cx.arc(bxLeft+14,yAcostarse,4,0,Math.PI*2);cx.fill();
                       cx.fillStyle='#334155';
-                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),bxLeft+22,mid);
+                      cx.fillText('Prom. acostarse  '+toHHMM(bedStats.m),bxLeft+22,yAcostarse);
                     }
                     if(wakeStats&&wakeStats.m!=null){
                       const txt='Prom. levantarse  '+toHHMM(wakeStats.m);
-                      const lw=cx.measureText(txt).width;
-                      cx.fillStyle='#1d4ed8';
-                      cx.beginPath();cx.arc(bxRight-lw-22,mid,4,0,Math.PI*2);cx.fill();
-                      cx.fillStyle='#334155';
-                      cx.fillText(txt,bxRight-lw-14,mid);
+                      if(dosFilas){
+                        cx.fillStyle='#1d4ed8';
+                        cx.beginPath();cx.arc(bxLeft+14,yLevantarse,4,0,Math.PI*2);cx.fill();
+                        cx.fillStyle='#334155';
+                        cx.fillText(txt,bxLeft+22,yLevantarse);
+                      }else{
+                        const lw=cx.measureText(txt).width;
+                        cx.fillStyle='#1d4ed8';
+                        cx.beginPath();cx.arc(bxRight-lw-22,yLevantarse,4,0,Math.PI*2);cx.fill();
+                        cx.fillStyle='#334155';
+                        cx.fillText(txt,bxRight-lw-14,yLevantarse);
+                      }
                     }
                     cx.restore();
                   }
@@ -15277,11 +15312,13 @@ async function showDrPTab_(tab){
         // Estado + color a partir del jet lag social (cortes pediátricos).
         const _sjlStatus = _sjlP==null?{t:'Sin datos',c:'#888'}:_sjlP<30?{t:'Muy buena',c:'#14532d'}:_sjlP<60?{t:'Buena',c:'#2d9e6b'}:_sjlP<90?{t:'Mejorable',c:'#d97706'}:{t:'Requiere atención',c:'#dc2626'};
         function pillarCard(title,valHtml,color,status,sub,pillarC){
-          return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+pillarC+'">'+
-            '<div style="font-size:10px;font-weight:700;color:'+pillarC+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+title+'</div>'+
-            '<div style="font-size:22px;font-weight:700;color:'+color+'">'+valHtml+'</div>'+
-            '<div style="font-size:10px;font-weight:600;color:'+color+';margin-bottom:4px">'+status+'</div>'+
-            '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+sub+'</div>'+
+          const cP = (typeof dmClaro==='function') ? dmClaro((pillarC||'').trim()) : pillarC;
+          const cV = (typeof dmClaro==='function') ? dmClaro(color) : color;
+          return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-top:3px solid '+cP+';border-radius:15px;padding:13px 14px">'+
+            '<div style="font-size:11px;font-weight:700;color:'+cP+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+title+'</div>'+
+            '<div style="font-size:25px;font-weight:700;color:'+cV+';line-height:1.1;margin:3px 0">'+valHtml+'</div>'+
+            '<div style="font-size:12px;font-weight:600;color:'+cV+';margin-bottom:6px">'+status+'</div>'+
+            '<div style="font-size:11.5px;color:rgba(244,239,229,.66);margin-top:6px;line-height:1.4">'+sub+'</div>'+
           '</div>';
         }
         if(pEl){
