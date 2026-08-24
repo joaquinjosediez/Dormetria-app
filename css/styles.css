@@ -3957,3 +3957,14 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 /* Los pilares, igual: la tarjeta oscura sobre hoja blanca no se lee */
 #dr-pillar-cards .dm-pilar-sub,
 body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !important; }
+
+
+/* mod158 · Aclaración de qué perfil se está creando */
+.dm-que-perfil{
+  margin:2px 0 16px; padding:11px 13px;
+  background:rgba(126,200,164,.1);
+  border-left:2px solid rgba(126,200,164,.5);
+  border-radius:0 10px 10px 0;
+  font-size:13px; line-height:1.55; color:rgba(244,239,229,.75);
+}
+.dm-que-perfil b{ color:#F4EFE5; }
