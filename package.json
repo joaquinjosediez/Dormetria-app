@@ -1,0 +1,11 @@
+{
+  "name": "dormetria-app",
+  "private": true,
+  "description": "App de Dormetria. Este archivo existe solo para las pruebas: la app en sí no necesita instalar nada.",
+  "scripts": {
+    "test": "node pruebas/correr-todo.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}
