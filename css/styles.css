@@ -4145,3 +4145,96 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
 
 /* Casilla de "mi propia variable" en el diario */
 .dm-var-chk{ width:19px; height:19px; flex-shrink:0; margin-top:2px; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod161 · El panel del profesional en el celular
+   Venía heredando la maqueta de escritorio: sin scroll, sin barra de
+   abajo usable, con el bloque de botones desplegado y sin forma de
+   volver. Acá se lo trata como lo que es en un celular: una app de una
+   sola columna con barra abajo.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width:899px){
+
+  /* ── Las pantallas del profesional scrollean ──────────────────────── */
+  #screen-doctor-home,
+  #screen-doctor-patient,
+  #screen-admin{
+    display:flex !important; flex-direction:column !important;
+    height:100dvh !important; overflow:hidden !important;
+  }
+  #screen-doctor-home > .scroll,
+  #screen-doctor-patient > .scroll,
+  #screen-doctor-home #dr-patient-list-panel,
+  #screen-doctor-patient #drp-content{
+    flex:1 1 auto !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:96px !important;   /* que la barra de abajo no tape nada */
+    max-height:none !important;
+  }
+
+  /* ── La barra de abajo, igual que la del paciente ─────────────────── */
+  #dr-bottomnav{
+    position:fixed; left:0; right:0; bottom:0; z-index:60;
+    background:rgba(10,26,20,.96) !important;
+    border-top:1px solid rgba(126,200,164,.14) !important;
+    padding:9px 0 calc(15px + env(safe-area-inset-bottom)) !important;
+    backdrop-filter:blur(10px);
+    display:flex !important;
+  }
+  #dr-bottomnav .bnav{
+    font-size:11px !important; gap:4px !important;
+    color:rgba(244,239,229,.45) !important; font-weight:500 !important;
+  }
+  #dr-bottomnav .bnav.active{ color:#7EC8A4 !important; font-weight:600 !important; }
+  #dr-bottomnav .bnav svg{ width:22px !important; height:22px !important; }
+  #dr-bottomnav .bnav-lbl{ color:inherit !important; }
+
+  /* ── El bloque de botones sueltos, plegado detrás de "Más" ────────── */
+  #dr-acciones-extra{ display:none; }
+  #dr-acciones-extra.dm-abierto{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  #dr-acciones-toggle{
+    width:100%; margin-top:10px; padding:12px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(126,200,164,.2); border-radius:13px;
+    color:rgba(244,239,229,.8); font-size:14.5px; font-weight:600;
+    font-family:var(--font); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+
+  /* ── El encabezado del panel, en una línea ─────────────────────────── */
+  .dr-cab-movil{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 16px; border-bottom:1px solid rgba(126,200,164,.12);
+    flex-shrink:0;
+  }
+  .dr-cab-movil .dr-cab-atras{
+    background:rgba(255,255,255,.07); border:1px solid rgba(126,200,164,.2);
+    border-radius:11px; width:40px; height:40px; flex-shrink:0;
+    color:#F4EFE5; font-size:19px; cursor:pointer; font-family:inherit;
+  }
+  .dr-cab-movil .dr-cab-tit{
+    flex:1; min-width:0; font-size:17px; font-weight:700; color:#F4EFE5;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod161 · La barra de arriba en escritorio, en una sola línea
+   "Salir" se caía al renglón de abajo cuando se sumó "Mi otro perfil".
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width:900px){
+  #dr-topbar-desktop{ flex-wrap:nowrap !important; }
+  #dr-topbar-desktop .dr-tb-tabs{
+    flex-wrap:nowrap !important; overflow-x:auto; scrollbar-width:none;
+  }
+  #dr-topbar-desktop .dr-tb-tabs::-webkit-scrollbar{ display:none; }
+  #dr-topbar-desktop .dr-tb-tab{
+    padding:7px 9px !important; font-size:12.5px !important; flex-shrink:0;
+  }
+  #dr-topbar-desktop .dr-tb-brand{ flex-shrink:0; }
+  #dr-topbar-desktop .dr-tb-brand #dr-tb-saludo{
+    max-width:150px; overflow:hidden; text-overflow:ellipsis;
+  }
+}

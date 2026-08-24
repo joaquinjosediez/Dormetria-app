@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod160">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod161">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1001,7 +1001,8 @@
     <div class="hero-label" id="dr-panel-label">Panel profesional</div>
     <div class="hero-name" id="dr-name" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
     <div class="hero-meta" id="dr-meta">—</div>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+    <button id="dr-acciones-toggle" onclick="dmTogglearAccionesPro()">Más opciones <span id="dr-acciones-flecha">▾</span></button>
+    <div id="dr-acciones-extra" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       <button id="dir-register-btn" onclick="showDrRegisterForm()" style="padding:8px 16px;border:none;border-radius:20px;background:#2d6b56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
         🏥 Registrarme en el directorio
       </button>
@@ -1321,7 +1322,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod160"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod161"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1340,7 +1341,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod160';
+const APP_VERSION='hoy79-mod161';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -8829,6 +8830,49 @@ function dmIrAGraficos(){
     if(dx > 70 && dy < 60 && ms < 600) dmVolverAtras();
   }, {passive:true});
 })();
+// En el celular, un encabezado propio con botón de atrás. La maqueta de
+// escritorio no tiene ninguno: en pantalla chica se entraba a una ficha y
+// no había forma de salir.
+function dmCabeceraMovil(){
+  try{
+    if(window.innerWidth >= 900) return;
+    [['screen-doctor-home','Mis pacientes', null],
+     ['screen-doctor-patient','Paciente', 'dmVolverAlPanel'],
+     ['screen-admin','Administración', 'dmVolverAlPanel']].forEach(function(cfg){
+      const pant = document.getElementById(cfg[0]);
+      if(!pant || pant.querySelector('.dr-cab-movil')) return;
+      const cab = document.createElement('div');
+      cab.className = 'dr-cab-movil';
+      cab.innerHTML =
+        (cfg[2] ? '<button class="dr-cab-atras" onclick="'+cfg[2]+'()" aria-label="Volver">←</button>' : '')+
+        '<div class="dr-cab-tit">'+cfg[1]+'</div>';
+      pant.insertBefore(cab, pant.firstChild);
+    });
+  }catch(e){ console.warn('[CAB-MOVIL]', e); }
+}
+window.dmCabeceraMovil = dmCabeceraMovil;
+
+function dmTogglearAccionesPro(){
+  const c = document.getElementById('dr-acciones-extra');
+  const f = document.getElementById('dr-acciones-flecha');
+  if(!c) return;
+  const abierto = c.classList.toggle('dm-abierto');
+  if(f) f.textContent = abierto ? '▴' : '▾';
+}
+window.dmTogglearAccionesPro = dmTogglearAccionesPro;
+
+// La barra de abajo del profesional marca dónde está parado.
+function dmMarcarPestanaPro(id){
+  try{
+    document.querySelectorAll('#dr-bottomnav .bnav').forEach(function(b){
+      const on = (b.id === id);
+      b.classList.toggle('active', on);
+      b.style.color = on ? '#7EC8A4' : 'rgba(244,239,229,.45)';
+    });
+  }catch(_){}
+}
+window.dmMarcarPestanaPro = dmMarcarPestanaPro;
+
 function dmVolverAtras(){
   try{
     // Si hay una capa abierta (globo, ficha, modal), se cierra esa primero.
@@ -12416,6 +12460,7 @@ async function pvtFinish(){
 // DOCTOR
 async function showDoctorHome(){const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
   try{ dmBuildDoctorTopbar(); dmTopbarRefrescarAdmin(); dmTopbarSaludo(); }catch(_){}
+  try{ dmCabeceraMovil(); }catch(_){}
   // Sin esto, en el primer render el CSS no sabe que la pestaña activa es
   // Pacientes y esconde la columna izquierda con el listado.
   try{ if(!document.body.classList.contains('dr-metrics-view')) document.body.classList.add('dr-tab-patients'); }catch(_){}
@@ -13535,7 +13580,7 @@ async function dmTomarFichaHuerfana(){
   if(!f) return;
   const cont = document.getElementById('ap-resultado');
   try{
-    await db.post('doctor_patients', { doctor_email: S.user.email, patient_email: f.email });
+    await db.post('doctor_patients', { doctor_email: S.user.email, patient_email: f.email }, '');
     if(cont){
       cont.innerHTML = '<div style="background:rgba(126,200,164,.12);border:1px solid rgba(126,200,164,.35);border-radius:14px;padding:15px;font-size:15px;color:#F4EFE5;line-height:1.6">'+
         '<b>'+f.nombre+'</b> ya está en tu listado. Cerrá esta ventana y refrescá la lista.</div>';
@@ -13609,7 +13654,7 @@ async function dmCrearPacienteGuardar(){
                      // era la ficha, y con varios profesionales en la base eso
                      // se vuelve imposible de reparar sin preguntar.
                      created_by: S.user ? S.user.email : null };
-    const r = await db.post('patients', cuerpo);
+    const r = await db.post('patients', cuerpo, '');
     // El codigo lo generamos nosotros antes de guardar, asi que no hace falta
     // que el servidor nos devuelva la fila: si las reglas de acceso permiten
     // escribir pero no leer, igual podemos mostrarlo.
@@ -13620,7 +13665,7 @@ async function dmCrearPacienteGuardar(){
     // en el listado. El síntoma no daba ninguna pista de la causa.
     let vinculoOk = false, vinculoErr = null;
     try{
-      await db.post('doctor_patients', { doctor_email:S.user.email, patient_email:email });
+      await db.post('doctor_patients', { doctor_email:S.user.email, patient_email:email }, '');
       vinculoOk = true;
     }catch(e){
       vinculoErr = (e && e.message) || String(e);
@@ -13666,7 +13711,7 @@ async function dmCrearPacienteGuardar(){
     console.error('[ALTA]', e);
     const m=String((e&&e.message)||'');
     if(/row-level security|violates row/i.test(m)){
-      poner('La base todavía no permite que un profesional cree fichas. Hay que agregar la regla de acceso en Supabase (te pasé el SQL).');
+      poner('La base rechazó la operación: '+m+' · Si menciona "patients", falta la política pac_medico_crea; si menciona "doctor_patients", falta dp_medico_vincula.');
     } else if(/duplicate key|unique constraint/i.test(m)){
       // Puede pasar aunque el chequeo previo no haya encontrado nada: si las
       // reglas de acceso no dejan LEER esa fila, el control de duplicados no
@@ -14377,7 +14422,7 @@ window.dmPdfIA = dmPdfIA;
 // la pestaña y hay que pagarlo de nuevo para volver a leerlo.
 async function dmGuardarSalidaIA(datos){
   try{
-    await db.post('ai_reports', datos);
+    await db.post('ai_reports', datos, '');
     return true;
   }catch(e){
     console.warn('[IA] no se pudo guardar:', e && e.message);
@@ -22542,7 +22587,7 @@ async function submitFeedback(){
       tipo: type,
       texto: text,
       version_app: (typeof APP_VERSION !== 'undefined') ? APP_VERSION : null
-    });
+    }, '');
 
     // El mail es solo un aviso. Si falla, la sugerencia ya está a salvo.
     try{
@@ -23276,7 +23321,7 @@ async function dmTcciGuardarInteres(precio){
       patient_email: email,
       precio_elegido: precio,
       semana_bloqueada: (window._dmTcciSemanaIntento||null)
-    });
+    }, '');
     guardado = true;
   }catch(e){
     // Este dato es el que te dice si el programa se puede cobrar y a qué
