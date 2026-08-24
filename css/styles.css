@@ -3789,6 +3789,19 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   font-size:13.5px !important; color:rgba(244,239,229,.6) !important;
 }
 
+/* ── Calidad reportada cruzada con las variables (panel profesional) ── */
+.dm-calfac{
+  background:#fff; border:1px solid rgba(0,0,0,.09); border-radius:12px;
+  padding:11px 13px;
+}
+.dm-calfac summary::-webkit-details-marker{ display:none; }
+.dm-calfac summary::marker{ content:''; }
+.dm-calfac summary::after{
+  content:'▾'; float:right; color:#77776e; font-size:11px; transition:transform .15s;
+}
+.dm-calfac[open] summary::after{ transform:rotate(180deg); display:inline-block; }
+.dm-calfac summary:hover{ color:#1a4a3a; }
+
 /* ── Pilares: el subtítulo bajo el porcentaje era casi invisible ─────── */
 #diary-pillar-bars [style*="color:var(--label-3)"]{ color:rgba(244,239,229,.55) !important; }
 

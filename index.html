@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod163">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod164">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod163"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod164"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod163';
+const APP_VERSION='hoy79-mod164';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5920,6 +5920,70 @@ function computeHabitsImpact(entries){
   });
   return { n:E.length, habitos:out };
 }
+
+// La calidad percibida, cruzada con TODAS las variables del diario.
+// El bloque de concordancia de arriba compara la calidad contra los tres
+// pilares —o sea, contra el propio sueño—. Esto es otra pregunta: qué de lo
+// que hace durante el día acompaña a que reporte mejor o peor.
+// No se recalcula nada: se reusa la misma comparación de Welch que ya alimenta
+// la tabla de factores, con sus mismos mínimos de n y su mismo umbral.
+function dmCalidadFactoresHtml(entries){
+  let R;
+  try{ R = computeHabitsImpact(entries); }catch(_){ return ''; }
+  if(!R || R.error || !R.habitos || !R.habitos.length) return '';
+
+  const filas = R.habitos.map(function(hb){
+    const e = (hb.efectos||[]).filter(function(x){ return x.id==='qual'; })[0];
+    if(!e) return null;
+    return { hb:hb, e:e };
+  }).filter(Boolean);
+  if(!filas.length) return '';
+
+  // Primero lo que más mueve la aguja; los sin diferencia, al final.
+  filas.sort(function(a,b){
+    const sa = a.e.signo!==0 ? 1 : 0, sb = b.e.signo!==0 ? 1 : 0;
+    if(sa!==sb) return sb-sa;
+    return Math.abs(b.e.diff) - Math.abs(a.e.diff);
+  });
+
+  const _n1 = v => (Math.round(v*10)/10).toFixed(1).replace('.', ',');
+  const cuerpo = filas.map(function(f){
+    const hb=f.hb, e=f.e;
+    const hay = e.signo!==0;
+    const mejor = e.diff>0;
+    // Verde/rojo SOLO si la diferencia pasó el umbral clínico y p<0,05.
+    // Pintar de color una diferencia que puede ser azar es la forma más
+    // rápida de que alguien saque una conclusión que los datos no sostienen.
+    const col = !hay ? '#77776e' : (mejor ? '#15803d' : '#b91c1c');
+    const flecha = !hay ? '≈' : (mejor ? '↑' : '↓');
+    return '<div style="display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-top:0.5px solid rgba(0,0,0,.07)">'+
+      '<span style="font-size:14px;line-height:1.3'+(hay?'':';opacity:.5')+'">'+hb.icon+'</span>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:12.5px;color:#3f3f46;line-height:1.4">'+
+          '<b>'+hb.label+'</b> · '+_n1(e.mOn)+' vs '+_n1(e.mOff)+' /5 '+
+          '<span style="color:'+col+';font-weight:700">'+flecha+' '+(e.diff>0?'+':'−')+_n1(Math.abs(e.diff))+'</span>'+
+        '</div>'+
+        '<div style="font-size:10.5px;color:#8a8a82;margin-top:1px">'+
+          hb.onTxt+' (n='+e.nA+') vs '+hb.offTxt+' (n='+e.nB+')'+
+          (e.p!=null ? ' · '+String(dmFmtP(e.p)).replace(/</g,'&lt;') : '')+
+          (hb.preliminar ? ' · preliminar' : '')+
+        '</div>'+
+      '</div></div>';
+  }).join('');
+
+  const conEfecto = filas.filter(function(f){ return f.e.signo!==0; }).length;
+  return '<details class="dm-calfac"'+(conEfecto?' open':'')+'>'+
+    '<summary style="cursor:pointer;font-size:11.5px;font-weight:700;color:#3f3f46;list-style:none">'+
+      '¿Qué acompaña a que reporte mejor o peor calidad? '+
+      '<span style="font-weight:400;color:#77776e">('+
+        (conEfecto ? conEfecto+' con diferencia' : 'ninguna con diferencia')+')</span></summary>'+
+    '<div style="margin-top:4px">'+cuerpo+'</div>'+
+    '<div style="font-size:10px;color:#8a8a82;margin-top:7px;line-height:1.45">'+
+      'Calidad reportada cada mañana, de 1 a 5. Comparación de Welch dentro del mismo paciente; '+
+      'se marca en color solo si supera el umbral clínico <em>y</em> p&lt;0,05. Es asociación, no causa.'+
+    '</div></details>';
+}
+window.dmCalidadFactoresHtml = dmCalidadFactoresHtml;
 
 function renderHabitsImpactHtml(entries, audiencia){
   const R=computeHabitsImpact(entries);
@@ -11010,11 +11074,11 @@ async function showDiaryTab_(tab){
             data:{
               labels,
               datasets:[
-                {label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:false},
-                {label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:false},
-                {label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:false},
-                {label:'Calidad reportada',data:sorted.map(e=>e.sleep_quality?e.sleep_quality*20:null),borderColor:'#a855f7',backgroundColor:'transparent',pointBackgroundColor:'#a855f7',tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[5,3],spanGaps:true,hidden:true,fill:false},
-                {label:'Energía reportada',data:sorted.map(e=>e.energy?e.energy*20:null),borderColor:'#0891b2',backgroundColor:'transparent',pointBackgroundColor:'#0891b2',tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[2,3],spanGaps:true,hidden:true,fill:false}
+                {label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},
+                {label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},
+                {label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},
+                {label:'Calidad reportada',data:sorted.map(e=>e.sleep_quality?e.sleep_quality*20:null),borderColor:'#a855f7',backgroundColor:'transparent',pointBackgroundColor:'#a855f7',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:1.6,borderDash:[5,3],spanGaps:true,hidden:true,fill:false},
+                {label:'Energía reportada',data:sorted.map(e=>e.energy?e.energy*20:null),borderColor:'#0891b2',backgroundColor:'transparent',pointBackgroundColor:'#0891b2',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:1.6,borderDash:[2,3],spanGaps:true,hidden:true,fill:false}
               ]
             },
             options:{
@@ -11024,11 +11088,12 @@ async function showDiaryTab_(tab){
                 tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}%`}}
               },
               scales:{
-                x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},
+                x:{ticks:{font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false},border:{display:false}},
                 y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}
               }
             }
           });
+          dmPrepararSuavizado('dp');
           buildPillarLegend('pat-pillar-legend','dp');
           });
           setTimeout(function(){ try{ dmReglaHoraria(S.charts.acto, 'pat-acto-regla'); }catch(_){} }, 160);
@@ -13796,12 +13861,26 @@ async function dmCrearPacienteGuardar(){
     if(cont) cont.innerHTML='<div style="background:rgba(126,200,164,.12);border:1px solid rgba(126,200,164,.3);border-radius:12px;padding:13px 15px">'+
       '<div style="font-size:15.5px;font-weight:700;color:#7EC8A4;margin-bottom:5px">\u2713 Ficha creada</div>'+
       '<div style="font-size:13.5px;color:rgba(244,239,229,.82);line-height:1.6;margin-bottom:11px"><b>'+escHtml(cuerpo.name+' '+cuerpo.lname)+'</b> ya aparece en <b>Pacientes</b>, la primera solapa del panel.<br>C\u00f3digo de vinculaci\u00f3n: <b>'+(nuevo&&nuevo.code?nuevo.code:'\u2014')+'</b>'+(_escOk?' \u00b7 '+_escOk+' escala'+(_escOk>1?'s':'')+' asignada'+(_escOk>1?'s':''):'')+'</div>'+
-      '<button onclick="dmInvitarPaciente()" style="width:100%;margin-bottom:9px;background:#7EC8A4;border:none;border-radius:10px;padding:11px;color:#0F2820;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">✉️ Invitarlo por mail (elige su contraseña)</button>'+
-      '<div id="ap-inv-estado" style="font-size:12px;line-height:1.5;margin-bottom:9px;min-height:1em;color:rgba(255,255,255,.7)"></div>'+
+      '<div id="ap-inv-estado" style="font-size:13px;line-height:1.55;margin-bottom:9px;min-height:1em;color:rgba(255,255,255,.7)">Enviándole el mail para que elija su contraseña…</div>'+
+      '<div id="ap-inv-reintento" style="margin-bottom:9px"></div>'+
       '<textarea id="ap-msg" readonly style="width:100%;min-height:118px;font-size:12.5px;line-height:1.5;padding:10px;border-radius:9px;border:none;background:rgba(0,0,0,.25);color:rgba(255,255,255,.85);font-family:var(--font);box-sizing:border-box">'+texto+'</textarea>'+
       '<button onclick="var t=document.getElementById(\'ap-msg\');t.select();document.execCommand(\'copy\');toast(\'Copiado\')" style="width:100%;margin-top:8px;background:rgba(255,255,255,.12);border:none;border-radius:10px;padding:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Copiar el mensaje para mandarle</button></div>';
     toast('Paciente dado de alta ✓');
     if(typeof loadDoctorPatients==='function') loadDoctorPatients();
+    // El mail sale SOLO. Antes habia que apretar un boton y, si no lo
+    // apretabas, la ficha quedaba creada y la persona no se enteraba nunca de
+    // que la estaba esperando. Ese era el roce mas caro de todo el alta.
+    (async function(){
+      const _est = document.getElementById('ap-inv-estado');
+      const _rei = document.getElementById('ap-inv-reintento');
+      const _r = await dmEnviarInvitacion({ email:email, name:cuerpo.name, lname:cuerpo.lname });
+      if(_est){ _est.textContent = _r.mensaje; _est.style.color = DM_COLOR_INV[_r.estado] || 'rgba(255,255,255,.7)'; }
+      if(_r.detalle) console.warn('[INVITAR]', _r.estado, _r.detalle);
+      // Si salio bien no hace falta ningun boton. Si no, uno para reintentar.
+      if(_rei && _r.estado !== 'enviado' && _r.estado !== 'ya_tiene_cuenta'){
+        _rei.innerHTML = '<button onclick="dmInvitarPaciente()" style="width:100%;background:rgba(255,255,255,.12);border:none;border-radius:10px;padding:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Reintentar el envío</button>';
+      }
+    })();
   }catch(e){
     console.error('[ALTA]', e);
     const m=String((e&&e.message)||'');
@@ -13822,16 +13901,21 @@ async function dmCrearPacienteGuardar(){
 // necesita la clave de servicio de Supabase, y esa clave no puede estar en el
 // navegador —salta todas las reglas de acceso de la base—. Acá solo se pide.
 const DM_URL_INVITAR = 'https://dormetria.com/.netlify/functions/invitar-paciente';
-async function dmInvitarPaciente(){
-  const datos = window._dmUltimaAlta;
-  const est = document.getElementById('ap-inv-estado');
-  const decir = (t,color)=>{ if(est){ est.textContent=t; est.style.color=color||'rgba(255,255,255,.7)'; } };
-  if(!datos || !datos.email){ decir('No hay ninguna ficha recién creada.', '#ff7979'); return; }
-  decir('Enviando…');
+
+// Manda el mail y devuelve QUE PASO, sin tocar la pantalla. Asi la misma
+// funcion sirve para el envio automatico del alta y para el boton de reenviar
+// desde la ficha, y el mensaje se arma una sola vez.
+//
+// estado: 'enviado' | 'ya_tiene_cuenta' | 'sin_sesion' | 'sin_configurar' | 'error'
+async function dmEnviarInvitacion(datos){
+  if(!datos || !datos.email) return { estado:'error', mensaje:'Falta el mail del paciente.' };
+  let token = null;
   try{
     const ses = await supa.auth.getSession();
-    const token = ses && ses.data && ses.data.session ? ses.data.session.access_token : null;
-    if(!token){ decir('Tu sesión expiró. Volvé a entrar.', '#ff7979'); return; }
+    token = ses && ses.data && ses.data.session ? ses.data.session.access_token : null;
+  }catch(_){}
+  if(!token) return { estado:'sin_sesion', mensaje:'Tu sesión expiró. Volvé a entrar y reintentá.' };
+  try{
     const r = await fetch(DM_URL_INVITAR, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
@@ -13839,16 +13923,64 @@ async function dmInvitarPaciente(){
     });
     const d = await r.json().catch(()=>({}));
     if(r.ok && d.ok){
-      decir('✓ Invitación enviada a '+datos.email+'. Le llega un mail para elegir su contraseña.', '#7EC8A4');
-      return;
+      return { estado:'enviado',
+               mensaje:'✓ Le llegó un mail a '+datos.email+' para elegir su contraseña.' };
     }
-    if(r.status===409){ decir(d.error||'Ya existe una cuenta con ese mail.', '#C8A96E'); return; }
-    decir(d.error || ('No se pudo enviar (código '+r.status+'). Mandale el mensaje de abajo por WhatsApp.'), '#ff7979');
+    if(r.status===409 || d.ya_existe){
+      return { estado:'ya_tiene_cuenta',
+               mensaje:'Ya tiene cuenta con ese mail: puede entrar directamente, no hace falta invitarla.' };
+    }
+    // 404 = la funcion no esta desplegada. 500 con "Faltan SUPABASE_" = falta
+    // cargar las variables en Netlify. Los dos son "todavia no lo configuraste",
+    // no "fallo el envio", y conviene decirlo distinto: uno se arregla una vez
+    // y para siempre.
+    const _txt = String(d.error||'');
+    if(r.status===404 || /Faltan SUPABASE|no such function|not found/i.test(_txt)){
+      return { estado:'sin_configurar',
+               mensaje:'El envío automático de mails todavía no está activo. Copiá el mensaje de abajo y mandáselo por WhatsApp.',
+               detalle:(r.status===404 ? 'La función invitar-paciente no está desplegada en Netlify.' : _txt) };
+    }
+    return { estado:'error', mensaje:(_txt || 'No se pudo enviar (código '+r.status+').'), detalle:_txt };
   }catch(e){
     console.error('[INVITAR]', e);
-    decir('No se pudo contactar al servidor de invitaciones. Mandale el mensaje de abajo por WhatsApp.', '#ff7979');
+    return { estado:'error',
+             mensaje:'No se pudo contactar al servidor de invitaciones.',
+             detalle:String((e&&e.message)||e) };
   }
 }
+window.dmEnviarInvitacion = dmEnviarInvitacion;
+
+const DM_COLOR_INV = { enviado:'#7EC8A4', ya_tiene_cuenta:'#C8A96E', sin_configurar:'#C8A96E',
+                       sin_sesion:'#ff7979', error:'#ff7979' };
+
+async function dmInvitarPaciente(){
+  const datos = window._dmUltimaAlta;
+  const est = document.getElementById('ap-inv-estado');
+  const decir = (t,color)=>{ if(est){ est.textContent=t; est.style.color=color||'rgba(255,255,255,.7)'; } };
+  if(!datos || !datos.email){ decir('No hay ninguna ficha recién creada.', '#ff7979'); return; }
+  decir('Enviando…');
+  const r = await dmEnviarInvitacion(datos);
+  decir(r.mensaje, DM_COLOR_INV[r.estado]);
+  if(r.detalle) console.warn('[INVITAR]', r.estado, r.detalle);
+}
+
+// Reenviar la invitacion a un paciente que YA estaba cargado.
+// Sin esto, el unico momento en que se podia mandar el mail era los segundos
+// siguientes al alta: si se cerraba la ventana, la persona nunca se enteraba
+// de que tenia un perfil esperandola.
+async function dmReinvitarPaciente(){
+  const est = document.getElementById('drp-inv-estado');
+  const btn = document.getElementById('drp-inv-btn');
+  const decir = (t,color)=>{ if(est){ est.textContent=t; est.style.color=color||'rgba(244,239,229,.6)'; } };
+  const u = (typeof S!=='undefined' && S.viewData) ? S.viewData : null;
+  if(!u || !u.email){ decir('No hay ningún paciente abierto.', '#ff9d9d'); return; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando…'; }
+  const r = await dmEnviarInvitacion({ email:u.email, name:u.name||'', lname:u.lname||'' });
+  decir(r.mensaje, DM_COLOR_INV[r.estado]);
+  if(r.detalle) console.warn('[INVITAR]', r.estado, r.detalle);
+  if(btn){ btn.disabled = false; btn.textContent = '✉️ Reenviar la invitación'; }
+}
+window.dmReinvitarPaciente = dmReinvitarPaciente;
 
 async function linkPatient(){
   const code=document.getElementById('link-code').value.trim().toUpperCase();
@@ -14881,6 +15013,24 @@ async function showDrPTab_(tab){
       const kv = (label,val) => '<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:0.5px solid rgba(126,200,164,0.08)"><span style="font-size:13px;color:rgba(244,239,229,0.65)">'+label+'</span><span style="font-size:13px;font-weight:500;color:#F4EFE5;text-align:right">'+val+'</span></div>';
       const kvFirst = (label,val) => '<div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:13px;color:rgba(244,239,229,0.65)">'+label+'</span><span style="font-size:13px;font-weight:500;color:#F4EFE5;text-align:right">'+val+'</span></div>';
       const datosBody = kvFirst('Sexo', u.sex||'—') + kv('País', u.country||'—') + kv('Altura / Peso', (u.height_cm?u.height_cm+' cm':'—')+' / '+(u.weight_kg?u.weight_kg+' kg':'—'));
+      // Acceso a la app. auth_id vacio = cargaste la ficha pero la persona
+      // todavia no entro nunca. Es el estado en el que quedaban los pacientes
+      // cuando no se apretaba el boton de invitar, y no habia forma de verlo
+      // ni de arreglarlo despues.
+      const _yaEntro = !!u.auth_id;
+      const accesoBody =
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">'+
+          '<span style="width:9px;height:9px;border-radius:50%;background:'+(_yaEntro?'#7EC8A4':'#C8A96E')+';flex-shrink:0"></span>'+
+          '<span style="font-size:13.5px;color:#F4EFE5">'+(_yaEntro?'Ya activó su cuenta':'Todavía no activó su cuenta')+'</span>'+
+        '</div>'+
+        '<div style="font-size:12.5px;color:rgba(244,239,229,0.62);line-height:1.55;margin-bottom:10px">'+
+          (_yaEntro
+            ? 'Entra con '+escHtml(u.email)+'. Si perdió la contraseña, puede recuperarla desde la pantalla de inicio.'
+            : 'Le llega un mail a '+escHtml(u.email)+' con un enlace para elegir su contraseña. Al entrar, la ficha que cargaste ya está completa.')+
+        '</div>'+
+        '<button id="drp-inv-btn" onclick="dmReinvitarPaciente()" style="width:100%;padding:10px;border:none;border-radius:9px;background:rgba(126,200,164,0.18);color:#7EC8A4;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">'+
+          (_yaEntro?'✉️ Reenviar la invitación':'✉️ Mandarle el mail para entrar')+'</button>'+
+        '<div id="drp-inv-estado" style="font-size:12.5px;margin-top:8px;min-height:1em;line-height:1.5;color:rgba(244,239,229,0.6)"></div>';
       const pathsBody = '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:6px">Patologías</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+(paths||'<span style="font-size:12px;color:rgba(244,239,229,0.5);font-style:italic">No registradas</span>')+'</div>'+
         '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:4px">Medicación habitual</div>'+
@@ -15071,6 +15221,7 @@ async function showDrPTab_(tab){
           })())+
         '</div>'+
         '<div class="dm-profcol">'+
+          card('🔑','Acceso a la app', accesoBody)+
           card('🩺','Antecedentes', pathsBody)+
           card('🌙','Cronotipo', cronotipoBody)+
         '</div>'+
@@ -15161,6 +15312,7 @@ async function showDrPTab_(tab){
           <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
           <div id="dr-pillar-legend"></div>
           <div id="dr-quality-concord" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
+          <div id="dr-quality-factores" style="margin-top:10px"></div>
         </div>
         <div class="dm-card dm-light" id="dr-weekly-prog" style="display:none"></div>
         <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
@@ -15842,8 +15994,12 @@ async function showDrPTab_(tab){
             }
           }
         }catch(_conc){}
+        try{
+          const _fEl=document.getElementById('dr-quality-factores');
+          if(_fEl) _fEl.innerHTML = dmCalidadFactoresHtml(sorted);
+        }catch(_cf){ console.error('[calidad-factores]', _cf); }
         const ctxP=document.getElementById('dr-pillar-chart');
-        if(ctxP){killChart('dp-dr');(function(){try{if(S.charts['dp-dr'])S.charts['dp-dr'].destroy();}catch(_){}})(),S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.4,pointRadius:3,borderWidth:2,fill:false},{label:'Calidad reportada',data:sorted.map(e=>e.sleep_quality?e.sleep_quality*20:null),borderColor:'#a855f7',backgroundColor:'transparent',pointBackgroundColor:'#a855f7',tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[5,3],spanGaps:true,fill:false},{label:'Energía reportada',data:sorted.map(e=>e.energy?e.energy*20:null),borderColor:'#0891b2',backgroundColor:'transparent',pointBackgroundColor:'#0891b2',tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[2,3],spanGaps:true,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:30},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});buildPillarLegend('dr-pillar-legend','dp-dr');}
+        if(ctxP){killChart('dp-dr');(function(){try{if(S.charts['dp-dr'])S.charts['dp-dr'].destroy();}catch(_){}})(),S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},{label:'Calidad reportada',data:sorted.map(e=>e.sleep_quality?e.sleep_quality*20:null),borderColor:'#a855f7',backgroundColor:'transparent',pointBackgroundColor:'#a855f7',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:1.6,borderDash:[5,3],spanGaps:true,fill:false},{label:'Energía reportada',data:sorted.map(e=>e.energy?e.energy*20:null),borderColor:'#0891b2',backgroundColor:'transparent',pointBackgroundColor:'#0891b2',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:1.6,borderDash:[2,3],spanGaps:true,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});dmPrepararSuavizado('dp-dr');buildPillarLegend('dr-pillar-legend','dp-dr');}
       },150);
     }else if(tab==='pvt'){
       // Show circadian alert PATTERN for doctor view
@@ -17764,6 +17920,62 @@ function renderWeeklyProgressionHtml(allDiary){
 
 // Leyenda de dos hileras para los gráficos de pilares: pilares arriba,
 // calidad/energía subjetivas abajo. Click en cada ítem prende/apaga la serie.
+// ── Promedio movil centrado ────────────────────────────────────────────
+// Con 76 noches y cinco lineas, el grafico noche a noche era una maraña: cada
+// serie sube y baja todos los dias y la tendencia —que es lo unico que se
+// mira en consulta— queda tapada por el ruido.
+// Ventana de 7: una semana entera, asi el fin de semana no corre la curva.
+// Los nulos no se rellenan; simplemente no entran al promedio.
+function dmPromedioMovil(arr, ventana){
+  ventana = ventana || 7;
+  const n = (arr||[]).length;
+  if(!n) return [];
+  const medio = Math.floor(ventana/2);
+  const salida = new Array(n);
+  for(let i=0;i<n;i++){
+    let suma=0, cuenta=0;
+    for(let k=i-medio; k<=i+medio; k++){
+      if(k<0 || k>=n) continue;
+      const v = arr[k];
+      if(v==null || isNaN(v)) continue;
+      suma += Number(v); cuenta++;
+    }
+    // Con menos de dos noches en la ventana no hay promedio que valga: se
+    // deja el hueco en vez de dibujar un punto que parece un dato.
+    salida[i] = cuenta>=2 ? Math.round(suma/cuenta*10)/10 : (cuenta===1 ? Number(arr[i]) : null);
+  }
+  return salida;
+}
+window.dmPromedioMovil = dmPromedioMovil;
+
+// Guarda las dos versiones de cada serie y arranca mostrando la suavizada.
+function dmPrepararSuavizado(chartKey){
+  const ch = S.charts[chartKey];
+  if(!ch) return;
+  ch.$dmCrudo = false;
+  ch.data.datasets.forEach(function(ds){
+    ds.$crudo  = ds.data.slice();
+    ds.$suave  = dmPromedioMovil(ds.data, 7);
+    ds.data    = ds.$suave;
+  });
+  ch.update('none');
+}
+window.dmPrepararSuavizado = dmPrepararSuavizado;
+
+function dmTogglearSuavizado(chartKey, containerId){
+  const ch = S.charts[chartKey];
+  if(!ch) return;
+  ch.$dmCrudo = !ch.$dmCrudo;
+  ch.data.datasets.forEach(function(ds){
+    if(!ds.$crudo) return;
+    ds.data = ch.$dmCrudo ? ds.$crudo : ds.$suave;
+    ds.borderWidth = ch.$dmCrudo ? 1.2 : 2.2;
+  });
+  ch.update();
+  buildPillarLegend(containerId, chartKey);
+}
+window.dmTogglearSuavizado = dmTogglearSuavizado;
+
 function buildPillarLegend(containerId, chartKey){
   const el=document.getElementById(containerId);
   const ch=S.charts[chartKey];
@@ -17773,7 +17985,19 @@ function buildPillarLegend(containerId, chartKey){
     const vis=ch.isDatasetVisible(i);
     return '<span onclick="togglePillarSeries(\''+chartKey+'\','+i+',\''+containerId+'\')" style="cursor:pointer;font-size:10.5px;display:inline-flex;align-items:center;gap:4px;'+(vis?'':'opacity:0.4;text-decoration:line-through;')+'color:#55554e"><span style="width:9px;height:9px;border-radius:50%;background:'+ds.borderColor+';display:inline-block"></span>'+ds.label+'</span>';
   }).join('')+'</div>';
-  el.innerHTML=row([0,1,2])+row([3,4].filter(i=>ch.data.datasets[i]));
+  // Interruptor tendencia / noche a noche. Va junto a la leyenda porque es
+  // lo mismo que decidir que se ve en el grafico.
+  const _crudo = !!ch.$dmCrudo;
+  const _tieneSuave = ch.data.datasets.some(function(d){ return !!d.$crudo; });
+  const _btn = _tieneSuave
+    ? '<div style="display:flex;justify-content:center;margin-top:7px">'+
+        '<button type="button" onclick="dmTogglearSuavizado(\''+chartKey+'\',\''+containerId+'\')" '+
+        'style="background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);border-radius:99px;padding:4px 11px;'+
+        'font-size:10.5px;color:#55554e;cursor:pointer;font-family:inherit">'+
+        (_crudo ? 'Ver la tendencia (promedio de 7 noches)' : 'Ver noche a noche')+'</button></div>'+
+        (_crudo ? '' : '<div style="text-align:center;font-size:9.5px;color:#8a8a82;margin-top:3px">Cada punto es el promedio de esa noche y las tres de cada lado.</div>')
+    : '';
+  el.innerHTML=row([0,1,2])+row([3,4].filter(i=>ch.data.datasets[i]))+_btn;
 }
 function togglePillarSeries(chartKey, idx, containerId){
   const ch=S.charts[chartKey]; if(!ch) return;
@@ -21582,9 +21806,21 @@ function dmScoreTxt(score, maxScore, scaleId){
 // muestra en pedazos demasiado chicos.
 const DM_MAX_VARS = 2;
 
+// De quien son las variables que hay que leer.
+// Cuando el profesional abre la ficha de un paciente, S.user sigue siendo EL
+// PROFESIONAL: el analisis de factores estaba leyendo las variables del medico
+// (ninguna) y las del paciente no entraban nunca. Del lado del paciente no
+// cambia nada, porque ahi S.role no es 'doctor'.
+function dmFuenteVars(){
+  if(typeof S!=='undefined' && S.role==='doctor' && S.viewData) return S.viewData;
+  return (typeof S!=='undefined' && S.user) ? S.user : null;
+}
+window.dmFuenteVars = dmFuenteVars;
+
 function dmGetVarsPersonales(){
   try{
-    const v = (S.user && S.user.custom_vars);
+    const _f = dmFuenteVars();
+    const v = (_f && _f.custom_vars);
     if(Array.isArray(v)) return v.slice(0, DM_MAX_VARS);
     if(typeof v === 'string' && v) return (JSON.parse(v)||[]).slice(0, DM_MAX_VARS);
   }catch(_){}
