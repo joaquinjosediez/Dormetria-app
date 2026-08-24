@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod162">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod163">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -537,10 +537,11 @@
     </div>
 
     <!-- 1) ¿Cómo usar Dormetria? — aparece solo si el paciente no la cerró aún -->
-    <div id="home-howto-card" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:16px;cursor:pointer" onclick="openHowToUse(true)">
+    <div id="home-howto-card" style="display:none;position:relative;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid rgba(126,200,164,0.3);border-radius:14px;padding:16px;cursor:pointer" onclick="openHowToUse(true)">
+      <button type="button" id="home-howto-cerrar" aria-label="Ocultar esta guía" onclick="dmCerrarHowTo(event)" style="position:absolute;top:5px;right:5px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:14px;line-height:1;padding:0;cursor:pointer;font-family:var(--font)">✕</button>
       <div style="display:flex;align-items:center;gap:12px">
         <div style="font-size:28px;line-height:1">📖</div>
-        <div style="flex:1">
+        <div style="flex:1;padding-right:24px">
           <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:2px">¿Cómo usar Dormetria?</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.7);line-height:1.4">Guía rápida para empezar. Tocá para verla.</div>
         </div>
@@ -1322,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod162"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod163"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1341,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod162';
+const APP_VERSION='hoy79-mod163';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2657,6 +2658,32 @@ function dmClaro(c){
   return DM_CLAROS[k] || c;
 }
 window.dmClaro = dmClaro;
+
+// El color y la palabra salen del MISMO lugar.
+// Venian de escalas distintas: el pilar de regularidad pintaba 63% con el
+// naranja de advertencia y al lado escribia "Buena". Dos mensajes opuestos en
+// la misma tarjeta. Ahora el color se deduce de la palabra que se va a
+// mostrar, asi que no pueden discrepar nunca mas.
+var DM_ESTADOS = {
+  'excelente':'#14532d','muy bien':'#14532d','muy buena':'#14532d',
+  'bien':'#2d9e6b','buena':'#2d9e6b',
+  'mejorable':'#d97706','regular':'#d97706',
+  'baja':'#dc2626','requiere atencion':'#dc2626','requiere atención':'#dc2626',
+  'muy baja':'#991b1b',
+  'descriptivo':'#44403c','informativo':'#44403c',
+  'sin datos':'#6b7280','insuficiente':'#6b7280'
+};
+function dmColorEstado(palabra, porDefecto){
+  if(!palabra) return porDefecto || '#6b7280';
+  var k = String(palabra).trim().toLowerCase();
+  return DM_ESTADOS[k] || porDefecto || '#6b7280';
+}
+window.dmColorEstado = dmColorEstado;
+
+// Con este identificador viaja una variable sugerida por el profesional dentro
+// de doctor_suggestions. Va con var y arriba de todo para que lo vean los dos
+// bloques de script que lo usan.
+var DM_VAR_SUG_ID = 'var-personal';
 function pillarBar(v,color){return '<div style="height:6px;border-radius:3px;background:var(--bg-secondary);margin-top:6px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+color+';width:'+v+'%;transition:width .6s ease"></div></div>';}
 
 // ───────────────────────────────────────────────────────────────────────
@@ -3000,9 +3027,42 @@ function dmVerNotaNoche(e, ev){
   const _lat = (e.sleep_latency_mins!=null && e.sleep_latency_mins!=='') ? (parseInt(e.sleep_latency_mins)+' min') : '—';
   const _dato = (rot,val) => '<div style="display:flex;justify-content:space-between;gap:18px;padding:3px 0;font-size:13px">'+
       '<span style="color:#6b7c74">'+rot+'</span><span style="color:#10231c;font-weight:600">'+val+'</span></div>';
+  // Despertares. Es lo primero que se mira en un insomnio de mantenimiento y
+  // no estaba: habia que abrir el registro entero para saber si esa noche se
+  // desperto y cuanto le costo volver a dormirse.
+  var _despTxt = '\u2014', _despDet = '';
+  try{
+    var _n = (e.awakenings==null || e.awakenings==='') ? null : parseInt(e.awakenings, 10);
+    var _waso = (e.wake_in_bed_mins==null || e.wake_in_bed_mins==='') ? null : parseInt(e.wake_in_bed_mins, 10);
+    if(isNaN(_n)) _n = null;
+    if(isNaN(_waso)) _waso = null;
+    if(_n === 0){
+      _despTxt = 'ninguno';
+    } else if(_n){
+      _despTxt = _n + (_n===1 ? ' vez' : ' veces') + (_waso!=null ? ' \u00b7 ' + _hm(_waso) + ' despierto' : '');
+    } else if(_waso!=null){
+      _despTxt = _hm(_waso) + ' despierto';
+    }
+    var _lista = e.awakening_detail;
+    if(typeof _lista === 'string' && _lista){ try{ _lista = JSON.parse(_lista); }catch(_e2){ _lista = null; } }
+    if(Array.isArray(_lista) && _lista.length){
+      _despDet = '<div style="margin:1px 0 4px 0">' + _lista.map(function(a){
+        var _hh = String((a && a.time) || '').slice(0,5);
+        var _dd = (a && a.duration!=null && a.duration!=='') ? (parseInt(a.duration,10) + ' min') : 'sin duraci\u00f3n';
+        return '<div style="font-size:12px;color:#6b7c74;padding:1px 0 1px 3px">\u00b7 ' + (_hh || 'sin hora') + ' \u2014 ' + _dd + '</div>';
+      }).join('') + '</div>';
+    }
+  }catch(_e1){}
+  var _finCama = (e.awake_in_bed_after_mins==null || e.awake_in_bed_after_mins==='')
+    ? null : parseInt(e.awake_in_bed_after_mins, 10);
+  if(isNaN(_finCama)) _finCama = null;
+
   globo.innerHTML='<div style="font-size:12px;color:#1a4a3a;font-weight:700;margin-bottom:7px">'+f+'</div>'+
     _dato('Durmió', e.no_sleep===true ? 'no durmió' : _hm(e.sleep_minutes))+
     _dato('Tardó en dormirse', _lat)+
+    _dato('Despertares', _despTxt)+
+    _despDet+
+    (_finCama ? _dato('En cama ya despierto', _hm(_finCama)) : '')+
     (t ? '<div style="margin-top:9px;padding-top:8px;border-top:1px solid #f0eee9;font-size:13px;color:#3f3f46;line-height:1.5;white-space:pre-wrap">'+
          String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>' : '');
   capa.appendChild(globo);
@@ -5059,12 +5119,14 @@ function updatePillarBars(entries){
     cardsOwn=[{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:_optOwn.lo+'–'+_optOwn.hi+'h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
      {label:'Regularidad',val:avgRegP,color:'#e67e22',statusOverride:(_localRegResult&&_localRegResult.label)||null,sub:_localRegResult.sd_midpoint_min!==null?('Variación: ±'+_localRegResult.sd_midpoint_min+' min'):'Variabilidad del horario'}
-    ].map(p=>{const c=pillarColor(p.val);const status=(p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
-      return '<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid '+p.color+'">'+
-        '<div style="font-size:10px;font-weight:700;color:'+p.color+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.label+'</div>'+
+    ].map(p=>{const status=p.statusOverride||(p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
+      const c=dmClaro(dmColorEstado(status,pillarColor(p.val)));
+      const pc=dmClaro(p.color);
+      return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-radius:12px;padding:10px 12px;border-top:3px solid '+pc+'">'+
+        '<div style="font-size:10px;font-weight:700;color:'+pc+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+p.label+'</div>'+
         '<div style="font-size:22px;font-weight:700;color:'+c+';margin:2px 0">'+p.val+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span></div>'+
         '<div style="font-size:10px;font-weight:600;color:'+c+';margin-bottom:4px">'+status+'</div>'+pillarBar(p.val,c)+
-        '<div style="font-size:9px;color:var(--label-3);margin-top:5px;line-height:1.3">'+p.sub+'</div></div>';
+        '<div style="font-size:9px;color:rgba(244,239,229,.55);margin-top:5px;line-height:1.3">'+p.sub+'</div></div>';
     }).join('');
   }
   pillarsEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+cardsOwn+'</div>'+
@@ -8965,6 +9027,18 @@ function updateHowToHomeCard(){
   if(!card) return;
   card.style.display = isHowToDismissed() ? 'none' : 'block';
 }
+// La cruz de la tarjeta del inicio. El boton "ya entiendo" ya existia, pero
+// obligaba a entrar a la guia y bajar hasta el final para sacarla del inicio.
+// Quien ya usa la app todos los dias no va a hacer eso: la ignora, y le queda
+// ocupando la primera pantalla para siempre.
+function dmCerrarHowTo(ev){
+  if(ev){ ev.stopPropagation(); if(ev.preventDefault) ev.preventDefault(); }
+  try{ localStorage.setItem(howtoStorageKey(),'1'); }catch(_){}
+  const card=document.getElementById('home-howto-card');
+  if(card) card.style.display='none';
+  if(typeof toast==='function') toast('Listo. Queda en Más › Cómo usar Dormetria');
+}
+window.dmCerrarHowTo = dmCerrarHowTo;
 
 function closeMasMenu(){ }
 
@@ -10904,10 +10978,13 @@ async function showDiaryTab_(tab){
               // palabras distintas en la misma pantalla. Manda la clínica.
               {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: (regResult && regResult.label) || null},
             ].map(p=>{
-              const c=pillarColor(p.val);
-              const pillarC = p.color || '#1a4a3a';
               const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
-              return `<div style="background:var(--bg-secondary);border-radius:12px;padding:10px 12px;border-top:3px solid ${pillarC}">
+              // Estas tarjetas van SIEMPRE sobre el verde oscuro del paciente:
+              // los colores clinicos estan pensados para papel blanco y hay que
+              // aclararlos, o el texto queda en 2:1 contra el fondo.
+              const c = dmClaro(dmColorEstado(status, pillarColor(p.val)));
+              const pillarC = dmClaro(p.color || '#1a4a3a');
+              return `<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-radius:12px;padding:10px 12px;border-top:3px solid ${pillarC}">
                 <div style="font-size:10px;font-weight:700;color:${pillarC};text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${p.label}</div>
                 <div style="font-size:22px;font-weight:700;color:${c};margin:2px 0">${p.val}<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span></div>
                 <div style="font-size:10px;font-weight:600;color:${c};margin-bottom:4px">${status}</div>
@@ -13624,7 +13701,20 @@ async function dmCrearPacienteGuardar(){
       const mia = vinculos.some(function(v){ return String(v.doctor_email||'').toLowerCase() === String(S.user.email||'').toLowerCase(); });
 
       if(mia){
-        poner('Ya tenés a '+quien+' en tu listado'+(cuando?' (ficha del '+cuando+')':'')+'. Buscala en la lista de la izquierda.');
+        // Esto NO es un error, pero salia por el mismo cartel rojo que los
+        // errores de validacion y se leia como si el alta hubiera fallado.
+        // La ficha existe y ya es de este profesional: es una confirmacion.
+        poner('');
+        const _cMia = document.getElementById('ap-resultado');
+        if(_cMia) _cMia.innerHTML =
+          '<div style="background:rgba(126,200,164,.14);border:1px solid rgba(126,200,164,.42);border-radius:14px;padding:16px">'+
+            '<div style="font-size:15.5px;font-weight:700;color:#7EC8A4;margin-bottom:5px">\u2713 '+quien+' ya est\u00e1 en tu listado</div>'+
+            '<div style="font-size:13.5px;color:rgba(244,239,229,.82);line-height:1.6">'+
+              'No hace falta volver a cargar la ficha'+(cuando?': se cre\u00f3 el '+cuando:'')+'. '+
+              'Est\u00e1 en <b>Pacientes</b>, la primera solapa del panel.</div>'+
+            '<button onclick="document.getElementById(&quot;dm-alta-pac&quot;).remove(); if(typeof showDrTab_===&quot;function&quot;) showDrTab_(&quot;patients&quot;);" '+
+              'style="width:100%;margin-top:13px;background:#7EC8A4;border:none;border-radius:11px;padding:12px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Ir al listado</button>'+
+          '</div>';
         return;
       }
       if(vinculos.length){
@@ -13704,7 +13794,8 @@ async function dmCrearPacienteGuardar(){
       'Si algo no coincide, tu código es '+(nuevo&&nuevo.code?nuevo.code:'—')+'.';
     const cont=document.getElementById('ap-resultado');
     if(cont) cont.innerHTML='<div style="background:rgba(126,200,164,.12);border:1px solid rgba(126,200,164,.3);border-radius:12px;padding:13px 15px">'+
-      '<div style="font-size:13px;font-weight:700;color:#7EC8A4;margin-bottom:7px">Ficha creada · código '+(nuevo&&nuevo.code?nuevo.code:'—')+(_escOk?' · '+_escOk+' escala'+(_escOk>1?'s':'')+' asignada'+(_escOk>1?'s':''):'')+'</div>'+
+      '<div style="font-size:15.5px;font-weight:700;color:#7EC8A4;margin-bottom:5px">\u2713 Ficha creada</div>'+
+      '<div style="font-size:13.5px;color:rgba(244,239,229,.82);line-height:1.6;margin-bottom:11px"><b>'+escHtml(cuerpo.name+' '+cuerpo.lname)+'</b> ya aparece en <b>Pacientes</b>, la primera solapa del panel.<br>C\u00f3digo de vinculaci\u00f3n: <b>'+(nuevo&&nuevo.code?nuevo.code:'\u2014')+'</b>'+(_escOk?' \u00b7 '+_escOk+' escala'+(_escOk>1?'s':'')+' asignada'+(_escOk>1?'s':''):'')+'</div>'+
       '<button onclick="dmInvitarPaciente()" style="width:100%;margin-bottom:9px;background:#7EC8A4;border:none;border-radius:10px;padding:11px;color:#0F2820;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">✉️ Invitarlo por mail (elige su contraseña)</button>'+
       '<div id="ap-inv-estado" style="font-size:12px;line-height:1.5;margin-bottom:9px;min-height:1em;color:rgba(255,255,255,.7)"></div>'+
       '<textarea id="ap-msg" readonly style="width:100%;min-height:118px;font-size:12.5px;line-height:1.5;padding:10px;border-radius:9px;border:none;background:rgba(0,0,0,.25);color:rgba(255,255,255,.85);font-family:var(--font);box-sizing:border-box">'+texto+'</textarea>'+
@@ -14936,6 +15027,34 @@ async function showDrPTab_(tab){
             (_screenAvg!=null?_row('📱','Pantallas antes de dormir (prom.)', _screenAvg+' min', _screenAvg>60):'');
         }
       }catch(_hdErr){ /* deja el mensaje "sin datos" */ }
+      // Variables propias del paciente.
+      // Lo que decidio seguir por su cuenta ("tome la medicacion", "guardia",
+      // "dormi con mi hijo") es informacion clinica: dice que sospecha el
+      // paciente que le afecta el sueno. Hasta ahora solo la veia el.
+      let varsBody = '';
+      try{
+        let _vp = u.custom_vars;
+        if(typeof _vp === 'string' && _vp){ try{ _vp = JSON.parse(_vp); }catch(_vp1){ _vp = []; } }
+        if(!Array.isArray(_vp)) _vp = [];
+        varsBody =
+          (_vp.length
+            ? '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:7px">Las marca cada noche y entran al an\u00e1lisis de factores</div>'+
+              _vp.map(function(v){
+                return '<div style="display:flex;gap:9px;align-items:center;background:rgba(126,200,164,0.07);border-radius:9px;padding:9px 11px;margin-bottom:6px">'+
+                  '<span style="font-size:15px">'+((v&&v.icon)||'\u2b50')+'</span>'+
+                  '<span style="font-size:13px;color:#F4EFE5">'+escHtml((v&&v.label)||'')+'</span></div>';
+              }).join('')
+            : '<div style="font-size:12.5px;color:rgba(244,239,229,0.5);font-style:italic">Todav\u00eda no agreg\u00f3 ninguna.</div>')+
+          '<div style="border-top:0.5px solid rgba(126,200,164,0.14);margin-top:11px;padding-top:11px">'+
+            '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:6px">Sugerirle una para que siga</div>'+
+            '<input id="drp-var-sug" type="text" maxlength="34" placeholder="Ej: tom\u00f3 la medicaci\u00f3n" '+
+              'style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid rgba(126,200,164,0.22);border-radius:9px;padding:10px 11px;font-size:13.5px;font-family:var(--font);color:#F4EFE5">'+
+            '<button onclick="dmSugerirVariable()" style="width:100%;margin-top:7px;padding:10px;border:none;border-radius:9px;background:rgba(126,200,164,0.18);color:#7EC8A4;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Envi\u00e1rsela</button>'+
+            '<div id="drp-var-estado" style="font-size:12px;margin-top:7px;min-height:1em;line-height:1.45;color:rgba(244,239,229,0.6)"></div>'+
+          '</div>';
+      }catch(_vErr){
+        varsBody = '<div style="font-size:12.5px;color:rgba(244,239,229,0.5)">No se pudieron leer las variables.</div>';
+      }
       cont.innerHTML =
         chipsHtml +
         card('🏷️','Etiquetas clínicas', '<div id="drp-tags-card-body">'+tagsCardBody+'</div>', true) +
@@ -14958,6 +15077,7 @@ async function showDrPTab_(tab){
         '<div class="dm-profcol">'+
           card('🌿','Hábitos declarados', habitsBody)+
           card('📔','Hábitos registrados · 14 días', habitsDiaryBody)+
+          card('⭐','Sus propias variables', varsBody)+
         '</div>';
     // Render the existing annotation section after innerHTML is set
     const _annotArea=document.getElementById('dr-notes-area');
@@ -15674,7 +15794,8 @@ async function showDrPTab_(tab){
                 ? regResult.label
                 : (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');
               const sub=({Cantidad:_optH.lo+'–'+_optH.hi+'h recomendado',Fragmentación:(_awakAvg>0?_awakAvg.toFixed(1)+' despertares/noche':'Sin despertares registrados'),Regularidad:(regResult.sd_midpoint_min!==null?('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')):'Variabilidad del horario')})[p.l]||'';
-              return pillarCard(p.l, p.v+'<span style="font-size:15px;font-weight:400;opacity:.55">%</span>', c, st, sub, p.pillarC);
+              // El color lo manda la palabra, no una segunda escala paralela.
+              return pillarCard(p.l, p.v+'<span style="font-size:15px;font-weight:400;opacity:.55">%</span>', dmColorEstado(st, c), st, sub, p.pillarC);
             }).join('');
           }
           pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+cards+'</div>'+
@@ -16453,6 +16574,37 @@ async function sendScaleSuggestion(){
 }
 
 
+// Manda al paciente una variable para que la siga cada noche.
+// Viaja por doctor_suggestions -la misma tabla de las escalas- a proposito:
+// ya existe, ya tiene permisos y el paciente ya la lee. Una tabla nueva para
+// dos campos seria otra migracion que correr y otra politica que olvidarse.
+async function dmSugerirVariable(){
+  const inp = document.getElementById('drp-var-sug');
+  const est = document.getElementById('drp-var-estado');
+  const decir = function(t, col){ if(est){ est.textContent = t; est.style.color = col || 'rgba(244,239,229,.6)'; } };
+  const txt = inp ? String(inp.value||'').trim() : '';
+  if(!txt){ decir('Escribí qué querés que siga.', '#ff9d9d'); return; }
+  const email = String(S.viewEmail||'').trim().toLowerCase();
+  if(!email){ decir('No hay ningún paciente abierto.', '#ff9d9d'); return; }
+  decir('Enviando…');
+  try{
+    await db.post('doctor_suggestions', {
+      doctor_email: String(S.user.email).trim().toLowerCase(),
+      doctor_name: ((S.user.gender==='Masculino')?'Dr. ':(S.user.gender==='Femenino')?'Dra. ':'Dr/a. ')+S.user.name+' '+(S.user.lname||''),
+      patient_email: email,
+      scale_id: DM_VAR_SUG_ID,
+      scale_name: txt,
+      seen: false, completed: false
+    }, '');
+    if(inp) inp.value = '';
+    decir('✓ Enviada. Le aparece en el inicio de su app para aceptarla.', '#7EC8A4');
+  }catch(e){
+    console.error('[var-sugerida]', e);
+    decir('No se pudo enviar: '+String((e&&e.message)||e), '#ff9d9d');
+  }
+}
+window.dmSugerirVariable = dmSugerirVariable;
+
 async function loadDoctorSuggestions(){
   const banner = document.getElementById('home-doctor-suggestions');
   const patEmail = (S.user?.email||'').trim();
@@ -16484,7 +16636,27 @@ async function loadDoctorSuggestions(){
     banner.style.display='block';
     return;
   }
-  if(!suggestions || !suggestions.length){
+  // Las variables sugeridas viajan por esta misma tabla pero NO son escalas:
+  // se separan antes de armar nada. Si no, aparecerian con un boton
+  // "Completar ahora" que al tocarlo no abre ningun cuestionario.
+  let varsSug = [];
+  if(Array.isArray(suggestions)){
+    varsSug = suggestions.filter(function(s){ return String(s.scale_id) === DM_VAR_SUG_ID; });
+    suggestions = suggestions.filter(function(s){ return String(s.scale_id) !== DM_VAR_SUG_ID; });
+  }
+  const varsHtml = varsSug.map(function(s){
+    const lbl = String(s.scale_name||'').trim();
+    if(!lbl) return '';
+    return '<div style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:2px solid #C8A96E;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 2px 12px rgba(200,169,110,0.2)">'+
+      '<div style="font-size:11px;font-weight:700;color:#8B6F3D !important;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px">TU PROFESIONAL TE SUGIERE SEGUIR</div>'+
+      '<div style="font-size:16px;font-weight:700;color:#0F2820 !important;margin-bottom:4px;line-height:1.3">'+escHtml(lbl)+'</div>'+
+      '<div style="font-size:12.5px;color:#5C6B61 !important;margin-bottom:11px;line-height:1.45">La vas a marcar sí o no cada noche, y la app te va a mostrar si se asocia a mejor o peor sueño.</div>'+
+      '<button data-vid="'+escHtml(String(s.id))+'" data-lbl="'+escHtml(lbl)+'" onclick="dmAceptarVarSugerida(this.dataset.vid, this.dataset.lbl)" style="background:#1F4738 !important;color:#fff !important;border:none;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;font-family:var(--font)">Agregarla a mis variables →</button>'+
+      '<button data-sid="'+escHtml(String(s.id))+'" onclick="dismissSuggestion(this.dataset.sid)" style="background:none;border:none;color:#8a8a8a !important;font-size:12px;cursor:pointer;width:100%;margin-top:7px;font-family:var(--font)">Ahora no</button>'+
+      '</div>';
+  }).join('');
+
+  if((!suggestions || !suggestions.length) && !varsHtml){
     // ¿Hay sugerencias para otro email? (diagnóstico inline)
     try{
       const others = await db.get('doctor_suggestions?completed=eq.false&select=patient_email').catch(()=>null);
@@ -16502,6 +16674,7 @@ async function loadDoctorSuggestions(){
     return;
   }
   // Ordenar por created_at en JS si existe, sino dejar como vino
+  suggestions = suggestions || [];
   suggestions.sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
   S._docSuggIds = suggestions.map(s=>s.scale_id);
   const cardsHtml = suggestions.map(s=>{
@@ -16519,11 +16692,13 @@ async function loadDoctorSuggestions(){
       '<button data-scid="'+s.scale_id+'" onclick="startScale(this.dataset.scid)" style="background:#1F4738 !important;color:#fff !important;border:none;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;font-family:var(--font)">Completar ahora →</button>'+
       '</div>';
   }).join('');
-  banner.innerHTML = '<div style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:2px solid #C8A96E;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(200,169,110,0.2)">'+
-    '<div style="font-size:14px;font-weight:700;color:#0F2820 !important;margin-bottom:4px;letter-spacing:0.01em">⭐ Escalas que te recomienda tu profesional</div>'+
-    '<div style="font-size:12px;color:#5C6B61 !important;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
-    cardsHtml+
-    '</div>';
+  banner.innerHTML = varsHtml + (cardsHtml
+    ? '<div style="background:linear-gradient(135deg,#F4EFE5 0%,#FFFFFF 100%);border:2px solid #C8A96E;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(200,169,110,0.2)">'+
+      '<div style="font-size:14px;font-weight:700;color:#0F2820 !important;margin-bottom:4px;letter-spacing:0.01em">⭐ Escalas que te recomienda tu profesional</div>'+
+      '<div style="font-size:12px;color:#5C6B61 !important;margin-bottom:12px">Completá las que te indicó para que pueda evaluarte mejor.</div>'+
+      cardsHtml+
+      '</div>'
+    : '');
   banner.style.display='block';
 }
 
@@ -21476,6 +21651,43 @@ function dmAbrirVarsPersonales(){
     '</div></div>';
   document.body.appendChild(w);
 }
+
+// El paciente acepta la variable que le mando el profesional.
+async function dmAceptarVarSugerida(id, label){
+  label = String(label||'').trim();
+  if(!label) return;
+  let vars = dmGetVarsPersonales();
+  const yaEsta = vars.some(function(v){
+    return String((v&&v.label)||'').trim().toLowerCase() === label.toLowerCase();
+  });
+  if(!yaEsta){
+    // Solo entran dos. Si ya tenia dos, la nueva reemplaza a la segunda y se
+    // avisa: borrar una en silencio seria peor que no dejar agregarla.
+    if(vars.length >= DM_MAX_VARS){
+      vars = vars.slice(0, DM_MAX_VARS - 1);
+      toast('Reemplacé la segunda: solo entran dos variables');
+    }
+    vars = vars.concat([{ id:'v'+(vars.length+1), label:label, icon:'⭐' }]);
+    try{
+      await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email), {custom_vars: vars});
+      S.user.custom_vars = vars;
+      toast('Listo. La vas a ver al cargar tu noche ✓');
+    }catch(e){
+      console.error('[var-sugerida]', e);
+      toast('No se pudo guardar la variable.');
+      return;
+    }
+  }else{
+    toast('Ya la tenías cargada');
+  }
+  try{
+    await db.patch('doctor_suggestions?id=eq.'+encodeURIComponent(id), {completed:true, seen:true});
+  }catch(_){}
+  const slot = document.getElementById('dm-vars-slot');
+  if(slot) slot.innerHTML = dmRenderVarsPersonales();
+  if(typeof loadDoctorSuggestions==='function') loadDoctorSuggestions();
+}
+window.dmAceptarVarSugerida = dmAceptarVarSugerida;
 
 async function dmGuardarVarsPersonales(){
   const l1=(document.getElementById('dm-var1')?.value||'').trim();

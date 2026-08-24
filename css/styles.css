@@ -3217,7 +3217,7 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
       pantalla apilados y el paciente perdia el actograma de vista. */
 @media (max-width:520px){
   #diary-pillar-bars > div{
-    grid-template-columns:1fr 1fr 1fr !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
     gap:8px !important;
   }
   #diary-pillar-bars > div > div{
@@ -3448,7 +3448,7 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 }
 /* Los pilares: tres columnas compactas */
 #diary-pillar-bars > div{
-  display:grid !important; grid-template-columns:1fr 1fr 1fr !important; gap:9px !important;
+  display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:9px !important;
 }
 #diary-pillar-bars > div > div{
   background:rgba(255,255,255,.05) !important;
@@ -3791,7 +3791,28 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 
 /* ── Pilares: el subtítulo bajo el porcentaje era casi invisible ─────── */
 #diary-pillar-bars [style*="color:var(--label-3)"]{ color:rgba(244,239,229,.55) !important; }
-#diary-pillar-bars{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+
+/* ── Por que las tres tarjetas salian desparejas ──────────────────────
+   Habia DOS grillas encimadas. La de tres columnas vive en el hijo
+   (#diary-pillar-bars > div); esta linea la ponia TAMBIEN en el
+   contenedor, asi que su unico hijo caia dentro de la primera de tres
+   columnas y, como un item de grilla no puede achicarse por debajo de
+   su contenido, se desbordaba hacia la derecha. De ahi que las tarjetas
+   no llegaran al borde y quedaran corridas.
+   El contenedor vuelve a ser un bloque comun. */
+#diary-pillar-bars{ display:block; }
+
+/* minmax(0,1fr) y no 1fr: con 1fr el ancho minimo de cada columna es el
+   de su palabra mas larga, y "FRAGMENTACION" mide bastante mas que
+   "CANTIDAD" — por eso una tarjeta salia mas ancha que las otras dos. */
+#diary-pillar-bars > div{
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  align-items:stretch !important;
+}
+#diary-pillar-bars > div > div{
+  min-width:0 !important;
+  overflow-wrap:anywhere;
+}
 
 
 /* ══════════════════════════════════════════════════════════════════════
