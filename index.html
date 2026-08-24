@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod161">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod162">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1322,7 +1322,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod161"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod162"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1341,7 +1341,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod161';
+const APP_VERSION='hoy79-mod162';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2881,6 +2881,10 @@ function showScreen(id){
   try{
     const _isDr = S && S.role === 'doctor';
     const _twoPanel = _isDr && (id === 'doctor-home' || id === 'doctor-patient');
+    // Una marca explícita del rol en el body. Sin esto, la barra del
+    // profesional dependía de que el JS la ocultara a mano, y bastaba una
+    // regla con !important para que se le colara a un paciente.
+    document.body.classList.toggle('dm-rol-pro', !!_isDr);
     document.body.classList.toggle('dr-desktop', !!_twoPanel);
     document.body.classList.toggle('dr-has-patient', _isDr && id === 'doctor-patient');
     if(_twoPanel && typeof applyDrPanelCollapsePref==='function') applyDrPanelCollapsePref();

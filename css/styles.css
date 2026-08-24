@@ -4013,12 +4013,12 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
 
   /* Un solo encabezado, el de la app */
   body.dr-desktop{ }
-  body.dr-desktop #screen-doctor-home > .topbar,
-  body.dr-desktop #screen-doctor-patient > .topbar{ display:flex !important; }
+  body.dr-desktop #screen-doctor-home.active > .topbar,
+  body.dr-desktop #screen-doctor-patient.active > .topbar{ display:flex !important; }
 
   /* El split de dos columnas no tiene sentido en pantalla angosta */
-  body.dr-desktop #screen-doctor-home,
-  body.dr-desktop #screen-doctor-patient{
+  body.dr-desktop #screen-doctor-home.active,
+  body.dr-desktop #screen-doctor-patient.active{
     display:block !important;
   }
   body.dr-desktop #dr-patient-list-panel,
@@ -4157,16 +4157,19 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
 @media (max-width:899px){
 
   /* ── Las pantallas del profesional scrollean ──────────────────────── */
-  #screen-doctor-home,
-  #screen-doctor-patient,
-  #screen-admin{
+  /* SOLO la pantalla activa. Sin ".active" este display:flex !important
+     le gana a la regla que oculta las pantallas inactivas, y las tres del
+     profesional quedaban visibles siempre — incluso para un paciente. */
+  #screen-doctor-home.active,
+  #screen-doctor-patient.active,
+  #screen-admin.active{
     display:flex !important; flex-direction:column !important;
     height:100dvh !important; overflow:hidden !important;
   }
-  #screen-doctor-home > .scroll,
-  #screen-doctor-patient > .scroll,
-  #screen-doctor-home #dr-patient-list-panel,
-  #screen-doctor-patient #drp-content{
+  #screen-doctor-home.active > .scroll,
+  #screen-doctor-patient.active > .scroll,
+  #screen-doctor-home.active #dr-patient-list-panel,
+  #screen-doctor-patient.active #drp-content{
     flex:1 1 auto !important;
     overflow-y:auto !important;
     -webkit-overflow-scrolling:touch;
@@ -4181,7 +4184,8 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
     border-top:1px solid rgba(126,200,164,.14) !important;
     padding:9px 0 calc(15px + env(safe-area-inset-bottom)) !important;
     backdrop-filter:blur(10px);
-    display:flex !important;
+    /* El display lo maneja el JS según el rol. Forzarlo acá se lo mostraba
+       también al paciente, encima de su propia barra. */
   }
   #dr-bottomnav .bnav{
     font-size:11px !important; gap:4px !important;
@@ -4238,3 +4242,15 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
     max-width:150px; overflow:hidden; text-overflow:ellipsis;
   }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod162 · La barra del profesional solo existe para el profesional
+   Venía con display:flex escrito en el HTML y dependía de que el JS la
+   ocultara. Ahora depende de una clase de rol en el body: si el rol no
+   es profesional, no hay forma de que aparezca.
+   ══════════════════════════════════════════════════════════════════════ */
+#dr-bottomnav{ display:none !important; }
+body.dm-rol-pro #dr-bottomnav{ display:flex !important; }
+/* Y la del paciente, al revés */
+body.dm-rol-pro #main-nav{ display:none !important; }
