@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod159">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod160">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1225,13 +1225,13 @@
     </div>
 
     <!-- TCC-I para paciente (oculto por default, visible solo si tiene protocolo activo) -->
-    <div id="patient-tcci-card" onclick="openPatientCbtiView()" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:16px;cursor:pointer;position:relative;margin-bottom:4px">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="font-size:32px;line-height:1">🌿</div>
-        <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Mi Protocolo TCC-I</div>
-        <div style="font-size:11.5px;color:rgba(255,255,255,0.7);line-height:1.45">Terapia cognitivo-conductual para el insomnio. <span id="patient-tcci-progress" style="color:#7ec8a4;font-weight:600"></span></div></div>
-        <div style="color:rgba(255,255,255,0.4);font-size:18px">›</div>
+    <div id="patient-tcci-card" onclick="openPatientCbtiView()" style="display:none;background:rgba(255,255,255,0.07);border:1px solid rgba(200,169,110,.45);border-radius:14px;padding:14px 16px;cursor:pointer;align-items:center;gap:14px">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(200,169,110,.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">🌿</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600;color:#fff">Mi protocolo TCC-I</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px;line-height:1.4">Terapia cognitivo-conductual para el insomnio<span id="patient-tcci-progress" style="color:#C8A96E;font-weight:600"></span></div>
       </div>
+      <div style="color:rgba(255,255,255,0.25);font-size:18px;flex-shrink:0">›</div>
     </div>
 
     <!-- PVT -->
@@ -1321,7 +1321,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod159"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod160"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1340,7 +1340,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod159';
+const APP_VERSION='hoy79-mod160';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5999,38 +5999,74 @@ function dmLimpiarNota(n){
 // calculo que ya usa la comparacion de factores.
 function renderCicloHtml(entries){
   try{
-    const R=computeHabitsImpact(entries);
+    const R = computeHabitsImpact(entries);
     if(!R || !R.habitos) return '';
-    const pre=R.habitos.filter(function(x){ return x.id==='premenstrual'; })[0];
-    const men=R.habitos.filter(function(x){ return x.id==='period'; })[0];
+    const pre = R.habitos.filter(function(x){ return x.id==='premenstrual'; })[0];
+    const men = R.habitos.filter(function(x){ return x.id==='period'; })[0];
     if(!pre && !men) return '';
-    const fila=function(hb,rot,col){
-      if(!hb) return '';
-      const e=hb.efectos.filter(function(x){ return x.signo!==0; })
-        .sort(function(a,b){ return Math.abs(b.diff/(b.mOff||1))-Math.abs(a.diff/(a.mOff||1)); })[0];
-      const txt = e
-        ? (e.id==='tst'  ? (e.diff>0?'dormís ':'dormís ')+Math.abs(Math.round(e.diff))+' minutos '+(e.diff>0?'más':'menos')
-          : e.id==='lat' ? 'tardás '+Math.abs(Math.round(e.diff))+' minutos '+(e.diff>0?'más':'menos')+' en dormirte'
-          : e.id==='awk' ? 'te despertás '+Math.abs(e.diff).toFixed(1)+' veces '+(e.diff>0?'más':'menos')
-          : 'la calidad cambia '+(e.diff>0?'+':'')+e.diff.toFixed(1))
-        : 'por ahora no se nota diferencia';
-      const c = e ? (e.signo>0?'#15803d':'#b91c1c') : '#6b7c74';
-      return '<div style="display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid #f0eee9">'+
-        '<span style="width:9px;height:9px;border-radius:50%;background:'+col+';flex-shrink:0;margin-top:6px"></span>'+
-        '<div style="flex:1"><div style="font-size:15px;line-height:1.5;color:#3f3f46">En <b>'+rot+'</b>, '+
-        '<b style="color:'+c+'">'+txt+'</b>.</div>'+
-        '<div style="font-size:12px;color:#8a9691;margin-top:3px">'+hb.nOn+' noches · comparado con el resto de tu ciclo</div></div></div>';
-    };
-    return '<div class="dm-card" style="background:#fff;border-radius:16px;padding:16px 17px">'+
-      '<div style="font-size:14px;font-weight:700;color:var(--label);margin-bottom:3px">🩸 Tu ciclo y tu sueño</div>'+
-      '<div style="font-size:12px;color:var(--label-3);margin-bottom:8px">Tu sueño no es igual en todas las fases, y eso no es impresión tuya.</div>'+
-      fila(pre,'los 5 días previos','#c2547d')+
-      fila(men,'los días de menstruación','#e88fb0')+
-      '<div style="font-size:11.5px;color:var(--label-3);margin-top:11px;line-height:1.5">Orienta a fase lútea tardía. No alcanza para hablar de síndrome premenstrual: eso necesita registrar síntomas durante dos ciclos con un profesional.</div>'+
-    '</div>';
-  }catch(_){ return ''; }
-}
 
+    // ── Sueño total promedio por fase ──────────────────────────────────
+    // Como en el prototipo: tres barras comparables entre sí, de la fase
+    // peor a la mejor. Se lee de un vistazo si el ciclo pesa o no.
+    const minPorFase = [];
+    const tstDe = function(hb, cual){
+      if(!hb) return null;
+      const e = (hb.efectos||[]).filter(function(x){ return x.id==='tst'; })[0];
+      if(!e) return null;
+      return cual==='on' ? e.mOn : e.mOff;
+    };
+    const base = tstDe(men,'off') != null ? tstDe(men,'off') : tstDe(pre,'off');
+    if(pre && tstDe(pre,'on')!=null) minPorFase.push({ rot:'Los 5 días previos', min:tstDe(pre,'on'), col:'#c2547d' });
+    if(men && tstDe(men,'on')!=null) minPorFase.push({ rot:'Días de menstruación', min:tstDe(men,'on'), col:'#e88fb0' });
+    if(base != null)                 minPorFase.push({ rot:'Resto del ciclo',      min:base,            col:'#5ee08a' });
+
+    const fmt = function(m){ const h2=Math.floor(m/60), q=Math.round(m%60); return h2+' h '+String(q).padStart(2,'0')+' m'; };
+    const tope = minPorFase.reduce(function(a,b){ return Math.max(a, b.min); }, 1);
+
+    let html = '<div class="dm-ciclo">'+
+      '<div class="dm-ciclo-h">🩸 Tu ciclo y tu sueño</div>'+
+      '<div class="dm-ciclo-sub">Tu sueño no es igual en todas las fases, y eso no es impresión tuya.</div>';
+
+    if(minPorFase.length >= 2){
+      html += '<div class="dm-ciclo-caja">'+
+        '<div class="dm-ciclo-rot">Sueño total promedio</div>'+
+        minPorFase.map(function(f){
+          const pct = Math.max(6, Math.round(f.min / tope * 100));
+          return '<div class="dm-ciclo-fase">'+
+            '<div class="dm-ciclo-fase-top"><span>'+f.rot+'</span><b>'+fmt(f.min)+'</b></div>'+
+            '<div class="dm-ciclo-riel"><div class="dm-ciclo-barra" style="width:'+pct+'%;background:'+f.col+'"></div></div>'+
+          '</div>';
+        }).join('')+
+      '</div>';
+    }
+
+    // ── Qué cambia en los días previos ─────────────────────────────────
+    const detalle = function(hb, titulo){
+      if(!hb) return '';
+      const filas = (hb.efectos||[]).filter(function(e){ return e.signo!==0; });
+      if(!filas.length) return '';
+      const rotulo = { tst:'Sueño total', lat:'Tardás en dormirte', awk:'Te despertás', qual:'Calidad que reportás' };
+      return '<div class="dm-ciclo-caja">'+
+        '<div class="dm-ciclo-rot">'+titulo+'</div>'+
+        filas.map(function(e,k){
+          const mejor = e.signo > 0;
+          const val = e.id==='awk'  ? (e.diff>0?'+':'')+e.diff.toFixed(1)+' veces'
+                    : e.id==='qual' ? (e.diff>0?'+':'')+e.diff.toFixed(1)+' / 5'
+                    : (e.diff>0?'+':'−')+Math.abs(Math.round(e.diff))+' min';
+          return '<div class="dm-ciclo-fila'+(k?'':' dm-ciclo-fila1')+'">'+
+            '<span>'+(rotulo[e.id]||e.label)+'</span>'+
+            '<b style="color:'+(mejor?'#5ee08a':'#ff9d9d')+'">'+val+'</b></div>';
+        }).join('')+
+      '</div>';
+    };
+    html += detalle(pre, 'En los 5 días previos');
+    html += detalle(men, 'En los días de menstruación');
+
+    html += '<div class="dm-ciclo-pie">Son tus propias noches comparadas entre sí. '+
+      'Con pocos ciclos registrados todavía es una tendencia, no una conclusión.</div>';
+    return html + '</div>';
+  }catch(e){ console.warn('[CICLO]', e); return ''; }
+}
 function renderNotasPacienteHtml(entries){
   const con=(entries||[])
     .filter(e=>e && e.notes && !String(e.notes).startsWith('Importado'))
@@ -17747,9 +17783,9 @@ function dmElegirRol(){
         '<div style="font-size:13.5px;color:rgba(244,239,229,.6);margin-top:2px">Mi propio registro de sueño</div></div>'+
         '<span style="color:#7EC8A4;font-size:20px">›</span></div>'+
 
-      '<label style="display:flex;gap:10px;align-items:center;margin-top:18px;cursor:pointer">'+
-        '<input type="checkbox" id="dm-rol-recordar" checked style="width:18px;height:18px">'+
-        '<span style="font-size:13.5px;color:rgba(244,239,229,.6)">Recordar mi elección</span></label>'+
+      '<div style="font-size:13px;color:rgba(244,239,229,.45);margin-top:18px;line-height:1.55">'+
+        'Se recuerda el último que usaste. Para cambiar, entrá a <b>Mi otro perfil</b> '+
+        '(profesional) o <b>Más → Soy profesional de la salud</b> (paciente).</div>'+
     '</div>';
   document.body.appendChild(w);
 }
@@ -17758,21 +17794,20 @@ window.dmElegirRol = dmElegirRol;
 async function dmEntrarComo(rol){
   const P = window._dmPerfiles;
   if(!P || !P[rol]) return;
-  try{
-    const rec = document.getElementById('dm-rol-recordar');
-    if(rec && rec.checked) localStorage.setItem('dm_rol_preferido', rol);
-    else localStorage.removeItem('dm_rol_preferido');
-  }catch(_){}
-  const w = document.getElementById('dm-elegir-rol'); if(w) w.remove();
 
-  S.user = P[rol]; S.role = rol;
-  try{ trackUsage(); }catch(_){}
-  if(rol === 'patient'){
-    try{ setPatientMode(S.user.dob); }catch(_){}
-    showHome();
-  }else{
-    showDoctorHome();
+  // Se anota el rol y se recarga. Cambiar S.user en caliente dejaba media
+  // app con el estado del rol anterior —la barra de abajo, las pantallas ya
+  // dibujadas, los datos en memoria— y el cambio parecía no hacer nada.
+  // La sesión no se pierde, así que la recarga es instantánea.
+  try{ localStorage.setItem('dm_rol_preferido', rol); }catch(_){}
+
+  const w = document.getElementById('dm-elegir-rol');
+  if(w){
+    w.innerHTML = '<div style="text-align:center;color:rgba(244,239,229,.75);font-size:16px;padding:40px 0">'+
+      '<div class="spinner" style="margin:0 auto 16px"></div>Entrando como '+
+      (rol==='doctor' ? 'profesional' : 'paciente')+'…</div>';
   }
+  setTimeout(function(){ try{ location.reload(); }catch(_){} }, 200);
 }
 window.dmEntrarComo = dmEntrarComo;
 
@@ -17796,16 +17831,16 @@ async function dmCrearOtroPerfil(){
           : 'Vas a poder llevar tu propio diario de sueño, con el mismo correo. Tu panel de pacientes queda como está.')+
       '</div>'+
       (esPaciente
-        ? '<div class="form-group"><label class="form-label">Especialidad</label>'+
-          '<select class="form-input" id="op-spec">'+
+        ? '<div style="margin-bottom:14px"><label style="display:block;font-size:13.5px;font-weight:600;color:rgba(244,239,229,.78);margin-bottom:7px">Especialidad</label>'+
+          '<select id="op-spec" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(126,200,164,.25);border-radius:12px;padding:13px;font-size:15px;color:#F4EFE5;font-family:var(--font)">'+
             '<option value="physician">Medicina</option><option value="psychiatry">Psiquiatría</option>'+
             '<option value="neurology">Neurología</option><option value="pneumology">Neumonología</option>'+
             '<option value="psychology">Psicología</option><option value="pediatrics">Pediatría</option>'+
             '<option value="ent">Otorrinolaringología</option><option value="dentistry">Odontología</option>'+
             '<option value="nutrition">Nutrición</option><option value="kinesiology">Kinesiología</option>'+
             '<option value="other_health">Otra profesión de la salud</option></select></div>'+
-          '<div class="form-group"><label class="form-label">Matrícula (opcional)</label>'+
-          '<input class="form-input" id="op-mat" placeholder="MN 12345"></div>'
+          '<div style="margin-bottom:14px"><label style="display:block;font-size:13.5px;font-weight:600;color:rgba(244,239,229,.78);margin-bottom:7px">Matrícula (opcional)</label>'+
+          '<input id="op-mat" placeholder="MN 12345" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(126,200,164,.25);border-radius:12px;padding:13px;font-size:15px;color:#F4EFE5;font-family:var(--font)"></div>'
         : '')+
       '<div id="op-err" style="font-size:13.5px;color:#fca5a5;line-height:1.5;margin-bottom:10px"></div>'+
       '<button id="op-btn" onclick="dmGuardarOtroPerfil()" style="width:100%;background:#7EC8A4;color:#0F2820;border:none;border-radius:13px;padding:14px;font-size:15.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Crear perfil '+destino+'</button>'+

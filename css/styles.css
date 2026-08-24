@@ -331,8 +331,7 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
     align-items:center;gap:16px;padding:0 14px;
     background:#16352a;border-bottom:1px solid rgba(255,255,255,0.09);
   }
-  /* En movil la barra superior no existe y manda la bottomnav de siempre. */
-  #dr-topbar-desktop{ display:none; }
+  /* (el display:none base se movió FUERA del media query, más abajo) */
   body.dr-desktop #dr-bottomnav{ display:none !important; }
   /* El topbar viejo de la columna izquierda (logo + Salir) es redundante:
      ambos viven ahora en la barra superior. */
@@ -3499,10 +3498,15 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   border:none !important; background:none !important;
   padding:0 !important; border-radius:0 !important;
 }
-#screen-mas .scroll > div[onclick] > div:first-child{
+/* Solo el circulito del icono. Antes esto agarraba al primer hijo de
+   CUALQUIER tarjeta: en la del TCC-I el primer hijo es la fila entera de
+   contenido, así que la aplastaba a 40x40 y el texto se salía del recuadro. */
+#screen-mas .scroll > div[onclick]:not(#patient-tcci-card) > div:first-child:not([style*="display:flex"]){
   width:40px !important; height:40px !important; border-radius:11px !important;
   background:rgba(126,200,164,.14) !important;
 }
+#patient-tcci-card > div{ display:flex !important; align-items:center; gap:14px; }
+#patient-tcci-card > div > div:first-child{ width:auto !important; height:auto !important; background:none !important; }
 #screen-profile #profile-content [style*="font-size:15px;font-weight:600"],
 #screen-mas [style*="font-size:15px;font-weight:600"]{
   font-size:16.5px !important; color:#F4EFE5 !important;
@@ -3979,3 +3983,165 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
 }
 .dm-despertar-campo{ min-width:0; }
 .dm-despertar-campo .dm-inp{ width:100%; box-sizing:border-box; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod160 · La barra del profesional es SOLO de escritorio
+   El "display:none" estaba dentro de @media (min-width:900px), o sea que
+   en el celular no se aplicaba nunca: la barra se dibujaba sin estilos,
+   como una lista de píldoras blancas encima del encabezado. Ahora está
+   oculta por defecto y solo aparece en pantalla ancha.
+   ══════════════════════════════════════════════════════════════════════ */
+#dr-topbar-desktop{ display:none !important; }
+@media (min-width:900px){
+  body.dr-desktop #dr-topbar-desktop{ display:flex !important; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod160 · El panel del profesional en celular
+   La barra de escritorio y el encabezado compacto se dibujaban igual en
+   pantallas angostas: quedaban como píldoras blancas sin estilo encima
+   del encabezado real, y el logo aparecía dos veces.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width:899px){
+  /* Nada de la barra de escritorio */
+  #dr-topbar-desktop{ display:none !important; }
+
+  /* El encabezado compacto de dos paneles tampoco va en el celular */
+  body .dm-panel-compact{ display:none !important; }
+
+  /* Un solo encabezado, el de la app */
+  body.dr-desktop{ }
+  body.dr-desktop #screen-doctor-home > .topbar,
+  body.dr-desktop #screen-doctor-patient > .topbar{ display:flex !important; }
+
+  /* El split de dos columnas no tiene sentido en pantalla angosta */
+  body.dr-desktop #screen-doctor-home,
+  body.dr-desktop #screen-doctor-patient{
+    display:block !important;
+  }
+  body.dr-desktop #dr-patient-list-panel,
+  body.dr-desktop #drp-content{
+    width:100% !important; max-width:100% !important;
+    display:block !important;
+  }
+  body.dr-desktop #screen-doctor-patient #drp-content{
+    grid-template-columns:1fr !important;
+  }
+
+  /* La barra de abajo del profesional, con el mismo tamaño que la del
+     paciente: venía de la versión de escritorio y quedaba apretada. */
+  #dr-bottomnav{ padding-bottom:env(safe-area-inset-bottom); }
+  #dr-bottomnav button, #dr-bottomnav a{ font-size:11.5px; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod160 · Tu ciclo y tu sueño
+   El HTML ya usaba estas clases desde hace varias versiones, pero el CSS
+   nunca se escribió: el bloque se dibujaba sin estilos.
+   Paleta tomada del prototipo: rosa oscuro para los días previos, rosa
+   claro para el sangrado, verde para el resto del ciclo.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-ciclo-tit, .dm-ciclo-h{
+  font-size:19px; font-weight:700; color:#F4EFE5; margin-bottom:5px;
+}
+.dm-ciclo-bajada, .dm-ciclo-sub{
+  font-size:14.5px; color:rgba(244,239,229,.62); line-height:1.6;
+  margin-bottom:16px;
+}
+.dm-ciclo-pie{
+  font-size:12.5px; color:rgba(244,239,229,.5); line-height:1.6;
+  margin-top:10px;
+}
+.dm-ciclo-caja{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(126,200,164,.16);
+  border-radius:17px; padding:16px 17px; margin-bottom:11px;
+}
+.dm-ciclo-rot{
+  font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:rgba(244,239,229,.5); margin-bottom:13px;
+}
+.dm-ciclo-fase{ margin-bottom:14px; }
+.dm-ciclo-fase:last-child{ margin-bottom:0; }
+.dm-ciclo-fase-top{
+  display:flex; justify-content:space-between; align-items:baseline; gap:14px;
+  font-size:14.5px; color:rgba(244,239,229,.82); margin-bottom:7px;
+}
+.dm-ciclo-fase-top b{ color:#F4EFE5; font-weight:700; white-space:nowrap; }
+.dm-ciclo-riel{
+  height:10px; background:rgba(255,255,255,.07);
+  border-radius:5px; overflow:hidden;
+}
+.dm-ciclo-barra{ height:100%; border-radius:5px; transition:width .5s ease; }
+
+/* Las filas de "qué cambia en los días previos" */
+.dm-ciclo-fila{
+  display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+  padding:11px 0; font-size:15px; color:rgba(244,239,229,.82);
+}
+.dm-ciclo-fila + .dm-ciclo-fila{ border-top:1px solid rgba(126,200,164,.14); }
+.dm-ciclo-fila b{ white-space:nowrap; font-weight:700; }
+.dm-ciclo-nota{
+  font-size:12.5px; color:rgba(244,239,229,.5); line-height:1.6;
+  margin-top:12px; padding-top:12px;
+  border-top:1px solid rgba(126,200,164,.14);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod160 · Clases que el HTML usaba sin estilo definido
+   Detectadas con un barrido que compara las clases dm-* del HTML contra
+   las del CSS. Es el mismo patrón que dejó el ciclo y el topbar sin
+   formato: el marcado se sube y el estilo queda sin escribir.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Contenedor del bloque del ciclo */
+.dm-ciclo{ margin-top:14px; }
+
+/* Envoltorios de la salida de la IA */
+.dm-ia-datos, .dm-ia-items{ display:block; }
+
+/* El enlace de "¿Primera vez? Crear cuenta", más visible */
+.dm-toggle-fuerte{
+  margin-top:16px; padding:13px; text-align:center;
+  background:rgba(126,200,164,.1);
+  border:1px solid rgba(126,200,164,.28);
+  border-radius:13px; font-size:14.5px;
+}
+.dm-toggle-fuerte span{ color:#7EC8A4; font-weight:700; cursor:pointer; }
+
+/* Recorrido guiado de la app */
+.dm-tour-tooltip{
+  position:fixed; z-index:10020; max-width:340px;
+  background:#12302a; border:1px solid rgba(126,200,164,.28);
+  border-radius:18px; padding:20px; box-shadow:0 18px 50px rgba(0,0,0,.5);
+}
+.dm-tour-title{ font-size:17.5px; font-weight:700; color:#F4EFE5; margin-bottom:7px; }
+.dm-tour-body{ font-size:14.5px; color:rgba(244,239,229,.72); line-height:1.6; }
+.dm-tour-progress{
+  font-size:12.5px; color:rgba(244,239,229,.45); margin-top:14px;
+}
+.dm-tour-actions{ display:flex; gap:9px; margin-top:14px; align-items:center; }
+.dm-tour-btn{
+  flex:1; padding:12px; border-radius:12px; border:none; cursor:pointer;
+  font-family:var(--font); font-size:14.5px; font-weight:600;
+}
+.dm-tour-btn-primary{ background:#7EC8A4; color:#0F2820; font-weight:700; }
+.dm-tour-btn-secondary{
+  background:rgba(255,255,255,.07); color:#F4EFE5;
+  border:1px solid rgba(126,200,164,.22);
+}
+.dm-tour-skip{
+  background:none; border:none; color:rgba(244,239,229,.45);
+  font-size:13.5px; cursor:pointer; font-family:var(--font); padding:8px;
+}
+
+/* Gráficos de adherencia del panel profesional */
+.dm-adh-charts{ display:grid; grid-template-columns:1fr; gap:12px; }
+@media (min-width:900px){ .dm-adh-charts{ grid-template-columns:1fr 1fr; } }
+
+/* Casilla de "mi propia variable" en el diario */
+.dm-var-chk{ width:19px; height:19px; flex-shrink:0; margin-top:2px; }
