@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod158">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod159">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -558,6 +558,10 @@
 
     <!-- Dos cifras: constancia y regularidad. Nada mas. -->
     <div id="home-cifras" style="display:none;gap:11px"></div>
+
+    <!-- Invitación a calificar al profesional. Aparece a las dos semanas
+         de vincularse y, si la posterga, vuelve al mes. -->
+    <div id="home-calificar" style="display:none"></div>
 
     <!-- Escalas que le pidió el profesional. Van acá, entre el diario y
          las lecturas: si hay algo pendiente que le indicaron, importa más
@@ -1222,7 +1226,6 @@
 
     <!-- TCC-I para paciente (oculto por default, visible solo si tiene protocolo activo) -->
     <div id="patient-tcci-card" onclick="openPatientCbtiView()" style="display:none;background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:16px;cursor:pointer;position:relative;margin-bottom:4px">
-      <div style="display:inline-block;background:#C8A96E;color:#0F2820;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:8px;letter-spacing:0.06em;margin-bottom:10px;white-space:nowrap">TU TRATAMIENTO</div>
       <div style="display:flex;align-items:center;gap:14px">
         <div style="font-size:32px;line-height:1">🌿</div>
         <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Mi Protocolo TCC-I</div>
@@ -1318,7 +1321,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod158"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod159"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1337,7 +1340,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod158';
+const APP_VERSION='hoy79-mod159';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -1745,6 +1748,13 @@ const db={
   async patch(table,data){
     return this.q(table,{method:'PATCH',body:JSON.stringify(data),
       headers:{'Prefer':'return=minimal'}});
+  },
+  // Igual que patch, pero devuelve las filas modificadas. Sirve para
+  // distinguir "se guardó" de "no encontró ninguna fila que tocar", que
+  // PostgREST informa igual: con un 204 y sin error.
+  async patchVerificado(table,data){
+    return this.q(table,{method:'PATCH',body:JSON.stringify(data),
+      headers:{'Prefer':'return=representation'}});
   },
   async upsert(table,data,onConflict='email'){
     return this.q(table,{method:'POST',body:JSON.stringify(data),
@@ -2635,6 +2645,9 @@ var DM_CLAROS = {
   '#dc2626':'#ff9d9d','#b91c1c':'#ff9d9d','#991b1b':'#ff7b7b','#ef4444':'#ff9d9d',
   '#185fa5':'#7fb8ff','#1d4ed8':'#93c5fd','#2563eb':'#93c5fd','#0369a1':'#7fb8ff',
   '#6b7280':'rgba(244,239,229,.55)','#888':'rgba(244,239,229,.55)',
+  // Los colores de los tres pilares. Faltaban dos y por eso el rótulo de
+  // Fragmentación quedaba en 2,33:1 sobre la tarjeta: ilegible.
+  '#0e7490':'#67d5e8','#e67e22':'#fbbf24','#44403c':'rgba(244,239,229,.7)',
   '#3f3f46':'rgba(244,239,229,.85)','#4b5563':'rgba(244,239,229,.7)'
 };
 function dmClaro(c){
@@ -7861,6 +7874,62 @@ async function dmCifrasInicio(){
   }catch(_){}
 }
 
+// ── Invitación a calificar al profesional ─────────────────────────────
+// Aparece recién a las dos semanas del vínculo: antes de eso el paciente
+// todavía no tiene con qué opinar. Si dice "más adelante", vuelve al mes.
+async function dmInvitarACalificar(){
+  try{
+    const el=document.getElementById('home-calificar');
+    if(!el || !S.user || !S.user.email || S.role==='doctor') return;
+
+    let postergado=0;
+    try{ postergado = parseInt(localStorage.getItem('dm_calif_postergada')||'0',10)||0; }catch(_){}
+    if(postergado && Date.now() < postergado) return;
+
+    const vinculos = await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+
+                                  '&select=doctor_email,rating,created_at').catch(function(){ return []; });
+    // El primero sin calificar y con al menos dos semanas de vínculo
+    const DOS_SEMANAS = 14*24*3600*1000;
+    const v = (vinculos||[]).filter(function(x){
+      if(x.rating) return false;
+      if(!x.created_at) return true;
+      return (Date.now() - new Date(x.created_at)) > DOS_SEMANAS;
+    })[0];
+    if(!v) return;
+
+    let nombre = v.doctor_email;
+    try{
+      const d = await db.get('doctors?email=eq.'+encodeURIComponent(v.doctor_email)+'&select=name,lname,gender');
+      if(d && d[0]){
+        const t = d[0].gender==='Femenino' ? 'Dra. ' : d[0].gender==='Masculino' ? 'Dr. ' : '';
+        nombre = (t + (d[0].name||'') + ' ' + (d[0].lname||'')).trim();
+      }
+    }catch(_){}
+
+    el.style.display='';
+    el.innerHTML =
+      '<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.3);border-radius:16px;padding:16px 17px">'+
+        '<div style="font-size:15.5px;font-weight:700;color:#F4EFE5;margin-bottom:5px">¿Querés calificar la atención con '+
+          String(nombre).replace(/</g,'&lt;')+'?</div>'+
+        '<div style="font-size:14px;color:rgba(244,239,229,.65);line-height:1.55;margin-bottom:14px">'+
+          'Ayuda a otras personas que están buscando profesional. Te lleva menos de un minuto.</div>'+
+        '<div style="display:flex;gap:9px">'+
+          '<button id="dm-calif-ahora" style="flex:1;background:#C8A96E;color:#0F2820;border:none;border-radius:12px;padding:12px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Calificar ahora</button>'+
+          '<button id="dm-calif-luego" style="flex:1;background:rgba(255,255,255,.06);color:rgba(244,239,229,.7);border:1px solid rgba(126,200,164,.2);border-radius:12px;padding:12px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:var(--font)">Más adelante</button>'+
+        '</div>'+
+      '</div>';
+
+    const bA=document.getElementById('dm-calif-ahora');
+    if(bA) bA.addEventListener('click', function(){ dmCalificarProfesional(v.doctor_email, nombre); });
+    const bL=document.getElementById('dm-calif-luego');
+    if(bL) bL.addEventListener('click', function(){
+      try{ localStorage.setItem('dm_calif_postergada', String(Date.now() + 30*24*3600*1000)); }catch(_){}
+      el.style.display='none';
+    });
+  }catch(e){ console.warn('[CALIFICAR-INVITAR]', e); }
+}
+window.dmInvitarACalificar = dmInvitarACalificar;
+
 // ── Leer hoy ──────────────────────────────────────────────────────────
 // Dos notas de la biblioteca, distintas cada dia. El objetivo es que la app
 // tenga algo para ofrecer aunque esa noche no haya pasado nada: es lo que
@@ -8004,6 +8073,7 @@ async function showHome(){
                             '&diary_date=eq.'+_f+'&select=sleep_minutes,sleep_latency_mins,no_sleep');
       dmTarjetaNoche((_r && _r.length) ? _r[0] : null);
       dmAvisoRediseno();
+      try{ dmInvitarACalificar(); }catch(_){}
       dmCifrasInicio();
       dmLeerHoy();
     }catch(_){ try{ dmTarjetaNoche(null); }catch(__){} }
@@ -8959,10 +9029,14 @@ function dmCalificarProfesional(email, nombre){
         return (n||ap) ? '<br><span style="font-size:12.5px;color:rgba(244,239,229,.5)">Va a figurar como <b>'+n+' '+(ap?ap[0].toUpperCase()+'.':'')+'</b></span>' : ''; })()+
       '</span></label>'+
     '<div id="dm-cal-error" style="font-size:13.5px;color:#fca5a5;line-height:1.5;margin-bottom:10px"></div>'+
-    '<button onclick="dmGuardarCalificacion('+JSON.stringify(email)+')" style="width:100%;background:#7EC8A4;border:none;border-radius:13px;padding:15px;color:#0F2820;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font)">Enviar</button>'+
+    '<button id="dm-cal-enviar" style="width:100%;background:#7EC8A4;border:none;border-radius:13px;padding:15px;color:#0F2820;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font)">Enviar</button>'+
     '<div onclick="document.getElementById(\'dm-calificar\').remove()" style="text-align:center;font-size:14px;color:rgba(244,239,229,.5);margin-top:12px;cursor:pointer">Cancelar</div>'+
   '</div>';
   document.body.appendChild(w);
+  // Enganchado por evento, no por atributo: un onclick en el HTML depende
+  // de que la función esté colgada de window justo en ese instante.
+  const _btn = w.querySelector('#dm-cal-enviar');
+  if(_btn) _btn.addEventListener('click', function(){ dmGuardarCalificacion(email); });
   window._dmCalValor=0;
   w.querySelectorAll('#dm-cal-estrellas span').forEach(function(s){
     s.addEventListener('click', function(){
@@ -8986,15 +9060,25 @@ async function dmGuardarCalificacion(email){
                   comment_public: !!(pub && pub.checked) };
     const url='doctor_patients?doctor_email=eq.'+encodeURIComponent(email)+
               '&patient_email=eq.'+encodeURIComponent(S.user.email);
+    let filas = null;
     try{
-      await db.patch(url, datos);
+      filas = await db.patchVerificado(url, datos);
     }catch(e1){
       // Si la columna comment_public todavia no existe, se reintenta sin ella:
       // la calificacion importa mas que ese detalle.
       if(/comment_public|column/i.test(String(e1 && e1.message))){
         delete datos.comment_public;
-        await db.patch(url, datos);
+        filas = await db.patchVerificado(url, datos);
       } else { throw e1; }
+    }
+
+    // Cero filas modificadas: la base aceptó el pedido pero no encontró
+    // ninguna fila que le corresponda tocar. Es lo que pasa cuando falta
+    // la política de acceso, y hasta ahora se veía como "no pasa nada".
+    if(Array.isArray(filas) && filas.length === 0){
+      decir('No se pudo guardar: tu cuenta no tiene permiso para calificar este vínculo. '+
+            'Falta la política dp_paciente_califica en Supabase.');
+      return;
     }
     const w=document.getElementById('dm-calificar'); if(w) w.remove();
     toast('¡Gracias! Tu calificación se envió');
@@ -10242,7 +10326,7 @@ async function showDiaryTab_(tab){
       // del codigo escribe ahi. Lo que cambia es la envoltura.
       // ══════════════════════════════════════════════════════════════
       cont.innerHTML =
-        '<h2 class="dm-h1">Tu sueño</h2>'+
+        ''+
         '<div class="dm-periodos">'+
           '<button id="score-period-7"  onclick="switchScorePeriod(7)"  class="dm-per'+(entries7.length>=3?'':' dm-per-off')+'">7 d</button>'+
           '<button id="score-period-30" onclick="switchScorePeriod(30)" class="dm-per dm-per-on">30 d</button>'+
@@ -10872,12 +10956,14 @@ function renderAwakenings(){
   if(!awakeningList.length){cont.innerHTML='<div class="dm-ayuda" style="padding:2px 0 10px">Todavía no agregaste ninguno.</div>';return;}
   cont.innerHTML=awakeningList.map((a,i)=>`
     <div class="dm-despertar">
-      <div style="flex:1;min-width:0">
-        <label class="dm-despertar-lbl">Horario</label>
-        <input class="dm-inp" type="time" value="${a.time}" oninput="updateAwakening(${i},'time',this.value)"></div>
-      <div style="flex:1;min-width:0">
-        <label class="dm-despertar-lbl">Duración (min)</label>
-        <input class="dm-inp" type="number" min="1" max="120" value="${a.duration}" placeholder="ej: 20" oninput="updateAwakening(${i},'duration',this.value)"></div>
+      <div class="dm-despertar-campos">
+        <div class="dm-despertar-campo">
+          <label class="dm-despertar-lbl">A qué hora</label>
+          <input class="dm-inp" type="time" value="${a.time}" oninput="updateAwakening(${i},'time',this.value)"></div>
+        <div class="dm-despertar-campo">
+          <label class="dm-despertar-lbl">Cuánto duró</label>
+          <input class="dm-inp" type="number" min="1" max="120" value="${a.duration}" placeholder="minutos" oninput="updateAwakening(${i},'duration',this.value)"></div>
+      </div>
       <button class="dm-despertar-x" onclick="removeAwakening(${i})" aria-label="Quitar">✕</button>
     </div>`).join('');
 }
@@ -11154,7 +11240,7 @@ function showDiaryNew(){
     <div id="med-inline-picker" style="display:none;background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);border-radius:14px;padding:13px;margin-bottom:8px">
       <div id="med-inline-content"></div>
     </div>
-<button type="button" id="med-toggle-btn" onclick="toggleMedPicker()" style="background:rgba(255,255,255,0.06);border:1.5px dashed rgba(126,200,164,0.45);border-radius:10px;padding:11px;width:100%;color:#F4EFE5;font-size:13.5px;font-weight:500;cursor:pointer;font-family:var(--font)">+ Agregar medicamento</button>
+<button type="button" id="med-toggle-btn" onclick="toggleMedPicker()" class="dm-agregar"><span style="font-size:17px;margin-right:7px">💊</span>Agregar medicamento</button>
     </div>
 
     <div class="dm-campo">
@@ -17391,9 +17477,15 @@ function renderWeeklyProgressionHtml(allDiary){
         (delta!==null ? ' · ' + (delta>=0?'+':'') + delta + ' vs anterior' : '');
       const isLast = i === blocks.length - 1;
       const weekLbl = isLast ? 'Esta sem.' : ('−' + (blocks.length - 1 - i) + ' sem.');
-      const cB = (typeof dmClaro==='function') ? dmClaro(b.color) : b.color;
+      // Paleta de staging: la menta de la marca en tres intensidades según
+      // el puntaje, y el dorado solo para señalar la semana en curso. Los
+      // verdes de semáforo quedaban fuera del resto de la app.
+      const cB = b.score >= 85 ? '#7EC8A4'
+               : b.score >= 70 ? 'rgba(126,200,164,.72)'
+               : b.score >= 55 ? 'rgba(126,200,164,.5)'
+               : '#C8A96E';
       return '<div title="'+tooltipText.replace(/"/g,'&quot;')+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;cursor:help">'+
-        '<div style="font-size:12.5px;font-weight:700;color:'+cB+'">'+b.score+'</div>'+
+        '<div style="font-size:12.5px;font-weight:700;color:'+(isLast?'#C8A96E':'rgba(244,239,229,.8)')+'">'+b.score+'</div>'+
         '<div style="width:100%;max-width:44px;height:'+h+'px;background:'+cB+';border-radius:7px 7px 0 0;'+
           (isLast?'box-shadow:inset 0 0 0 2px #C8A96E;':'')+'"></div>'+
         '<div style="font-size:11px;color:rgba(244,239,229,.5);white-space:nowrap">'+weekLbl+'</div>'+

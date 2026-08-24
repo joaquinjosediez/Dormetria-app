@@ -3968,3 +3968,14 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
   font-size:13px; line-height:1.55; color:rgba(244,239,229,.75);
 }
 .dm-que-perfil b{ color:#F4EFE5; }
+
+
+/* mod159 · Despertares: los dos campos del mismo ancho.
+   Con los rótulos de distinto largo, "flex:1" daba recuadros desparejos. */
+.dm-despertar{ align-items:center; }
+.dm-despertar-campos{
+  flex:1; min-width:0;
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+}
+.dm-despertar-campo{ min-width:0; }
+.dm-despertar-campo .dm-inp{ width:100%; box-sizing:border-box; }
