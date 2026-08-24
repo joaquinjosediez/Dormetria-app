@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod156">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod157">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1307,7 +1307,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod156"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod157"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1326,7 +1326,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod156';
+const APP_VERSION='hoy79-mod157';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4888,7 +4888,7 @@ function switchDrScoreMes(ym){
   if(sel){ sel.style.background='#1a4a3a'; sel.style.color='#fff'; sel.style.borderColor='#1a4a3a'; }
   if(f.length<3){ toast('Ese mes tiene menos de 3 noches registradas'); return; }
   const w=document.getElementById('dr-score-panel-wrap');
-  if(w) w.innerHTML=renderSleepScorePanel(f, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})());
+  if(w) w.innerHTML=renderSleepScorePanel(f, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})(), 'doctor');
 }
 
 function switchDrScorePeriod(days){
@@ -4907,7 +4907,7 @@ function switchDrScorePeriod(days){
   const _sm=document.getElementById('dr-score-mes');
   if(_sm){ _sm.value=''; _sm.style.background='transparent'; _sm.style.color='var(--label-2)'; _sm.style.borderColor='var(--sep-opaque)'; }
   const w=document.getElementById('dr-score-panel-wrap');
-  if(w) w.innerHTML=renderSleepScorePanel(filtered.length>=3?filtered:all);
+  if(w) w.innerHTML=renderSleepScorePanel(filtered.length>=3?filtered:all, null, 'doctor');
 }
 
 
@@ -5289,8 +5289,21 @@ function computeDiaryMetrics(entries){
     isFree = (e.day_type==='free') || (_dow===0||_dow===6);
     if(isFree){ weTotal.push(e.sleep_minutes); weMid.push(mid); }
     else { wdTotal.push(e.sleep_minutes); wdMid.push(mid); }
-    // TIB (Time in Bed) — para terapia de restricción de cama
-    let tibM = (wakeM<bedM%1440?wakeM+1440:wakeM) - (bedM%1440);
+    // TIB (Time in Bed) — de acostarse a LEVANTARSE, no a despertarse.
+    // Si no cargó la hora de levantarse, se usa la de despertarse como antes.
+    let finM = wakeM;
+    if(e.get_up_time){
+      const _g = String(e.get_up_time).slice(0,5).split(':');
+      const _gm = parseInt(_g[0],10)*60 + parseInt(_g[1],10);
+      if(!isNaN(_gm)){
+        // La hora de levantarse tiene que ser posterior a la de despertarse;
+        // si no lo es, es un dato mal cargado y se descarta.
+        const _wAbs = (wakeM < bedM%1440) ? wakeM+1440 : wakeM;
+        const _gAbs = (_gm  < bedM%1440) ? _gm+1440  : _gm;
+        if(_gAbs >= _wAbs && _gAbs - _wAbs <= 8*60) finM = _gm;
+      }
+    }
+    let tibM = (finM<bedM%1440?finM+1440:finM) - (bedM%1440);
     if(tibM<0) tibM += 1440;
     if(tibM>0 && tibM<=24*60) tibMinsArr.push(tibM);
   });
@@ -6142,7 +6155,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     html += row('Duración promedio de despertares', m.fmtMin(m.avgAwakDur), awakColor, awakSub);
     // Tiempo en cama (TIB) — para sleep restriction therapy
     if(m.avgTIB != null && !_bebe){
-      html += row('Tiempo en cama (TIB)', m.fmtDur(m.avgTIB), null, 'Promedio bedtime → wake_time — base para terapia de restricción de cama');
+      html += row('Tiempo en cama (TIB)', m.fmtDur(m.avgTIB), null, 'De acostarse a levantarse — base para terapia de restricción de cama');
     }
     // Eficiencia de sueño (TST/TIB) — umbral clínico ≥85% (solo adultos/niños grandes)
     if(m.sleepEfficiency != null && !_bebe){
@@ -7873,6 +7886,16 @@ function dmLeerHoy(){
 function dmAvisoRediseno(){
   try{
     if(localStorage.getItem('dm_visto_rediseno')==='1') return;
+    // Solo para quien ya usaba la app antes del rediseño. A una cuenta
+    // creada esta semana el cartel no le dice nada: para ella no cambió
+    // nada. Se toma la fecha de alta de la ficha como referencia.
+    const DIA_REDISENO = new Date('2026-08-14T00:00:00');
+    let alta = null;
+    try{ alta = S.user && S.user.created_at ? new Date(S.user.created_at) : null; }catch(_){}
+    if(!alta || alta >= DIA_REDISENO){
+      try{ localStorage.setItem('dm_visto_rediseno','1'); }catch(_){}
+      return;
+    }
     const el=document.getElementById('home-novedad');
     if(!el) return;
     el.style.display='';
@@ -14791,7 +14814,7 @@ async function showDrPTab_(tab){
             <button onclick="switchDrScorePeriod(0)"  id="dr-score-all" style="padding:4px 12px;border:none;border-radius:16px;font-size:11.5px;font-weight:700;cursor:pointer;background:${dmDrPerActivo('dias',0)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',0)?'#fff':'#1a4a3a'};font-family:var(--font)">Todo</button>
             ${dmSelectorMesDrHtml(subj)}
           </div>
-          <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())}</div>
+          <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})(), 'doctor')}</div>
           ${weekCompareHtml}
         </div>
         <div class="dm-card dm-light dm-diary-pillars">
@@ -15393,13 +15416,21 @@ async function showDrPTab_(tab){
         // Estado + color a partir del jet lag social (cortes pediátricos).
         const _sjlStatus = _sjlP==null?{t:'Sin datos',c:'#888'}:_sjlP<30?{t:'Muy buena',c:'#14532d'}:_sjlP<60?{t:'Buena',c:'#2d9e6b'}:_sjlP<90?{t:'Mejorable',c:'#d97706'}:{t:'Requiere atención',c:'#dc2626'};
         function pillarCard(title,valHtml,color,status,sub,pillarC){
-          const cP = (typeof dmClaro==='function') ? dmClaro((pillarC||'').trim()) : pillarC;
-          const cV = (typeof dmClaro==='function') ? dmClaro(color) : color;
-          return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-top:3px solid '+cP+';border-radius:15px;padding:13px 14px">'+
+          // La misma tarjeta va sobre verde oscuro (app) y sobre blanco
+          // (panel). El fondo y el texto secundario cambian; los colores
+          // clínicos solo se aclaran en el lado oscuro.
+          const _oscuroP = (typeof S==='undefined') || S.role !== 'doctor';
+          const cP = _oscuroP && typeof dmClaro==='function' ? dmClaro((pillarC||'').trim()) : (pillarC||'').trim();
+          const cV = _oscuroP && typeof dmClaro==='function' ? dmClaro(color) : color;
+          const caja = _oscuroP
+            ? 'background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16)'
+            : 'background:#fff;border:1px solid var(--sep-opaque);box-shadow:0 1px 3px rgba(0,0,0,.05)';
+          const colSub = _oscuroP ? 'rgba(244,239,229,.66)' : '#5c6b63';
+          return '<div style="'+caja+';border-top:3px solid '+cP+';border-radius:15px;padding:13px 14px">'+
             '<div style="font-size:11px;font-weight:700;color:'+cP+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+title+'</div>'+
             '<div style="font-size:25px;font-weight:700;color:'+cV+';line-height:1.1;margin:3px 0">'+valHtml+'</div>'+
             '<div style="font-size:12px;font-weight:600;color:'+cV+';margin-bottom:6px">'+status+'</div>'+
-            '<div style="font-size:11.5px;color:rgba(244,239,229,.66);margin-top:6px;line-height:1.4">'+sub+'</div>'+
+            '<div style="font-size:11.5px;color:'+colSub+';margin-top:6px;line-height:1.4">'+sub+'</div>'+
           '</div>';
         }
         if(pEl){
@@ -15416,9 +15447,16 @@ async function showDrPTab_(tab){
               pillarCard('Regularidad', (_sjlP==null?'—':_sjlP+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.5)"> min</span>'), _sjlStatus.c, _sjlStatus.t, 'Jet lag social (finde vs. semana). Es la métrica de regularidad con respaldo pediátrico (Sun 2019). Este pilar SÍ pesa en el puntaje.', '#e67e22');
           } else {
             cards = [{l:'Cantidad',v:avgQtyP,pillarC:'#1a4a3a'},{l:'Fragmentación',v:avgFragP,pillarC:'#0e7490'},{l:'Regularidad',v:avgRegP,pillarC:'#e67e22'}].map(p=>{
-              const c=pColor(p.v);const st=(p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');
+              const c=pColor(p.v);
+              // Regularidad usa la etiqueta de computeSleepRegularity, que es
+              // la que también se muestra en el bloque técnico de abajo. Antes
+              // había dos escalas y el mismo 63% salía "Regular" arriba y
+              // "Buena" abajo.
+              const st = (p.l==='Regularidad' && regResult && regResult.label)
+                ? regResult.label
+                : (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');
               const sub=({Cantidad:_optH.lo+'–'+_optH.hi+'h recomendado',Fragmentación:(_awakAvg>0?_awakAvg.toFixed(1)+' despertares/noche':'Sin despertares registrados'),Regularidad:(regResult.sd_midpoint_min!==null?('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')):'Variabilidad del horario')})[p.l]||'';
-              return pillarCard(p.l, p.v+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.5)">%</span>', c, st, sub, p.pillarC);
+              return pillarCard(p.l, p.v+'<span style="font-size:15px;font-weight:400;opacity:.55">%</span>', c, st, sub, p.pillarC);
             }).join('');
           }
           pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+cards+'</div>'+
@@ -17345,7 +17383,10 @@ function togglePillarSeries(chartKey, idx, containerId){
   buildPillarLegend(containerId, chartKey);
 }
 
-function renderSleepScorePanel(entries, ageYears){
+function renderSleepScorePanel(entries, ageYears, audience){
+  // Igual que en las métricas: la misma función se dibuja sobre verde
+  // oscuro (paciente) y sobre blanco (profesional).
+  const _claro = (audience === 'doctor');
   const sc = calcSleepScore(entries, ageYears);
   if(!sc) return '<div class="empty-state" style="padding:16px 0">Necesitás al menos 3 registros en el diario para calcular tu score de sueño.</div>';
   
@@ -17357,7 +17398,7 @@ function renderSleepScorePanel(entries, ageYears){
       <div style="font-size:11px;color:#77776e;margin-top:8px">Basado en ${sc.nNights} noches de registro</div>
     </div>
 
-    <details class="dm-expli">
+    <details class="dm-expli${_claro?' dm-expli-claro':''}">
       <summary>¿Cómo se calcula este score?<span class="dm-expli-f">▾</span></summary>
       <div class="dm-expli-cuerpo">
         <p>Combina los tres pilares que ves abajo.</p>

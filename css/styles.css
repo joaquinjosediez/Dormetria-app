@@ -3933,3 +3933,27 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
    audiencia. Acá solo va la caja: reaplicar una variable que ya resolvía
    claro no cambiaba nada, y por eso quedó blanco sobre blanco. */
 .dm-metricas-claro{ color:#10231c !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod157 · "¿Cómo se calcula este score?" sobre hoja blanca
+   El mismo desplegable se dibuja en la app (verde oscuro) y en el panel
+   del profesional (blanco). Los colores del oscuro lo dejaban ilegible.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-expli.dm-expli-claro{
+  background:#fff;
+  border:1px solid var(--sep-opaque);
+  box-shadow:0 1px 3px rgba(0,0,0,.05);
+}
+.dm-expli-claro summary{ color:#10231c; }
+.dm-expli-claro .dm-expli-f{ color:#1a4a3a; }
+.dm-expli-claro .dm-expli-cuerpo p{ color:#3f4b45; }
+.dm-expli-claro .dm-expli-cuerpo b{ color:#10231c; }
+.dm-expli-claro .dm-expli-nota{
+  color:#5c6b63 !important;
+  border-top-color:#e6ece9;
+}
+
+/* Los pilares, igual: la tarjeta oscura sobre hoja blanca no se lee */
+#dr-pillar-cards .dm-pilar-sub,
+body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !important; }
