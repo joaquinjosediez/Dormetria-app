@@ -3789,6 +3789,32 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   font-size:13.5px !important; color:rgba(244,239,229,.6) !important;
 }
 
+/* ── La fila de TCC-I en "Más", igual que las otras ──────────────────
+   Tenía descripción larga y una línea de progreso, así que salía del doble
+   de alto que sus vecinas y rompía el ritmo de la lista. */
+#patient-tcci-card{ align-items:center !important; }
+#patient-tcci-card > div:nth-child(2){ min-width:0; }
+#patient-tcci-card > div:nth-child(2) > div:nth-child(2){
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+#patient-tcci-progress{
+  display:inline !important; margin-top:0 !important;
+}
+#patient-tcci-progress:not(:empty)::before{ content:' · '; opacity:.5; }
+
+/* ── Confeti al cerrar una semana del programa ────────────────────────
+   Sin librerías: cada papelito es un div con esta animación. Las variables
+   --dm-giro y --dm-desvio las pone el JS, distintas para cada uno, así no
+   caen todos igual. */
+@keyframes dmConfetiCae{
+  0%   { transform:translate3d(0,-10px,0) rotate(0deg); opacity:1; }
+  100% { transform:translate3d(var(--dm-desvio,0px), 105vh, 0) rotate(var(--dm-giro,360deg)); opacity:0; }
+}
+@media (prefers-reduced-motion: reduce){
+  @keyframes dmConfetiCae{ 0%,100%{ opacity:0; } }
+}
+
 /* ── Calidad reportada cruzada con las variables (panel profesional) ── */
 .dm-calfac{
   background:#fff; border:1px solid rgba(0,0,0,.09); border-radius:12px;
@@ -4191,29 +4217,62 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
 @media (max-width:899px){
 
   /* ── Las pantallas del profesional scrollean ──────────────────────── */
-  /* SOLO la pantalla activa. Sin ".active" este display:flex !important
-     le gana a la regla que oculta las pantallas inactivas, y las tres del
-     profesional quedaban visibles siempre — incluso para un paciente. */
+  /* SOLO la pantalla activa. Sin ".active" este display le gana a la regla
+     que oculta las pantallas inactivas, y las tres del profesional quedaban
+     visibles siempre — incluso para un paciente. Eso ya pasó una vez. */
+
+  /* UN SOLO contenedor con scroll: la pantalla entera.
+     Los tres intentos anteriores repartían el alto entre contenedores flex
+     anidados (#app → .screen → .scroll). Ese reparto depende de una cadena
+     de padres que hay que medir en un navegador real, y tres veces salió mal:
+     el contenido quedaba abajo del pliegue y no había forma de bajar.
+     Con position:fixed la pantalla se ancla a la ventana y ya no depende de
+     ningún padre; con overflow-y:auto scrollea TODO junto. No queda ningún
+     reparto de alto que pueda fallar. */
   #screen-doctor-home.active,
   #screen-doctor-patient.active,
   #screen-admin.active{
-    display:flex !important; flex-direction:column !important;
-    height:100dvh !important; overflow:hidden !important;
+    position:fixed !important;
+    top:0; bottom:0; left:0; right:0;
+    max-width:430px; margin:0 auto;
+    display:block !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch;
+    background:#0f2820;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom,0px)) !important;
   }
+
+  /* Los de adentro dejan de tener su propio scroll: si lo conservaran habría
+     dos barras anidadas y el dedo no sabría cuál está moviendo. */
   #screen-doctor-home.active > .scroll,
   #screen-doctor-patient.active > .scroll,
+  #screen-admin.active > .scroll,
   #screen-doctor-home.active #dr-patient-list-panel,
-  #screen-doctor-patient.active #drp-content{
-    flex:1 1 auto !important;
-    overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch;
-    padding-bottom:96px !important;   /* que la barra de abajo no tape nada */
+  #screen-doctor-patient.active #drp-content,
+  #screen-doctor-home.active #dr-content{
+    flex:none !important;
+    height:auto !important;
     max-height:none !important;
+    overflow:visible !important;
+    padding-bottom:0 !important;
+  }
+
+  /* La barra de arriba se queda pegada: es donde está "volver". Si se fuera
+     con el scroll, quedarías sin salida a mitad de una ficha larga. */
+  #screen-doctor-home.active > .topbar,
+  #screen-doctor-patient.active > .topbar,
+  #screen-admin.active > .topbar,
+  #screen-doctor-home.active > .dr-cab-movil,
+  #screen-doctor-patient.active > .dr-cab-movil{
+    position:sticky !important; top:0; z-index:30;
+    background:#0f2820 !important;
   }
 
   /* ── La barra de abajo, igual que la del paciente ─────────────────── */
   #dr-bottomnav{
     position:fixed; left:0; right:0; bottom:0; z-index:60;
+    max-width:430px; margin:0 auto;
     background:rgba(10,26,20,.96) !important;
     border-top:1px solid rgba(126,200,164,.14) !important;
     padding:9px 0 calc(15px + env(safe-area-inset-bottom)) !important;
@@ -4229,9 +4288,42 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
   #dr-bottomnav .bnav svg{ width:22px !important; height:22px !important; }
   #dr-bottomnav .bnav-lbl{ color:inherit !important; }
 
+  /* ── El orden de la ficha en el celular ────────────────────────────── */
+  /* En escritorio son dos columnas: a la izquierda score/pilares/métricas,
+     a la derecha el actograma. Al apilarse en el celular, el actograma
+     terminaba último, después de las métricas, y para mirarlo había que
+     pasar por todo lo demás.
+     display:contents disuelve los dos contenedores y deja a sus hijos como
+     hermanos, que es lo único que permite intercalarlos con "order". */
+  #screen-doctor-patient.active .dm-diary-top{
+    display:flex !important; flex-direction:column !important; gap:12px;
+  }
+  #screen-doctor-patient.active .dm-diary-left,
+  #screen-doctor-patient.active .dm-diary-right{ display:contents !important; }
+
+  #screen-doctor-patient.active .dm-diary-score   { order:1; }
+  #screen-doctor-patient.active .dm-diary-pillars { order:2; }
+  #screen-doctor-patient.active #dr-weekly-prog   { order:3; }
+  #screen-doctor-patient.active .dm-diary-acto    { order:4; }
+  #screen-doctor-patient.active #dr-clinical-metrics { order:5; }
+  #screen-doctor-patient.active #dr-reg-slot      { order:6; }
+
   /* ── El bloque de botones sueltos, plegado detrás de "Más" ────────── */
-  #dr-acciones-extra{ display:none; }
-  #dr-acciones-extra.dm-abierto{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  /* !important porque los dos divs traen style="display:flex" escrito en la
+     etiqueta, y un estilo en línea le gana a cualquier regla sin !important.
+     Sin esto el bloque quedaba abierto siempre y el botón no hacía nada. */
+  #dr-acciones-extra,
+  #dr-acciones-fila2{ display:none !important; }
+  #dr-acciones-extra.dm-abierto{
+    display:flex !important; flex-direction:column; gap:8px; margin-top:10px;
+  }
+  #dr-acciones-fila2.dm-abierto{
+    display:flex !important; gap:8px; margin-top:8px;
+  }
+  /* Plegado se ve SOLO el nombre y el botón. La matrícula y la versión
+     vuelven al abrir. */
+  #screen-doctor-home.active #dr-meta{ display:none !important; }
+  #screen-doctor-home.active #dr-meta.dm-abierto{ display:block !important; }
   #dr-acciones-toggle{
     width:100%; margin-top:10px; padding:12px;
     background:rgba(255,255,255,.06);
@@ -4240,6 +4332,37 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
     font-family:var(--font); cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:8px;
   }
+
+  /* ── La cabecera del panel profesional ─────────────────────────────── */
+  /* Ocupaba media pantalla antes de llegar al buscador de pacientes, que es
+     a lo que se entra a hacer. Queda el nombre con el botón de opciones al
+     lado, y el resto plegado. */
+  #screen-doctor-home.active #dr-panel-hero{
+    padding:10px 16px 12px !important;
+    display:flex !important; flex-wrap:wrap; align-items:center; gap:8px;
+  }
+  #screen-doctor-home.active #dr-panel-label{ display:none !important; }
+  #screen-doctor-home.active #dr-meta{
+    flex:1 0 100%; order:3;
+    font-size:11.5px !important; opacity:.6;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  #screen-doctor-home.active #dr-name{
+    flex:1 1 auto; order:1; margin:0 !important;
+    font-size:19px !important;
+  }
+  /* El botón al lado del nombre, no debajo ocupando una fila entera. */
+  #screen-doctor-home.active #dr-acciones-toggle{
+    order:2; width:auto !important; flex:0 0 auto;
+    margin-top:0 !important; padding:8px 13px !important;
+    font-size:13px !important;
+  }
+  #screen-doctor-home.active #dr-acciones-extra{ order:4; flex:1 0 100%; }
+  #screen-doctor-home.active #dr-acciones-fila2{ order:5; flex:1 0 100%; }
+
+  /* La barra superior con el logo tampoco necesita tanto aire. */
+  #screen-doctor-home.active > .topbar{ padding-top:6px; padding-bottom:6px; }
+  #screen-doctor-home.active #dr-topbar-sub{ display:none; }
 
   /* ── El encabezado del panel, en una línea ─────────────────────────── */
   .dr-cab-movil{
