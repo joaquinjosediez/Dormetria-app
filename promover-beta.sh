@@ -70,17 +70,41 @@ if ! grep -q "$VER" index.html; then
   exit 1
 fi
 
-if [ ! -d node_modules ]; then
-  echo "   Instalando lo que necesitan las pruebas (solo esta vez)…"
-  npm install --silent --no-audit --no-fund
-fi
-
-echo
-if ! npm test; then
+ise_pueden_correr_las_pruebas=si
+if ! command -v npm >/dev/null 2>&1; then
   echo
-  echo "NO SE PUBLICÓ NADA. Producción sigue en $ACTUAL."
-  git checkout -- index.html css/styles.css
-  exit 1
+  echo "───────────────────────────────────────────────────────────"
+  echo " No encuentro Node.js, así que NO puedo correr las pruebas."
+  echo
+  echo " Se instala una sola vez desde:"
+  echo "   https://nodejs.org/en/download   (botón LTS, archivo .pkg)"
+  echo " Después cerrá la Terminal y abrí una nueva."
+  echo
+  echo " Pero esto ya lo miraste vos en el celular, que es lo que"
+  echo " las pruebas no pueden ver. Si algo sale mal:"
+  echo "   ./volver-atras.sh"
+  echo "───────────────────────────────────────────────────────────"
+  echo
+  printf "¿Promover igual, sin correr las pruebas? (s/n) "
+  read -r SIN_PRUEBAS
+  case "$SIN_PRUEBAS" in
+    s|S|si|SI|Si|y|Y) echo "   Va sin pruebas." ;;
+    *) echo "   No promoví nada."; git checkout -- index.html css/styles.css; exit 0 ;;
+  esac
+else
+  if [ ! -d node_modules ]; then
+    echo "   Instalando lo que necesitan las pruebas (solo esta vez)…"
+    if ! npm install --silent --no-audit --no-fund; then
+      echo "   No se pudieron instalar. Sigo sin pruebas."
+    fi
+  fi
+  echo
+  if ! npm test; then
+    echo
+    echo "NO SE PROMOVIÓ NADA. Producción sigue en $ACTUAL."
+    git checkout -- index.html css/styles.css
+    exit 1
+  fi
 fi
 
 git add -A

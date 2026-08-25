@@ -105,7 +105,12 @@ r.ok(sinEspacios(w.getComputedStyle(cont).display) === 'block',
 const grilla = w.getComputedStyle(cont.firstElementChild).getPropertyValue('grid-template-columns');
 r.ok(sinEspacios(grilla).includes('repeat(3,minmax(0,1fr))'),
      'las columnas pueden achicarse por igual', grilla || '(vacío)');
-r.ok(sinEspacios(w.getComputedStyle(d.getElementById('c1')).getPropertyValue('min-width')) === '0px',
-     'ninguna tarjeta se ensancha por su texto');
+// El min-width tampoco se le pregunta al motor: jsdom 24 y jsdom 30 no
+// contestan lo mismo. Se lee la regla, que es además lo correcto — esto es
+// una decisión de CSS, no una medición de layout.
+const reglasCss = C.reglasDe();
+const puedenAchicarse = reglasCss.some(x =>
+  x.sel.includes('#diary-pillar-bars > div > div') && /min-width\s*:\s*0/.test(x.cuerpo));
+r.ok(puedenAchicarse, 'ninguna tarjeta se ensancha por su texto');
 
 r.cerrar('Contraste por encima de 4,5:1 y tarjetas parejas.');

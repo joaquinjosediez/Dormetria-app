@@ -84,7 +84,11 @@ function navegadorFalso() {
     localStorage: {
       getItem: k => (k in almacen ? almacen[k] : null),
       setItem: (k, v) => { almacen[k] = String(v); },
-      removeItem: k => { delete almacen[k]; }, clear: () => {}
+      removeItem: k => { delete almacen[k]; },
+      // clear() era un no-op. Una prueba que hacía localStorage.clear() y
+      // seguía viendo los datos viejos podía dar por buena una migración que
+      // en realidad no se había ejecutado.
+      clear: () => { Object.keys(almacen).forEach(k => { delete almacen[k]; }); }
     },
     sessionStorage: { getItem: () => null, setItem: noop, removeItem: noop },
     fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve({}),
@@ -163,6 +167,21 @@ function domConCss(cuerpoHtml) {
                    '</style></head><body>' + cuerpoHtml + '</body></html>');
 }
 
+// ── Las reglas del CSS, en una lista ───────────────────────────────────
+// Los comentarios se sacan ANTES de partir. Sin eso, el selector de la regla
+// que viene después de un comentario se lee con el comentario pegado adelante,
+// y una comprobación exacta del selector falla sin motivo real.
+//
+// Preguntarle a la REGLA en vez de preguntarle al motor tiene otra ventaja:
+// el resultado no cambia según qué versión de jsdom tenga instalada cada
+// computadora. Eso ya pasó: dos pruebas fallaban en la máquina de Joaquín y
+// pasaban en la de desarrollo, con archivos idénticos.
+function reglasDe(css) {
+  const limpio = String(css == null ? leerCss() : css).replace(/\/\*[\s\S]*?\*\//g, '');
+  return [...limpio.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .map(m => ({ sel: m[1].trim(), cuerpo: m[2] }));
+}
+
 // ── Contraste, calculado ───────────────────────────────────────────────
 // Mirar la pantalla y decir "se ve bien" no sirve: lo que a mí me parece
 // legible en un monitor bueno es ilegible en un celular al sol. WCAG pide
@@ -222,7 +241,7 @@ function crearReporte(titulo) {
 
 module.exports = {
   RAIZ, RUTAS, leerHtml, leerCss, version, bloques,
-  navegadorFalso, appEvaluada, conDom, domConCss,
+  navegadorFalso, appEvaluada, conDom, domConCss, reglasDe,
   aRgb, sobre, luminancia, contraste, MINIMO_LEGIBLE,
   crearReporte
 };

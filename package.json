@@ -6,6 +6,7 @@
     "test": "node pruebas/correr-todo.js"
   },
   "devDependencies": {
-    "jsdom": "^24.1.0"
-  }
+    "jsdom": "30.0.1"
+  },
+  "comentario": "La versión de jsdom va CLAVADA, sin ^. Con ^24.1.0 cada computadora instalaba una versión distinta del motor de CSS y las mismas pruebas daban resultados distintos según dónde se corrieran: dos pruebas fallaban en la máquina de Joaquín y pasaban en la de desarrollo, con archivos idénticos. Una red de seguridad que depende de en qué computadora estás no sirve de red."
 }

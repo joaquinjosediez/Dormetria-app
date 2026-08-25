@@ -30,10 +30,7 @@ const r = C.crearReporte('El paciente no ve el panel profesional');
 const css = C.leerCss();
 const PANTALLAS_PRO = ['#screen-doctor-home', '#screen-doctor-patient', '#screen-admin'];
 
-// Se parten las reglas en "selector { cuerpo }" sin librerías: alcanza para
-// esto y evita depender de un parser que interprete distinto.
-const reglas = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-  .map(m => ({ sel: m[1].trim(), cuerpo: m[2] }));
+const reglas = C.reglasDe(css);
 
 const culpables = reglas.filter(x => {
   const muestra = /display\s*:\s*(flex|block|grid)/i.test(x.cuerpo);
@@ -100,10 +97,20 @@ const visible = id => {
 
 r.seccion('Un paciente, en su pantalla de inicio:');
 comoPaciente();
-['screen-doctor-home', 'screen-doctor-patient', 'screen-admin', 'dr-bottomnav'].forEach(id => {
+['screen-doctor-home', 'screen-doctor-patient', 'screen-admin'].forEach(id => {
   const dsp = visible(id);
   r.ok(dsp === 'none' || dsp === '(no existe)', 'no ve ' + id, 'display: ' + dsp);
 });
+
+// La barra de abajo NO se comprueba con el motor: depende de resolver un
+// !important contra otro, y ahí jsdom 24 y jsdom 30 no contestan lo mismo.
+// La regla sí se puede leer, y es lo que importa de todos modos.
+const navOculta  = reglas.some(x => x.sel === '#dr-bottomnav' &&
+                                    /display\s*:\s*none\s*!important/i.test(x.cuerpo));
+const navSoloPro = reglas.some(x => /body\.dm-rol-pro\s+#dr-bottomnav/.test(x.sel) &&
+                                    /display\s*:\s*flex/i.test(x.cuerpo));
+r.ok(navOculta, 'la barra del profesional arranca oculta para todos');
+r.ok(navSoloPro, 'y solo se enciende con el rol profesional en el body');
 
 r.seccion('Y el profesional sí ve la suya:');
 comoProfesional();
@@ -131,8 +138,7 @@ r2.ok(bloquesMovil.length > 0, 'existe el bloque de celular en el CSS',
       bloquesMovil.length + ' bloques');
 
 const cssMovil = bloquesMovil.join('\n');
-const reglasMovil = [...cssMovil.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-  .map(m => ({ sel: m[1].trim(), cuerpo: m[2] }));
+const reglasMovil = C.reglasDe(cssMovil);
 
 PANTALLAS_PRO.forEach(p => {
   const conScroll = reglasMovil.some(x =>

@@ -149,3 +149,43 @@ r.ok(!/#b91c1c|#15803d/.test(sal2 || ''), 'sin diferencia real no pinta nada de 
 r.ok(corr('dmCalidadFactoresHtml(__pocas)') === '', 'con 6 noches no dice nada');
 
 r.cerrar('Los números dicen lo que los datos sostienen.');
+
+// ── La biblioteca de fichas ────────────────────────────────────────────
+// En mod130 se reescribieron las fichas y se perdieron cuatro sin que nadie
+// lo notara: embarazo, adultos mayores, trabajo por turnos y guardias.
+// Estuvieron ausentes 37 versiones, hasta que Joaquín se acordó de que
+// existían. Esta comprobación está para que no vuelva a pasar en silencio.
+//
+// Verificado: reprueba mod167 en las seis fichas que faltaban.
+const r3 = C.crearReporte('La biblioteca de fichas está completa');
+const fichas = corr('typeof PATIENT_EDU_TOPICS!=="undefined"?PATIENT_EDU_TOPICS:[]') || [];
+
+r3.ok(fichas.length >= 12, 'hay al menos 12 fichas', fichas.length + ' fichas');
+
+const IMPRESCINDIBLES = [
+  ['higiene', 'higiene del sueño'], ['tcci', 'qué es la TCC-I'],
+  ['cafe-alcohol', 'café y alcohol'], ['pantallas', 'pantallas'],
+  ['horas', 'cuántas horas'], ['despertares', 'despertarse de noche'],
+  ['embarazo', 'embarazo'], ['lactancia', 'recién nacido'],
+  ['mayores', 'después de los 65'], ['turnos', 'trabajo por turnos'],
+  ['guardias', 'guardias'], ['menopausia', 'menopausia']
+];
+IMPRESCINDIBLES.forEach(([id, queEs]) => {
+  r3.ok(fichas.some(f => f.id === id), 'está la ficha de ' + queEs);
+});
+
+// Ninguna puede quedar vacía ni a medio escribir.
+const flojas = fichas.filter(f => !f.title || !f.icon || !f.body ||
+                                  f.body.replace(/\s+/g, ' ').length < 400);
+r3.ok(flojas.length === 0, 'todas tienen título, ícono y cuerpo',
+      flojas.length ? flojas.map(f => f.id).join(', ') : fichas.length + ' revisadas');
+
+const sinCerrar = fichas.filter(f =>
+  (f.body.match(/<p/g) || []).length !== (f.body.match(/<\/p>/g) || []).length);
+r3.ok(sinCerrar.length === 0, 'el HTML de cada ficha cierra bien',
+      sinCerrar.length ? sinCerrar.map(f => f.id).join(', ') : '');
+
+const idsFichas = fichas.map(f => f.id);
+r3.ok(new Set(idsFichas).size === idsFichas.length, 'sin identificadores repetidos');
+
+r3.cerrar('Las 12 fichas están y están enteras.');
