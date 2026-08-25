@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod166">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod167">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1007,7 +1007,7 @@
       <button id="dir-register-btn" onclick="showDrRegisterForm()" style="padding:8px 16px;border:none;border-radius:20px;background:#2d6b56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
         🏥 Registrarme en el directorio
       </button>
-      <button id="admin-setup-btn" onclick="showAdminSetup()" style="display:none;padding:8px 14px;border:none;border-radius:20px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+      <button id="admin-setup-btn" onclick="showAdminSetup()" hidden style="display:none !important;padding:8px 14px;border:none;border-radius:20px;background:#1a4a3a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
         🔑 Activar acceso admin
       </button>
       <button id="admin-btn" onclick="showAdminPanel()" style="display:none;padding:8px 16px;border:none;border-radius:20px;background:#14532d;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
@@ -1231,7 +1231,7 @@
       <div style="width:40px;height:40px;border-radius:10px;background:rgba(200,169,110,.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">🌿</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:600;color:#fff">Mi protocolo TCC-I</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px;line-height:1.4">Terapia cognitivo-conductual para el insomnio<span id="patient-tcci-progress" style="color:#C8A96E;font-weight:600"></span></div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px;line-height:1.4">Terapia cognitivo-conductual para el insomnio<span id="patient-tcci-progress" style="color:#C8A96E;font-weight:600;display:block;margin-top:3px;line-height:1.35"></span></div>
       </div>
       <div style="color:rgba(255,255,255,0.25);font-size:18px;flex-shrink:0">›</div>
     </div>
@@ -1281,9 +1281,9 @@
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-top:6px;margin-bottom:2px">Información</div>
 
     <!-- Todo lo que siempre quisiste saber (movido desde el home) -->
-    <div onclick="showSleepInfo()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+    <div onclick="dmTodoSobreElSueno()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
       <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">💡</div>
-      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Todo lo que siempre quisiste saber del sueño</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Respuestas a las dudas más comunes</div></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Todo sobre el sueño</div><div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px">Los temas de tu profesional, la biblioteca y las dudas más comunes</div></div>
       <div style="color:rgba(255,255,255,0.25);font-size:18px">›</div>
     </div>
 
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod166"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod167"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod166';
+const APP_VERSION='hoy79-mod167';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -7543,7 +7543,7 @@ async function loadPatientEducation(){
     const total = assigned.length;
     wrap.style.display='block';
     wrap.innerHTML =
-      '<div onclick="openPatientEduList()" style="background:linear-gradient(135deg,rgba(200,169,110,0.15),rgba(126,200,164,0.08));border:1px solid rgba(200,169,110,0.35);border-radius:14px;padding:14px 16px;cursor:pointer">'+
+      '<div onclick="dmTodoSobreElSueno()" style="background:linear-gradient(135deg,rgba(200,169,110,0.15),rgba(126,200,164,0.08));border:1px solid rgba(200,169,110,0.35);border-radius:14px;padding:14px 16px;cursor:pointer">'+
         '<div style="font-size:10px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">📚 Tu profesional te acerca</div>'+
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
           '<div style="flex:1">'+
@@ -7560,6 +7560,69 @@ async function loadPatientEducation(){
     wrap.style.display='none';
   }
 }
+async function dmTodoSobreElSueno(){
+  const body  = document.getElementById('edu-screen-body');
+  const title = document.getElementById('edu-screen-title');
+  if(!body) return;
+  if(title) title.textContent = 'Todo sobre el sueño';
+
+  const temas = (typeof PATIENT_EDU_TOPICS!=='undefined' ? PATIENT_EDU_TOPICS : []);
+  const asignados = S._patientEduAssigned || [];
+  const idsAsignados = asignados.map(function(a){ return a.topic_id; });
+
+  // Una sola forma de fila para todo lo de esta pantalla.
+  const fila = function(icono, titulo, pie, accion, destacada){
+    return '<div onclick="'+accion+'" style="background:rgba(255,255,255,'+(destacada?'0.09':'0.06')+');'+
+      'border:1px solid '+(destacada?'rgba(200,169,110,.45)':'rgba(255,255,255,0.1)')+';border-radius:14px;'+
+      'padding:14px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:13px">'+
+      '<div style="width:40px;height:40px;border-radius:11px;background:'+(destacada?'rgba(200,169,110,.16)':'rgba(126,200,164,.12)')+';'+
+        'display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">'+icono+'</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:14.5px;font-weight:600;color:#fff;line-height:1.35">'+titulo+'</div>'+
+        (pie ? '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:3px;line-height:1.4">'+pie+'</div>' : '')+
+      '</div>'+
+      '<div style="color:rgba(255,255,255,0.28);font-size:18px;flex-shrink:0">›</div>'+
+    '</div>';
+  };
+  const encabezado = function(t){
+    return '<div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;'+
+      'color:rgba(255,255,255,0.42);margin:18px 2px 9px">'+t+'</div>';
+  };
+
+  let html = '';
+
+  // 1) Lo que eligió el profesional. Va primero: es lo único personalizado.
+  if(asignados.length){
+    html += encabezado('Lo que te recomendó tu profesional');
+    asignados.forEach(function(a){
+      const t = temas.find(function(x){ return x.id===a.topic_id; });
+      if(!t) return;
+      html += fila(t.icon, escHtml(t.title),
+                   a.read_at ? '✓ Ya lo leíste' : '● Sin leer',
+                   'openPatientEduTopic(\''+t.id+'\')', !a.read_at);
+    });
+  }
+
+  // 2) El resto de la biblioteca.
+  const otros = temas.filter(function(t){ return idsAsignados.indexOf(t.id)<0; });
+  if(otros.length){
+    html += encabezado(asignados.length ? 'Otros temas' : 'Temas');
+    otros.forEach(function(t){
+      html += fila(t.icon, escHtml(t.title), '', 'openPatientEduTopic(\''+t.id+'\')', false);
+    });
+  }
+
+  // 3) Las preguntas frecuentes, que antes vivían en otra puerta.
+  html += encabezado('Preguntas frecuentes');
+  html += fila('💬', 'Las dudas más comunes',
+               '¿Cuántas horas hay que dormir? ¿Es malo dormir 5 horas? ¿Sirve recuperar el finde?',
+               'showSleepInfo()', false);
+
+  body.innerHTML = html;
+  showScreen('edu');
+}
+window.dmTodoSobreElSueno = dmTodoSobreElSueno;
+
 async function openPatientEduList(){
   const list = S._patientEduAssigned || [];
   if(!list.length){ toast('Sin material asignado'); return; }
@@ -7588,7 +7651,7 @@ async function openPatientEduTopic(topicId){
   const title = document.getElementById('edu-screen-title');
   if(title) title.textContent = t.title;
   if(!body) return;
-  body.innerHTML = '<button onclick="openPatientEduList()" style="background:none;border:none;color:#7ec8a4;font-size:13px;padding:0 0 12px;cursor:pointer;font-family:inherit">← Volver al material</button>'+
+  body.innerHTML = '<button onclick="dmTodoSobreElSueno()" style="background:none;border:none;color:#7ec8a4;font-size:13px;padding:0 0 12px;cursor:pointer;font-family:inherit">← Volver</button>'+
     '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px 16px;font-size:13.5px;color:rgba(255,255,255,0.85);line-height:1.6">'+
     '<div style="font-size:32px;text-align:center;margin-bottom:8px">'+t.icon+'</div>'+
     '<div style="font-size:18px;font-weight:700;color:#fff;text-align:center;margin-bottom:14px">'+t.title+'</div>'+
@@ -12679,7 +12742,9 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
   }catch(_panelMirrorErr){}
   if(checkAdminAccess()){
     const ab=document.getElementById('admin-btn');if(ab)ab.style.display='inline-flex';
-    const asb=document.getElementById('admin-setup-btn');if(asb)asb.style.display='inline-flex';
+    // El botón de activar admin quedó fuera: no va a haber otro
+    // administrador, y cuando haga falta se activa desde el código.
+    const asb=document.getElementById('admin-setup-btn');if(asb)asb.style.display='none';
   }
   const _pl=document.getElementById('dr-panel-label'); if(_pl) _pl.textContent=(['psychiatry','neurology','pneumology','ent','pediatrics','cardiology','general'].includes(d.specialty)?'Panel profesional':'Panel profesional');showScreen('doctor-home');showDrTab_('patients');setTimeout(()=>{updateDrAvailBtn();updateDrListedBtn();},200);}
 function showDrTab(tab,el){
@@ -12740,7 +12805,7 @@ function dmBuildDoctorTopbar(){
           '<div class="dr-tb-menu-head"><div class="dr-tb-menu-name" id="dr-tb-menu-name">—</div><div class="dr-tb-menu-sub" id="dr-tb-menu-sub">Panel profesional</div></div>'+
           '<button onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
           '<button id="dr-tb-dir" onclick="dmTopbarCloseMenu();showDrRegisterForm()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio de profesionales</button>'+
-          '<button id="dr-tb-adminsetup" style="display:none" onclick="dmTopbarCloseMenu();showAdminSetup()">'+ic('M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z')+'Activar acceso admin</button>'+
+          ''+
           '<button id="dr-tb-admin" style="display:none" onclick="dmTopbarCloseMenu();showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Panel Admin</button>'+
           '<hr>'+
           '<button onclick="dmTopbarCloseMenu();dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo se usa</button>'+
@@ -12875,7 +12940,21 @@ async function showDrTab_(tab){
   // En escritorio, todo lo que no sea el listado de pacientes se muestra en el
   // panel ancho de la derecha: en la barra de 360px no se puede leer nada.
   try{
-    const _isDesk=document.body.classList.contains('dr-desktop');
+    // ¿HAY dos paneles de verdad?
+    //
+    // La clase dr-desktop se pone según el ROL y la pantalla, no según el
+    // tamaño de la ventana. Para el CSS alcanza, porque esas reglas viven
+    // adentro de @media (min-width:900px) y en el celular no aplican.
+    // Pero acá el JS la estaba leyendo como si significara "hay dos paneles":
+    // en el celular mandaba el contenido a una columna que no existe y dejaba
+    // en su lugar un cartel hablando de un panel de la derecha que no está.
+    // Alertas, Métricas, Mi perfil y TCC-I quedaban vacías.
+    // Es el mismo error que ya pasó con el CSS de mod161: dar por sentado el
+    // escritorio sin preguntar por el ancho.
+    const _isDesk = document.body.classList.contains('dr-desktop') &&
+                    (typeof window.matchMedia==='function'
+                       ? window.matchMedia('(min-width:900px)').matches
+                       : (window.innerWidth||0) >= 900);
     const _side=document.getElementById('dr-metrics-desktop');
     if(_isDesk && _side && tab!=='patients'){
       document.body.classList.add('dr-metrics-view');
@@ -15058,9 +15137,14 @@ async function showDrPTab_(tab){
             ? 'Entra con '+escHtml(u.email)+'. Si perdió la contraseña, puede recuperarla desde la pantalla de inicio.'
             : 'Le llega un mail a '+escHtml(u.email)+' con un enlace para elegir su contraseña. Al entrar, la ficha que cargaste ya está completa.')+
         '</div>'+
-        '<button id="drp-inv-btn" onclick="dmReinvitarPaciente()" style="width:100%;padding:10px;border:none;border-radius:9px;background:rgba(126,200,164,0.18);color:#7EC8A4;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">'+
-          (_yaEntro?'✉️ Reenviar la invitación':'✉️ Mandarle el mail para entrar')+'</button>'+
-        '<div id="drp-inv-estado" style="font-size:12.5px;margin-top:8px;min-height:1em;line-height:1.5;color:rgba(244,239,229,0.6)"></div>';
+        // El botón solo si hace falta. Si la persona ya entró, invitarla de
+        // nuevo no hace nada útil y ocupa lugar en una ficha que ya es larga.
+        // Para la contraseña olvidada está la recuperación desde el inicio,
+        // que es lo que dice el texto de arriba.
+        (_yaEntro ? '' :
+          '<button id="drp-inv-btn" onclick="dmReinvitarPaciente()" style="width:100%;padding:10px;border:none;border-radius:9px;background:rgba(126,200,164,0.18);color:#7EC8A4;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">'+
+            '✉️ Mandarle el mail para entrar</button>'+
+          '<div id="drp-inv-estado" style="font-size:12.5px;margin-top:8px;min-height:1em;line-height:1.5;color:rgba(244,239,229,0.6)"></div>');
       const pathsBody = '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:6px">Patologías</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+(paths||'<span style="font-size:12px;color:rgba(244,239,229,0.5);font-style:italic">No registradas</span>')+'</div>'+
         '<div style="font-size:11px;color:rgba(244,239,229,0.55);margin-bottom:4px">Medicación habitual</div>'+
@@ -24047,10 +24131,10 @@ async function checkPatientTcciCard(){
     }catch(err){
       console.error('[checkPatientTcciCard] DB ERROR:', err);
       card.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;font-size:11px;color:#991b1b"><strong>⚠ No se pudo leer tu protocolo TCC-I.</strong><br>'+(err.message||'')+'<br>Probable política RLS faltante en cbti_patients.</div>';
-      card.style.display='block';
+      card.style.display='flex';
       return;
     }
-    card.style.display='block'; // siempre visible: si no hay protocolo del médico, ofrece la vía autoguiada
+    card.style.display='flex'; // flex, no block: los hijos van en fila como en las demás filas de Más
     const homeCard = document.getElementById('home-tcci-card');
     if(homeCard) homeCard.style.display='block';
     const homeSub = document.getElementById('home-tcci-sub');

@@ -4262,6 +4262,26 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
   #dr-bottomnav .bnav svg{ width:22px !important; height:22px !important; }
   #dr-bottomnav .bnav-lbl{ color:inherit !important; }
 
+  /* ── El orden de la ficha en el celular ────────────────────────────── */
+  /* En escritorio son dos columnas: a la izquierda score/pilares/métricas,
+     a la derecha el actograma. Al apilarse en el celular, el actograma
+     terminaba último, después de las métricas, y para mirarlo había que
+     pasar por todo lo demás.
+     display:contents disuelve los dos contenedores y deja a sus hijos como
+     hermanos, que es lo único que permite intercalarlos con "order". */
+  #screen-doctor-patient.active .dm-diary-top{
+    display:flex !important; flex-direction:column !important; gap:12px;
+  }
+  #screen-doctor-patient.active .dm-diary-left,
+  #screen-doctor-patient.active .dm-diary-right{ display:contents !important; }
+
+  #screen-doctor-patient.active .dm-diary-score   { order:1; }
+  #screen-doctor-patient.active .dm-diary-pillars { order:2; }
+  #screen-doctor-patient.active #dr-weekly-prog   { order:3; }
+  #screen-doctor-patient.active .dm-diary-acto    { order:4; }
+  #screen-doctor-patient.active #dr-clinical-metrics { order:5; }
+  #screen-doctor-patient.active #dr-reg-slot      { order:6; }
+
   /* ── El bloque de botones sueltos, plegado detrás de "Más" ────────── */
   #dr-acciones-extra{ display:none; }
   #dr-acciones-extra.dm-abierto{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
@@ -4273,6 +4293,36 @@ body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !i
     font-family:var(--font); cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:8px;
   }
+
+  /* ── La cabecera del panel profesional ─────────────────────────────── */
+  /* Ocupaba media pantalla antes de llegar al buscador de pacientes, que es
+     a lo que se entra a hacer. Queda el nombre con el botón de opciones al
+     lado, y el resto plegado. */
+  #screen-doctor-home.active #dr-panel-hero{
+    padding:10px 16px 12px !important;
+    display:flex !important; flex-wrap:wrap; align-items:center; gap:8px;
+  }
+  #screen-doctor-home.active #dr-panel-label{ display:none !important; }
+  #screen-doctor-home.active #dr-meta{
+    flex:1 0 100%; order:3;
+    font-size:11.5px !important; opacity:.6;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  #screen-doctor-home.active #dr-name{
+    flex:1 1 auto; order:1; margin:0 !important;
+    font-size:19px !important;
+  }
+  /* El botón al lado del nombre, no debajo ocupando una fila entera. */
+  #screen-doctor-home.active #dr-acciones-toggle{
+    order:2; width:auto !important; flex:0 0 auto;
+    margin-top:0 !important; padding:8px 13px !important;
+    font-size:13px !important;
+  }
+  #screen-doctor-home.active #dr-acciones-extra{ order:4; flex:1 0 100%; }
+
+  /* La barra superior con el logo tampoco necesita tanto aire. */
+  #screen-doctor-home.active > .topbar{ padding-top:6px; padding-bottom:6px; }
+  #screen-doctor-home.active #dr-topbar-sub{ display:none; }
 
   /* ── El encabezado del panel, en una línea ─────────────────────────── */
   .dr-cab-movil{
