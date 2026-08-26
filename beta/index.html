@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod169">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod170">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod169"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod170"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod169';
+const APP_VERSION='hoy79-mod170';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2150,26 +2150,33 @@ const SCALES=[
 ],
  interp:s=>s<33?{l:'Sin TEPT probable',c:'#14532d',bg:'#dcfce7'}:{l:'TEPT probable',c:'#9b1c1c',bg:'#fee2e2'}
 },
-{id:'dbas',ref:'Morin CM. (1993). Dysfunctional Beliefs and Attitudes about Sleep (DBAS). Guilford Press.',name:'Creencias sobre el sueño (DBAS-16)',cat:'sleep',max:160,desc:'Creencias y actitudes disfuncionales sobre el sueño',
+{id:'dbas',ref:'Morin CM, Vallères A, Ivers H. (2007). Dysfunctional Beliefs and Attitudes about Sleep (DBAS): validation of a brief version (DBAS-16). Sleep 30(11):1547-54.',name:'Creencias sobre el sueño (DBAS-16)',cat:'sleep',max:160,desc:'Creencias y actitudes sobre el sueño que sostienen el insomnio',
  qs:[
-  {t:'Necesito 8 horas de sueño para sentirme descansado/a y funcionar bien al día siguiente',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Cuando no duermo bien, arruina mi capacidad de funcionar al día siguiente',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Estoy preocupado/a de que el insomnio crónico pueda tener consecuencias graves en mi salud',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Me preocupa perder el control sobre mi capacidad para dormir',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Sé que si una noche duermo mal, perturbará mi sueño durante toda la semana',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Para estar alerta y funcionar bien al día siguiente, es mejor no hacer siesta si duermo mal',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Cuando estoy cansado/a, con nervioso/a o deprimido/a, sé que dormiré mal',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Creo que el insomnio está arruinando mi capacidad de disfrutar la vida',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Los medicamentos son probablemente la única solución al insomnio',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'El sueño es impredecible para mí; a veces duerme bien y otras no sé por qué',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Tengo muy poco control sobre las consecuencias negativas del sueño deficiente',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Cuando duermo mal una noche, sé que lo recuperaré la noche siguiente',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[6,5,4,3,2,1,0]},
-  {t:'El sueño deficiente me hace más propenso/a a enfermar',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Creo que puedo superar los efectos negativos del sueño deficiente en mi funcionamiento',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[6,5,4,3,2,1,0]},
-  {t:'Cuando me siento irritable, deprimido/a o ansioso/a durante el día, es porque no dormí bien',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]},
-  {t:'Creo que el insomnio es básicamente el resultado del envejecimiento y no hay mucho que pueda hacer',opts:['Completamente en desacuerdo','Bastante en desacuerdo','Algo en desacuerdo','Neutral','Algo de acuerdo','Bastante de acuerdo','Completamente de acuerdo'],sc:[0,1,2,3,4,5,6]}
-],
- interp:s=>s<=80?{l:'Sin creencias disfuncionales',c:'#14532d',bg:'#dcfce7'}:s<=120?{l:'Creencias moderadas',c:'#92400e',bg:'#fef3c7'}:{l:'Creencias disfuncionales severas',c:'#9b1c1c',bg:'#fee2e2'}
+  {t:'Necesito 8 horas de sueño para sentirme descansado/a y funcionar bien al día siguiente',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Cuando no duermo lo suficiente una noche, necesito recuperarlo al día siguiente con una siesta o durmiendo más',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Estoy preocupado/a de que el insomnio crónico pueda tener consecuencias graves para mi salud física',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Me preocupa perder el control sobre mi capacidad de dormir',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Sé que una noche de mal sueño va a perturbar mi sueño durante toda la semana',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Para estar alerta y funcionar bien durante el día, creo que es mejor tomar un somnífero que pasar una mala noche',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Cuando me siento irritable, deprimido/a o ansioso/a durante el día, es sobre todo porque dormí mal la noche anterior',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Cuando duermo mal una noche, sé que va a perturbar mi actividad al día siguiente',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Para estar despejado/a y funcionar bien durante el día, creo que sería mejor tomar un somnífero que dormir mal',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Cuando me siento cansado/a, sin energía o simplemente no rindo bien durante el día, en general es porque no dormí bien la noche anterior',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Creo que el insomnio es básicamente el resultado de un desequilibrio químico',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Siento que el insomnio está arruinando mi capacidad de disfrutar la vida y me impide hacer lo que quiero',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'La medicación es probablemente la única solución para el insomnio',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Evito o cancelo compromisos (sociales, familiares) después de una noche de mal sueño',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'El sueño es algo impredecible para mí: no tengo control sobre él',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[0,1,2,3,4,5,6,7,8,9,10]},
+  {t:'Cuando duermo mal una noche, sé que voy a poder recuperarlo la noche siguiente',opts:['0 · Muy en desacuerdo','1','2','3','4','5 · Ni acuerdo ni desacuerdo','6','7','8','9','10 · Muy de acuerdo'],sc:[10,9,8,7,6,5,4,3,2,1,0]}
+ ],
+ // Se informa la MEDIA por ítem (total ÷ 16), que es como se reporta el
+ // DBAS-16 en la literatura. Corte de relevancia clínica: media ≥ 3,8.
+ //
+ // ANTES ESTO ESTABA MAL Y NO ERA UN DETALLE: los ítems puntuaban de 0 a 6
+ // (máximo real 96) pero los cortes eran 80 y 120, heredados de la escala
+ // 0–10. La banda 'severa' era literalmente inalcanzable y alguien con 80
+ // sobre 96 salía clasificado como 'sin creencias disfuncionales'.
+ interp:s=>{var m=s/16; return m<3.8?{l:'Creencias en rango esperable',c:'#14532d',bg:'#dcfce7'}:m<5.5?{l:'Creencias disfuncionales moderadas',c:'#92400e',bg:'#fef3c7'}:{l:'Creencias disfuncionales marcadas',c:'#9b1c1c',bg:'#fee2e2'};}
 },
 {id:'fosq10',ref:'Weaver TE et al. (1997). An instrument to measure functional outcomes for disorders of excessive sleepiness. Sleep, 20(10), 835–843.',name:'FOSQ-10',cat:'qol',max:20,desc:'Impacto de la somnolencia en calidad de vida y funcionamiento',
  qs:[
@@ -2218,27 +2225,30 @@ const SCALES=[
   {t:'¿Con qué frecuencia te despertaste sintiéndote cansado/a y agotado/a tras tu cantidad habitual de sueño?',opts:['Nunca','1-3 días','4-7 días','8-14 días','15-21 días','22-31 días'],sc:[0,1,2,3,4,5]}
  ],
  interp:s=>s<=4?{l:'Sin problemas de sueño relevantes',c:'#14532d',bg:'#dcfce7'}:s<=11?{l:'Problemas de sueño moderados',c:'#92400e',bg:'#fef3c7'}:{l:'Problemas de sueño significativos',c:'#991b1b',bg:'#fee2e2'}},
-{id:'psas',ref:'Nicassio PM et al. (1985). The phenomenology of the pre-sleep state. Behav Res Ther.',name:'Activación pre-sueño (PSAS)',cat:'insomnia',max:80,desc:'Nivel de activación cognitiva y somática antes de dormir',
+{id:'psas',ref:'Nicassio PM, Mendlowitz DR, Fussell JJ, Petras L. (1985). The phenomenology of the pre-sleep state: the development of the Pre-Sleep Arousal Scale. Behav Res Ther 23(3):263-71.',name:'Activación pre-sueño (PSAS)',cat:'insomnia',max:80,desc:'Ocho ítems de activación cognitiva y ocho de activación somática. Los cortes son orientativos: el PSAS no tiene puntos de corte de consenso.',
  qs:[
-  {note:'¿Qué tan frecuente experimentás esto cuando intentás dormir?',t:'Mi mente sigue activa, con pensamientos o imágenes',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Me preocupa el sueño',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Siento que no puedo controlar mis pensamientos',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Siento tensión muscular en el cuerpo',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Siento que no puedo relajarme',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Siento el corazón acelerado o latidos irregulares',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Siento sensaciones físicas molestas (calor, frío, hormigueo)',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Siento ansiedad o nerviosismo',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Me resulta difícil apagar la mente',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Pienso en problemas o situaciones del día',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Me preocupa el impacto de no dormir al día siguiente',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Me siento deprimido/a al no poder dormir',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Siento el tiempo muy lento mientras intento dormir',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Intento suprimir pensamientos para dormir',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Busco distracciones (teléfono, TV) para dejar de pensar',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'Pienso en síntomas físicos que podrían interferir con el sueño',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]},
-  {t:'No puedo dejar de pensar en problemas o preocupaciones antes de dormir',opts:['1 - Nunca','2','3','4','5 - Siempre'],sc:[1,2,3,4,5]}
+  {note:'Marcá con qué intensidad te pasó esto la última semana, mientras intentabas dormirte.',t:'Preocuparme por si me voy a poder dormir',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Repasar o darle vueltas a lo que pasó durante el día',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Pensamientos tristes o angustiantes',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Preocuparme por problemas que no tienen que ver con el sueño',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Sentir la mente despierta, activa',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'No poder apagar los pensamientos',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Que los pensamientos se disparen uno atrás del otro',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Distraerme con ruidos del ambiente (el reloj, la calle, la casa)',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'El corazón acelerado, fuerte o con latidos irregulares',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Una sensación de nerviosismo o inquietud en el cuerpo',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Falta de aire o respiración trabajosa',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Los músculos tensos, agarrotados',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Sensación de frío en las manos, los pies o el cuerpo',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'El estómago revuelto (nudo, acidez, náuseas, gases)',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'Transpiración en las palmas de las manos o en otras partes del cuerpo',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]},
+  {t:'La boca o la garganta secas',opts:['1 · Nada','2 · Un poco','3 · Moderado','4 · Bastante','5 · Muchísimo'],sc:[1,2,3,4,5]}
  ],
- interp:s=>s<=25?{l:'Activación baja',c:'#15803d',bg:'#dcfce7'}:s<=45?{l:'Activación moderada',c:'#92400e',bg:'#fef3c7'}:{l:'Activación alta',c:'#991b1b',bg:'#fee2e2'}},
+ subescalas:{cognitiva:[0,1,2,3,4,5,6,7], somatica:[8,9,10,11,12,13,14,15]},
+ // Cortes sobre el total 16–80. La versión anterior tenía 17 ítems y solo
+ // cuatro somáticos: los puntajes de antes NO son comparables con estos.
+ interp:s=>s<=30?{l:'Activación baja',c:'#14532d',bg:'#dcfce7'}:s<=45?{l:'Activación moderada',c:'#92400e',bg:'#fef3c7'}:{l:'Activación alta',c:'#991b1b',bg:'#fee2e2'}
+},
 {id:'rbdq',ref:'Li SX et al. (2010). RBD Questionnaire. Sleep Med, 11(1), 43-48.',name:'Conductas en el sueño REM (RBD-SQ)',cat:'parasomnia',max:13,desc:'Cribado de trastorno de conducta en sueño REM',
  qs:[
   {t:'¿Sueña vívidamente?',opts:['No','Sí'],sc:[0,1]},
@@ -7454,7 +7464,7 @@ async function copyPatientSummaryToClipboard(encodedEmail){
       pathologicalRecs.forEach(r => {
         const sc = SCALES.find(s => s.id === r.scale_id);
         const i = sc.interp(r.score);
-        L.push('  - '+sc.name+' '+dmScoreTxt(r.score,r.max_score,r.scale_id)+': '+i.l);
+        L.push('  - '+sc.name+' '+dmScoreTxt(r.score,r.max_score,r.scale_id)+': '+i.l+(dmEscalaVieja(r)?' [escala anterior, no comparable]':''));
       });
     }
     // Otras escalas (normales) — listadas breves
@@ -7466,7 +7476,7 @@ async function copyPatientSummaryToClipboard(encodedEmail){
         const sc = SCALES.find(s => s.id === r.scale_id);
         if(!sc) return;
         const i = sc.interp(r.score);
-        L.push('  - '+sc.name+' '+dmScoreTxt(r.score,r.max_score,r.scale_id)+': '+(i?i.l:'—'));
+        L.push('  - '+sc.name+' '+dmScoreTxt(r.score,r.max_score,r.scale_id)+': '+(i?i.l:'—')+(dmEscalaVieja(r)?' [escala anterior, no comparable]':''));
       });
     }
     // Diario y métricas
@@ -15032,14 +15042,21 @@ async function showDrPTab_(tab){
         const _prev=_hist.length>=2?_hist[_hist.length-2]:null;
         const _d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
         let _compareHtml='';
-        if(_prev){
+        // Si alguno de los dos se cargó con la versión anterior del DBAS o el
+        // PSAS, la flecha compararía dos reglas distintas y mostraría una
+        // mejoría o un empeoramiento que no ocurrió. Se avisa en vez de
+        // dibujar la comparación.
+        if(_prev && (dmEscalaVieja(_prev) || dmEscalaVieja(r))){
+          _compareHtml='<div style="font-size:11.5px;color:#7a4444;margin-top:6px;line-height:1.45;font-style:italic">'+
+            'No se compara con la medición anterior: se tomó con una versión distinta de la escala.</div>';
+        } else if(_prev){
           const _pi=sc.interp(_prev.score);
           const _delta=r.score-_prev.score;
           const _pd=new Date(_prev.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
           const _arrow=_delta>0?'↗':_delta<0?'↘':'≈';
           _compareHtml='<div class="dm-compare"><div class="dm-compare-then"><div style="font-size:10px;color:#7a4444">'+_pd+'</div><div style="font-size:13px;font-weight:600">'+dmScoreTxt(_prev.score,_prev.max_score,_prev.scale_id)+'</div></div><div class="dm-compare-arrow">'+_arrow+'</div><div><div style="font-size:10px;color:#7a4444">'+_d+' (actual)</div><div style="font-size:13px;font-weight:700">'+dmScoreTxt(r.score,r.max_score,r.scale_id)+'</div></div></div>';
         }
-        kf.push('<div style="background:#fee2e2;border-radius:'+(_prev?'16px':'10px')+';padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+dmScoreTxt(r.score,r.max_score,r.scale_id)+')'+(_prev?'':' · '+_d)+_compareHtml+'</div>');
+        kf.push('<div style="background:#fee2e2;border-radius:'+(_prev?'16px':'10px')+';padding:9px 13px;margin-bottom:6px;font-size:13px;color:#991b1b">⚠️ <strong>'+sc.name+'</strong>: '+i.l+' ('+dmScoreTxt(r.score,r.max_score,r.scale_id)+')'+dmMarcaEscalaVieja(r,true)+(_prev?'':' · '+_d)+_compareHtml+'</div>');
       });
       // Diary score
       // Resumen: traemos hasta 30 noches para poder comparar últimos 14 vs 14 anteriores.
@@ -21981,12 +21998,57 @@ const DM_NACIONALIDADES = ['','Argentina','Uruguay','Chile','Paraguay','Bolivia'
 // evaluations.max_score puede venir null (registros viejos, cargas por SQL),
 // y el panel mostraba "15/null". Ahora cae a la definición de la escala y,
 // si esa tampoco tiene tope, muestra el puntaje solo con el corte patológico.
+// Fecha en la que se corrigieron el DBAS (volvió a 0–10, como el publicado)
+// y el PSAS (volvió a los 16 ítems validados). Todo lo cargado antes quedó
+// con otra escala y no es comparable.
+const DM_ESCALAS_CORREGIDAS = '2026-08-26';
+function dmEscalaVieja(r){
+  try{
+    if(!r || !r.scale_id) return false;
+    if(r.scale_id!=='dbas' && r.scale_id!=='psas') return false;
+    if(!r.created_at) return false;
+    return String(r.created_at).slice(0,10) < DM_ESCALAS_CORREGIDAS;
+  }catch(_){ return false; }
+}
+window.dmEscalaVieja = dmEscalaVieja;
+
+// Una etiqueta chiquita para no confundir versiones.
+function dmMarcaEscalaVieja(r, claro){
+  if(!dmEscalaVieja(r)) return '';
+  return '<span title="Se cargó con una versión anterior de la escala. El puntaje no es comparable con los actuales." '+
+    'style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.03em;'+
+    'background:'+(claro?'rgba(200,169,110,.18)':'rgba(200,169,110,.22)')+';color:#8B6F3D;'+
+    'border-radius:99px;padding:2px 7px;margin-left:6px;vertical-align:middle">escala anterior</span>';
+}
+window.dmMarcaEscalaVieja = dmMarcaEscalaVieja;
+
+// El máximo REAL de una escala: la suma de lo más alto que puede sacar cada
+// ítem. Nueve escalas declaraban un tope que no coincidía con sus preguntas
+// —el FSFI decía 36 y suma 90— así que el "42/36" que veía el profesional
+// no significaba nada. Se calcula una vez y se guarda.
+const _dmMaxReal = {};
+function dmMaxReal(sc){
+  if(!sc || !sc.qs || !sc.qs.length) return null;
+  if(sc.customScore) return sc.max!=null ? Number(sc.max) : null;
+  if(_dmMaxReal[sc.id]!=null) return _dmMaxReal[sc.id];
+  let t=0;
+  try{ sc.qs.forEach(function(q){ t += Math.max.apply(null, q.sc||[0]); }); }
+  catch(_){ return sc.max!=null ? Number(sc.max) : null; }
+  _dmMaxReal[sc.id]=t;
+  return t;
+}
+window.dmMaxReal = dmMaxReal;
+
 function dmScoreTxt(score, maxScore, scaleId){
   if(score==null) return '—';
   const sc = (typeof SCALES!=='undefined') ? SCALES.find(s=>s.id===scaleId) : null;
-  const max = (maxScore!=null && !isNaN(maxScore) && Number(maxScore)>0)
-              ? Number(maxScore)
-              : (sc && sc.max ? Number(sc.max) : null);
+  // El calculado MANDA sobre el guardado: si están en desacuerdo, el que
+  // está mal es el guardado.
+  const real = dmMaxReal(sc);
+  const max = (real!=null && real>0) ? real
+              : (maxScore!=null && !isNaN(maxScore) && Number(maxScore)>0)
+                ? Number(maxScore)
+                : (sc && sc.max ? Number(sc.max) : null);
   if(max) return score+'/'+max;
   // Sin tope: mostramos el corte a partir del cual se considera patológico.
   const cortes = { psqi:5, ess:10, isi:15, stopbang:5, phq9:10, gad7:10,
