@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod170">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod171">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod170"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod171"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod170';
+const APP_VERSION='hoy79-mod171';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -6643,9 +6643,17 @@ function autoDetectDayType(){
   const auto = (dow===0||dow===6) ? 'free' : 'work';
   setDayType(auto, null, false);
   if(badge){
-    badge.textContent='Detectado automáticamente';
+    // Decir de qué día habla. Antes decía solo "detectado" y el paciente no
+    // tenía cómo saber si se refería a la noche o a la mañana.
+    const nom=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][dow];
+    badge.textContent=(auto==='free'?'sábado o domingo':'día de semana')+' · '+nom;
     badge.style.background='#dcfce7';
     badge.style.color='#1a4a3a';
+  }
+  const ayuda=document.getElementById('d-daytype-ayuda');
+  if(ayuda){
+    const nom2=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][dow];
+    ayuda.innerHTML='Hablamos de la mañana del <b>'+nom2+'</b>. Si ese día no tenías horario, marcá libre.';
   }
 }
 function saveDrAnnotation(email){
@@ -11611,11 +11619,12 @@ function showDiaryNew(){
     </div>
 
     <div class="dm-campo">
-      <label class="dm-lbl">¿Ayer fue día laboral o libre?
+      <label class="dm-lbl">Esa mañana, ¿te tenías que levantar para trabajar o estudiar?
         <span id="d-daytype-auto-badge" class="dm-badge">detectado</span></label>
+      <div class="dm-ayuda" id="d-daytype-ayuda">Lo que cuenta es la mañana del día que pusiste arriba, no la noche anterior.</div>
       <div class="dm-ops">
-        <button id="d-daytype-work" class="dm-op" onclick="setDayType('work',this,true)">🏢 Laboral</button>
-        <button id="d-daytype-free" class="dm-op" onclick="setDayType('free',this,true)">🏖 Libre</button>
+        <button id="d-daytype-work" class="dm-op" onclick="setDayType('work',this,true)">🏢 Sí, con horario</button>
+        <button id="d-daytype-free" class="dm-op" onclick="setDayType('free',this,true)">🏖 No, libre</button>
       </div>
       <input type="hidden" id="d-daytype" value="">
     </div>
