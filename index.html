@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod172">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod175">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -200,7 +200,7 @@
     <div style="font-size:16px;font-weight:700;color:var(--label);margin-bottom:8px">2. Datos que recolectamos</div>
     <div style="font-size:14px;color:var(--label-2);line-height:1.7;margin-bottom:16px">
       <strong>Datos de identificación:</strong> nombre, apellido, fecha de nacimiento, correo electrónico, contraseña (almacenada en texto plano — <em>pendiente migración a hash</em>).<br><br>
-      <strong>Datos de salud (sensibles según Art. 2 Ley 25.326):</strong> resultados de escalas clínicas, diario de sueño, estudios médicos adjuntos, datos de wearables importados, medicación, foto de perfil.<br><br>
+      <strong>Datos de salud (sensibles según Art. 2 Ley 25.326):</strong> resultados de escalas clínicas, diario de sueño, estudios médicos adjuntos, datos de wearables importados, medicación.<br><br>
       <strong>Datos técnicos:</strong> credencial biométrica WebAuthn (almacenada exclusivamente en el dispositivo del usuario — Dormetria nunca accede a la biometría en sí).
     </div>
 
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod172"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod175"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod172';
+const APP_VERSION='hoy79-mod175';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3883,8 +3883,16 @@ function showDrRegisterForm(){
           <option value="ES" ${u.country==='ES'?'selected':''}>🇪🇸 España</option>
           <option value="OT" ${u.country==='OT'?'selected':''}>🌎 Otro</option>
         </select></div>
-      <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Foto de perfil (URL, opcional)</label>
-        <input id="dreg-photo" class="form-input" type="url" placeholder="https://... (link a foto profesional)" value="${u.photo_url||''}" style="width:100%;box-sizing:border-box"></div>
+      <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Foto de perfil <span style="font-weight:400;opacity:.7">(opcional — la ven los pacientes en el directorio)</span></label>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div id="dreg-photo-preview" style="width:70px;height:70px;border-radius:50%;background:#1a4a3a;border:2px solid #C8A96E;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:22px;color:#fff;flex-shrink:0">${u.photo_url?'<img src="'+u.photo_url+'" style="width:100%;height:100%;object-fit:cover">':(((u.name||'?')[0]||'?')+((u.lname||'')[0]||'')).toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <label for="dreg-photo-upload" style="display:inline-block;padding:9px 16px;background:#2D6B55;color:#fff;border-radius:9px;font-size:13.5px;cursor:pointer;font-weight:600">📷 ${u.photo_url?'Cambiar foto':'Elegir foto'}</label>
+            <input type="file" id="dreg-photo-upload" accept="image/*" onchange="previewPhoto(this,'dreg-photo','dreg-photo-preview')" style="display:none">
+            <div style="font-size:11px;color:#666;margin-top:6px;line-height:1.4">Desde tu galería. Se achica sola antes de guardarse.</div>
+          </div>
+        </div>
+        <input type="hidden" id="dreg-photo" value="${u.photo_url||''}"></div>
       <div><label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Descripción breve (opcional)</label>
         <textarea id="dreg-bio" class="form-input" rows="2" placeholder="Áreas de interés, enfoque, modalidad de atención..." style="width:100%;box-sizing:border-box;resize:none">${u.bio||''}</textarea></div>
       <div class="caja-clara" style="background:#fef9e7;border:1px solid #C8A96E;border-radius:10px;padding:12px;margin-top:4px">
@@ -4015,6 +4023,9 @@ async function saveDrRegisterForm(){
 // Abre el correo con el texto de la persona citado y una respuesta armada.
 // No manda nada por su cuenta: se abre el cliente de mail y vos decidís.
 function dmResponderSugerenciaHtml(f){
+  // Escape propio: no depender de un ayudante que vive dentro de otra función.
+  const esc = function(x){ return String(x==null?'':x)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   const mail = String((f && f.autor_email) || '').trim();
   if(!mail || mail.indexOf('@')<0){
     return '<div style="font-size:11.5px;color:#9ca3af;margin-top:8px;font-style:italic">Sin correo: se mandó de forma anónima.</div>';
@@ -6453,6 +6464,16 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     row('Sueño total promedio', m.fmtDur(m.avgTotal))+
     row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub);
 
+  // La eficiencia SÍ le sirve al paciente: es el número que explica por qué
+  // se le va a pedir que achique el tiempo en cama. Con su explicación al
+  // lado, no necesita ser un dato reservado al profesional.
+  if(audience !== 'doctor' && m.sleepEfficiency != null && !_bebe){
+    html += row('Eficiencia de sueño',
+      m.sleepEfficiency+'%',
+      m.sleepEfficiency>=85?'#15803d': m.sleepEfficiency>=75?'#d97706':'#dc2626',
+      dmQueEs('Del tiempo que pasás en la cama, cuánto dormís de verdad. Por encima de 85% está bien. Por debajo de 75% suele haber margen para achicar el tiempo en cama, que es de lo que más rinde en el insomnio.'));
+  }
+
   // "Duración promedio de despertares" → solo para médico (concepto técnico para paciente)
   if(audience === 'doctor'){
     html += row('Duración promedio de despertares', m.fmtMin(m.avgAwakDur), awakColor, awakSub);
@@ -6479,11 +6500,15 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     // El parentesis cerraba aca arriba, asi que estas dos filas se colaban
     // en la vista de un bebe, donde "dia laboral" y el corte de 7 horas no
     // significan nada. Ahora quedan dentro del mismo guardado por edad.
+    ((m.nWe===0 || m.nWd===0)
+      ? '<div style="font-size:12px;color:'+C.sub+';line-height:1.5;padding:8px 0 2px">'+
+        'Para calcular el jet lag social hacen falta noches de los dos tipos. '+
+        (m.nWe===0 ? 'Todavía no hay ninguna noche marcada como <b>libre</b>.'
+                   : 'Todavía no hay ninguna noche marcada como <b>laboral</b>.')+
+        '</div>'
+      : '')+
     row('Jet lag social', sjlStr, sjlColor,
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
-    row('Eficiencia de sueño', (m.sleepEfficiency!=null? m.sleepEfficiency+'%' : '—'),
-        (m.sleepEfficiency==null?null: m.sleepEfficiency>=85?'#15803d': m.sleepEfficiency>=75?'#d97706':'#dc2626'),
-        dmQueEs('Del tiempo que pasás en la cama, cuánto dormís de verdad. Por encima de 85% está bien. Por debajo de 75% suele haber margen para achicar el tiempo en cama, que es lo que más rinde en el insomnio.')),
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor));
 
   // Bloque adicional para el paciente: versión amigable de la variación
@@ -10259,10 +10284,16 @@ function initProfileEditExtras(){
   }
 }
 
-function previewPhoto(input){
+function previewPhoto(input, idDato, idPreview){
+  idDato    = idDato    || 'prof-photo-data';
+  idPreview = idPreview || 'prof-photo-preview';
   if(!input.files||!input.files[0])return;
   const file=input.files[0];
-  if(file.size>5*1024*1024){toast('La foto debe ser menor a 5MB');input.value='';return;}
+  // El celular saca fotos de 3 a 8 MB. El tope está para cortar el caso raro
+  // de alguien subiendo una imagen enorme, no para molestar: lo que se guarda
+  // después de achicar son unos 25 KB.
+  if(file.size>12*1024*1024){toast('Esa foto es muy pesada. Probá con otra.');input.value='';return;}
+  if(!/^image\//.test(file.type||'')){toast('Tiene que ser una imagen (JPG, PNG o HEIC).');input.value='';return;}
   const reader=new FileReader();
   reader.onload=function(e){
     // Compress to max 300x300, JPEG quality 0.7
@@ -10277,12 +10308,15 @@ function previewPhoto(input){
       const ctx=canvas.getContext('2d');
       ctx.drawImage(img,0,0,w,h);
       const data=canvas.toDataURL('image/jpeg',0.75);
-      document.getElementById('prof-photo-data').value=data;
-      const prev=document.getElementById('prof-photo-preview');
+      const campo=document.getElementById(idDato);
+      if(campo) campo.value=data;
+      const prev=document.getElementById(idPreview);
       if(prev)prev.innerHTML='<img src="'+data+'" style="width:100%;height:100%;object-fit:cover">';
     };
+    img.onerror=function(){ toast('No se pudo leer esa imagen. Probá con una foto en JPG.'); };
     img.src=e.target.result;
   };
+  reader.onerror=function(){ toast('No se pudo abrir el archivo.'); };
   reader.readAsDataURL(file);
 }
 
@@ -10373,14 +10407,6 @@ function renderMiPerfilEdit(card){
   var sel=function(id,lbl,val,opts){return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;color:rgba(244,239,229,.62);margin-bottom:5px">'+lbl+'</label><select id="'+id+'" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d1d5db;border-radius:10px;background:#f3f4f6;color:#111;font-size:14px">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>';};
   card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#F4EFE5">Editar mi perfil</div><button onclick="document.getElementById(\'mp-modal\').remove()" style="background:none;border:none;color:rgba(244,239,229,.5);font-size:22px;cursor:pointer">✕</button></div>'
    +'<div style="margin-bottom:18px;text-align:center">'
-     +'<div id="prof-photo-preview" style="width:96px;height:96px;border-radius:50%;margin:0 auto 8px;background:#1a4a3a;border:3px solid #C8A96E;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:32px;color:#fff;font-weight:500">'
-       +(u.photo_url?'<img src="'+u.photo_url+'" style="width:100%;height:100%;object-fit:cover">':((u.name||'?')[0]||'?').toUpperCase())
-     +'</div>'
-     +'<input type="hidden" id="prof-photo-data" value="'+_mpEsc(u.photo_url||'')+'">'
-     +'<label for="mp-photo-upload" style="display:inline-block;padding:7px 16px;background:#2D6B55;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500">📷 '+(u.photo_url?'Cambiar foto':'Agregar foto')+'</label>'
-     +'<input type="file" id="mp-photo-upload" accept="image/*" onchange="previewPhoto(this)" style="display:none">'
-     +'<div style="font-size:11px;color:rgba(244,239,229,.5);margin-top:6px">Tu profesional también la verá</div>'
-   +'</div>'
    +inp('mp-name','Nombre',u.name)
    +inp('mp-lname','Apellido',u.lname)
    +inp('mp-dob','Fecha de nacimiento',u.dob,'date')
@@ -10545,13 +10571,12 @@ async function saveProfile(){
   if(!heightVal){toast('Por favor completá la altura');return;}
   setBtn('save-profile-btn',true);
   const paths=getPfPaths();
-  const photoData=document.getElementById('prof-photo-data');
-  const photoVal=photoData?photoData.value:'';
+  // La foto del paciente se quitó: no se guarda ni se pisa lo que hubiera.
   const actTypeEl=document.getElementById('pf-activity-type');const dobEl=document.getElementById('pf-dob');const name_val=document.getElementById('pf-name')?.value?.trim()||S.user.name||'';
   const lname_val=document.getElementById('pf-lname')?.value?.trim()||S.user.lname||'';
   const upd={name:name_val,lname:lname_val,dob:dobEl?dobEl.value||null:null,sex:document.getElementById('pf-sex')?.value||S.user.sex,height_cm:parseFloat(document.getElementById('pf-height').value)||null,weight_kg:parseFloat(document.getElementById('pf-weight').value)||null,pathologies:paths,medications:document.getElementById('pf-meds').value.trim(),alcohol:document.getElementById('pf-alcohol').value,tobacco:document.getElementById('pf-tobacco').value,physical_activity:document.getElementById('pf-activity').value,activity_type:(()=>{const el=document.getElementById('pf-activity-type');if(!el||!el.value)return null;const vals=el.value.split(',').filter(Boolean);return vals.length===1?vals[0]:vals.length>1?vals:null;})(),work_schedule:(()=>{const el=document.getElementById('pf-work-schedule');if(!el||!el.value)return null;const v=el.value.split(',').filter(Boolean);return v.length===0?null:v.length===1?v[0]:v;})(),has_menarche:(()=>{const v=document.getElementById('pf-menarche')?.value;return v===''||v===undefined?null:v==='true';})()||null,has_menopause:(()=>{const v=document.getElementById('pf-menopause')?.value;return v===''||v===undefined?null:v==='true';})()||null,
     activity_other:(()=>{const el=document.getElementById('pf-activity-other');return el&&actTypeEl&&actTypeEl.value==='other'?el.value.trim()||null:null;})(),
-    photo_url:photoVal||null};
+    };
   try{
     // Save country to localStorage (column may not exist in DB)
     const countryVal=document.getElementById('pf-country')?.value||'';
@@ -10565,7 +10590,7 @@ async function saveProfile(){
     // Retry with only safe known columns
     const safeUpd={dob:upd.dob,sex:upd.sex,height_cm:upd.height_cm,weight_kg:upd.weight_kg,
       pathologies:upd.pathologies,medications:upd.medications,alcohol:upd.alcohol,
-      tobacco:upd.tobacco,physical_activity:upd.physical_activity,photo_url:upd.photo_url};
+      tobacco:upd.tobacco,physical_activity:upd.physical_activity};
     await db.patch(`patients?email=eq.${encodeURIComponent(S.user.email)}`,safeUpd);
     patchOk = true;
   }
@@ -13230,7 +13255,7 @@ async function renderPatientList(filter){
             return escHtml(ln ? (ln + ', ' + fn) : (fn || u.email));
           })();
           const isArch = archived.has(u.email.toLowerCase());
-          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}${u.photo_url?'<div style="flex-shrink:0"><img src="'+u.photo_url+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover"></div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,0.5);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
+          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,0.5);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
         const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
@@ -13373,6 +13398,27 @@ async function renderPatientList(filter){
             <div style="font-size:12.5px;color:rgba(255,255,255,0.75);line-height:1.55">${dr.bio?dr.bio.replace(/</g,'&lt;'):'<span style="opacity:0.55;font-style:italic">Todavía no cargaste una reseña. Tocá Editar y contá en pocas líneas tu enfoque — es lo primero que ve un paciente que te encuentra en el directorio.</span>'}</div>
           </div>
           <div id="dr-myratings" style="margin-top:12px"></div>
+          <details style="background:rgba(255,255,255,0.05);border-radius:14px;padding:13px 15px;margin-top:12px">
+            <summary style="cursor:pointer;font-size:13.5px;font-weight:600;color:#F4EFE5;list-style:none">
+              ⭐ Escalas que usás habitualmente
+              <span style="font-weight:400;color:rgba(244,239,229,.5);font-size:12px"> · aparecen destacadas en cada paciente</span></summary>
+            <div style="font-size:12px;color:rgba(244,239,229,.55);margin:8px 0 10px">Se guardan solas al marcarlas.</div>
+            <div id="dr-scales-picker" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+          </details>
+          <div style="margin:14px 0 0;padding:14px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.3);border-radius:12px">
+          <div style="font-size:12px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Herramientas del profesional</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button type="button" onclick="showCustomBundleConfig()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
+              <span style="font-size:18px">⭐</span>
+              <div style="flex:1"><div>Mis sugerencias rápidas</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Configurá tu bundle personalizado de escalas</div></div>
+            </button>
+            <button type="button" onclick="showDrQrPrint()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
+              <span style="font-size:18px">📱</span>
+              <div style="flex:1"><div>QR para el consultorio</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Hoja imprimible con QR de descarga + vinculación directa</div></div>
+            </button>
+          </div>
+        </div>
+
           <button onclick="showChangePassword()" style="width:100%;margin-top:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(126,200,164,0.2);color:#F4EFE5;font-size:13px;font-weight:600;padding:11px;border-radius:12px;cursor:pointer;font-family:var(--font)">🔒 Cambiar mi contraseña</button>
         </div>
         <div id="dr-profile-form" style="display:none">
@@ -13413,7 +13459,15 @@ async function renderPatientList(filter){
 
         <div class="form-group"><label class="form-label">Foto profesional</label>
           <div style="font-size:11.5px;color:rgba(244,239,229,0.6);line-height:1.5;margin:-2px 0 7px">Pegá el enlace de una foto tuya. Una cara conocida cambia mucho la decisión de quien busca profesional.</div>
-          <input class="form-input" id="dr-edit-photo" value="${dr.photo_url||''}" placeholder="https://…"></div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div id="dr-photo-preview" style="width:74px;height:74px;border-radius:50%;background:#1a4a3a;border:2px solid #C8A96E;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:24px;color:#F4EFE5;flex-shrink:0">${dr.photo_url?'<img src="'+dr.photo_url+'" style="width:100%;height:100%;object-fit:cover">':(((dr.name||'?')[0]||'?')+((dr.lname||'')[0]||'')).toUpperCase()}</div>
+            <div style="flex:1;min-width:0">
+              <label for="dr-photo-upload" style="display:inline-block;padding:9px 16px;background:#2D6B55;color:#fff;border-radius:9px;font-size:13.5px;cursor:pointer;font-weight:600">📷 ${dr.photo_url?'Cambiar foto':'Elegir foto'}</label>
+              <input type="file" id="dr-photo-upload" accept="image/*" onchange="previewPhoto(this,'dr-edit-photo','dr-photo-preview')" style="display:none">
+              <div style="font-size:11.5px;color:rgba(244,239,229,.5);margin-top:6px;line-height:1.4">Desde la galería del celular o del escritorio. Se achica sola.</div>
+            </div>
+          </div>
+          <input type="hidden" id="dr-edit-photo" value="${dr.photo_url||''}"></div>
 
         <div class="form-group"><label class="form-label">Formación <span style="opacity:.6;font-weight:400">(opcional)</span></label>
           <input class="form-input" id="dr-edit-training" value="${dr.training||''}" placeholder="Universidad, residencia, posgrados"></div>
@@ -13440,24 +13494,7 @@ async function renderPatientList(filter){
 
         <div class="form-group"><label class="form-label">Valor de la consulta <span style="opacity:.6;font-weight:400">(opcional — si lo dejás vacío no se muestra)</span></label>
           <input class="form-input" id="dr-edit-fee" value="${dr.fee||''}" placeholder="Ej: $45.000 la primera consulta"></div>
-        <div class="form-group" style="margin-top:16px">
-          <label class="form-label">Escalas que usás habitualmente</label>
-          <div style="font-size:12px;color:var(--label-3);margin-bottom:10px">Seleccioná las escalas de tu interés para que aparezcan destacadas en el panel de cada paciente</div>
-          <div id="dr-scales-picker" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
-        </div>
-        <div style="margin:18px 0 14px;padding:14px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.3);border-radius:12px">
-          <div style="font-size:12px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Herramientas del profesional</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button type="button" onclick="showCustomBundleConfig()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
-              <span style="font-size:18px">⭐</span>
-              <div style="flex:1"><div>Mis sugerencias rápidas</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Configurá tu bundle personalizado de escalas</div></div>
-            </button>
-            <button type="button" onclick="showDrQrPrint()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
-              <span style="font-size:18px">📱</span>
-              <div style="flex:1"><div>QR para el consultorio</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Hoja imprimible con QR de descarga + vinculación directa</div></div>
-            </button>
-          </div>
-        </div>
+
         <div onclick="dmOpenChangePassword()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 15px;display:flex;align-items:center;cursor:pointer;margin-top:16px">
           <div style="font-size:13.5px;color:rgba(255,255,255,0.78)">🔑 Cambiar mi contraseña</div>
           <div style="margin-left:auto;color:rgba(255,255,255,0.28);font-size:16px">›</div>
@@ -14413,8 +14450,9 @@ async function viewPatient(email){
   if(_drpAvatar){
     const _initials=((u.name||'?')[0]+(u.lname||'')[0]||'').toUpperCase();
     _drpAvatar.style.display='flex';
-    _drpAvatar.innerHTML = u.photo_url
-      ? '<img src="'+u.photo_url+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'
+    // Sin foto del paciente: quedan las iniciales.
+    _drpAvatar.innerHTML = false
+      ? ''
       : _initials;
   }
   if(_drpname) _drpname.textContent = (u.name||u.email.split('@')[0])+' '+(u.lname||'')+(u._placeholder?' (datos pendientes)':'');
@@ -15248,8 +15286,8 @@ async function showDrPTab_(tab){
           else {cronoTxt='V+';cronoLabel='Vespertino def.';}
         }
       }catch(_){}
-      const photoEl = u.photo_url
-        ? '<img src="'+u.photo_url+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #C8A96E">'
+      const photoEl = false
+        ? ''
         : '<div style="width:96px;height:96px;border-radius:50%;background:#1A4A3A;border:3px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:500;color:#F4EFE5">'+(initials||'?')+'</div>';
       // heroHtml (foto+nombre+email grandes) se eliminó: esos mismos datos ya
       // están arriba en el header compacto de la ficha (avatar chico + nombre +
@@ -23472,7 +23510,7 @@ function showDrQrPrint(){
       <strong>¿Para qué sirve Dormetria?</strong><br>
       Es una plataforma donde podés registrar tu sueño día por día, completar escalas clínicas validadas que yo te indique, y compartir todo conmigo en tiempo real. Si seguís estas indicaciones, vamos a poder hacer un seguimiento mucho más preciso de tu evolución.
     </div>
-    <div style="text-align:center;margin-top:18px;font-size:10px;color:#5C6B61">joaquinjosediez.github.io/Dormetria-app · ${(u.email_public||u.email||'')}${u.phone?' · '+u.phone:''}</div>
+    <div style="text-align:center;margin-top:18px;font-size:11px;color:#5C6B61"><b>www.dormetria.com</b></div>
   `;
   showScreen('dr-qr-print');
 }
