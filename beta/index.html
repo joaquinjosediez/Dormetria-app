@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod171">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod172">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod171"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod172"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod171';
+const APP_VERSION='hoy79-mod172';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4011,6 +4011,43 @@ async function saveDrRegisterForm(){
   }catch(e){toast('Error: '+e.message);}
 }
 
+// ── Contestarle a quien mandó una sugerencia ──────────────────────────
+// Abre el correo con el texto de la persona citado y una respuesta armada.
+// No manda nada por su cuenta: se abre el cliente de mail y vos decidís.
+function dmResponderSugerenciaHtml(f){
+  const mail = String((f && f.autor_email) || '').trim();
+  if(!mail || mail.indexOf('@')<0){
+    return '<div style="font-size:11.5px;color:#9ca3af;margin-top:8px;font-style:italic">Sin correo: se mandó de forma anónima.</div>';
+  }
+  const id = 'sug-'+String(f.id||Math.random()).replace(/[^a-z0-9]/gi,'');
+  return '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0ee">'+
+    '<button onclick="dmResponderSugerencia('+JSON.stringify(mail).replace(/"/g,'&quot;')+','+
+      JSON.stringify(String(f.texto||'')).replace(/"/g,'&quot;')+')" '+
+      'style="background:#1a4a3a;border:none;border-radius:9px;padding:8px 14px;color:#fff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">'+
+      '✉️ Responderle a '+esc(mail)+'</button>'+
+    '<span id="'+id+'" style="font-size:11.5px;color:#6b7280;margin-left:9px"></span>'+
+  '</div>';
+}
+window.dmResponderSugerenciaHtml = dmResponderSugerenciaHtml;
+
+function dmResponderSugerencia(mail, texto){
+  const citado = String(texto||'').split('\n').map(function(l){ return '> '+l; }).join('\n');
+  const cuerpo =
+    'Hola,\n\n'+
+    'Gracias por escribirnos. Nos escribiste esto:\n\n'+
+    citado+'\n\n'+
+    '\n\n'+
+    'Un saludo,\n'+
+    ((S.user && S.user.name) ? (S.user.name+' '+(S.user.lname||'')).trim() : 'El equipo de Dormetria')+'\n'+
+    'Dormetria';
+  const url = 'mailto:'+encodeURIComponent(mail)+
+    '?subject='+encodeURIComponent('Sobre lo que nos escribiste en Dormetria')+
+    '&body='+encodeURIComponent(cuerpo);
+  try{ window.location.href = url; }
+  catch(_){ toast('No se pudo abrir el correo. Escribile a '+mail); }
+}
+window.dmResponderSugerencia = dmResponderSugerencia;
+
 async function showAdminPanel(){
   try{ const _v=document.getElementById('admin-version'); if(_v) _v.textContent=APP_VERSION; }catch(_){}
   if(!checkAdminAccess()){ toast('Acceso no autorizado'); return; }
@@ -4106,6 +4143,7 @@ async function dmAdminEscuchar(){
             '<span style="white-space:nowrap">'+(f.tipo?esc(TIPOS[f.tipo]||f.tipo)+' · ':'')+fecha(f.created_at)+'</span></div>'+
           '<div style="font-size:14.5px;color:#1f2937;line-height:1.6;white-space:pre-wrap">'+esc(f.texto)+'</div>'+
           (f.version_app?'<div style="font-size:11px;color:#9ca3af;margin-top:6px">'+esc(f.version_app)+'</div>':'')+
+          dmResponderSugerenciaHtml(f)+
         '</div>';
       }).join('');
   }else if(!sug || !sug.err){
@@ -6443,6 +6481,9 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     // significan nada. Ahora quedan dentro del mismo guardado por edad.
     row('Jet lag social', sjlStr, sjlColor,
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
+    row('Eficiencia de sueño', (m.sleepEfficiency!=null? m.sleepEfficiency+'%' : '—'),
+        (m.sleepEfficiency==null?null: m.sleepEfficiency>=85?'#15803d': m.sleepEfficiency>=75?'#d97706':'#dc2626'),
+        dmQueEs('Del tiempo que pasás en la cama, cuánto dormís de verdad. Por encima de 85% está bien. Por debajo de 75% suele haber margen para achicar el tiempo en cama, que es lo que más rinde en el insomnio.')),
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor));
 
   // Bloque adicional para el paciente: versión amigable de la variación
@@ -12870,7 +12911,7 @@ function dmBuildDoctorTopbar(){
         '<button class="dr-tb-tab" data-tab="profile" onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
         '<button class="dr-tb-tab" onclick="showDrRegisterForm()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio</button>'+
         '<button class="dr-tb-tab" onclick="dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo funciona</button>'+
-        '<button class="dr-tb-tab" onclick="dmMenuPerfiles()">'+ic('M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')+'Mi otro perfil</button>'+
+        '<button class="dr-tb-tab" onclick="dmMenuPerfiles()">'+ic('M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')+'Mi perfil paciente</button>'+
         '<button class="dr-tb-tab" onclick="showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'Ayudanos a mejorar</button>'+
         '<button class="dr-tb-tab" id="dr-tb-admin-tab" style="display:none" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Admin</button>'+
         '<button class="dr-tb-tab" onclick="logout()" style="color:rgba(252,165,165,.9)">'+ic('M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1')+'Salir</button>'+
@@ -18460,7 +18501,7 @@ function dmElegirRol(){
         '<span style="color:#7EC8A4;font-size:20px">›</span></div>'+
 
       '<div style="font-size:13px;color:rgba(244,239,229,.45);margin-top:18px;line-height:1.55">'+
-        'Se recuerda el último que usaste. Para cambiar, entrá a <b>Mi otro perfil</b> '+
+        'Se recuerda el último que usaste. Para cambiar, entrá a <b>Mi perfil paciente</b> '+
         '(profesional) o <b>Más → Soy profesional de la salud</b> (paciente).</div>'+
     '</div>';
   document.body.appendChild(w);
@@ -23406,20 +23447,27 @@ function showDrQrPrint(){
       <div style="font-size:18px;font-weight:700;color:#0F2820">${drFullName}</div>
       ${drSpec?'<div style="font-size:13px;color:#5C6B61">'+drSpec+(drMat?' · '+drMat:'')+'</div>':''}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-      <div class="qr-card">
-        <div style="font-size:13px;font-weight:700;color:#0F2820;text-transform:uppercase;letter-spacing:0.06em">PASO 1</div>
-        <div style="font-size:14px;font-weight:600;color:#0F2820;margin-top:4px">Descargá la app</div>
-        <img src="${qrLogin}" alt="QR de descarga">
-        <div style="font-size:11px;color:#5C6B61;line-height:1.4">Escaneá este QR con la cámara del celular. Abre la app, registrate como paciente y listo.</div>
+    <div class="qr-card" style="max-width:340px;margin:0 auto 22px">
+      <div style="font-size:13px;font-weight:700;color:#0F2820;text-transform:uppercase;letter-spacing:0.06em">Escaneá para empezar</div>
+      <img src="${qrLogin}" alt="QR para entrar a Dormetria">
+      <div style="font-size:12px;color:#5C6B61;line-height:1.5">Apuntá la cámara del celular. Se abre la app y podés crear tu cuenta como paciente.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px">
+      <div style="text-align:center">
+        <div style="width:30px;height:30px;border-radius:50%;background:#0F2820;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 7px">1</div>
+        <div style="font-size:12.5px;color:#0F2820;line-height:1.45"><b>Escaneá el QR</b> y creá tu cuenta con tu correo.</div>
       </div>
-      <div class="qr-card">
-        <div style="font-size:13px;font-weight:700;color:#0F2820;text-transform:uppercase;letter-spacing:0.06em">PASO 2</div>
-        <div style="font-size:14px;font-weight:600;color:#0F2820;margin-top:4px">Vinculate conmigo</div>
-        <img src="${qrDoctor}" alt="QR del profesional">
-        <div style="font-size:11px;color:#5C6B61;line-height:1.4">Una vez registrado, escaneá este QR para conectar tu cuenta directamente con mi perfil profesional.</div>
+      <div style="text-align:center">
+        <div style="width:30px;height:30px;border-radius:50%;background:#0F2820;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 7px">2</div>
+        <div style="font-size:12.5px;color:#0F2820;line-height:1.45">En la app, entrá a <b>Yo → Mi código</b>.</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:30px;height:30px;border-radius:50%;background:#0F2820;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 7px">3</div>
+        <div style="font-size:12.5px;color:#0F2820;line-height:1.45"><b>Mostrame ese código</b> y te vinculo a tu ficha.</div>
       </div>
     </div>
+
     <div style="background:#fef9e7;border:1px solid #C8A96E;border-radius:10px;padding:14px;font-size:12px;color:#0F2820;line-height:1.6">
       <strong>¿Para qué sirve Dormetria?</strong><br>
       Es una plataforma donde podés registrar tu sueño día por día, completar escalas clínicas validadas que yo te indique, y compartir todo conmigo en tiempo real. Si seguís estas indicaciones, vamos a poder hacer un seguimiento mucho más preciso de tu evolución.
