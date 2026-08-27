@@ -3803,6 +3803,59 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 }
 #patient-tcci-progress:not(:empty)::before{ content:' · '; opacity:.5; }
 
+/* ── El actograma se recorre hacia arriba y abajo, no de costado ──────
+   El lienzo tiene min-width:340px para que las barras no se aplasten, y eso
+   hacía que la caja scrolleara también en horizontal: al arrastrar con el
+   dedo el gráfico se iba de lado y costaba volver. Vertical solamente. */
+.dm-acto-caja{
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:none;
+  touch-action:pan-y;
+}
+.dm-acto-caja canvas{ max-width:100% !important; min-width:0 !important; }
+#pat-acto-inner{ min-width:0 !important; width:100%; }
+
+/* ── "FRAGMENTACIÓN" no entra y se partía por la mitad ────────────────
+   Quedaba "FRAGMENTACIÓ / N" en dos filas. Con la letra un poco más chica
+   y sin separación extra entra completa; y si algún día no entrara, corta
+   por sílabas en vez de por cualquier letra. */
+#diary-pillar-bars > div > div > div:first-child,
+#dr-pillar-bars   > div > div > div:first-child{
+  overflow-wrap:normal !important;
+  word-break:normal !important;
+  hyphens:auto;
+  -webkit-hyphens:auto;
+}
+@media (max-width:440px){
+  #diary-pillar-bars > div > div > div:first-child{
+    font-size:8.6px !important; letter-spacing:.01em !important;
+  }
+}
+
+/* ── El formulario del perfil profesional va sobre verde oscuro ───────
+   Los rótulos usaban --label-2 y --label-3, que son grises pensados para
+   fondo blanco: sobre el verde quedaban casi negros sobre casi negro. */
+#dr-profile-form .form-label,
+#dr-profile-form label,
+#dr-profile-form .sec-title{
+  color:rgba(244,239,229,.78) !important;
+}
+#dr-profile-form .form-label span,
+#dr-profile-form label span{ color:rgba(244,239,229,.5) !important; }
+#dr-profile-form .suggest-label div,
+#dr-profile-form .dm-ayuda,
+#dr-profile-form [style*="var(--label-2)"],
+#dr-profile-form [style*="var(--label-3)"]{
+  color:rgba(244,239,229,.62) !important;
+}
+#dr-profile-form .suggest-label{
+  background:rgba(255,255,255,.06) !important;
+  border-color:rgba(126,200,164,.18) !important;
+}
+#dr-profile-form .suggest-label div:first-child{ color:#F4EFE5 !important; }
+
 /* ── Confeti al cerrar una semana del programa ────────────────────────
    Sin librerías: cada papelito es un div con esta animación. Las variables
    --dm-giro y --dm-desvio las pone el JS, distintas para cada uno, así no
