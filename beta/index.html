@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod172">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod173">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod172"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod173"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod172';
+const APP_VERSION='hoy79-mod173';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4015,6 +4015,9 @@ async function saveDrRegisterForm(){
 // Abre el correo con el texto de la persona citado y una respuesta armada.
 // No manda nada por su cuenta: se abre el cliente de mail y vos decidís.
 function dmResponderSugerenciaHtml(f){
+  // Escape propio: no depender de un ayudante que vive dentro de otra función.
+  const esc = function(x){ return String(x==null?'':x)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   const mail = String((f && f.autor_email) || '').trim();
   if(!mail || mail.indexOf('@')<0){
     return '<div style="font-size:11.5px;color:#9ca3af;margin-top:8px;font-style:italic">Sin correo: se mandó de forma anónima.</div>';
@@ -6453,6 +6456,16 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     row('Sueño total promedio', m.fmtDur(m.avgTotal))+
     row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub);
 
+  // La eficiencia SÍ le sirve al paciente: es el número que explica por qué
+  // se le va a pedir que achique el tiempo en cama. Con su explicación al
+  // lado, no necesita ser un dato reservado al profesional.
+  if(audience !== 'doctor' && m.sleepEfficiency != null && !_bebe){
+    html += row('Eficiencia de sueño',
+      m.sleepEfficiency+'%',
+      m.sleepEfficiency>=85?'#15803d': m.sleepEfficiency>=75?'#d97706':'#dc2626',
+      dmQueEs('Del tiempo que pasás en la cama, cuánto dormís de verdad. Por encima de 85% está bien. Por debajo de 75% suele haber margen para achicar el tiempo en cama, que es de lo que más rinde en el insomnio.'));
+  }
+
   // "Duración promedio de despertares" → solo para médico (concepto técnico para paciente)
   if(audience === 'doctor'){
     html += row('Duración promedio de despertares', m.fmtMin(m.avgAwakDur), awakColor, awakSub);
@@ -6479,11 +6492,15 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     // El parentesis cerraba aca arriba, asi que estas dos filas se colaban
     // en la vista de un bebe, donde "dia laboral" y el corte de 7 horas no
     // significan nada. Ahora quedan dentro del mismo guardado por edad.
+    ((m.nWe===0 || m.nWd===0)
+      ? '<div style="font-size:12px;color:'+C.sub+';line-height:1.5;padding:8px 0 2px">'+
+        'Para calcular el jet lag social hacen falta noches de los dos tipos. '+
+        (m.nWe===0 ? 'Todavía no hay ninguna noche marcada como <b>libre</b>.'
+                   : 'Todavía no hay ninguna noche marcada como <b>laboral</b>.')+
+        '</div>'
+      : '')+
     row('Jet lag social', sjlStr, sjlColor,
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
-    row('Eficiencia de sueño', (m.sleepEfficiency!=null? m.sleepEfficiency+'%' : '—'),
-        (m.sleepEfficiency==null?null: m.sleepEfficiency>=85?'#15803d': m.sleepEfficiency>=75?'#d97706':'#dc2626'),
-        dmQueEs('Del tiempo que pasás en la cama, cuánto dormís de verdad. Por encima de 85% está bien. Por debajo de 75% suele haber margen para achicar el tiempo en cama, que es lo que más rinde en el insomnio.')),
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor));
 
   // Bloque adicional para el paciente: versión amigable de la variación
@@ -13373,6 +13390,27 @@ async function renderPatientList(filter){
             <div style="font-size:12.5px;color:rgba(255,255,255,0.75);line-height:1.55">${dr.bio?dr.bio.replace(/</g,'&lt;'):'<span style="opacity:0.55;font-style:italic">Todavía no cargaste una reseña. Tocá Editar y contá en pocas líneas tu enfoque — es lo primero que ve un paciente que te encuentra en el directorio.</span>'}</div>
           </div>
           <div id="dr-myratings" style="margin-top:12px"></div>
+          <details style="background:rgba(255,255,255,0.05);border-radius:14px;padding:13px 15px;margin-top:12px">
+            <summary style="cursor:pointer;font-size:13.5px;font-weight:600;color:#F4EFE5;list-style:none">
+              ⭐ Escalas que usás habitualmente
+              <span style="font-weight:400;color:rgba(244,239,229,.5);font-size:12px"> · aparecen destacadas en cada paciente</span></summary>
+            <div style="font-size:12px;color:rgba(244,239,229,.55);margin:8px 0 10px">Se guardan solas al marcarlas.</div>
+            <div id="dr-scales-picker" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+          </details>
+          <div style="margin:14px 0 0;padding:14px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.3);border-radius:12px">
+          <div style="font-size:12px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Herramientas del profesional</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button type="button" onclick="showCustomBundleConfig()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
+              <span style="font-size:18px">⭐</span>
+              <div style="flex:1"><div>Mis sugerencias rápidas</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Configurá tu bundle personalizado de escalas</div></div>
+            </button>
+            <button type="button" onclick="showDrQrPrint()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
+              <span style="font-size:18px">📱</span>
+              <div style="flex:1"><div>QR para el consultorio</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Hoja imprimible con QR de descarga + vinculación directa</div></div>
+            </button>
+          </div>
+        </div>
+
           <button onclick="showChangePassword()" style="width:100%;margin-top:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(126,200,164,0.2);color:#F4EFE5;font-size:13px;font-weight:600;padding:11px;border-radius:12px;cursor:pointer;font-family:var(--font)">🔒 Cambiar mi contraseña</button>
         </div>
         <div id="dr-profile-form" style="display:none">
@@ -13440,24 +13478,7 @@ async function renderPatientList(filter){
 
         <div class="form-group"><label class="form-label">Valor de la consulta <span style="opacity:.6;font-weight:400">(opcional — si lo dejás vacío no se muestra)</span></label>
           <input class="form-input" id="dr-edit-fee" value="${dr.fee||''}" placeholder="Ej: $45.000 la primera consulta"></div>
-        <div class="form-group" style="margin-top:16px">
-          <label class="form-label">Escalas que usás habitualmente</label>
-          <div style="font-size:12px;color:var(--label-3);margin-bottom:10px">Seleccioná las escalas de tu interés para que aparezcan destacadas en el panel de cada paciente</div>
-          <div id="dr-scales-picker" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
-        </div>
-        <div style="margin:18px 0 14px;padding:14px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.3);border-radius:12px">
-          <div style="font-size:12px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Herramientas del profesional</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button type="button" onclick="showCustomBundleConfig()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
-              <span style="font-size:18px">⭐</span>
-              <div style="flex:1"><div>Mis sugerencias rápidas</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Configurá tu bundle personalizado de escalas</div></div>
-            </button>
-            <button type="button" onclick="showDrQrPrint()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;display:flex;align-items:center;gap:10px">
-              <span style="font-size:18px">📱</span>
-              <div style="flex:1"><div>QR para el consultorio</div><div style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.55);margin-top:2px">Hoja imprimible con QR de descarga + vinculación directa</div></div>
-            </button>
-          </div>
-        </div>
+
         <div onclick="dmOpenChangePassword()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 15px;display:flex;align-items:center;cursor:pointer;margin-top:16px">
           <div style="font-size:13.5px;color:rgba(255,255,255,0.78)">🔑 Cambiar mi contraseña</div>
           <div style="margin-left:auto;color:rgba(255,255,255,0.28);font-size:16px">›</div>
@@ -23472,7 +23493,7 @@ function showDrQrPrint(){
       <strong>¿Para qué sirve Dormetria?</strong><br>
       Es una plataforma donde podés registrar tu sueño día por día, completar escalas clínicas validadas que yo te indique, y compartir todo conmigo en tiempo real. Si seguís estas indicaciones, vamos a poder hacer un seguimiento mucho más preciso de tu evolución.
     </div>
-    <div style="text-align:center;margin-top:18px;font-size:10px;color:#5C6B61">joaquinjosediez.github.io/Dormetria-app · ${(u.email_public||u.email||'')}${u.phone?' · '+u.phone:''}</div>
+    <div style="text-align:center;margin-top:18px;font-size:11px;color:#5C6B61"><b>www.dormetria.com</b></div>
   `;
   showScreen('dr-qr-print');
 }
