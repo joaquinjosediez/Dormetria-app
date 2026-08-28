@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod175">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod176">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1323,7 +1323,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod175"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod176"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1342,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod175';
+const APP_VERSION='hoy79-mod176';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -1446,6 +1446,61 @@ async function dmSyncPushTags(){
   window._dmInstallPrompt=null;
   window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); window._dmInstallPrompt=e; try{ updateInstallUI(); }catch(_){} });
 })();
+// ── ¿A cuántos pacientes les puede llegar un recordatorio? ────────────
+// Hoy nadie lo sabe. OneSignal tiene los suscriptores pero no sabe qué
+// paciente es cada uno, y Supabase no sabe nada del estado del permiso. Con
+// eso, cualquier decisión sobre recordatorios es a ciegas.
+//
+// Lo que más pesa: en iPhone las notificaciones web SOLO funcionan si la
+// persona agregó la app a la pantalla de inicio. Abierta como pestaña de
+// Safari no recibe nada, sin aviso ni error. Puede haber pacientes a los que
+// el recordatorio nunca les llegó y ninguno de los dos se enteró.
+//
+// Esto anota el estado en la ficha, una sola vez por cambio. Si las columnas
+// todavía no existen en la base, patchFlexible las descarta y no rompe nada.
+async function dmRegistrarEstadoPush(){
+  try{
+    if(!S.user || !S.user.email) return;
+    if(S.role === 'doctor') return;   // sólo interesa del lado del paciente
+
+    const permiso = ('Notification' in window) ? Notification.permission : 'sin-soporte';
+    const esIOS   = (typeof isIOSDevice==='function') ? !!isIOSDevice() : false;
+    const esPWA   = (typeof isStandalonePWA==='function') ? !!isStandalonePWA() : false;
+
+    // El estado que de verdad importa: si le PUEDE llegar o no, y por qué no.
+    const estado =
+      permiso === 'granted'                 ? (esIOS && !esPWA ? 'ios-sin-instalar' : 'le-llega')
+      : permiso === 'denied'                ? 'bloqueado'
+      : (esIOS && !esPWA)                   ? 'ios-sin-instalar'
+      : permiso === 'sin-soporte'           ? 'sin-soporte'
+      :                                       'nunca-lo-activo';
+
+    // No escribir en cada apertura: sólo cuando cambia.
+    const clave = 'dm_push_estado_' + String(S.user.email).toLowerCase();
+    let previo = null;
+    try{ previo = localStorage.getItem(clave); }catch(_){}
+    if(previo === estado) return;
+
+    const r = await db.patchFlexible(
+      'patients?email=eq.'+encodeURIComponent(S.user.email),
+      { push_estado: estado, push_pwa: esPWA, push_ios: esIOS,
+        push_visto: new Date().toISOString() });
+    try{ localStorage.setItem(clave, estado); }catch(_){}
+    if(r && r.descartadas && r.descartadas.length){
+      console.warn('[push] faltan columnas en patients:', r.descartadas.join(', '));
+    }
+
+    // Y decirle a OneSignal QUIÉN es, para poder mandarle sólo a quien
+    // corresponda. Sin esto sólo se puede mandar a todos o a nadie.
+    try{
+      if(window._dmOneSignal && window._dmOneSignal.login){
+        await window._dmOneSignal.login(String(S.user.email).toLowerCase());
+      }
+    }catch(_){}
+  }catch(e){ console.warn('[push] no se pudo anotar el estado:', e && e.message); }
+}
+window.dmRegistrarEstadoPush = dmRegistrarEstadoPush;
+
 function isStandalonePWA(){
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
 }
@@ -8464,6 +8519,9 @@ function dmTarjetaNoche(entry){
 }
 
 async function showHome(){
+  // Anotar si a esta persona le pueden llegar recordatorios. No bloquea nada:
+  // corre por su cuenta y si falla, falla en silencio.
+  try{ dmRegistrarEstadoPush(); }catch(_){}
   // La noche de ayer: se consulta y se pinta apenas entra, sin esperar al
   // resto de la pantalla. Es lo primero que la persona vino a ver.
   (async function(){
