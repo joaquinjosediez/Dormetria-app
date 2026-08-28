@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod176">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod180">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -465,13 +465,11 @@
         </div>
         <div class="err" id="reg-error">Completá todos los campos</div></div>
       <div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.07);border-radius:10px;border:1px solid rgba(255,255,255,0.1)">
-        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Términos <span style="color:#FF3B30">*</span></div>
-        <div style="display:flex;flex-direction:column;gap:7px">
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c1" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto el almacenamiento de mis datos de salud</span></label>
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c2" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto que el médico vinculado acceda a mi historial</span></label>
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c4" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Acepto las notificaciones al médico por resultados relevantes</span></label>
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c3" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.5">Uso anónimo de mis datos para investigación <em>(opcional)</em></span></label>
-          <div style="font-size:11px;color:var(--label-3);margin-top:3px"><span onclick="showScreen('privacy')" style="color:#1a4a3a;cursor:pointer;text-decoration:underline">Ver política de privacidad</span></div>
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Para usar Dormetria</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c1" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;line-height:1.45">Acepto los <span onclick="event.preventDefault();event.stopPropagation();showScreen('consent')" style="color:#7EC8A4;text-decoration:underline">t&eacute;rminos de uso</span> y la <span onclick="event.preventDefault();event.stopPropagation();showScreen('privacy')" style="color:#7EC8A4;text-decoration:underline">pol&iacute;tica de privacidad</span>: guardar mis datos de salud, que mi profesional los vea y que reciba un aviso si una escala da un resultado de riesgo.</span></label>
+          <div style="height:1px;background:rgba(255,255,255,0.13);margin:2px 0"></div>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="reg-c3" style="accent-color:#1a4a3a;margin-top:2px;flex-shrink:0"><span style="font-size:13px;line-height:1.45">Acepto que mis datos <strong>anonimizados</strong> se usen en investigaci&oacute;n cient&iacute;fica sobre sue&ntilde;o. <em style="color:rgba(255,255,255,0.55)">Es opcional y separado: si no lo marc&aacute;s, us&aacute;s la app exactamente igual.</em> <span onclick="event.preventDefault();event.stopPropagation();dmVerDetalleInvestigacion()" style="color:#7EC8A4;text-decoration:underline">Ver de qu&eacute; se trata</span></span></label>
         </div>
       </div>
       <button class="btn btn-g" onclick="doRegister()" id="reg-btn">Crear cuenta</button>
@@ -1323,7 +1321,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod176"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod180"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1342,7 +1340,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod176';
+const APP_VERSION='hoy79-mod180';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -1485,6 +1483,18 @@ async function dmRegistrarEstadoPush(){
       'patients?email=eq.'+encodeURIComponent(S.user.email),
       { push_estado: estado, push_pwa: esPWA, push_ios: esIOS,
         push_visto: new Date().toISOString() });
+
+    // Si el permiso está dado, las etiquetas de OneSignal se vuelven a
+    // escribir en cada apertura. Así, si alguna vez quedaron mal —o se
+    // perdieron al limpiar el navegador— se arreglan solas sin que la
+    // persona tenga que hacer nada.
+    if(estado === 'le-llega'){
+      try{
+        const _pr = getReminderPrefs();
+        if(!_pr.enabled) saveReminderPref(true, _pr.time || '09:00');
+        else if(window._dmOneSignal) dmSyncPushTags();
+      }catch(_){}
+    }
     try{ localStorage.setItem(clave, estado); }catch(_){}
     if(r && r.descartadas && r.descartadas.length){
       console.warn('[push] faltan columnas en patients:', r.descartadas.join(', '));
@@ -1500,6 +1510,186 @@ async function dmRegistrarEstadoPush(){
   }catch(e){ console.warn('[push] no se pudo anotar el estado:', e && e.message); }
 }
 window.dmRegistrarEstadoPush = dmRegistrarEstadoPush;
+
+// ─── Consentimiento: que quede en la BASE, no en el navegador ────────────
+//
+// Hasta mod177 el consentimiento se guardaba SOLO en localStorage
+// (dm_consent_v1). Eso tenía dos consecuencias graves:
+//
+//   1. Al cambiar de teléfono o limpiar el navegador, el consentimiento
+//      desaparecía. No quedaba rastro de que la persona lo hubiera dado.
+//   2. Los pacientes dados de alta por el profesional NUNCA veían la
+//      pantalla de registro: entraban por el link, ponían la contraseña y
+//      listo. No aceptaban nada, ni siquiera lo obligatorio.
+//
+// Desde mod178 el consentimiento se escribe en `patients`. Así se puede
+// construir la cohorte de investigación con una consulta, y quien no lo
+// aceptó queda afuera por diseño y no por memoria.
+
+var DM_CONSENT_VERSION = 'v3-2026-08';
+
+// Escribe el consentimiento en la base. Tolerante: si las columnas todavía
+// no existen, patchFlexible las descarta y la app sigue andando.
+async function dmGuardarConsentimiento(datos, origen){
+  try{
+    if(!S || !S.user || !S.user.email) return false;
+    const ahora = new Date().toISOString();
+    const fila = {
+      consent_version:       DM_CONSENT_VERSION,
+      consent_date:          datos.fecha || ahora,
+      consent_origen:        origen || 'registro',
+      research_consent:      !!datos.research,
+      research_consent_date: datos.research ? (datos.fecha || ahora) : null
+    };
+    await db.patchFlexible('patients?email=eq.'+encodeURIComponent(S.user.email), fila);
+    Object.assign(S.user, fila);
+    return true;
+  }catch(e){ console.warn('[consent] no se pudo guardar:', e && e.message); return false; }
+}
+window.dmGuardarConsentimiento = dmGuardarConsentimiento;
+
+// Al entrar: si en la base no hay consentimiento, resolverlo.
+//   · Si el dispositivo tiene el consentimiento viejo -> se sube tal cual,
+//     con su fecha original. Es la respuesta que la persona ya dio; no hay
+//     por qué volver a preguntársela.
+//   · Si no hay nada -> se pregunta. Este es el caso de los pacientes dados
+//     de alta por el profesional.
+async function dmConsentimientoSincronizar(){
+  try{
+    if(!S || S.role !== 'patient' || !S.user || !S.user.email) return;
+    if(S.user.consent_version) return;              // ya está en la base
+
+    let previo = null;
+    try{ previo = JSON.parse(localStorage.getItem('dm_consent_v1') || 'null'); }catch(_){}
+
+    if(previo && previo.storage && previo.doctorAccess){
+      await dmGuardarConsentimiento(
+        { research: !!previo.research, fecha: previo.researchUpdated || previo.date },
+        'migrado-del-dispositivo');
+      return;
+    }
+    dmConsentimientoPreguntar();
+  }catch(e){ console.warn('[consent]', e && e.message); }
+}
+window.dmConsentimientoSincronizar = dmConsentimientoSincronizar;
+
+// La hoja de información de investigación. Un comité de ética no evalúa el
+// casillero: evalúa ESTO. Si algo de acá no está, lo van a pedir.
+var DM_INFO_INVESTIGACION = [
+  ['Para qué',
+   'Entender qué factores de la vida diaria —horarios, actividad, ánimo, hábitos— se '+
+   'asocian con dormir mejor o peor, y publicar esos resultados para que otros '+
+   'profesionales puedan usarlos.'],
+  ['Qué datos',
+   'Tus registros del diario de sueño, los puntajes de las escalas y datos generales '+
+   '(edad y sexo). <strong>Nunca</strong> tu nombre, tu correo, tu teléfono ni tus '+
+   'comentarios escritos.'],
+  ['Cómo se separa de vos',
+   'Antes de cualquier análisis, tu identidad se reemplaza por un código irreversible. '+
+   'Quien analiza los datos no puede volver de ese código a vos.'],
+  ['Es voluntario, de verdad',
+   'Si no aceptás, usás Dormetria exactamente igual: las mismas funciones, los mismos '+
+   'gráficos, la misma atención de tu profesional. No cambia nada.'],
+  ['Podés arrepentirte',
+   'Desde <strong>Perfil → Privacidad</strong>, cuando quieras y sin explicar por qué. '+
+   'Tus datos salen de los análisis futuros desde ese momento. Lo que ya se haya '+
+   'publicado no se puede retirar, porque ya está impreso y es anónimo.'],
+  ['Qué NO se hace',
+   'No se venden tus datos. No se comparten con obras sociales, prepagas, empleadores '+
+   'ni aseguradoras. No se te devuelven resultados individuales: esto es investigación, '+
+   'no un estudio médico.'],
+  ['Quién es responsable',
+   'Dr. Joaquín Diez, responsable de la base de datos de Dormetria. Consultas y '+
+   'revocaciones: <strong>info@dormetria.com</strong>.'],
+  ['Riesgos',
+   'El principal es que alguien acceda indebidamente a la base. Por eso los datos de '+
+   'investigación se usan siempre disociados de tu identidad. Beneficio directo para '+
+   'vos: ninguno. El beneficio es para quienes consulten después.']
+];
+
+function dmVerDetalleInvestigacion(){
+  if(document.getElementById('dm-info-inv')) return;
+  const d=document.createElement('div');
+  d.id='dm-info-inv';
+  d.setAttribute('style','position:fixed;inset:0;z-index:100000;background:rgba(10,26,20,.9);'+
+    'display:flex;align-items:center;justify-content:center;padding:16px');
+  d.innerHTML='<div style="background:#F4EFE5;border-radius:18px;max-width:460px;width:100%;'+
+      'max-height:88vh;overflow:auto;padding:24px 22px;box-shadow:0 18px 50px rgba(0,0,0,.45)">'+
+      '<div style="font-size:18px;font-weight:600;color:#1a4a3a;margin-bottom:4px">Uso de datos para investigación</div>'+
+      '<div style="font-size:12px;color:#6b7f75;margin-bottom:16px">Versión '+DM_CONSENT_VERSION+'</div>'+
+      DM_INFO_INVESTIGACION.map(function(x){
+        return '<div style="margin-bottom:14px">'+
+          '<div style="font-size:13px;font-weight:600;color:#1a4a3a;margin-bottom:3px">'+x[0]+'</div>'+
+          '<div style="font-size:13.5px;line-height:1.5;color:#3a4f45">'+x[1]+'</div></div>';
+      }).join('')+
+      '<button onclick="var e=document.getElementById(\'dm-info-inv\');if(e)e.remove()" '+
+        'style="width:100%;padding:13px;border:none;border-radius:12px;background:#1a4a3a;'+
+        'color:#F4EFE5;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px">Entendido</button>'+
+    '</div>';
+  document.body.appendChild(d);
+}
+window.dmVerDetalleInvestigacion = dmVerDetalleInvestigacion;
+
+// La pregunta de primera entrada. Misma estructura que el registro: UN
+// obligatorio agrupado, y el de investigación aparte y desmarcado.
+function dmConsentimientoPreguntar(){
+  if(document.getElementById('dm-consent-modal')) return;
+  const d = document.createElement('div');
+  d.id = 'dm-consent-modal';
+  d.setAttribute('style',
+    'position:fixed;inset:0;z-index:99999;background:rgba(10,26,20,.86);'+
+    'display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto');
+  d.innerHTML =
+    '<div style="background:#F4EFE5;border-radius:18px;max-width:440px;width:100%;'+
+      'padding:24px 22px;box-shadow:0 18px 50px rgba(0,0,0,.4);max-height:92vh;overflow:auto">'+
+      '<div style="font-size:19px;font-weight:600;color:#1a4a3a;margin-bottom:6px">Antes de empezar</div>'+
+      '<div style="font-size:14px;color:#4a5f55;line-height:1.5;margin-bottom:18px">'+
+        'Tu profesional creó tu cuenta. Falta tu conformidad, que se pide una sola vez.</div>'+
+
+      '<label style="display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-size:14px;'+
+        'line-height:1.5;color:#25382f;cursor:pointer">'+
+        '<input type="checkbox" id="dmc-1" style="accent-color:#1a4a3a;margin-top:3px;flex-shrink:0;width:17px;height:17px">'+
+        '<span>Acepto los <strong>términos de uso</strong> y la <strong>política de privacidad</strong>: '+
+        'guardar mis datos de salud, que mi profesional los vea y que reciba un aviso si una escala '+
+        'da un resultado de riesgo.</span></label>'+
+
+      '<div style="height:1px;background:rgba(26,74,58,.16);margin:14px 0"></div>'+
+
+      '<label style="display:flex;gap:10px;align-items:flex-start;margin:0 0 6px;font-size:14px;'+
+        'line-height:1.5;color:#25382f;cursor:pointer">'+
+        '<input type="checkbox" id="dmc-4" style="accent-color:#1a4a3a;margin-top:3px;flex-shrink:0;width:17px;height:17px">'+
+        '<span>Acepto que mis datos <strong>anonimizados</strong> se usen en investigación científica '+
+        'sobre sueño. <em style="color:#5b7268">Es opcional: si no lo marcás, usás la app exactamente igual.</em></span></label>'+
+      '<div onclick="dmVerDetalleInvestigacion()" style="font-size:13px;color:#1a4a3a;'+
+        'text-decoration:underline;cursor:pointer;margin:0 0 16px 27px">Ver de qué se trata</div>'+
+
+      '<div id="dmc-err" style="display:none;font-size:13px;color:#b91c1c;margin:2px 0 12px"></div>'+
+      '<button id="dmc-ok" style="width:100%;padding:14px;border:none;border-radius:12px;'+
+        'background:#1a4a3a;color:#F4EFE5;font-size:15px;font-weight:600;cursor:pointer">Continuar</button>'+
+    '</div>';
+  document.body.appendChild(d);
+
+  document.getElementById('dmc-ok').onclick = async function(){
+    const g = id => document.getElementById(id);
+    if(!g('dmc-1').checked){
+      const e = g('dmc-err');
+      e.textContent = 'Para usar Dormetria hay que aceptar los términos y la política de privacidad.';
+      e.style.display = 'block';
+      return;
+    }
+    this.disabled = true; this.textContent = 'Guardando…';
+    const research = g('dmc-4').checked;
+    try{
+      localStorage.setItem('dm_consent_v1', JSON.stringify({
+        v:2, date:new Date().toISOString(), storage:true, doctorAccess:true,
+        research:research, alerts:true }));
+    }catch(_){}
+    await dmGuardarConsentimiento({ research: research }, 'primera-entrada');
+    d.remove();
+    toast('✓ Listo');
+  };
+}
+window.dmConsentimientoPreguntar = dmConsentimientoPreguntar;
 
 function isStandalonePWA(){
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
@@ -1645,11 +1835,17 @@ async function dmEnableNotifications(btn){
       p = await Notification.requestPermission();
     }
     if(p==='granted'){
+      // Se prende ACÁ, antes de sincronizar. Con hora por defecto: quien no
+      // elija ninguna igual recibe.
+      try{
+        const _pr = getReminderPrefs();
+        saveReminderPref(true, _pr.time || '09:00');
+      }catch(_){}
       toast('✓ Notificaciones activadas');
       try{ new Notification('Dormetria', {body:'Listo. Te vamos a recordar completar tu diario.', icon:'icon-192.png'}); }catch(_){}
       try{ await dmSyncPushTags(); }catch(_){}
       try{ updateInstallUI(); }catch(_){}
-      if(btn) btn.textContent='✓ Activadas — elegir horario';
+      if(btn) btn.textContent='✓ Activadas — cambiar horario';
       if(typeof showReminderSettings==='function') setTimeout(()=>showReminderSettings('diary'),600);
     } else {
       dmMostrarComoHabilitarNotif();
@@ -3664,12 +3860,16 @@ async function doRegister(){
         err.classList.add('show');
         return;
       }
-      const rc1=document.getElementById('reg-c1'),rc2=document.getElementById('reg-c2'),rc4=document.getElementById('reg-c4');
-      if(!rc1||!rc1.checked||!rc2.checked||!rc4.checked){
-        err.textContent='Aceptá los términos obligatorios para continuar.';err.classList.add('show');return;
+      // Un solo casillero obligatorio (términos + privacidad), como en
+      // cualquier app. Lo que NO se puede agrupar acá adentro es el de
+      // investigación: agruparlo lo volvería no voluntario, y un consentimiento
+      // no voluntario no es válido ni para la ley de datos ni para un comité.
+      const rc1=document.getElementById('reg-c1');
+      if(!rc1||!rc1.checked){
+        err.textContent='Para crear la cuenta hay que aceptar los términos y la política de privacidad.';err.classList.add('show');return;
       }
       const rc3=document.getElementById('reg-c3');
-      localStorage.setItem('dm_consent_v1',JSON.stringify({v:1,date:new Date().toISOString(),storage:true,doctorAccess:true,research:rc3?rc3.checked:false,alerts:true}));
+      localStorage.setItem('dm_consent_v1',JSON.stringify({v:2,date:new Date().toISOString(),storage:true,doctorAccess:true,research:rc3?rc3.checked:false,alerts:true}));
       // Paso 1: crear usuario en Supabase Auth
       const {data: authData, error: authErr} = await supa.auth.signUp({
         email,
@@ -3705,10 +3905,18 @@ async function doRegister(){
             try{ await db.patch('patients?id=eq.'+encodeURIComponent(_previo.id), _faltantes); Object.assign(_previo,_faltantes); }catch(_){}
           }
           S.user=_previo;
+          // Se registró por su cuenta sobre una ficha que el profesional ya
+          // había creado. Acá SÍ vio los casilleros: hay que guardarlos.
+          try{ await dmGuardarConsentimiento({research: rc3?rc3.checked:false}, 'registro'); }catch(_){}
           throw {__adoptado:true};
         }
         const d=await db.post('patients', patientData);
         S.user = Array.isArray(d) ? d[0] : d;
+        // El consentimiento va en una escritura aparte, no en el insert:
+        // si las columnas todavía no existen en la base, patchFlexible las
+        // descarta y el alta igual se completa. Al revés, un insert con una
+        // columna desconocida se rechaza entero y la persona no puede entrar.
+        try{ await dmGuardarConsentimiento({research: rc3?rc3.checked:false}, 'registro'); }catch(_){}
       } catch(profErr){
         if(profErr && profErr.__adoptado){ /* ya quedo resuelto arriba */ }
         else{
@@ -8522,6 +8730,10 @@ async function showHome(){
   // Anotar si a esta persona le pueden llegar recordatorios. No bloquea nada:
   // corre por su cuenta y si falla, falla en silencio.
   try{ dmRegistrarEstadoPush(); }catch(_){}
+  // Y que el consentimiento quede en la base, no sólo en este navegador.
+  // A quien nunca lo dio (los dados de alta por el profesional) se le
+  // pregunta acá, en su primera entrada.
+  try{ dmConsentimientoSincronizar(); }catch(_){}
   // La noche de ayer: se consulta y se pinta apenas entra, sin esperar al
   // resto de la pantalla. Es lo primero que la persona vino a ver.
   (async function(){
@@ -18435,7 +18647,12 @@ function toggleResearchConsent(el){
       db.q('patients?email=eq.'+encodeURIComponent(S.user.email), {
         method:'PATCH',
         prefer:'return=minimal',
-        body:{research_consent: el.checked, research_consent_date: new Date().toISOString()}
+        body:{research_consent: el.checked,
+              research_consent_date:   el.checked ? new Date().toISOString() : null,
+              // La revocación se ANOTA, no se borra. Un comité pregunta cómo
+              // se revoca y cómo se demuestra que se respetó.
+              research_withdrawn_date: el.checked ? null : new Date().toISOString(),
+              consent_version: DM_CONSENT_VERSION, consent_date: new Date().toISOString()}
       }).catch(()=>{});
     }
     toast(el.checked ? '✓ Consentimiento de investigación activado' : 'Consentimiento de investigación desactivado');
@@ -22873,14 +23090,35 @@ function saveReminderPref(enabled, time){
   const prefs = JSON.parse(localStorage.getItem('dm_reminder_prefs')||'{}');
   if(enabled !== undefined) prefs.enabled = enabled;
   if(time) prefs.time = time;
-  localStorage.setItem('dm_reminder_prefs', JSON.stringify(prefs));
+  try{ localStorage.setItem('dm_reminder_prefs', JSON.stringify(prefs)); }catch(_){}
   // Que el cambio de horario viaje a OneSignal: si no, el paciente elige las
   // 21 h y le sigue llegando a las 8.
   try{ if(window._dmOneSignal) dmSyncPushTags(); }catch(_){}
+  // Y que sobreviva al navegador.
+  try{
+    if(S && S.user && S.user.email && S.role !== 'doctor'){
+      S.user.recordatorio_on   = !!prefs.enabled;
+      S.user.recordatorio_hora = prefs.time || '09:00';
+      db.patchFlexible('patients?email=eq.'+encodeURIComponent(S.user.email),
+        { recordatorio_on: !!prefs.enabled, recordatorio_hora: prefs.time || '09:00' });
+    }
+  }catch(_){}
 }
 
 function getReminderPrefs(){
-  return JSON.parse(localStorage.getItem('dm_reminder_prefs')||'{"enabled":false,"time":"08:00"}');
+  try{
+    const local = localStorage.getItem('dm_reminder_prefs');
+    if(local) return JSON.parse(local);
+  }catch(_){}
+  // Sin nada en el navegador: se usa lo último que quedó guardado en la
+  // ficha, que sobrevive a cambiar de teléfono o limpiar los datos.
+  try{
+    if(S && S.user && S.user.recordatorio_on != null){
+      return { enabled: !!S.user.recordatorio_on,
+               time: S.user.recordatorio_hora || '09:00' };
+    }
+  }catch(_){}
+  return { enabled:false, time:'09:00' };
 }
 
 function scheduleLocalReminder(){
