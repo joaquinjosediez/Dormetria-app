@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=hoy79-mod180">
+<link rel="stylesheet" href="css/styles.css?v=hoy79-mod182">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -474,7 +474,6 @@
       </div>
       <button class="btn btn-g" onclick="doRegister()" id="reg-btn">Crear cuenta</button>
       <div class="toggle-link" style="margin-top:12px">¿Ya tenés cuenta? <span onclick="showLogin()">Ingresar</span></div>
-      <div class="toggle-link">¿Ya tenés cuenta? <span onclick="showLogin()">Ingresar</span></div>
     </div>
   </div></div>
 </div>
@@ -1321,7 +1320,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod180"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod182"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1340,7 +1339,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='hoy79-mod180';
+const APP_VERSION='hoy79-mod182';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5329,7 +5328,7 @@ function copyAIResult(){
 // Mismo selector de mes que en la vista del paciente, sobre las noches de la
 // persona que el profesional esta mirando.
 function dmDrPerActivo(tipo, valor){
-  const p=window._drPeriodo||{tipo:'dias',valor:30};
+  const p=window._drPeriodo||{tipo:'dias',valor:0};   // 0 = todo el historial
   return p.tipo===tipo && String(p.valor)===String(valor);
 }
 function dmSelectorMesDrHtml(entries){
@@ -11046,11 +11045,13 @@ async function showDiaryTab_(tab){
       const cutoff7 = new Date(); cutoff7.setDate(cutoff7.getDate()-7);
       const entries30 = subjEntries.filter(e=>new Date(e.diary_date)>=cutoff30);
       const entries7 = subjEntries.filter(e=>new Date(e.diary_date)>=cutoff7);
-      // Por defecto se muestran los ultimos 30 dias. Si no hay al menos 3
-      // noches en ese lapso se cae al historial completo, que es preferible a
-      // una pantalla vacia.
-      const scoreEntries = entries30.length>=3 ? entries30 : subjEntries;
-      window._dmPeriodoInicial = entries30.length>=3 ? 30 : 0;
+      // Por defecto se muestra TODO el historial. Antes arrancaba en 30 dias
+      // y eso escondia mas de lo que mostraba: quien registra hace meses veia
+      // un recorte sin darse cuenta de que habia mas atras, y los promedios de
+      // la pantalla no eran los de su historia sino los del ultimo mes.
+      // Los botones 7 d / 30 d siguen ahi para achicar cuando hace falta.
+      const scoreEntries = subjEntries;
+      window._dmPeriodoInicial = 0;   // 0 = todo el historial
       // ══════════════════════════════════════════════════════════════
       // GRAFICOS · marcado nuevo, el del prototipo.
       // Se conservan todos los id (score-panel-wrap, diary-pillar-bars,
@@ -11062,8 +11063,8 @@ async function showDiaryTab_(tab){
         ''+
         '<div class="dm-periodos">'+
           '<button id="score-period-7"  onclick="switchScorePeriod(7)"  class="dm-per'+(entries7.length>=3?'':' dm-per-off')+'">7 d</button>'+
-          '<button id="score-period-30" onclick="switchScorePeriod(30)" class="dm-per dm-per-on">30 d</button>'+
-          '<button id="score-period-all" onclick="switchScorePeriod(0)" class="dm-per">Todo</button>'+
+          '<button id="score-period-30" onclick="switchScorePeriod(30)" class="dm-per">30 d</button>'+
+          '<button id="score-period-all" onclick="switchScorePeriod(0)" class="dm-per dm-per-on">Todo</button>'+
           dmSelectorMesHtml(null, scoreEntries)+
         '</div>'+
         '<div id="score-panel-wrap">'+renderSleepScorePanel(scoreEntries,(function(){try{const _d=S.user&&S.user.dob?new Date(S.user.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})())+'</div>'
@@ -15819,11 +15820,13 @@ async function showDrPTab_(tab){
       // interpretar la pantalla, porque cada bloque hablaba de otro periodo.
       // Ahora se filtra ACA, una sola vez, y todo lo de abajo hereda el recorte.
       window._drTodasLasNoches = subjTodas;
-      const _per = window._drPeriodo || {tipo:'dias', valor:30};
+      const _per = window._drPeriodo || {tipo:'dias', valor:0};   // todo
       let subj = subjTodas;
       if(_per.tipo==='mes'){
         const _m = subjTodas.filter(e=>String(e.diary_date||'').slice(0,7)===_per.valor);
-        if(_m.length>=3) subj=_m; else window._drPeriodo={tipo:'dias',valor:30};
+        // Si el mes elegido tiene menos de 3 noches se vuelve al historial
+        // completo, no a 30 dias: es mas util ver todo que ver otro recorte.
+        if(_m.length>=3) subj=_m; else window._drPeriodo={tipo:'dias',valor:0};
       } else if(_per.tipo==='dias' && _per.valor>0){
         const _c=new Date(); _c.setDate(_c.getDate()-_per.valor);
         const _d = subjTodas.filter(e=>new Date(e.diary_date)>=_c);
