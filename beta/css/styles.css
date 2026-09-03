@@ -99,7 +99,10 @@
 .dm-card.dm-light{ background:#fff; border-color:rgba(0,0,0,0.06); color:var(--label); }
 .dm-card > .dm-card-title{
   display:flex;align-items:center;gap:8px;margin-bottom:10px;
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7EC8A4;
+  /* 11px con letter-spacing alto y mayúsculas quedaba duro de leer en pantalla
+     de consultorio. 11.5px y un verde algo más claro mejoran el contraste sin
+     cambiar la jerarquía visual. */
+  font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.055em;color:#8FD4B0;
 }
 .dm-card.dm-light > .dm-card-title{ color:var(--label-2); }
 .dm-hero{ border-radius:var(--rxl); overflow:hidden; margin-bottom:16px; }
@@ -157,6 +160,13 @@
    CSS multi-column, no grid: con grid, una cantidad IMPAR de tarjetas deja
    la última sola con un hueco vacío al lado (exactamente lo que pasaba con
    3 alertas). Con column-count el contenido se reparte solo. */
+/* Resumen (modo especialista): dos columnas solo cuando hay ancho. En móvil o
+   panel angosto se apila, si no las tarjetas quedan ilegibles. */
+.dm-resumen-cols{ grid-template-columns:1fr !important; }
+@media (min-width:900px){
+  body.dr-desktop .dm-resumen-cols{ grid-template-columns:1fr 1fr !important; }
+}
+
 .dm-grid2{ display:block; }
 .dm-grid2 > *{ margin-bottom:8px; }
 @media (min-width:900px){
@@ -459,6 +469,11 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
      bloque ENTERO en una celda. */
   body.dr-desktop #screen-doctor-patient #drp-content{
     max-width:1100px;margin:0 auto;width:100%;
+    /* El primer bloque de cada pestaña arrancaba pegado a la barra de tabs
+       —el toggle en Resumen, las tarjetas en Perfil, los recuadros del
+       Diario—. Se le da el mismo aire que hay ENTRE tarjetas (16px), para
+       que el borde superior respire igual que el resto de la grilla. */
+    padding-top:16px;
   }
   /* ── TODOS los tabs: dos columnas compactas, bloques enteros ── */
   body.dr-desktop #screen-doctor-patient #drp-content{
@@ -518,6 +533,56 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   }
   body.dr-desktop #drp-content[data-tab="summary"] .sc-card{
     margin-bottom:8px !important;
+  }
+  /* Resumen es display:block, pero la regla del grid de arriba
+     (#drp-content .dm-card{margin-bottom:0}) le saca la separación y las
+     tarjetas quedaban pegadas una contra otra. Se restituye el aire y se
+     iguala el padding/tipografía de Perfil para que las dos pestañas se
+     vean como la misma familia. */
+  body.dr-desktop #drp-content[data-tab="summary"] .dm-card{
+    margin-bottom:14px !important;
+    padding:14px 16px;
+  }
+  body.dr-desktop #drp-content[data-tab="summary"] .dm-card-title{
+    margin-bottom:9px;
+  }
+  /* Las dos columnas del modo especialista: cada columna maneja su propio
+     apilado, así que la última tarjeta de cada una no arrastra margen. */
+  body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-cols > div > .dm-card:last-child{
+    margin-bottom:0 !important;
+  }
+  /* Debajo de 1100px las dos columnas se apilan: a esa altura quedaban
+     tarjetas de ~300px con texto clínico partido en muchas líneas. */
+  @media (max-width:1100px){
+    body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-cols,
+    body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-head{
+      grid-template-columns:1fr !important;
+    }
+  }
+  /* Fila de cabecera (Etiquetas + Datos): el margen inferior de la tarjeta
+     lo aporta el gap del grid, si no queda doble espacio. */
+  body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-head{
+    margin-bottom:14px;
+  }
+  body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-head > .dm-card{
+    margin-bottom:0 !important;
+    height:100%;
+  }
+
+  /* ── Perfil: más densidad y aire mejor repartido ──
+     Las tarjetas tenían padding generoso y filas etiqueta/valor de 6px,
+     lo que dejaba la columna 1 muy corta y la 3 muy larga. Se compacta el
+     interior sin tocar la estructura, que es la que fija el JS. */
+  body.dr-desktop #drp-content[data-tab="profile"]{
+    gap:10px 12px !important;
+  }
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-card{
+    padding:12px 14px;
+  }
+  /* Filas etiqueta/valor: menos alto de línea, separador más sutil. */
+  body.dr-desktop #drp-content[data-tab="profile"] .dm-card > div[style*="justify-content:space-between"]{
+    padding-top:5px !important;
+    padding-bottom:5px !important;
   }
   /* Perfil: 3 columnas con posición explícita por tarjeta (col:1/2/3 vía
      inline style desde JS), en vez de CSS multi-column. El usuario pidió una
@@ -758,6 +823,28 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 }
 #screen-doctor-home .form-input::placeholder,
 #screen-profile .form-input::placeholder{ color: rgba(244,239,229,0.38) !important; }
+
+/* ══ CONTRASTE EN LA FICHA DEL PACIENTE (Resumen y Perfil) ═══════════
+   Los rótulos y textos secundarios se escribieron inline con opacidades
+   de 0.5 a 0.78 sobre #1d3a2b. Sobre papel blanco esas opacidades se ven
+   bien, pero sobre el verde oscuro de la app el texto queda gris apagado
+   y no se lee (rótulos "Edad / IMC", "Medicación", la base de la
+   orientación, la nota de las etiquetas). Se sube cada escalón sin
+   aplanar la jerarquía: lo secundario sigue siendo secundario, pero
+   legible. Se hace por selector de atributo porque los estilos son
+   inline y no hay clase a la que apuntar. */
+/* El contraste del texto secundario ya NO se corrige acá. Se intentó
+   con selectores [style*="rgba(...)"] y resultó frágil: el código
+   escribe las opacidades en dos formas (".5" y "0.5") y bastaba una
+   variante no contemplada para que la regla no aplicara. Ahora los
+   valores están subidos directamente en el origen (HTML y js/), que
+   es determinista y se puede verificar leyendo el código. */
+
+/* Títulos de sección de Mi perfil ("TUS DATOS", "RESEÑA PROFESIONAL"):
+   0.68 sobre verde con mayúsculas chicas y letter-spacing todavía se
+   perdía. */
+#screen-doctor-home .sec-title,
+#screen-profile .sec-title{ color: rgba(255,255,255,0.82) !important; }
 
 /* ══ CHIPS DE MEDICACION ═════════════════════════════════════════════
    Estaban escritos con var(--label) y var(--bg-secondary) en el style
@@ -1600,8 +1687,8 @@ input, select, textarea{ color: inherit; }
 #screen-profile .divider { background: rgba(255,255,255,0.07) !important; }
 
 /* ── DOCTOR PATIENT VIEW (dark green screen) — mismo tratamiento que screen-profile ── */
-#screen-doctor-patient .sec-title { color: rgba(255,255,255,0.45) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
-#screen-doctor-patient .info-label { color: rgba(255,255,255,0.5) !important; }
+#screen-doctor-patient .sec-title { color: rgba(255,255,255,0.78) !important; border-bottom-color: rgba(255,255,255,0.08) !important; }
+#screen-doctor-patient .info-label { color: rgba(255,255,255,0.78) !important; }
 #screen-doctor-patient .info-val   { color: rgba(255,255,255,0.9) !important; }
 #screen-doctor-patient .info-row   { border-bottom-color: rgba(255,255,255,0.07) !important; }
 #screen-doctor-patient .tag { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.85) !important; }
@@ -1699,8 +1786,8 @@ input, select, textarea{ color: inherit; }
 /* ── AUDITORÍA DE CONTRASTE — ambos perfiles sobre verde ── */
 /* Vista del profesional sobre el paciente: faltaban los catch-all de label */
 #screen-doctor-patient [style*="color:var(--label)"]   { color: rgba(255,255,255,0.9) !important; }
-#screen-doctor-patient [style*="color:var(--label-2)"] { color: rgba(255,255,255,0.6) !important; }
-#screen-doctor-patient [style*="color:var(--label-3)"] { color: rgba(255,255,255,0.4) !important; }
+#screen-doctor-patient [style*="color:var(--label-2)"] { color: rgba(255,255,255,0.82) !important; }
+#screen-doctor-patient [style*="color:var(--label-3)"] { color: rgba(255,255,255,0.72) !important; }
 /* var(--ink*) inline queda invisible sobre verde en AMBOS perfiles → claro */
 #screen-doctor-patient [style*="color:var(--ink)"],
 #screen-profile        [style*="color:var(--ink)"]   { color: rgba(255,255,255,0.85) !important; }
@@ -2570,7 +2657,7 @@ input, select, textarea{ color: inherit; }
 { color: rgba(255,255,255,0.55) !important; }
 
 /* sec-title en doctor-patient */
-#screen-doctor-patient .sec-title { color: rgba(255,255,255,0.5) !important; }
+#screen-doctor-patient .sec-title { color: rgba(255,255,255,0.78) !important; }
 #screen-doctor-patient .suggest-label [style*="color:var(--label)"],
 #screen-doctor-home .suggest-label [style*="color:var(--label)"]
 { color: var(--label) !important; }
@@ -4072,8 +4159,18 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 }
 
 /* Los pilares, igual: la tarjeta oscura sobre hoja blanca no se lee */
-#dr-pillar-cards .dm-pilar-sub,
-body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]{ color:#5c6b63 !important; }
+#dr-pillar-cards .dm-pilar-sub{ color:#5c6b63 !important; }
+
+/* OJO — acá estaba la causa del "texto gris que no se distingue del fondo".
+   A la regla de arriba, pensada para tarjetas sobre HOJA BLANCA, se le había
+   sumado el selector:
+       body.dr-desktop #drp-content [style*="color:rgba(244,239,229"]
+   que agarra TODO el texto cream del panel del profesional —un panel
+   OSCURO— y lo forzaba a #5c6b63 con !important, sin distinguir opacidad.
+   Resultado: todos los rótulos y textos secundarios quedaban del mismo gris
+   verdoso apagado, y cualquier ajuste de opacidad en el origen no tenía
+   ningún efecto porque esta regla lo pisaba. Se elimina: la jerarquía la
+   dan ahora las opacidades del propio marcado. */
 
 
 /* mod158 · Aclaración de qué perfil se está creando */

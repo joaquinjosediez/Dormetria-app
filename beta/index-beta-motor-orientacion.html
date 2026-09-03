@@ -23,7 +23,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
 <!-- BETA: el CSS también va con cache-busting por timestamp, si no Safari sigue
      sirviendo la hoja vieja y los ajustes de tipografía no se ven. -->
-<link rel="stylesheet" href="css/styles.css?v=mod183">
+<script>document.write('<link rel="stylesheet" href="css/styles.css?v=dev' + Date.now() + '">');</script>
+<noscript><link rel="stylesheet" href="css/styles.css"></noscript>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1322,10 +1323,22 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod183"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod183"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod183"></script>
-<script src="js/dormetria-render-resumen.js?v=mod183"></script>
+<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod182"></script>
+<!-- BETA: cache-busting por timestamp. Cada recarga trae la última versión del
+     motor sin necesidad de vaciar caché. En producción se reemplaza por ?v=modNNN. -->
+<script>
+(function(){
+  var _v = '?v=dev' + Date.now();
+  var _files = [
+    'js/dormetria-motor-orientacion.js',
+    'js/dormetria-summary-nuevo.js',
+    'js/dormetria-render-resumen.js'
+  ];
+  for (var i=0; i<_files.length; i++){
+    document.write('<scr' + 'ipt src="' + _files[i] + _v + '"><\/scr' + 'ipt>');
+  }
+})();
+</script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1344,7 +1357,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod183';
+const APP_VERSION='hoy79-mod182';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
