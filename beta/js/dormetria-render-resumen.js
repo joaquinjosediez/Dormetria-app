@@ -125,13 +125,34 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
       '</div>'
     : '';
 
-  const tarjetaConducta = dmCardResumen('🩺', 'Conducta sugerida',
-    dmKv('Primera línea', escHtml(c.primeraLinea || '—'), true) +
-    dmKv('Fármaco', '<span style="color:#C8A96E">' + escHtml(c.farmaco || '—') + '</span>') +
-    maticesHtml +
-    '<div style="font-size:12px;color:rgba(244,239,229,.76);line-height:1.55;margin-top:10px">' + escHtml(c.base || '') + '</div>' +
-    '<button type="button" style="width:100%;margin-top:12px;padding:11px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.12);color:#7EC8A4;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">' +
-      escHtml((c.ctaTexto || 'Iniciar programa').replace('▶ ', '')) + '</button>');
+  // Cuando no hay base (pocos datos) o el sueño está dentro de rango, el motor
+  // devuelve procede:false. En ese caso NO se muestra ni primera línea ni
+  // fármaco ni el botón de iniciar: se dice por qué y qué haría falta.
+  let tarjetaConducta;
+  if (c.procede === false) {
+    const faltanHtml = (c.faltan || []).length
+      ? '<div style="background:rgba(200,169,110,0.10);border:0.5px solid rgba(200,169,110,0.28);border-radius:11px;padding:11px 13px;margin-top:11px">' +
+          '<div style="font-size:11px;font-weight:700;color:#C8A96E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:7px">Qué falta</div>' +
+          (c.faltan || []).map(function (f) {
+            return '<div style="font-size:12.5px;color:rgba(244,239,229,.88);line-height:1.55;margin-bottom:5px">• ' + escHtml(f) + '</div>';
+          }).join('') +
+        '</div>'
+      : '';
+    tarjetaConducta = dmCardResumen('🩺', 'Conducta sugerida',
+      '<div style="font-size:15px;font-weight:600;color:#F4EFE5;line-height:1.35;margin-bottom:7px">' +
+        escHtml(c.titulo || 'Sin conducta sugerida') + '</div>' +
+      '<div style="font-size:13px;color:rgba(244,239,229,.86);line-height:1.6">' +
+        escHtml(c.base || '') + '</div>' +
+      faltanHtml);
+  } else {
+    tarjetaConducta = dmCardResumen('🩺', 'Conducta sugerida',
+      dmKv('Primera línea', escHtml(c.primeraLinea || '—'), true) +
+      dmKv('Fármaco', '<span style="color:#C8A96E">' + escHtml(c.farmaco || '—') + '</span>') +
+      maticesHtml +
+      '<div style="font-size:12px;color:rgba(244,239,229,.76);line-height:1.55;margin-top:10px">' + escHtml(c.base || '') + '</div>' +
+      '<button type="button" style="width:100%;margin-top:12px;padding:11px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.12);color:#7EC8A4;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">' +
+        escHtml((c.ctaTexto || 'Iniciar programa').replace('▶ ', '')) + '</button>');
+  }
 
   // ── Banderas de seguridad (especialista) ───────────────────────────
   let tarjetaBanderas = '';

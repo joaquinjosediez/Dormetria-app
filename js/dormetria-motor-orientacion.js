@@ -43,11 +43,14 @@ function dmMotorOrientacion(recs, diaryEntries, doctorData) {
   const diarySlice = (diaryEntries || []).slice(0, 14);  // últimas 14 noches
   const diaryHasData = diarySlice.length >= 3;
 
-  // ─── 3. ORIENTACIÓN: qué tipo de cuadro ───
+  // ─── 3. Se decide ANTES de la conducta: sin base no se sugiere nada ───
+  result.datosInsuficientes = (!diaryHasData && !isiScore);
+
+  // ─── 4. ORIENTACIÓN: qué tipo de cuadro ───
   result.orientacion = dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore);
 
-  // ─── 4. CONDUCTA SUGERIDA (siempre) ───
-  result.conducta = dmCalcularConducta(result.orientacion, lastScales, diarySlice);
+  // ─── 5. CONDUCTA SUGERIDA (solo si hay con qué sostenerla) ───
+  result.conducta = dmCalcularConducta(result.orientacion, lastScales, diarySlice, result.datosInsuficientes);
 
   // ─── 5. BANDERAS DE SEGURIDAD (siempre) ───
   result.banderas = dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diarySlice);
@@ -72,11 +75,6 @@ function dmMotorOrientacion(recs, diaryEntries, doctorData) {
   // ─── 8. MÉTRICAS CRUDAS (el render las lee de motorResult.metricas) ───
   result.metricas = dmMetricasDiario(diarySlice);
   result.nochesRegistradas = diarySlice.length;
-
-  // ─── 9. Validar si datos insuficientes (DESPUÉS de todo) ───
-  if (!diaryHasData && !isiScore) {
-    result.datosInsuficientes = true;
-  }
 
   return result;
 }
@@ -216,14 +214,75 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
 /**
  * Calcula la conducta sugerida
  */
-function dmCalcularConducta(orientacion, lastScales, diarySlice) {
+function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficientes) {
+  const texto = (orientacion && orientacion.texto) || '';
+  const sinBase  = datosInsuficientes || /sin datos/i.test(texto);
+  const normal   = /dentro de límites normales/i.test(texto);
+
+  // ── Sin base: NO se sugiere conducta ──────────────────────────────────
+  // Antes se devolvía TCC-I siempre, así que un paciente con una sola noche
+  // cargada y ninguna escala recibía igual una recomendación de tratamiento.
+  // Una sugerencia sin datos que la sostengan es peor que no dar ninguna.
+  if (sinBase) {
+    return {
+      procede: false,
+      motivo: 'sin_datos',
+      titulo: 'Todavía no hay base para sugerir una conducta',
+      base: 'Con lo cargado hasta ahora no se puede sostener ninguna indicación. ' +
+            'Estos son los datos que la habilitarían.',
+      faltan: dmQueFaltaParaOrientar(lastScales, diarySlice)
+    };
+  }
+
+  // ── Sueño dentro de rango: tampoco corresponde tratar insomnio ────────
+  if (normal) {
+    return {
+      procede: false,
+      motivo: 'sin_indicacion',
+      titulo: 'Sin indicación de tratamiento para insomnio',
+      base: 'Las métricas del diario están dentro de rango. La TCC-I trata el ' +
+            'insomnio: no corresponde indicarla si no hay un patrón que lo sostenga. ' +
+            'Si la persona igual refiere malestar con su sueño, conviene revisar el ' +
+            'motivo de consulta antes que iniciar un tratamiento.',
+      faltan: []
+    };
+  }
+
+  // ── Hay un patrón de insomnio: primera línea TCC-I ────────────────────
   return {
+    procede: true,
     primeraLinea: 'TCC-I (terapia cognitivo-conductual para el insomnio)',
     farmaco: 'Solo como puente, ≤ 4 semanas',
     base: 'Guías AASM / consenso. La sugerencia es de apoyo — la indicación la hacés vos.',
     matices: dmCalcularMatices(lastScales, diarySlice),
     ctaTexto: 'Iniciar TCC-I acompañada'
   };
+}
+
+/**
+ * Enumera, en concreto, qué hace falta para poder orientar.
+ * Sirve para que el profesional sepa qué pedir en vez de leer "sin datos".
+ */
+function dmQueFaltaParaOrientar(lastScales, diarySlice) {
+  const faltan = [];
+  const noches = (diarySlice || []).length;
+
+  if (noches < 3) {
+    faltan.push(noches === 0
+      ? 'Diario de sueño: no hay ninguna noche cargada (hacen falta al menos 3, idealmente 14).'
+      : 'Diario de sueño: ' + noches + (noches === 1 ? ' noche cargada' : ' noches cargadas') +
+        '. Hacen falta al menos 3, idealmente 14.');
+  }
+  if (!(lastScales && lastScales.isi)) {
+    faltan.push('ISI (Índice de Gravedad del Insomnio): no está cargado.');
+  }
+  if (!(lastScales && lastScales.stopbang)) {
+    faltan.push('STOP-BANG: sin él no se puede descartar riesgo de apnea antes de sostener hipnóticos.');
+  }
+  if (!(lastScales && lastScales.ess)) {
+    faltan.push('Epworth (ESS): queda sin evaluar la somnolencia diurna.');
+  }
+  return faltan;
 }
 
 /**

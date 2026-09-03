@@ -15839,6 +15839,12 @@ async function showDrPTab_(tab){
             try{ _isArch=JSON.parse(localStorage.getItem('dm_dr_archived_pts_'+(S.user&&S.user.email||'').toLowerCase())||'[]').map(x=>String(x).toLowerCase()).includes(u.email.toLowerCase()); }catch(_){}
             return '<button onclick="drArchiveFromProfile(\''+u.email+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,0.18);border-radius:9px;background:transparent;color:'+(_isArch?'#7EC8A4':'rgba(244,239,229,0.55)')+';font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">'+(_isArch?'↻ Reactivar paciente':'🗂 Archivar paciente')+'</button>';
           })())+
+          // "Hábitos declarados" se movió a esta columna. Antes las tres
+          // tarjetas de hábitos estaban juntas en la tercera y la primera
+          // quedaba con una sola tarjeta corta y medio panel vacío debajo.
+          // Es una tarjeta compacta (cuatro campos en 2x2), así que equilibra
+          // sin alargar de más esta columna.
+          card('🌿','Hábitos declarados', habitsBody)+
         '</div>'+
         '<div class="dm-profcol">'+
           // Solo se muestra mientras haya algo que hacer. Una vez que el
@@ -15849,7 +15855,6 @@ async function showDrPTab_(tab){
           card('🌙','Cronotipo', cronotipoBody)+
         '</div>'+
         '<div class="dm-profcol">'+
-          card('🌿','Hábitos declarados', habitsBody)+
           card('📔','Hábitos registrados · 14 días', habitsDiaryBody)+
           card('⭐','Sus propias variables', varsBody)+
         '</div>';
