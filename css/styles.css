@@ -853,18 +853,14 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
    BLANCA el paciente veia botones vacios: texto blanco sobre blanco, sin
    poder cargar la medicacion. Con colores propios el problema no puede
    volver, porque ya no dependen de una variable que otra regla reescribe. */
-.dm-med-chip{
-  padding:7px 12px; border-radius:20px; font-size:13px; cursor:pointer;
-  font-family:var(--font);
-  border:1.5px solid #cfd8d3;
-  background:#ffffff;
-  color:#10231c !important;
-}
-.dm-med-chip.on{
-  border-color:#1a4a3a;
-  background:#1a4a3a;
-  color:#ffffff !important;
-}
+/* OJO — este bloque quedó OBSOLETO y hacía daño. Se escribió cuando el
+   selector de medicación vivía en una tarjeta BLANCA, y por eso forzaba
+   texto casi negro con !important. Hoy el selector está sobre fondo oscuro
+   (#med-inline-picker usa background:rgba(255,255,255,.05)), y más abajo
+   hay un bloque .dm-med-chip nuevo, con colores para fondo oscuro. Pero el
+   !important de acá le ganaba: los chips sin seleccionar quedaban #10231c
+   —negro— sobre fondo oscuro, y los seleccionados blanco sobre verde claro.
+   Las dos combinaciones ilegibles. Se elimina y manda el bloque nuevo. */
 /* ══ LISTAS DESPLEGABLES ═════════════════════════════════════════════
    El <select> lo pintamos nosotros, pero la lista que se abre la dibuja el
    sistema operativo con SU fondo —blanco en Windows— heredando el color de
@@ -878,11 +874,9 @@ select optgroup{
   background:#ffffff !important;
 }
 
-.dm-med-cat{
-  font-size:10px; font-weight:700; text-transform:uppercase;
-  letter-spacing:0.05em; margin:8px 0 4px;
-  color:#6b7c74 !important;
-}
+/* Mismo caso que .dm-med-chip: este rótulo de categoría venía de la versión
+   sobre tarjeta blanca y su color gris con !important pisaba al bloque nuevo,
+   dejando los nombres de categoría casi invisibles sobre el fondo oscuro. */
 
 /* ══ RED DE SEGURIDAD DE CONTRASTE ═══════════════════════════════════
    Dos clases de error visual se repetían por toda la app y las dos vienen
@@ -4098,17 +4092,29 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 /* Los botones para elegir un medicamento */
 .dm-med-cat{
   font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-  color:rgba(244,239,229,.5); margin:12px 0 7px;
+  color:rgba(244,239,229,.78); margin:12px 0 7px;
 }
 .dm-med-chip{
   padding:9px 14px; border-radius:20px; font-size:14px; cursor:pointer;
   font-family:var(--font); font-weight:500;
-  border:1.5px solid rgba(126,200,164,.28);
-  background:rgba(255,255,255,.06);
+  border:1.5px solid rgba(126,200,164,.34);
+  background:rgba(255,255,255,.07);
   color:#F4EFE5;
+  transition:background .12s ease, border-color .12s ease;
 }
+/* Sin estado intermedio, el chip no acusaba recibo del mouse y costaba saber
+   cuál se iba a marcar en una grilla de treinta y pico de nombres. */
+.dm-med-chip:hover{
+  background:rgba(126,200,164,.16);
+  border-color:rgba(126,200,164,.55);
+}
+/* Seleccionado: verde pleno con texto oscuro. Es el mismo par de colores que
+   usa el resto de la app para "activo", así que se lee como tal sin leyenda. */
 .dm-med-chip.on{
   background:#7EC8A4; border-color:#7EC8A4; color:#0F2820; font-weight:700;
+}
+.dm-med-chip.on:hover{
+  background:#8FD4B0; border-color:#8FD4B0;
 }
 
 /* El buscador y el campo de dosis, dentro del selector */

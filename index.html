@@ -22248,6 +22248,12 @@ const COMMON_MEDS = [
   {name:'Fluoxetina', cat:'ISRS'},
   {name:'Venlafaxina', cat:'IRSN'},
   {name:'Duloxetina', cat:'IRSN'},
+  // Gabapentinoides: se usan fuera de indicación para dormir, y en el síndrome
+  // de piernas inquietas —que esta app etiqueta como SPI— son de primera línea.
+  // Importan también porque potencian la sedación de benzodiacepinas y opioides,
+  // así que conviene que queden registrados y no cargados como "otros".
+  {name:'Pregabalina', cat:'Gabapentinoide'},
+  {name:'Gabapentina', cat:'Gabapentinoide'},
   {name:'Litio', cat:'Estabilizador'},
   {name:'Valproato', cat:'Estabilizador'},
   {name:'Lamotrigina', cat:'Estabilizador'},
