@@ -558,6 +558,9 @@
 
     <!-- Dos cifras: constancia y regularidad. Nada mas. -->
     <div id="home-cifras" style="display:none;gap:11px"></div>
+    <!-- Mensaje de aliento. Compara la última semana con la anterior: a los
+         14 días la señal llega demasiado tarde para sostener la conducta. -->
+    <div id="home-aliento" style="display:none;margin-top:11px"></div>
 
     <!-- Invitación a calificar al profesional. Aparece a las dos semanas
          de vincularse y, si la posterga, vuelve al mes. -->
@@ -1325,7 +1328,7 @@
 <script src="js/dormetria-sleep-metrics.js?v=mod183-844fc1f5"></script>
 <script src="js/dormetria-motor-orientacion.js?v=mod183-a1f70979"></script>
 <script src="js/dormetria-summary-nuevo.js?v=mod183-f2923a01"></script>
-<script src="js/dormetria-render-resumen.js?v=mod183-8848e814"></script>
+<script src="js/dormetria-render-resumen.js?v=mod183-56f086de"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -8725,7 +8728,70 @@ async function dmCifrasInicio(){
     el.style.display='flex';
     el.innerHTML = caja(racha, racha===1?'día seguido registrando':'días seguidos registrando', '#7EC8A4')
       + caja(variacion!=null?('±'+variacion+'<span style="font-size:13px">min</span>'):'—','variación de tu horario','#C8A96E');
+
+    try{ dmMensajeAliento(rows, racha); }catch(e){ console.warn('[aliento]', e); }
   }catch(_){}
+}
+
+// ── MENSAJE DE ALIENTO ────────────────────────────────────────────────
+// Compara la ÚLTIMA SEMANA con la anterior, y de ahí en más semana contra
+// semana. A los 14 días el refuerzo llega tarde: para sostener el registro
+// la señal tiene que aparecer dentro del mismo ciclo en que la persona hizo
+// el esfuerzo.
+//
+// Nunca dice que la persona está peor. Cuando el puntaje no mejora, se
+// reconoce lo único que la persona controla del todo —haber registrado—,
+// que además es lo que hace falta para que el tratamiento se pueda ajustar.
+// El silencio no era neutro: si el mensaje apareciera solo al mejorar, su
+// ausencia se volvería legible como "vengo mal".
+function dmMensajeAliento(rows, racha){
+  const el=document.getElementById('home-aliento');
+  if(!el) return;
+  el.style.display='none';
+  if(typeof calcSleepScore!=='function' || !rows || rows.length<6) return;
+
+  // rows viene ordenado por fecha descendente
+  const semana1 = rows.slice(0,7);     // última semana
+  const semana2 = rows.slice(7,14);    // la anterior
+  if(semana1.length<3) return;
+
+  const edad = (S.user && S.user.dob)
+    ? Math.floor((Date.now()-new Date(S.user.dob))/31557600000) : null;
+
+  const s1 = calcSleepScore(semana1, edad);
+  const s2 = semana2.length>=3 ? calcSleepScore(semana2, edad) : null;
+  if(!s1) return;
+
+  const caja=(texto,color,fondo,borde)=>
+    '<div style="background:'+fondo+';border:1px solid '+borde+';border-radius:14px;padding:13px 15px">'+
+      '<div style="font-size:13.5px;color:'+color+';line-height:1.55;font-weight:600">'+texto+'</div>'+
+    '</div>';
+
+  // Sin semana previa todavía no hay con qué comparar: se refuerza el arranque.
+  if(!s2){
+    if(racha>=3){
+      el.innerHTML=caja('Vas '+racha+' días seguidos registrando. La semana que viene vas a poder ver cómo evoluciona tu sueño.',
+        '#7EC8A4','rgba(126,200,164,0.10)','rgba(126,200,164,0.30)');
+      el.style.display='block';
+    }
+    return;
+  }
+
+  const delta = s1.total - s2.total;
+
+  if(delta >= 4){
+    el.innerHTML=caja('Bien por todo lo que estás haciendo. Comparado con la semana pasada tu sueño viene mejorando — estos cambios se notan con el tiempo.',
+      '#7EC8A4','rgba(126,200,164,0.12)','rgba(126,200,164,0.32)');
+    el.style.display='block';
+    return;
+  }
+
+  // Estable o peor: se reconoce la constancia, nunca el retroceso.
+  if(racha>=4){
+    el.innerHTML=caja('Seguís registrando cada noche, y eso es lo que permite ajustar el tratamiento. El sueño mejora de a poco y con altibajos.',
+      'rgba(244,239,229,.9)','rgba(255,255,255,0.05)','rgba(255,255,255,0.10)');
+    el.style.display='block';
+  }
 }
 
 // ── Invitación a calificar al profesional ─────────────────────────────

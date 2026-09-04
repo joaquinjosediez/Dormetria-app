@@ -211,6 +211,60 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
       '</div>');
   }
 
+  // ── Cuestionarios (solo especialista) ──────────────────────────────
+  // El Resumen es una vista de decisión: si entran las ocho escalas con su
+  // histórico se vuelve una planilla. Acá va solo lo que cambia la conducta
+  // —las que están fuera de rango— y un acceso al detalle completo.
+  let tarjetaEscalas = '';
+  if (modo === 'esp') {
+    let filas = '';
+    try {
+      const recs = (typeof S !== 'undefined' && S.viewRecs) ? S.viewRecs : [];
+      const ultimas = {};
+      recs.forEach(function (r) {
+        if (!ultimas[r.scale_id] || new Date(r.created_at) > new Date(ultimas[r.scale_id].created_at)) {
+          ultimas[r.scale_id] = r;
+        }
+      });
+      const lista = Object.values(ultimas).map(function (r) {
+        const sc = (typeof SCALES !== 'undefined') ? SCALES.find(function (x) { return x.id === r.scale_id; }) : null;
+        if (!sc) return null;
+        const i = sc.interp(r.score) || {};
+        const alterada = i.bg === '#fee2e2' || i.bg === '#fef2f2';
+        return { nombre: sc.name, score: r.score, max: r.max_score || sc.max || null,
+                 etiqueta: i.l || '', alterada: alterada, fecha: r.created_at };
+      }).filter(Boolean)
+        .sort(function (a, b) { return (b.alterada ? 1 : 0) - (a.alterada ? 1 : 0); });
+
+      // Se muestran las alteradas; las normales se resumen en una línea, para
+      // que se vea que fueron evaluadas sin ocupar la tarjeta entera.
+      const alteradas = lista.filter(function (x) { return x.alterada; });
+      const normales  = lista.filter(function (x) { return !x.alterada; });
+
+      filas = alteradas.map(function (x) {
+        const f = x.fecha ? new Date(x.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '';
+        return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-top:0.5px solid rgba(126,200,164,0.08)">' +
+          '<span style="font-size:13px;color:#F4EFE5;font-weight:600">' + escHtml(x.nombre) + '</span>' +
+          '<span style="font-size:12.5px;color:#E88;font-weight:700;white-space:nowrap">' +
+            x.score + (x.max ? '/' + x.max : '') + ' · ' + escHtml(x.etiqueta) +
+            (f ? ' <span style="color:rgba(244,239,229,.72);font-weight:500">' + f + '</span>' : '') +
+          '</span></div>';
+      }).join('');
+
+      if (normales.length) {
+        filas += '<div style="font-size:12px;color:rgba(244,239,229,.78);line-height:1.5;padding-top:9px;' +
+          (alteradas.length ? 'border-top:0.5px solid rgba(126,200,164,0.08);margin-top:4px' : '') + '">' +
+          'Dentro de rango: ' + normales.map(function (x) { return escHtml(x.nombre); }).join(', ') + '.</div>';
+      }
+      if (!lista.length) {
+        filas = '<div style="font-size:12.5px;color:rgba(244,239,229,.78);font-style:italic">Sin cuestionarios cargados.</div>';
+      }
+    } catch (err) {
+      filas = '<div style="font-size:12.5px;color:rgba(244,239,229,.78);font-style:italic">No se pudieron leer los cuestionarios.</div>';
+    }
+    tarjetaEscalas = dmCardResumen('📊', 'Cuestionarios', filas);
+  }
+
   // ── Material para el paciente ──────────────────────────────────────
   // Eran tres botones de ancho completo apilados: mucha superficie para tres
   // etiquetas cortas. Como chips que envuelven ocupan una fila o dos y se
@@ -270,6 +324,6 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   return toggle + cabecera +
     '<div class="dm-resumen-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">' +
       '<div>' + tarjetaOrientacion + tarjetaConducta + '</div>' +
-      '<div>' + tarjetaBanderas + tarjetaEvolucion + tarjetaMaterial + '</div>' +
+      '<div>' + tarjetaBanderas + tarjetaEscalas + tarjetaEvolucion + tarjetaMaterial + '</div>' +
     '</div>';
 }
