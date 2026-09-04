@@ -11845,8 +11845,8 @@ async function showDiaryTab_(tab){
 }
 
 // DIARY HELPERS (global state)
-let caffItems=[];let alcItems=[];let awakeningList=[];let hasAwakenings=null;let hasNap=null;
-function resetDiaryHelpers(){caffItems=[];alcItems=[];awakeningList=[];hasAwakenings=null;hasNap=null;_medModalMeds=[];_periodActive=false;}
+let caffItems=[];let alcItems=[];let awakeningList=[];let napList=[];let hasAwakenings=null;let hasNap=null;
+function resetDiaryHelpers(){caffItems=[];alcItems=[];awakeningList=[];napList=[];hasAwakenings=null;hasNap=null;_medModalMeds=[];_periodActive=false;}
 // Redibuja el bloque de variables personalizadas al abrir un registro nuevo.
 function dmPintarVarsSlot(){
   try{
@@ -11887,6 +11887,33 @@ function dmAplicarSinAlcohol(){
 window.dmNoTomoAlcohol=dmNoTomoAlcohol; window.dmVuelvoATomar=dmVuelvoATomar;
 window.dmAplicarSinAlcohol=dmAplicarSinAlcohol;
 
+// ── SIESTAS (varias) ──────────────────────────────────────────────────
+// Mismo patrón que los despertares. La lista se serializa a "Siestas: [...]",
+// el formato que ya usaba el diario infantil y que parseChildNaps entiende,
+// así que las métricas de sueño en 24 h las leen sin cambios.
+function addNap(){ napList.push({start:'',duration:''}); renderNaps(); }
+function removeNap(i){ napList.splice(i,1); renderNaps(); }
+function updateNap(i,field,val){ if(napList[i]) napList[i][field]=val; }
+function renderNaps(){
+  const cont=document.getElementById('nap-list'); if(!cont) return;
+  if(!napList.length){
+    cont.innerHTML='<div class="dm-ayuda" style="padding:2px 0 10px">Todavía no agregaste ninguna.</div>';
+    return;
+  }
+  cont.innerHTML=napList.map((n,i)=>`
+    <div class="dm-despertar">
+      <div class="dm-despertar-campos">
+        <div class="dm-despertar-campo">
+          <label class="dm-despertar-lbl">Empezó</label>
+          <input class="dm-inp" type="time" value="${n.start}" oninput="updateNap(${i},'start',this.value)"></div>
+        <div class="dm-despertar-campo">
+          <label class="dm-despertar-lbl">Cuánto duró</label>
+          <input class="dm-inp" type="number" min="1" max="480" value="${n.duration}" placeholder="minutos" oninput="updateNap(${i},'duration',this.value)"></div>
+      </div>
+      <button class="dm-despertar-x" onclick="removeNap(${i})" aria-label="Quitar">✕</button>
+    </div>`).join('');
+}
+
 function addAwakening(){awakeningList.push({time:'',duration:''});renderAwakenings();}
 function removeAwakening(i){awakeningList.splice(i,1);renderAwakenings();}
 function updateAwakening(i,field,val){if(awakeningList[i])awakeningList[i][field]=val;}
@@ -11910,7 +11937,7 @@ function renderAwakenings(){
 }
 function setNoAwakenings(){hasAwakenings=false;document.getElementById('awk-no-btn').classList.add('sel');document.getElementById('awk-yes-btn').classList.remove('sel');document.getElementById('awakening-section').style.display='none';awakeningList=[];}
 function setYesAwakenings(){hasAwakenings=true;document.getElementById('awk-yes-btn').classList.add('sel');document.getElementById('awk-no-btn').classList.remove('sel');document.getElementById('awakening-section').style.display='block';if(!awakeningList.length)addAwakening();renderAwakenings();}
-function setNap(val){hasNap=val;document.getElementById('nap-yes-btn').classList.toggle('sel',val);document.getElementById('nap-no-btn').classList.toggle('sel',!val);document.getElementById('nap-fields').style.display=val?'block':'none';}
+function setNap(val){hasNap=val;document.getElementById('nap-yes-btn').classList.toggle('sel',val);document.getElementById('nap-no-btn').classList.toggle('sel',!val);document.getElementById('nap-fields').style.display=val?'block':'none';if(val){ if(!napList.length) napList.push({start:'',duration:''}); renderNaps(); } }
 function updateCaffPreview(){const sel=document.getElementById('d-caff-type');const qty=parseInt(document.getElementById('d-caff-qty').value)||1;if(!sel||!sel.value||sel.value.startsWith('ninguno')){document.getElementById('caff-preview').textContent='';return;}const mg=parseFloat(sel.value.split('|')[1]||0)*qty;const name=sel.options[sel.selectedIndex].text.split('(')[0].trim();document.getElementById('caff-preview').textContent='→ '+qty+' × '+name+' = '+Math.round(mg)+' mg';}
 function addCaffItem(){const sel=document.getElementById('d-caff-type');const qty=parseInt(document.getElementById('d-caff-qty').value)||1;if(!sel||!sel.value||sel.value.startsWith('ninguno'))return;const mg=Math.round(parseFloat(sel.value.split('|')[1]||0)*qty);const label=sel.options[sel.selectedIndex].text;caffItems.push({label:qty+'× '+label,mg});renderCaffItems();sel.value='ninguno|0';document.getElementById('d-caff-qty').value=1;document.getElementById('caff-preview').textContent='';}
 function removeCaffItem(i){caffItems.splice(i,1);renderCaffItems();}
@@ -12031,13 +12058,34 @@ async function editDiaryEntry(id){
       }catch(_aw){}
       // Siesta (guardada en notes con formato "Siesta: HH:MM (Xmin)")
       try{
-        const nm=(e.notes||'').match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
-        if(nm){
-          setNap(true);
-          const ns=document.getElementById('d-nap-start'); if(ns) ns.value=nm[1];
-          const nd=document.getElementById('d-nap-dur'); if(nd && nm[2]) nd.value=nm[2];
-          cleanNotes = cleanNotes.replace(/\s*\|?\s*Siestas?: [^|]*/,'').trim();
-        }
+          napList = [];
+          // Formato actual: "Siestas: [{start,end},...]" — una o varias.
+          const mj=(e.notes||'').match(/Siestas: (\[.*?\])(?: \||$)/);
+          if(mj){
+            try{
+              JSON.parse(mj[1]).forEach(function(n){
+                if(!n || !n.start) return;
+                let dur='';
+                if(n.end){
+                  const [ah,am]=n.start.split(':').map(Number);
+                  const [bh,bm]=n.end.split(':').map(Number);
+                  let d=(bh*60+bm)-(ah*60+am); if(d<0) d+=1440;
+                  dur=String(d);
+                }
+                napList.push({start:n.start, duration:dur});
+              });
+            }catch(_){}
+          }
+          // Formato viejo, de una sola siesta: "Siesta: HH:MM (Xmin)".
+          if(!napList.length){
+            const nm=(e.notes||'').match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
+            if(nm) napList.push({start:nm[1], duration:nm[2]||''});
+          }
+          if(napList.length){
+            setNap(true);
+            if(typeof renderNaps==='function') renderNaps();
+            cleanNotes = cleanNotes.replace(/\s*\|?\s*Siestas?: [^|]*/,'').trim();
+          }
       }catch(_np){}
       // Ejercicio
       const exM=document.getElementById('d-exercise-mins');
@@ -12283,11 +12331,13 @@ function showDiaryNew(){
         <button id="nap-no-btn" class="dm-op" onclick="setNap(false)">No</button>
         <button id="nap-yes-btn" class="dm-op" onclick="setNap(true)">Sí</button>
       </div>
+      <!-- Varias siestas: antes había un solo par hora/duración, así que quien
+           dormía dos veces (siesta corta de mediodía + otra de tarde, algo
+           habitual en turnos rotativos y en adultos mayores) solo podía cargar
+           una. Se reusa el mismo patrón de filas de los despertares. -->
       <div id="nap-fields" style="display:none;margin-top:12px">
-        <label class="dm-lbl">Empezó</label>
-        <input class="dm-inp" type="time" id="d-nap-start">
-        <label class="dm-lbl" style="margin-top:12px">Cuánto duró (min)</label>
-        <input class="dm-inp" type="number" id="d-nap-dur" min="0" placeholder="45">
+        <div id="nap-list"></div>
+        <button type="button" class="dm-agregar" onclick="addNap()">+ Agregar siesta</button>
       </div>
     </div>
   </div>
@@ -12591,21 +12641,31 @@ async function saveDiary(){
   const screenMins=_numOCero(document.getElementById('d-screen'));
   const notes=document.getElementById('d-notes')?.value||'';
   const meds=getMedications();
-  const napStart=document.getElementById('d-nap-start')?.value||null;
-  const napDur=parseInt(document.getElementById('d-nap-dur')?.value)||null;
-  // Estos dos valores se leían y NUNCA se escribían: la siesta que cargaba el
-  // paciente se perdía entera. Se guardan con el mismo formato que el diario
-  // infantil ("Siestas: [{start,end}]") para que parseChildNaps los lea.
-  let napTxt=null;
-  if(napStart){
-    let fin=napStart;
-    if(napDur){
-      const [sh,sm]=napStart.split(':').map(Number);
-      const t=(sh*60+sm+napDur)%1440;
-      fin=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
-    }
-    napTxt='Siestas: '+JSON.stringify([{start:napStart, end:fin}]);
-  }
+  // Siestas: ahora pueden ser varias. Se guardan con el mismo formato que el
+  // diario infantil ("Siestas: [{start,end}]") para que parseChildNaps las lea.
+  //
+  // Las columnas nap_start y nap_minutes se siguen escribiendo, porque de ahí
+  // leen el actograma y las métricas de sueño en 24 h. Se les da el sentido
+  // que conserva la información: nap_start = comienzo de la PRIMERA siesta,
+  // nap_minutes = TOTAL dormido en siestas. Así nada de lo que ya existe se
+  // rompe, y el detalle de cada siesta queda en el JSON.
+  const napsValidas=(napList||[])
+    .filter(n=>n && n.start)
+    .map(n=>({start:n.start, duration:parseInt(n.duration)||0}))
+    .sort((a,b)=>a.start.localeCompare(b.start));
+
+  const finDe=(inicio,dur)=>{
+    if(!dur) return inicio;
+    const [sh,sm]=inicio.split(':').map(Number);
+    const t=(sh*60+sm+dur)%1440;
+    return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+  };
+
+  const napStart = napsValidas.length ? napsValidas[0].start : null;
+  const napDur   = napsValidas.length ? napsValidas.reduce((a,n)=>a+n.duration,0) : null;
+  const napTxt   = napsValidas.length
+    ? 'Siestas: '+JSON.stringify(napsValidas.map(n=>({start:n.start, end:finDe(n.start,n.duration)})))
+    : null;
   // Awakenings (calculados ANTES de sleepMins para descontar WASO de TST)
   const awakList=awakeningList||[];
   // hasAwakenings===false significa "no me desperte": eso es 0 minutos de WASO,
