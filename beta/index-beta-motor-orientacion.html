@@ -9581,10 +9581,10 @@ function updateNavTabs(){
   const hasKids = kids.length>0 || forWhom==='child' || forWhom==='both';
   if(!hasKids){
     if(hijosBtn) hijosBtn.style.display='none';
-    // Si antes había hijos y se borraron, "Gráficos" pudo haber quedado
+    // Si antes había hijos y se borraron, "Diario" pudo haber quedado
     // replegado por falta de lugar. Al no haber pestañas de hijos vuelve.
-    const g=document.getElementById('bnav-graficos');
-    if(g) g.style.display='';
+    const d=document.getElementById('bnav-diario');
+    if(d) d.style.display='';
     return;
   }
 
@@ -9594,12 +9594,16 @@ function updateNavTabs(){
   // también oculta, no quedaba ningún camino visible para cargar datos del hijo.
   //
   // Se resuelve el apiñamiento en vez de esconder la función: si la barra
-  // pasaría de seis botones, "Gráficos" sale de la barra —sigue accesible desde
-  // "Más" y desde dentro de Diario— por ser la sección menos usada a diario.
-  // "Inicio" y "Diario" no se tocan nunca.
-  const graficosBtn = document.getElementById('bnav-graficos');
+  // pasaría de seis botones, se repliega "Diario".
+  //
+  // Por qué Diario y no Gráficos: la carga de la noche se hace desde Inicio,
+  // así que a Diario se entra solo para editar un registro viejo —algo
+  // ocasional—. Gráficos, en cambio, es donde el paciente ve su evolución, que
+  // es la razón por la que sostiene el registro. Replegar Gráficos escondía
+  // justamente la recompensa de usar la app.
+  const diarioBtn = document.getElementById('bnav-diario');
   const totalBotones = 4 /* Inicio, Diario, Yo, Más */ + (kids.length<=2 ? kids.length : 1);
-  if(graficosBtn) graficosBtn.style.display = (totalBotones > 5) ? 'none' : '';
+  if(diarioBtn) diarioBtn.style.display = (totalBotones > 5) ? 'none' : '';
   if(kids.length>=1 && kids.length<=2 && nav && masBtn){
     if(hijosBtn) hijosBtn.style.display='none';
     kids.forEach(c=>{
