@@ -19863,18 +19863,29 @@ function getEEDSISubScaleName(ageGroup){
 }
 
 
-function renderChildScales(){
+async function renderChildScales(){
   const el = document.getElementById('ch-scales-list');
-  if(!el) return;
+  if(!el||!S.user) return;
   if(!S.ageGroup||S.ageGroup==='adult'){if(S.user&&S.user.dob)setPatientMode(S.user.dob);if(!S.ageGroup||S.ageGroup==='adult')S.ageGroup='school';}
   const pediatricScales = SCALES.filter(s => s.ageGroups && (s.ageGroups.includes(S.ageGroup)||s.ageGroups.includes('all')));
   if(!pediatricScales.length){
     el.innerHTML='<div style="padding:24px;text-align:center;color:var(--label-2)">No hay escalas disponibles para este grupo de edad.</div>';
     return;
   }
+  // Evaluaciones del hijo activo: NUNCA leer de S.records (esa caché es del
+  // perfil adulto y no se limpia al cambiar de hijo — con 2+ hijos, la
+  // pantalla de escalas de cualquiera terminaba mostrando los resultados del
+  // primer perfil cargado en la sesión). Se pide siempre fresco, igual que
+  // renderChildDiaryList.
+  const childEmail = S.user.email;
+  el.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
+  let childRecs=[];
+  try{ childRecs = await db.get('evaluations?patient_email=eq.'+encodeURIComponent(childEmail)+'&order=created_at.asc&select=*')||[]; }
+  catch(e){ childRecs=[]; }
+  if(!S.user || S.user.email!==childEmail) return; // se cambió de perfil mientras cargaba
   el.innerHTML = '<div class="sec-title" style="margin:4px 0 12px">Evaluaciones para ' + (SLEEP_NORMS[S.ageGroup]?.label||'este grupo de edad') + '</div>' +
     pediatricScales.map(sc => {
-      const scR = (S.records||[]).filter(r=>r.scale_id===sc.id);
+      const scR = childRecs.filter(r=>r.scale_id===sc.id);
       const last = scR[scR.length-1];
       const i = last ? sc.interp(last.score) : null;
       return `<div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;margin-bottom:12px;cursor:pointer" onclick="startScale('${sc.id}')">
