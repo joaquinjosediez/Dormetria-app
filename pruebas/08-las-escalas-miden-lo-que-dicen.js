@@ -77,7 +77,13 @@ r.ok(/escala anterior/.test(ctx.dmMarcaEscalaVieja(viejo)), 'la etiqueta lo dice
 r.ok(ctx.dmMarcaEscalaVieja(nuevo) === '', 'y no aparece donde no corresponde');
 
 const html = C.leerHtml();
+// El guard vivía en el bloque de banderas, que se rehizo como pestaña
+// Cuestionarios. Sigue siendo la misma condición, en su nueva casa: si
+// alguna de las dos tomas es de la versión anterior, la lista avisa en vez
+// de dejar que se lean como comparables.
 r.ok(/dmEscalaVieja\(_prev\) \|\| dmEscalaVieja\(r\)/.test(html),
      'la comparación antes/ahora se corta si cruza dos versiones');
+r.ok(/No comparable entre sí/.test(html),
+     'y lo dice en pantalla, no solo por dentro');
 
 r.cerrar('Las escalas declaran lo que miden y lo viejo no se mezcla con lo nuevo.');

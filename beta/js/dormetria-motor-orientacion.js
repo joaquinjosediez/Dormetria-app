@@ -196,7 +196,9 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
   const conciliacion  = metrics.latenciaMedia > 30;
   const mantenimiento = metrics.vigiliaIntrasueño > 30;
   const nNoches = diarySlice.length;
-  const cifras = `Latencia ~${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ~${Math.round(metrics.vigiliaIntrasueño)} min, eficiencia ${Math.round(metrics.eficiencia)}%. ${nNoches} noches registradas.`;
+  // "N noches registradas" se leía como el total del paciente y no coincidía
+  // con la pestaña Diario. Se aclara que es la ventana de análisis.
+  const cifras = `Latencia ~${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ~${Math.round(metrics.vigiliaIntrasueño)} min, eficiencia ${Math.round(metrics.eficiencia)}%. Promedios de las últimas ${nNoches} noches.`;
 
   if (conciliacion && mantenimiento) {
     orientacion.texto = 'Compatible con patrón de insomnio mixto';

@@ -146,7 +146,12 @@ r.ok(/2,0 vs 4,0/.test(sal || ''), 'con las dos medias');
 r.ok(/asociación, no causa/.test(sal || ''), 'y aclarando que no es causa');
 const sal2 = corr('dmCalidadFactoresHtml(__parejas)');
 r.ok(!/#b91c1c|#15803d/.test(sal2 || ''), 'sin diferencia real no pinta nada de color');
-r.ok(corr('dmCalidadFactoresHtml(__pocas)') === '', 'con 6 noches no dice nada');
+// El contrato cambió a pedido: con pocas noches ya no devuelve '' —eso dejaba
+// la tarjeta vacía y el médico no sabía si faltaban datos o si algo falló—
+// sino un texto explícito de datos insuficientes, y sin verde ni rojo.
+const _pocasSal = corr('dmCalidadFactoresHtml(__pocas)') || '';
+r.ok(/datos suficientes/.test(_pocasSal), 'con 6 noches avisa que faltan datos');
+r.ok(!/#b91c1c|#15803d/.test(_pocasSal), 'y no pinta ningún efecto');
 
 r.cerrar('Los números dicen lo que los datos sostienen.');
 

@@ -1117,7 +1117,10 @@
     <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
     <button class="tab" onclick="showDrPTab('edumat',this)">📚 Material</button>
   </div>
-  <div class="scroll"><div id="drp-content" style="padding:0 16px"></div></div>
+  <!-- El padding va inline porque inline le gana a la hoja de estilos: la
+     regla padding-top que había en styles.css nunca se aplicaba y el
+     contenido quedaba pegado a la barra de pestañas. -->
+  <div class="scroll"><div id="drp-content" style="padding:14px 16px 0"></div></div>
 </div>
 
   <div class="bottomnav" id="main-nav">
@@ -1328,7 +1331,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=hoy79-mod182"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod186-beta"></script>
 <!-- BETA: cache-busting por timestamp. Cada recarga trae la última versión del
      motor sin necesidad de vaciar caché. En producción se reemplaza por ?v=modNNN. -->
 <script>
@@ -1362,7 +1365,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod185-beta';
+const APP_VERSION='mod186-beta';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2724,11 +2727,15 @@ const SCALES=[
  name:'Hamilton — Depresión (HAM-D 17)',cat:'mental',max:52,
  desc:'Escala clínica de 17 ítems para medir severidad de depresión. Puntaje de corte: leve ≥8, moderada ≥14, severa ≥19, muy severa ≥23. Diseñada para administración clínica.',
  interp:s=>{
-   if(s<=7)  return {l:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
-   if(s<=13) return {l:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
-   if(s<=18) return {l:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
-   if(s<=22) return {l:'Depresión severa',c:'#9a3412',bg:'#fff7ed'};
-   return {l:'Depresión muy severa',c:'#991b1b',bg:'#fee2e2'};
+     // Cortes de Zimmerman M et al., "Severity classification on the Hamilton
+     // Depression Rating Scale", J Affect Disord 2013: 0-7 sin depresión,
+     // 8-16 leve, 17-23 moderada, ≥24 severa. Antes se usaba la banda
+     // convencional (0-7/8-13/14-18/19-22/≥23), que agrega una categoría
+     // "muy severa" sin respaldo empírico publicado.
+     if(s<=7)  return {l:'Sin depresión significativa',c:'#166534',bg:'#f0fdf4'};
+     if(s<=16) return {l:'Depresión leve',c:'#3f6212',bg:'#f7fee7'};
+     if(s<=23) return {l:'Depresión moderada',c:'#854d0e',bg:'#fefce8'};
+     return {l:'Depresión severa',c:'#991b1b',bg:'#fee2e2'};
  },
  qs:[
    {t:'Estado de ánimo deprimido (tristeza, desesperanza, inutilidad)',opts:['Ausente','Estas emociones solo al preguntar','Las expresa espontáneamente','Las comunica no verbalmente','Casi todo el tiempo'],sc:[0,1,2,3,4]},
@@ -6301,16 +6308,30 @@ function computeHabitsImpact(entries){
 // No se recalcula nada: se reusa la misma comparación de Welch que ya alimenta
 // la tabla de factores, con sus mismos mínimos de n y su mismo umbral.
 function dmCalidadFactoresHtml(entries){
+  // Estado vacío explícito. Antes devolvía '' y, como ahora esto vive en su
+  // propia tarjeta, quedaba un recuadro con título y nada adentro: el médico
+  // no sabía si no había datos o si algo había fallado.
+  const _vacio = function(txt){
+    return '<div style="font-size:12.5px;color:#5c6b63;line-height:1.55;font-style:italic">'+txt+'</div>';
+  };
   let R;
-  try{ R = computeHabitsImpact(entries); }catch(_){ return ''; }
-  if(!R || R.error || !R.habitos || !R.habitos.length) return '';
+  try{ R = computeHabitsImpact(entries); }
+  catch(_){ return _vacio('No se pudo calcular el impacto de los hábitos.'); }
+  if(!R || R.error || !R.habitos || !R.habitos.length){
+    return _vacio('Todavía no hay datos suficientes. Para comparar noches con y sin ' +
+      'un hábito hacen falta varias de cada tipo: se calcula solo cuando el paciente ' +
+      'registra cafeína, alcohol, ejercicio o pantallas en parte de las noches.');
+  }
 
   const filas = R.habitos.map(function(hb){
     const e = (hb.efectos||[]).filter(function(x){ return x.id==='qual'; })[0];
     if(!e) return null;
     return { hb:hb, e:e };
   }).filter(Boolean);
-  if(!filas.length) return '';
+  if(!filas.length){
+    return _vacio('El paciente registra estos hábitos, pero todavía no hay suficientes ' +
+      'noches de cada tipo para comparar su efecto sobre la calidad del sueño.');
+  }
 
   // Primero lo que más mueve la aguja; los sin diferencia, al final.
   filas.sort(function(a,b){
@@ -6704,8 +6725,20 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   const m = computeDiaryMetrics(entries);
   if(!m) return '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--label-2)">Necesitás al menos 3 registros con horarios completos para ver las métricas clínicas.</div>';
   const reg = computeSleepRegularity(entries);
-  const sjlStr = m.socialJetLag!=null ? (m.socialJetLag<30?'Mínimo':m.socialJetLag<60?'Leve':m.socialJetLag<90?'Moderado':'Alto')+' ('+m.socialJetLag+' min)' : 'Sin datos';
-  const sjlColor = m.socialJetLag==null?'var(--label-2)':m.socialJetLag<30?'#14532d':m.socialJetLag<60?'#d97706':'#dc2626';
+    // El jet lag social compara el midpoint de los días libres contra el de
+    // los laborables. Con UNA sola noche libre, esa noche define todo el
+    // promedio: un sábado acostándose tarde produce un "jet lag alto" que no
+    // describe ningún patrón. Por eso podía convivir con una regularidad
+    // buena, que se calcula sobre todas las noches y diluye la excepción.
+    // El mínimo (4 laborables, 3 libres) ya se exigía en otro punto del
+    // código; acá faltaba.
+    const _sjlMuestra = (m.nWd >= 4 && m.nWe >= 3);
+    const sjlStr = (m.socialJetLag != null && _sjlMuestra)
+      ? (m.socialJetLag<30?'Mínimo':m.socialJetLag<60?'Leve':m.socialJetLag<90?'Moderado':'Alto')+' ('+m.socialJetLag+' min)'
+      : (m.socialJetLag != null
+          ? 'Muestra insuficiente ('+m.nWd+' laborables, '+m.nWe+' libres)'
+          : 'Sin datos');
+  const sjlColor = (!_sjlMuestra || m.socialJetLag==null)?'var(--label-2)':m.socialJetLag<30?'#14532d':m.socialJetLag<60?'#d97706':'#dc2626';
   const insufColor = m.under7Pct>30?'#dc2626':m.under7Pct>15?'#d97706':'#14532d';
   const debtStr = m.sleepDebt!=null ? (m.sleepDebt>0?'+':'')+Math.round(m.sleepDebt)+' min' : '—';
   const debtColor = m.sleepDebt==null?'var(--label-2)':Math.abs(m.sleepDebt)<60?'#14532d':Math.abs(m.sleepDebt)<120?'#d97706':'#dc2626';
@@ -13542,6 +13575,55 @@ async function pvtFinish(){
 }
 
 // DOCTOR
+// ── AVISO DE PERFIL INCOMPLETO ────────────────────────────────────────
+// Por ahora solo "a quiénes atendés" (population), porque es el único campo
+// cuyo vacío tiene una consecuencia funcional: el directorio filtra por él.
+async function dmAvisarPerfilIncompleto(){
+  try{
+    if(!S.user || S.role!=='doctor') return;
+    if(document.getElementById('dm-aviso-perfil')) return;
+    // Postergable: si eligió "más tarde", no vuelve por una semana.
+    let hasta = 0;
+    try{ hasta = parseInt(localStorage.getItem('dm_aviso_pop_hasta')||'0',10)||0; }catch(_){}
+    if(hasta && Date.now() < hasta) return;
+
+    let dr = S.user;
+    try{
+      const d = await db.get('doctors?email=eq.'+encodeURIComponent(S.user.email)+'&select=population');
+      if(d && d[0]) dr = Object.assign({}, S.user, d[0]);
+    }catch(_){}
+    if(String(dr.population||'').trim()) return;   // ya está completo
+
+    const w=document.createElement('div');
+    w.id='dm-aviso-perfil';
+    w.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:9998;'+
+      'max-width:min(560px,92vw);background:#1d3a2b;border:1px solid rgba(200,169,110,.42);'+
+      'border-radius:14px;padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,.4)';
+    w.innerHTML =
+      '<div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:5px">Falta un dato en tu perfil</div>'+
+      '<div style="font-size:13px;color:rgba(244,239,229,.9);line-height:1.55;margin-bottom:11px">'+
+        'No indicaste <b>a quiénes atendés</b>. Ese dato define en qué búsquedas del '+
+        'directorio aparecés: si atendés niños y no está cargado, no figurás cuando '+
+        'un padre busca desde el perfil de su hijo.</div>'+
+      '<div style="display:flex;gap:9px;flex-wrap:wrap">'+
+        '<button type="button" onclick="dmIrACompletarPerfil()" style="flex:1 1 auto;padding:9px 14px;border:none;border-radius:9px;background:#7EC8A4;color:#0F2820;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Completar ahora</button>'+
+        '<button type="button" onclick="dmPosponerAvisoPerfil()" style="flex:0 0 auto;padding:9px 14px;border:1px solid rgba(244,239,229,.28);border-radius:9px;background:transparent;color:rgba(244,239,229,.86);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Más tarde</button>'+
+      '</div>';
+    document.body.appendChild(w);
+  }catch(e){ console.warn('[aviso perfil]', e); }
+}
+function dmPosponerAvisoPerfil(){
+  try{ localStorage.setItem('dm_aviso_pop_hasta', String(Date.now()+7*24*3600*1000)); }catch(_){}
+  const w=document.getElementById('dm-aviso-perfil'); if(w) w.remove();
+}
+function dmIrACompletarPerfil(){
+  const w=document.getElementById('dm-aviso-perfil'); if(w) w.remove();
+  try{ if(typeof dmMenuPerfiles==='function'){ dmMenuPerfiles(); return; } }catch(_){}
+  try{ showScreen('doctor-home'); }catch(_){}
+}
+window.dmPosponerAvisoPerfil = dmPosponerAvisoPerfil;
+window.dmIrACompletarPerfil  = dmIrACompletarPerfil;
+
 async function showDoctorHome(){const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
   try{ dmBuildDoctorTopbar(); dmTopbarRefrescarAdmin(); dmTopbarSaludo(); }catch(_){}
   try{ dmCabeceraMovil(); }catch(_){}
@@ -13549,6 +13631,11 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
   // Pacientes y esconde la columna izquierda con el listado.
   try{ if(!document.body.classList.contains('dr-metrics-view')) document.body.classList.add('dr-tab-patients'); }catch(_){}
   setTimeout(()=>{ try{ dmSyncTopbarBadge(); dmSyncTopbarMenu(); }catch(_){} }, 1200);
+  // Aviso: perfil incompleto en "a quiénes atendés". Ese campo define en qué
+  // búsquedas del directorio aparece el profesional; sin completarlo, quien
+  // atiende niños no figura en las búsquedas pediátricas y no tiene forma de
+  // enterarse. Se muestra una vez por sesión y se puede posponer una semana.
+  setTimeout(function(){ try{ dmAvisarPerfilIncompleto(); }catch(_){} }, 1500);
   setTimeout(()=>{ try{ dmSyncTopbarMenu(); }catch(_){} }, 2500);
   setTimeout(()=>{ try{ if(!document.body.classList.contains('dr-has-patient')) dmMaybeAutoStartTour('doctor_home'); }catch(_){} }, 900);
   // Merge localStorage profile data into S.user, then refresh from DB
@@ -14055,19 +14142,24 @@ async function renderPatientList(filter){
     }
     try{
       const _sLabel=(sL[dr.specialty]||dr.specialty||'Sin especialidad');
-      const _ro=(l,v)=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.07)"><span style="font-size:13px;color:rgba(255,255,255,.76)">'+l+'</span><span style="font-size:13px;font-weight:600;color:#fff;text-align:right">'+(v||'—')+'</span></div>';
+      const _ro=(l,v)=>'<div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.07)">'+
+        '<div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(126,200,164,.82)">'+l+'</div>'+
+        '<div style="font-size:13.5px;font-weight:600;color:#fff;margin-top:2px;line-height:1.4">'+(v||'—')+'</div></div>';
       cont.innerHTML=`<div style="padding:16px 0">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div class="sec-title" style="margin:0">Datos del perfil profesional</div>
+          <div class="sec-title" style="margin:0;color:rgba(244,239,229,.82) !important">Datos del perfil profesional</div>
           <button onclick="toggleDrProfileEdit(true)" id="dr-edit-toggle" style="background:rgba(126,200,164,0.12);border:1px solid rgba(126,200,164,0.35);color:#7EC8A4;font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
         </div>
         <div id="dr-profile-readonly" style="margin-bottom:16px">
-          <div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:16px 16px 14px;display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
-            <div style="width:52px;height:52px;border-radius:50%;background:#1a4a3a;border:2px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600;color:#F4EFE5;flex-shrink:0">${((dr.name||'?')[0]||'')+((dr.lname||'')[0]||'')}</div>
+          <div style="background:linear-gradient(135deg,rgba(126,200,164,.10),rgba(255,255,255,.04));border:1px solid rgba(126,200,164,.18);border-radius:18px;padding:22px 22px 20px;display:flex;gap:20px;align-items:center;margin-bottom:12px">
+<div style="width:96px;height:96px;border-radius:50%;background:#1a4a3a;border:3px solid #C8A96E;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:32px;font-weight:600;color:#F4EFE5;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.28)">${dr.photo_url ? '<img src="'+dr.photo_url+'" alt="" style="width:100%;height:100%;object-fit:cover">' : (((dr.name||'?')[0]||'?')+((dr.lname||'')[0]||'')).toUpperCase()}</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:16px;font-weight:600;color:#fff">${(dr.gender==='Femenino'?'Dra. ':'Dr. ')+((dr.name||'')+' '+(dr.lname||'')).trim()}</div>
-              <div style="font-size:12.5px;color:#7EC8A4;margin-top:2px">${_sLabel}${dr.mat?' · '+dr.mat:''}</div>
-              <div style="font-size:11.5px;color:rgba(255,255,255,.72);margin-top:2px">${[dr.inst||dr.institution,dr.city,dr.country].filter(Boolean).join(' · ')||'—'}</div>
+              <div style="font-size:23px;font-weight:600;color:#fff;line-height:1.2;letter-spacing:-0.01em">${(dr.gender==='Femenino'?'Dra. ':'Dr. ')+((dr.name||'')+' '+(dr.lname||'')).trim()}</div>
+              <div style="font-size:14px;color:#7EC8A4;margin-top:5px;font-weight:500">${_sLabel}${dr.mat?' · '+dr.mat:''}</div>
+              <div style="font-size:12.5px;color:rgba(244,239,229,.78);margin-top:6px;display:flex;gap:7px;flex-wrap:wrap;align-items:center">${
+                [dr.inst||dr.institution, dr.province, dr.city, dr.country].filter(Boolean)
+                  .map(function(t){ return '<span style="background:rgba(255,255,255,.07);border-radius:99px;padding:3px 10px">'+t+'</span>'; })
+                  .join('') || '<span style="opacity:.7">Sin ubicación cargada</span>'}</div>
             </div>
           </div>
           ${(function(){
@@ -14076,25 +14168,45 @@ async function renderPatientList(filter){
                               _pop.indexOf('child')>=0?'Niños y adolescentes':null]
                              .filter(Boolean).join(' · ');
             const filas =
-              _ro('Consultorio', dr.address) +
-              _ro('Teléfono', [dr.phone_cc, dr.phone].filter(Boolean).join(' ')) +
-              _ro('Modalidad', dr.modality) +
+              _ro('Consultorio', [dr.address, dr.province, dr.city, dr.country]
+                                  .filter(Boolean).join(' · ')) +
+              _ro('Teléfono', (function(){
+                const _cc = dr.phone_cc || '';
+                // Bandera del país según el prefijo, igual que en el selector.
+                const _fl = {'+54':'🇦🇷','+598':'🇺🇾','+595':'🇵🇾','+56':'🇨🇱','+591':'🇧🇴',
+                             '+51':'🇵🇪','+593':'🇪🇨','+57':'🇨🇴','+58':'🇻🇪','+55':'🇧🇷',
+                             '+52':'🇲🇽','+34':'🇪🇸','+1':'🇺🇸'}[_cc] || '';
+                const _num = [_cc, dr.phone].filter(Boolean).join(' ');
+                return _num ? (_fl ? _fl + ' ' + _num : _num) : '';
+              })()) +
+              _ro('Modalidad', ({presencial:'Presencial', online:'Virtual',
+                                 ambas:'Presencial y virtual'})[dr.modality] || dr.modality) +
               _ro('Valor de la consulta', dr.fee) +
               _ro('Formación', dr.training) +
               _ro('Sociedades', dr.associations) +
-              _ro('Atiende', _atiende) +
+              // 'Atiende' sale de dr.population, que hoy NO tiene ningún campo
+              // en el formulario de edición (los checkboxes dr-pop-adult /
+              // dr-pop-child no existen en el HTML), así que nunca se puede
+              // completar. Se muestra solo si tiene valor; si no, se omite
+              // en vez de dejar un '—' permanente que parece un dato faltante.
+              // Ahora SÍ se puede completar desde el formulario, así que se
+              // muestra siempre: vacío es un dato accionable —sin esto no
+              // aparecés en las búsquedas del directorio— y no un hueco.
+              _ro('Atiende', _atiende ||
+                  '<span style="color:#C8A96E;font-weight:500">Sin definir · completalo para aparecer en el directorio</span>') +
               _ro('En el directorio', dr.listed===true||dr.listed==='true' ? 'Sí' :
                                        dr.listed==='pending' ? 'Solicitud enviada' : 'No');
-            return '<div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:13px 15px;margin-bottom:12px">'+
-              '<div class="sec-title" style="margin:0 0 4px">Tus datos <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6">· lo que quedó guardado</span></div>'+
-              filas + '</div>';
+            return '<div style="background:rgba(255,255,255,0.045);border:1px solid rgba(126,200,164,.13);border-radius:16px;padding:15px 17px;margin-bottom:12px">'+
+              '<div class="sec-title" style="margin:0 0 4px;color:rgba(244,239,229,.82) !important">Tus datos <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6">· lo que quedó guardado</span></div>'+
+            '<div class="dm-perfil-datos">' + filas + '</div>' +
+          '</div>';
           })()}
-          <div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:13px 15px">
-            <div class="sec-title" style="margin:0 0 6px">Reseña profesional <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6">· la ve el paciente</span></div>
+          <div style="background:rgba(255,255,255,0.045);border:1px solid rgba(126,200,164,.13);border-radius:16px;padding:15px 17px">
+            <div class="sec-title" style="margin:0 0 6px;color:rgba(244,239,229,.82) !important">Reseña profesional <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6">· la ve el paciente</span></div>
             <div style="font-size:12.5px;color:rgba(255,255,255,.92);line-height:1.55">${dr.bio?dr.bio.replace(/</g,'&lt;'):'<span style="opacity:0.55;font-style:italic">Todavía no cargaste una reseña. Tocá Editar y contá en pocas líneas tu enfoque — es lo primero que ve un paciente que te encuentra en el directorio.</span>'}</div>
           </div>
           <div id="dr-myratings" style="margin-top:12px"></div>
-          <details style="background:rgba(255,255,255,0.05);border-radius:14px;padding:13px 15px;margin-top:12px">
+          <details style="background:rgba(255,255,255,0.045);border:1px solid rgba(126,200,164,.13);border-radius:16px;padding:15px 17px;margin-top:12px">
             <summary style="cursor:pointer;font-size:13.5px;font-weight:600;color:#F4EFE5;list-style:none">
               ⭐ Escalas que usás habitualmente
               <span style="font-weight:400;color:rgba(244,239,229,.72);font-size:12px"> · aparecen destacadas en cada paciente</span></summary>
@@ -14140,6 +14252,8 @@ async function renderPatientList(filter){
           </select></div>
         <div class="form-group"><label class="form-label">Ciudad</label>
           <input class="form-input" id="dr-edit-city" value="${dr.city||''}" placeholder="Buenos Aires"></div>
+        <div class="form-group"><label class="form-label">Provincia / Estado</label>
+          <input class="form-input" id="dr-edit-province" value="${dr.province||''}" placeholder="Ej: Buenos Aires"></div>
         <div class="form-group"><label class="form-label">País 🌍</label>
           <select class="form-select" id="dr-edit-country">
             <option value="">Seleccionar</option>
@@ -14184,9 +14298,31 @@ async function renderPatientList(filter){
           <select class="form-select" id="dr-edit-modality">
             <option value="">Seleccionar</option>
             <option value="presencial"${dr.modality==='presencial'?' selected':''}>Solo presencial</option>
-            <option value="online"${dr.modality==='online'?' selected':''}>Solo por videollamada</option>
-            <option value="ambas"${dr.modality==='ambas'?' selected':''}>Presencial y videollamada</option>
+            <option value="online"${dr.modality==='online'?' selected':''}>Solo virtual</option>
+            <option value="ambas"${dr.modality==='ambas'?' selected':''}>Presencial y virtual</option>
           </select></div>
+
+        <!-- A QUIÉNES ATIENDE — poblacion.
+             El guardado (population) y updateDrPopLabel() ya existían; lo que
+             faltaba era este marcado, así que el campo nunca se podía completar
+             y quedaba en "—". No es cosmético: el directorio filtra por acá
+             cuando un padre busca desde el perfil de un hijo, así que sin esto
+             ningún profesional aparece en las búsquedas pediátricas. -->
+        <div class="form-group"><label class="form-label">¿A quiénes atendés?</label>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <label id="dr-pop-adult-lbl" style="flex:1 1 160px;display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:11px;border:1.5px solid rgba(126,200,164,.22);background:rgba(255,255,255,.06);cursor:pointer">
+              <input type="checkbox" id="dr-pop-adult" onchange="updateDrPopLabel()" style="accent-color:#7EC8A4;margin-top:2px;flex-shrink:0;width:16px;height:16px"${(String(dr.population||'').indexOf('adult')>=0)?' checked':''}>
+              <span><span style="font-size:13.5px;font-weight:600;color:#F4EFE5">Adultos</span>
+              <span style="display:block;font-size:11.5px;color:rgba(244,239,229,.76);margin-top:2px">18 años o más</span></span>
+            </label>
+            <label id="dr-pop-child-lbl" style="flex:1 1 160px;display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:11px;border:1.5px solid rgba(126,200,164,.22);background:rgba(255,255,255,.06);cursor:pointer">
+              <input type="checkbox" id="dr-pop-child" onchange="updateDrPopLabel()" style="accent-color:#7EC8A4;margin-top:2px;flex-shrink:0;width:16px;height:16px"${(String(dr.population||'').indexOf('child')>=0)?' checked':''}>
+              <span><span style="font-size:13.5px;font-weight:600;color:#F4EFE5">Niños y adolescentes</span>
+              <span style="display:block;font-size:11.5px;color:rgba(244,239,229,.76);margin-top:2px">Menores de 18 años</span></span>
+            </label>
+          </div>
+          <div style="font-size:11.5px;color:rgba(255,255,255,.76);margin-top:6px;line-height:1.45">Define en qué búsquedas del directorio aparecés. Podés marcar las dos.</div>
+        </div>
 
         <div class="form-group"><label class="form-label">Valor de la consulta <span style="opacity:.6;font-weight:400">(opcional — si lo dejás vacío no se muestra)</span></label>
           <input class="form-input" id="dr-edit-fee" value="${dr.fee||''}" placeholder="Ej: $45.000 la primera consulta"></div>
@@ -14463,7 +14599,7 @@ async function renderDoctorRatings(containerId, doctorEmail){
     const rated=(rows||[]).filter(function(r){ return r.rating; });
     if(!rated.length){
       el.innerHTML = esPropio
-        ? '<div style="font-size:13.5px;color:rgba(244,239,229,.82);line-height:1.55">Todavía no recibiste calificaciones.<br>Tus pacientes las dejan desde <b style="color:#7EC8A4">Yo → Mi código</b> en su app.</div>'
+        ? '<div style="font-size:13.5px;color:rgba(244,239,229,.82);line-height:1.55">Todavía no recibiste calificaciones.<br>Tus pacientes las dejan desde <b style="color:#7EC8A4">Yo → Mis especialistas</b> en su app.</div>'
         : '<div style="font-size:13.5px;color:rgba(244,239,229,.72);line-height:1.55">Todavía no tiene opiniones publicadas.</div>';
       return;
     }
@@ -15124,6 +15260,16 @@ async function backgroundFillMissingTags(patients){
 }
 
 async function viewPatient(email){
+    // Al abrir OTRA ficha se descartan las cachés de la anterior. Sin esto,
+    // cualquier vista que lea S.viewRecs o S._drDiaryCache antes de hacer su
+    // propio fetch muestra datos de la ficha previa bajo el nombre nuevo.
+    // Ya pasó dos veces: con las escalas de los hijos y con el Resumen.
+    if(S.viewEmail !== email){
+      S.viewRecs = null;
+      S._viewRecsEmail = null;
+      S._drDiaryCache = null;
+      S._dmNochesTotales = null;
+    }
   S.viewEmail=email;showScreen('doctor-patient');
   // Pills de solo lectura en el encabezado — usan SU PROPIO fetch (nunca
   // S.viewRecs) para no heredar por error las etiquetas del paciente anterior.
@@ -16198,7 +16344,9 @@ async function showDrPTab_(tab){
           <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
           <div id="dr-pillar-legend"></div>
           <div id="dr-quality-concord" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
-          <div id="dr-quality-factores" style="margin-top:10px"></div>
+          <!-- "Factores asociados al sueño" se movió a la columna derecha:
+               acá alargaba la izquierda, que ya tiene score y pilares,
+               mientras la derecha llevaba solo el actograma. -->
         </div>
         <div class="dm-card dm-light" id="dr-weekly-prog" style="display:none"></div>
         <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
@@ -16233,6 +16381,10 @@ async function showDrPTab_(tab){
           </div>
         </div>
         <div id="dr-reg-slot"></div>
+        <div class="dm-card dm-light">
+          <div class="dm-card-title">🔍 Factores asociados al sueño</div>
+          <div id="dr-quality-factores"></div>
+        </div>
         </div>
         </div>
         <div id="dr-abajo-slot"></div>`;
@@ -17006,16 +17158,40 @@ async function showDrPTab_(tab){
         const col=alterada?'#E88':'#7EC8A4';
         const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
         const varias=tomas.length>1;
+        // DBAS y PSAS cambiaron de versión: un puntaje viejo y uno nuevo no
+        // son comparables. Si la lista los muestra uno debajo del otro sin
+        // avisar, la lectura de evolución es falsa. La corta acá:
+        // dmEscalaVieja(_prev) || dmEscalaVieja(r) marca cualquiera de las dos.
+        const _prev = varias ? tomas[1] : null;
+        const _cruzaVersiones = !!_prev && (dmEscalaVieja(_prev) || dmEscalaVieja(r));
+        const _avisoVer = _cruzaVersiones
+          ? '<div style="font-size:11px;color:#C8A96E;margin-top:5px;line-height:1.4;font-style:italic">'+
+            'No comparable entre sí: hay tomas con versiones distintas de la escala.</div>'
+          : '';
 
         // Toda la tarjeta abre las respuestas de la última toma. Si hay más de
         // una, la flecha —y solo la flecha— despliega las anteriores. Antes
         // había un botón "Ver respuestas" que estiraba la tarjeta hacia abajo.
+        // El control de tomas anteriores ocupa SIEMPRE el mismo ancho, tenga o no
+        // tomas: antes aparecía solo cuando había varias y corría el puntaje, así
+        // que las tarjetas quedaban desalineadas entre sí. Cuando no hay, se
+        // reserva el espacio vacío.
+        //
+        // Y se ve: era una flecha suelta de 14px en menta sobre verde, casi
+        // invisible. Ahora es una pastilla con el número de tomas, que además
+        // dice cuántas hay sin tener que abrirla.
         const flecha = varias
           ? '<button type="button" onclick="event.stopPropagation();dmTogglearCuest(\'' + id + '\')" '+
-            'aria-label="Ver tomas anteriores" '+
-            'style="appearance:none;border:none;background:none;cursor:pointer;padding:2px 4px;margin-left:8px;'+
-            'color:#7EC8A4;font-size:14px;font-family:inherit"><span id="cq-f-'+id+'" style="display:inline-block">▾</span></button>'
-          : '';
+            'aria-label="Ver las ' + (tomas.length-1) + ' tomas anteriores" '+
+            'title="Ver tomas anteriores" '+
+            'style="appearance:none;cursor:pointer;font-family:inherit;flex:0 0 auto;width:52px;'+
+            'margin-left:10px;display:flex;align-items:center;justify-content:center;gap:3px;'+
+            'padding:5px 0;border:1px solid rgba(126,200,164,.38);border-radius:999px;'+
+            'background:rgba(126,200,164,.14);color:#7EC8A4;font-size:12px;font-weight:700">'+
+            '<span>'+tomas.length+'</span>'+
+            '<span id="cq-f-'+id+'" style="display:inline-block;font-size:11px;transition:transform .15s">▾</span>'+
+            '</button>'
+          : '<span style="flex:0 0 auto;width:52px;margin-left:10px" aria-hidden="true"></span>';
 
         const historia = varias
           ? '<div id="cq-h-'+id+'" style="display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(126,200,164,0.14)">'+
@@ -17025,7 +17201,7 @@ async function showDrPTab_(tab){
                 return '<div onclick="event.stopPropagation();showDrEvalAnswersById(\''+t.id+'\')" '+
                   'style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;cursor:pointer">'+
                   '<span style="font-size:12.5px;color:rgba(244,239,229,.82)">'+td+'</span>'+
-                  '<span style="font-size:12.5px;color:#F4EFE5;font-weight:600">'+t.score+'/'+(t.max_score||(sc&&sc.max)||'—')+' · '+ti.l+'</span></div>';
+                  '<span style="font-size:12.5px;color:#F4EFE5;font-weight:600">'+t.score+'/'+(t.max_score||(sc&&sc.max)||'—')+' · '+ti.l+dmMarcaEscalaVieja(t)+'</span></div>';
               }).join('')+
             '</div>'
           : '';
@@ -17036,7 +17212,8 @@ async function showDrPTab_(tab){
               '<div style="min-width:0">'+
                 '<div style="font-size:14.5px;font-weight:600;color:#F4EFE5;line-height:1.35">'+(sc?sc.name:r.scale_name)+'</div>'+
                 '<div style="font-size:12px;color:rgba(244,239,229,.78);margin-top:3px">'+d+
-                  (varias?' · '+tomas.length+' tomas':'')+'</div>'+
+                  (varias?' · '+tomas.length+' tomas':'')+dmMarcaEscalaVieja(r)+'</div>'+
+                _avisoVer+
               '</div>'+
               '<div style="display:flex;align-items:flex-start">'+
                 '<div style="text-align:right;white-space:nowrap">'+
@@ -18895,15 +19072,15 @@ function renderWeeklyProgressionHtml(allDiary){
                : b.score >= 55 ? 'rgba(126,200,164,.5)'
                : '#C8A96E';
       return '<div title="'+tooltipText.replace(/"/g,'&quot;')+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;cursor:help">'+
-        '<div style="font-size:12.5px;font-weight:700;color:'+(isLast?'#C8A96E':'rgba(244,239,229,.8)')+'">'+b.score+'</div>'+
+        '<div style="font-size:12.5px;font-weight:700;color:'+(isLast?'#8A6A2A':'#3f4b45')+'">'+b.score+'</div>'+
         '<div style="width:100%;max-width:44px;height:'+h+'px;background:'+cB+';border-radius:7px 7px 0 0;'+
           (isLast?'box-shadow:inset 0 0 0 2px #C8A96E;':'')+'"></div>'+
-        '<div style="font-size:11px;color:rgba(244,239,229,.72);white-space:nowrap">'+weekLbl+'</div>'+
+        '<div style="font-size:11px;color:#5c6b63;white-space:nowrap">'+weekLbl+'</div>'+
       '</div>';
     }).join('');
     const bestBlock = blocks.reduce((a,b)=>(!a||b.score>a.score)?b:a, null);
     const worstBlock = blocks.reduce((a,b)=>(!a||b.score<a.score)?b:a, null);
-    return '<div style="font-size:12px;color:rgba(244,239,229,.72);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:12px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
+    return '<div style="font-size:12px;color:#5c6b63;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:12px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
       '<div style="display:flex;align-items:flex-end;gap:8px;height:108px;margin-bottom:8px">'+barsHtml+'</div>'+
       '<div style="font-size:11px;color:#444;line-height:1.5">'+
         ''+   // Mejor y peor semana: se saco. La barra de arriba ya muestra la
@@ -22803,7 +22980,8 @@ function dmMarcaEscalaVieja(r, claro){
   if(!dmEscalaVieja(r)) return '';
   return '<span title="Se cargó con una versión anterior de la escala. El puntaje no es comparable con los actuales." '+
     'style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.03em;'+
-    'background:'+(claro?'rgba(200,169,110,.18)':'rgba(200,169,110,.22)')+';color:#8B6F3D;'+
+    'background:'+(claro?'rgba(200,169,110,.18)':'rgba(200,169,110,.22)')+';'+
+    'color:'+(claro?'#8B6F3D':'#C8A96E')+';'+
     'border-radius:99px;padding:2px 7px;margin-left:6px;vertical-align:middle">escala anterior</span>';
 }
 window.dmMarcaEscalaVieja = dmMarcaEscalaVieja;
@@ -23078,6 +23256,9 @@ async function saveDrProfile(){
     modality:document.getElementById('dr-edit-modality')?.value||null,
     fee:document.getElementById('dr-edit-fee')?.value||null,
     city:document.getElementById('dr-edit-city')?.value||'',
+    // Si la columna `province` todavía no existe en `doctors`, patchFlexible
+    // la descarta y guarda el resto: no rompe el guardado entero.
+    province:document.getElementById('dr-edit-province')?.value||'',
     country:document.getElementById('dr-edit-country')?.value||'',
     gender:document.getElementById('dr-edit-gender')?.value||'',preferred_scales:window._drSelectedScales||[],population:[(document.getElementById('dr-pop-adult')?.checked?'adult':null),(document.getElementById('dr-pop-child')?.checked?'child':null)].filter(Boolean).join(',')||null,
   };
@@ -23295,8 +23476,13 @@ function updateDrPopLabel(){
   const child = document.getElementById('dr-pop-child');
   const lA = document.getElementById('dr-pop-adult-lbl');
   const lC = document.getElementById('dr-pop-child-lbl');
-  if(adult&&lA){ lA.style.borderColor=adult.checked?'#1a4a3a':'var(--sep-opaque)'; lA.style.background=adult.checked?'#f0fdf4':'var(--bg-secondary)'; }
-  if(child&&lC){ lC.style.borderColor=child.checked?'#1a4a3a':'var(--sep-opaque)'; lC.style.background=child.checked?'#f0fdf4':'var(--bg-secondary)'; }
+  // Colores del tema OSCURO: la versión anterior usaba #f0fdf4 y
+  // var(--bg-secondary), pensados para fondo claro, y en este formulario la
+  // opción marcada quedaba casi blanca.
+  const _on  = (el)=>{ el.style.borderColor='#7EC8A4'; el.style.background='rgba(126,200,164,.16)'; };
+  const _off = (el)=>{ el.style.borderColor='rgba(126,200,164,.22)'; el.style.background='rgba(255,255,255,.06)'; };
+  if(adult&&lA){ adult.checked ? _on(lA) : _off(lA); }
+  if(child&&lC){ child.checked ? _on(lC) : _off(lC); }
 }
 
 
@@ -24170,7 +24356,19 @@ function showDrQrPrint(){
   const drFullName = (u.sex==='Femenino'?'Dra. ':'Dr. ') + (u.name||'') + ' ' + (u.lname||'');
   const specLabels = {psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Terapia Ocupacional',kinesiology:'Kinesiología',general:'Clínica General'};
   const drSpec = specLabels[u.specialty] || u.specialty || '';
-  const drMat = u.mat || '';
+  // El campo `mat` suele venir con la especialidad adentro ("MN 122506
+  // Psiquiatria"), y al concatenarlo con drSpec quedaba "Psiquiatría · MN
+  // 122506 Psiquiatria". Se quita la repetición, ignorando tildes.
+  let drMat = u.mat || '';
+  if (drSpec && drMat) {
+    const _sinT = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if (_sinT(drMat).toLowerCase().indexOf(_sinT(drSpec).toLowerCase()) >= 0) {
+      const _esc = t => t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      drMat = drMat.replace(new RegExp(_esc(drSpec),'ig'),'')
+                   .replace(new RegExp(_esc(_sinT(drSpec)),'ig'),'')
+                   .replace(/\s{2,}/g,' ').replace(/[\s\u00b7-]+$/,'').trim();
+    }
+  }
   // Apuntaba a la dirección vieja de GitHub Pages. Un QR impreso y pegado en
   // la pared se queda años: tiene que ir al dominio propio y, además, entrar
   // directo a CREAR CUENTA, que es lo que va a hacer quien lo escanee.
@@ -24239,7 +24437,7 @@ function showDrQrPrint(){
       </div>
       <div style="text-align:center">
         <div style="width:30px;height:30px;border-radius:50%;background:#0F2820;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 7px">2</div>
-        <div style="font-size:12.5px;color:#0F2820;line-height:1.45">En la app, entrá a <b>Yo → Mi código</b>.</div>
+        <div style="font-size:12.5px;color:#0F2820;line-height:1.45">En la app, entrá a <b>Yo → Mis especialistas</b>.</div>
       </div>
       <div style="text-align:center">
         <div style="width:30px;height:30px;border-radius:50%;background:#0F2820;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 7px">3</div>
@@ -24319,7 +24517,11 @@ async function dmImprimirQr(){
 
   const hoja =
     '<div class="hoja">'+
-      '<div class="marca">dormetria</div>'+
+      // El wordmark real, con la luna en la "o". Antes era texto plano y en la
+      // hoja impresa se perdía la marca.
+      '<div class="marca">' + (typeof dormetriaLogo === 'function'
+          ? dormetriaLogo({height:30, fill:'#0F2820'})
+          : 'dormetria') + '</div>'+
       '<div class="bajada">Medicina del sueño</div>'+
       '<div class="dr">'+ esc(d.nombre || '') +'</div>'+
       (subtitulo ? '<div class="spec">'+ esc(subtitulo) +'</div>' : '')+
@@ -24329,7 +24531,7 @@ async function dmImprimirQr(){
       '</div>'+
       '<ol class="pasos">'+
         '<li>Escaneá y creá tu cuenta con tu correo.</li>'+
-        '<li>Entrá a <b>Yo → Mi código</b>.</li>'+
+        '<li>En la app, entrá a <b>Yo → Mis especialistas</b>.</li>'+
         '<li>Mostrame el código y te vinculo a tu ficha.</li>'+
       '</ol>'+
       '<div class="pie">Registrá tu sueño y completá las escalas que te indique. '+
@@ -24351,24 +24553,31 @@ async function dmImprimirQr(){
         'box-sizing:border-box}'+
       'html,body{margin:0;padding:0;background:#fff}'+
       'body{color:#0F2820;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}'+
-      '.hoja{width:128mm;margin:0 auto;padding:6mm 0;text-align:center}'+
-      '.marca{font-size:27px;font-weight:600;letter-spacing:0.01em;line-height:1}'+
+      // Todo el contenido se alinea al ANCHO DEL CUADRO DEL QR (66mm) y ese
+      // bloque va centrado en la hoja. Antes el texto ocupaba 128mm y el QR
+      // 66mm, así que los pasos y el pie se veían mucho más anchos que el
+      // recuadro y la hoja quedaba descentrada a la vista.
+      '.hoja{width:66mm;margin:0 auto;padding:6mm 0;text-align:center}'+
+      '.marca{line-height:0;display:block}'+
+      '.marca svg{width:100%;height:auto;max-width:52mm;display:inline-block}'+
       '.bajada{font-size:9.5px;color:#5C6B61;letter-spacing:0.16em;'+
         'text-transform:uppercase;margin-top:3px}'+
       '.dr{font-size:14px;font-weight:700;margin-top:7mm;line-height:1.2}'+
       '.spec{font-size:10.5px;color:#5C6B61;margin-top:2px}'+
       '.qr-box{border:1.5px solid #0F2820;border-radius:10px;padding:5mm 4mm 4mm;'+
-        'margin:5mm auto 0;width:66mm;break-inside:avoid;page-break-inside:avoid}'+
+        'margin:5mm auto 0;width:100%;box-sizing:border-box;'+
+        'break-inside:avoid;page-break-inside:avoid}'+
       '.qr-box img{display:block;width:52mm;height:52mm;margin:0 auto}'+
       '.qr-pie{font-size:9.5px;color:#5C6B61;margin-top:3mm;line-height:1.35}'+
       '.pasos{list-style:none;counter-reset:p;margin:5mm 0 0;padding:0;text-align:left}'+
       '.pasos li{counter-increment:p;position:relative;padding-left:7mm;'+
-        'font-size:10.5px;line-height:1.5;margin-bottom:2mm}'+
+        'font-size:10.5px;line-height:1.45;margin-bottom:2.5mm;text-align:left}'+
       '.pasos li:before{content:counter(p);position:absolute;left:0;top:0.1mm;'+
         'width:4.6mm;height:4.6mm;border-radius:50%;background:#0F2820;color:#fff;'+
         'font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center}'+
       '.pie{font-size:9.5px;line-height:1.5;color:#0F2820;background:#F4EFE5;'+
-        'border-radius:7px;padding:3mm 3.5mm;margin-top:4mm;text-align:left}'+
+        'border-radius:7px;padding:3mm 3.5mm;margin-top:4mm;text-align:left;'+
+        'box-sizing:border-box}'+
       '.web{font-size:9px;font-weight:700;color:#5C6B61;margin-top:3.5mm;'+
         'letter-spacing:0.04em}'+
     '</style></head><body>'+ hoja +'</body></html>'

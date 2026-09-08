@@ -469,11 +469,10 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
      bloque ENTERO en una celda. */
   body.dr-desktop #screen-doctor-patient #drp-content{
     max-width:1100px;margin:0 auto;width:100%;
-    /* El primer bloque de cada pestaña arrancaba pegado a la barra de tabs
-       —el toggle en Resumen, las tarjetas en Perfil, los recuadros del
-       Diario—. Se le da el mismo aire que hay ENTRE tarjetas (16px), para
-       que el borde superior respire igual que el resto de la grilla. */
-    padding-top:16px;
+    /* El aire superior se define inline en el propio #drp-content: una regla
+       acá no puede ganarle al style="padding:..." del elemento, y por eso
+       este padding-top no tenía ningún efecto. Se deja documentado para que
+       no se vuelva a intentar desde la hoja de estilos. */
   }
   /* ── TODOS los tabs: dos columnas compactas, bloques enteros ── */
   body.dr-desktop #screen-doctor-patient #drp-content{
@@ -985,7 +984,7 @@ input, select, textarea{ color: inherit; }
 .err.show{display:block;}
 
 /* ── LOGIN ── */
-.login-outer{display:flex;align-items:center;justify-content:center;padding:24px;background:transparent;flex:1;width:100%;}
+.login-outer{display:flex;align-items:flex-start;align-items:safe center;justify-content:center;padding:24px;background:transparent;flex:1;width:100%;overflow-y:auto;}
 .login-wrap{width:100%;max-width:380px;background:rgba(10,28,20,0.92);border-radius:16px;padding:24px 20px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 40px rgba(0,0,0,0.5);}
 .login-logo{text-align:center;margin-bottom:32px;}
 .login-icon{
@@ -1101,8 +1100,12 @@ input, select, textarea{ color: inherit; }
     white-space:nowrap;
   }
   body.dr-desktop #screen-doctor-patient .tab-bar{
-    gap:2px;
-    justify-content:flex-start;
+    /* space-between reparte el sobrante ENTRE las pestañas en vez de dejarlo
+       todo junto al borde derecho, que era el margen asimétrico. El padding
+       lateral iguala los dos extremos. */
+    gap:0;
+    justify-content:space-between;
+    padding:0 4px;
   }
 }
 
@@ -4649,3 +4652,12 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
   color:#8FD4B0; margin-bottom:7px;
 }
 @media (max-width:1000px){ .dm-sug-grid{ columns:1; } }
+
+
+/* Mi perfil profesional — "Tus datos" en dos columnas. Cada fila es
+   etiqueta/valor con el valor pegado a la derecha; a lo ancho completo el
+   espacio del medio quedaba vacío. Con dos columnas el recorrido es más
+   corto y la tarjeta deja de ser una lista larga. */
+.dm-perfil-datos{ columns:2; column-gap:26px; }
+.dm-perfil-datos > div{ break-inside:avoid; }
+@media (max-width:900px){ .dm-perfil-datos{ columns:1; } }

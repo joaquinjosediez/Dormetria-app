@@ -9,22 +9,38 @@ async function dmShowSummaryNuevo(email, cont) {
   cont.innerHTML = '<div style="padding:40px; text-align:center; color:#a09080;"><div style="font-size:14px;">⏳ Cargando resumen...</div></div>';
 
   try {
-    // Traer escalas (ya deberían estar en S.viewRecs, pero lo traemos de seguro)
-    let recs = S.viewRecs || [];
-    if (!recs.length) {
-      try {
-        recs = await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`);
-        S.viewRecs = recs || [];
-      } catch (e) {
-        console.warn('No se pudo traer escalas:', e);
-        recs = [];
-      }
+    // Escalas: SIEMPRE se piden frescas para ESTE paciente.
+    //
+    // Antes se reusaba S.viewRecs si no estaba vacío, pero esa caché es global
+    // y no está atada a ningún correo: al abrir un paciente nuevo todavía tenía
+    // las escalas del anterior, y el Resumen mostraba —bajo el nombre del
+    // paciente actual— puntajes que no eran suyos, incluido PHQ-9. Al cambiar
+    // de pestaña otra consulta los reemplazaba y "desaparecían".
+    // Es el mismo error que ya se corrigió en las escalas de los hijos.
+    // Una consulta de más es barata; mostrar el dato de otra persona no lo es.
+    let recs = [];
+    try {
+      recs = await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.asc&select=*`) || [];
+    } catch (e) {
+      console.warn('No se pudo traer escalas:', e);
+      recs = [];
     }
+    // La caché se deja consistente con el paciente que se está viendo.
+    S.viewRecs = recs;
+    S._viewRecsEmail = email;
 
     // Traer diario (hasta 30 noches)
     let diaryEntries = [];
     try {
       diaryEntries = await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&order=diary_date.desc&limit=30`);
+      // Total real de noches cargadas. El motor analiza solo las últimas 14
+      // —es la ventana clínica— pero el Resumen decía "14 noches registradas",
+      // que se leía como el total y no coincidía con la pestaña Diario.
+      // Consulta liviana: una sola columna.
+      try {
+        const todas = await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=diary_date`);
+        S._dmNochesTotales = (todas || []).length;
+      } catch (_) { S._dmNochesTotales = null; }
     } catch (e) {
       console.warn('No se pudo traer el diario:', e);
       diaryEntries = [];
@@ -32,13 +48,20 @@ async function dmShowSummaryNuevo(email, cont) {
 
     // Guardar para usar en el toggle
     dmCurrentMotorResult = dmMotorOrientacion(recs, diaryEntries, S.viewData);
+    dmCurrentMotorResult.nochesTotalesDiario = S._dmNochesTotales;
     dmCurrentEmail = email;
 
     // Obtener el modo del profesional (Gen/Esp)
+    // La preferencia se guardaba POR PACIENTE ('dm-mode-'+email), así que con
+    // cada ficha nueva volvía a Generalista y había que cambiarla otra vez.
+    // Es una preferencia del profesional, no del paciente: se guarda global.
+    // Se respeta la del paciente si existe, por compatibilidad con lo guardado.
     let modo = 'gen';
     try {
-      const saved = localStorage.getItem('dm-mode-' + email);
-      if (saved) modo = saved;
+      const global = localStorage.getItem('dm-mode');
+      const porPaciente = localStorage.getItem('dm-mode-' + email);
+      const elegido = global || porPaciente;
+      if (elegido === 'gen' || elegido === 'esp') modo = elegido;
     } catch (_) {}
 
     // Renderizar la UI
@@ -118,7 +141,8 @@ function handleToggleClick(e) {
 
   // Guardar preferencia
   try {
-    localStorage.setItem('dm-mode-' + dmCurrentEmail, newModo);
+    // Global: la elección vale para todas las fichas.
+    localStorage.setItem('dm-mode', newModo);
   } catch (_) {}
 
   // Re-renderizar

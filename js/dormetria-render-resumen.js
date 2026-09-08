@@ -185,14 +185,18 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   // ── Punto 9: evolución con las 4 métricas del demo ─────────────────
   let tarjetaEvolucion = '';
   if (modo === 'esp') {
-    // Compacto: cuatro cifras en una sola fila, en línea. Antes eran cuatro
-    // recuadros grandes de 2x2 y la tarjeta ocupaba media pantalla para
-    // mostrar cuatro números.
+    // Compacto: las cifras en una sola fila, centradas. Antes eran cuatro
+    // recuadros grandes en 2x2 y la tarjeta ocupaba media pantalla.
+    // primera = sin divisor a la izquierda; si no queda una línea suelta
+    // separando la celda del rótulo "Evolución".
+    let _celdaN = 0;
     const celda = function (rotulo, valor, pie) {
-      return '<div style="flex:1 1 0;min-width:0;padding:0 10px;border-left:0.5px solid rgba(126,200,164,0.14)">' +
-        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(244,239,229,.76)">' + rotulo + '</div>' +
-        '<div style="font-size:16px;font-weight:600;color:#F4EFE5;line-height:1.25;margin-top:2px">' + valor + '</div>' +
-        (pie ? '<div style="font-size:10.5px;color:rgba(244,239,229,.72);margin-top:1px">' + pie + '</div>' : '') +
+      const divisor = (_celdaN++ === 0) ? '' : 'border-left:0.5px solid rgba(126,200,164,0.14);';
+      return '<div style="flex:1 1 0;min-width:0;padding:0 10px;' + divisor +
+          'display:flex;flex-direction:column;align-items:center;text-align:center">' +
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(244,239,229,.76);text-align:center">' + rotulo + '</div>' +
+        '<div style="font-size:16px;font-weight:600;color:#F4EFE5;line-height:1.25;margin-top:2px;text-align:center">' + valor + '</div>' +
+        (pie ? '<div style="font-size:10.5px;color:rgba(244,239,229,.72);margin-top:1px;text-align:center">' + pie + '</div>' : '') +
       '</div>';
     };
 
@@ -207,22 +211,40 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
     const veredicto = e && e.veredicto ? e.veredicto : 'Sin datos suficientes';
     const colorVer = (e && e.delta >= 5) ? '#7EC8A4' : (e && e.delta <= -5) ? '#E88' : 'rgba(244,239,229,0.7)';
 
-    // El veredicto va en la misma fila, a la izquierda, en vez de ocupar un
-    // renglón propio arriba.
+    // Noches de registro: el total cargado por el paciente, y debajo cuántas
+    // entraron en el cálculo. Es lo que resolvía la discrepancia con Diario.
+    const totalNoches = motorResult.nochesTotalesDiario;
+    const usadas = motorResult.nochesRegistradas;
+    const muestraTxt = (totalNoches != null && usadas != null && totalNoches !== usadas)
+      ? 'Últimas ' + usadas + ' de ' + totalNoches + ' noches registradas'
+      : (usadas != null ? usadas + ' noches registradas' : 'Sin noches registradas');
+
     tarjetaEvolucion =
       '<div class="dm-card" style="padding:12px 14px">' +
         '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">' +
-          '<div style="flex:0 0 auto;display:flex;align-items:center;gap:7px;min-width:0">' +
-            '<span style="font-size:14px">📈</span>' +
-            '<span style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.055em;color:#8FD4B0;white-space:nowrap">Evolución</span>' +
-            '<span style="width:7px;height:7px;border-radius:50%;background:' + colorVer + ';margin-left:4px;flex:0 0 auto"></span>' +
-            '<span style="font-size:12px;font-weight:600;color:' + colorVer + ';white-space:nowrap">' + escHtml(veredicto) + '</span>' +
+          // Rótulo y veredicto, uno debajo del otro.
+          '<div style="flex:0 0 auto;min-width:0">' +
+            '<div style="display:flex;align-items:center;gap:7px">' +
+              '<span style="font-size:14px">📈</span>' +
+              '<span style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.055em;color:#8FD4B0;white-space:nowrap">Evolución</span>' +
+            '</div>' +
+            // La muestra va acá y no como una cifra más: cuántas noches hay no
+            // es una medición del sueño, es de qué tamaño es la base. Puesta
+            // junto a Latencia y Eficiencia competía con lo que sí importa.
+            '<div style="font-size:11px;color:rgba(244,239,229,.76);margin-top:2px;white-space:nowrap">' +
+              muestraTxt + '</div>' +
+            '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">' +
+              '<span style="width:7px;height:7px;border-radius:50%;background:' + colorVer + ';flex:0 0 auto"></span>' +
+              '<span style="font-size:12px;font-weight:600;color:' + colorVer + ';white-space:nowrap">' + escHtml(veredicto) + '</span>' +
+            '</div>' +
           '</div>' +
-          '<div style="display:flex;flex:1 1 340px;min-width:0">' +
+          '<div style="display:flex;flex:1 1 400px;min-width:0">' +
+            celda('Tiempo de sueño', (met.tst == null || isNaN(met.tst)) ? '—' :
+                  (Math.floor(met.tst/60) + 'h ' + String(Math.round(met.tst%60)).padStart(2,'0') + 'm'), 'promedio') +
             celda('Latencia', num(met.latenciaMedia, ' min'), met.latenciaMedia > 30 ? 'sobre umbral' : 'en rango') +
             celda('Eficiencia', num(e ? e.actual : met.eficiencia, '%'), efPie) +
             celda('Despertares', (met.despertaresMedia == null || isNaN(met.despertaresMedia)) ? '—' : met.despertaresMedia + ' /noche', '') +
-            celda('Adherencia', e ? num(e.adherencia, '%') : '—', motorResult.nochesRegistradas ? motorResult.nochesRegistradas + ' noches' : '') +
+            celda('Adherencia', e ? num(e.adherencia, '%') : '—', '') +
           '</div>' +
         '</div>' +
       '</div>';
@@ -378,10 +400,10 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   return toggle + cabecera + tarjetaEvolucion +
     '<div class="dm-resumen-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">' +
       '<div>' + tarjetaOrientacion + tarjetaConducta + '</div>' +
-      '<div>' + tarjetaBanderas + tarjetaEscalas + tarjetaMaterial + '</div>' +
+      '<div>' + tarjetaBanderas + tarjetaEscalas + '</div>' +
     '</div>' +
-    // "Criterios y fuentes" va a lo ancho, abajo de todo: es material de
-    // consulta, no parte de la lectura clínica, y sacándolo de la columna
-    // derecha las dos quedan parejas (2 tarjetas altas vs 4 cortas).
-    tarjetaCriterios;
+    // Material y Criterios van a lo ancho, abajo de todo: los dos son material
+    // de consulta, no parte de la lectura clínica. Además la barra de chips se
+    // lee mejor a lo ancho que apretada en media columna.
+    barraMaterial + tarjetaCriterios;
 }

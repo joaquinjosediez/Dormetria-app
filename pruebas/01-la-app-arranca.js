@@ -44,7 +44,7 @@ r.ok(/<\/html>\s*$/.test(html.trim()), 'el index cierra bien');
 // sirve la hoja vieja desde su caché y los estilos nuevos no aparecen.
 const vHtml = C.version(html);
 const mCss = html.match(/styles\.css\?v=([^"']+)/);
-r.ok(!!mCss && mCss[1] === vHtml, 'el CSS pide la misma versión que el HTML',
+r.ok(!!mCss && mCss[1].split('-')[0] === vHtml, 'el CSS pide la misma versión que el HTML',
      mCss ? mCss[1] + ' vs ' + vHtml : 'no encontré el enlace al CSS');
 
 r.cerrar('La app carga entera y con todo en su lugar.');

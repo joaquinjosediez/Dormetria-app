@@ -28,8 +28,9 @@ const leerCss  = () => fs.readFileSync(RUTAS.css, 'utf8');
 // La versión que declara el archivo. Sirve para que los mensajes digan
 // sobre QUÉ se corrió la prueba.
 function version(html) {
-  const m = (html || leerHtml()).match(/hoy79-mod\d+/);
-  return m ? m[0] : '(sin versión)';
+  // El prefijo 'hoy79-' se dejó de usar; hoy la versión es modNNN a secas.
+  const m = (html || leerHtml()).match(/APP_VERSION='([^']+)'/);
+  return m ? m[1] : '(sin versión)';
 }
 
 // Los <script> escritos dentro del index, en orden, más el archivo de
