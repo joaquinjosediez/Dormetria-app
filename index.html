@@ -23,7 +23,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
 <!-- BETA: el CSS también va con cache-busting por timestamp, si no Safari sigue
      sirviendo la hoja vieja y los ajustes de tipografía no se ven. -->
-<link rel="stylesheet" href="css/styles.css?v=mod183-83b84ca4">
+<link rel="stylesheet" href="css/styles.css?v=mod185-3644d245">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1106,15 +1106,15 @@
     <button class="tab active" onclick="showDrPTab('summary',this)">Resumen</button>
     <button class="tab" onclick="showDrPTab('profile',this)">Perfil</button>
     <button class="tab" onclick="showDrPTab('diary',this)">Diario sueño</button>
+    <!-- Cuestionarios va temprano: es de lo que más se consulta. "Historial"
+         quedó como vista interna suya. -->
+    <button class="tab" onclick="showDrPTab('cuestionarios',this)">Cuestionarios</button>
+    <button class="tab" onclick="showDrPTab('suggest',this)">Sugerir escalas</button>
     <button class="tab" onclick="showDrPTab('docs',this)">Estudios</button>
     <button class="tab" onclick="showDrPTab('informe',this)">📄 Informe</button>
     <button class="tab" onclick="showDrPTab('notes',this)">📝 Notas</button>
     <button class="tab" onclick="showDrPTab('pvt',this)">Alerta</button>
-    <button class="tab" onclick="showDrPTab('suggest',this)">Sugerir escalas</button>
     <button class="tab" onclick="showDrPTab('edumat',this)">📚 Material</button>
-    <!-- "Historial" pasó a ser una vista DENTRO de Cuestionarios: el historial
-         de una escala es su evolución en el tiempo, no una sección aparte. -->
-    <button class="tab" onclick="showDrPTab('cuestionarios',this)">Cuestionarios</button>
   </div>
   <div class="scroll"><div id="drp-content" style="padding:0 16px"></div></div>
 </div>
@@ -1327,10 +1327,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod183-844fc1f5"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod183-a1f70979"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod183-f2923a01"></script>
-<script src="js/dormetria-render-resumen.js?v=mod183-56f086de"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod185-844fc1f5"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod185-96a207e5"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod185-f2dc59cb"></script>
+<script src="js/dormetria-render-resumen.js?v=mod185-a5886ff6"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1349,7 +1349,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod183';
+const APP_VERSION='mod185';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -10063,8 +10063,15 @@ async function dmGuardarCalificacion(email){
     const datos={ rating: window._dmCalValor,
                   comment: (txt && txt.value) ? txt.value.trim() : null,
                   comment_public: !!(pub && pub.checked) };
-    const url='doctor_patients?doctor_email=eq.'+encodeURIComponent(email)+
-              '&patient_email=eq.'+encodeURIComponent(S.user.email);
+    // ilike en vez de eq: el filtro de PostgREST distingue mayúsculas, pero la
+    // política RLS compara con lower() de los dos lados. Si el correo del
+    // profesional guardado en `doctors` difiere en una mayúscula del que quedó
+    // en `doctor_patients`, el filtro no encuentra la fila, el UPDATE afecta
+    // cero filas, y la app lo reportaba como "falta la política". La política
+    // estaba bien: el que no matcheaba era el filtro. Sin comodines, ilike se
+    // comporta como una igualdad que no distingue mayúsculas.
+    const url='doctor_patients?doctor_email=ilike.'+encodeURIComponent(email)+
+              '&patient_email=ilike.'+encodeURIComponent(S.user.email);
     let filas = null;
     try{
       filas = await db.patchVerificado(url, datos);
@@ -10081,8 +10088,12 @@ async function dmGuardarCalificacion(email){
     // ninguna fila que le corresponda tocar. Es lo que pasa cuando falta
     // la política de acceso, y hasta ahora se veía como "no pasa nada".
     if(Array.isArray(filas) && filas.length === 0){
-      decir('No se pudo guardar: tu cuenta no tiene permiso para calificar este vínculo. '+
-            'Falta la política dp_paciente_califica en Supabase.');
+      // El mensaje anterior afirmaba que faltaba una política. Era una
+      // conclusión, no un hecho: cero filas puede ser eso o que el filtro no
+      // encuentre el vínculo. Decir la causa equivocada manda a tocar la base
+      // sin necesidad, que es lo que pasó.
+      decir('No se pudo guardar: no se encontró el vínculo con ese profesional. '+
+            'Probá recargar; si sigue, avisanos.');
       return;
     }
     const w=document.getElementById('dm-calificar'); if(w) w.remove();
@@ -10137,7 +10148,7 @@ async function showPatientCode(){
     lsLkDrs.forEach(e=>{if(!lkDrs.includes(e)) lkDrs.push(e);});
     if(!lkDrs.length){codeDrEl.innerHTML='<div style="font-size:13px;color:var(--label-3)">Ningún profesional te sigue todavía.</div>';}
     else{
-      Promise.all(lkDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=name,lname,specialty,gender').then(d=>d&&d[0]||{email:e,name:e.split('@')[0],lname:''}).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
+      Promise.all(lkDrs.map(e=>db.get('doctors?email=eq.'+encodeURIComponent(e)+'&select=email,name,lname,specialty,gender') /* email VA en el select: sin él d.email quedaba undefined y el boton de calificar salia con data-cal="undefined", asi que el PATCH nunca encontraba el vinculo */.then(d=>Object.assign({email:e},(d&&d[0])||{name:e.split('@')[0],lname:''})).catch(()=>({email:e,name:e.split('@')[0],lname:''})))).then(drs=>{
         const sL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'TO',kinesiology:'Kinesiol.',general:'Clínica Gral',physician:'Médico'};
         codeDrEl.innerHTML=drs.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;margin-bottom:6px"><div><div style="font-size:13px;font-weight:600;color:#fff">${d.gender==='Masculino'||d.sex==='Masculino'?'Dr.':(d.gender==='Femenino'||d.sex==='Femenino')?'Dra.':'Dr/a.'} ${d.name} ${d.lname||''}</div><div style="font-size:11px;color:rgba(255,255,255,.72)">${sL[d.specialty]||d.specialty||'Especialista'}</div></div><div style="display:flex;gap:8px;flex-shrink:0">
             <button data-cal="${d.email}" data-nom="${(d.name||'')+' '+(d.lname||'')}" class="code-rate-btn" style="padding:6px 13px;border:none;border-radius:8px;background:rgba(200,169,110,0.22);color:#C8A96E;font-size:12px;font-weight:700;cursor:pointer">⭐ Calificar</button>
@@ -15758,10 +15769,122 @@ function dmCopiarInforme(){
 }
 
 // Cambia entre 'Última' e 'Historial' dentro de la pestaña Cuestionarios.
-function dmSubCuest(v){ window._dmSubCuest = v; showDrPTab_('cuestionarios'); }
-window.dmSubCuest = dmSubCuest;
+// Abre/cierra la historia de una escala dentro de su propia tarjeta.
+function dmTogglearCuest(id){
+  const h=document.getElementById('cq-h-'+id), f=document.getElementById('cq-f-'+id);
+  if(!h) return;
+  const abierto = h.style.display!=='none';
+  h.style.display = abierto ? 'none' : 'block';
+  if(f) f.style.transform = abierto ? '' : 'rotate(180deg)';
+}
+window.dmTogglearCuest = dmTogglearCuest;
+
+// Sincroniza la pestaña marcada con el contenido que se está mostrando.
+// showDrPTab(tab, el) marcaba el elemento CLICKEADO, pero al abrir un paciente
+// se llama showDrPTab_('summary') sin elemento: la marca quedaba en la pestaña
+// que se había usado con el paciente anterior. Se veía Resumen con "Diario
+// sueño" subrayado.
+function dmMarcarPestana(tab){
+  try{
+    const tabs=document.querySelectorAll('#screen-doctor-patient .tab-bar .tab');
+    tabs.forEach(function(t){
+      const oc=t.getAttribute('onclick')||'';
+      t.classList.toggle('active', oc.indexOf("'"+tab+"'")!==-1);
+    });
+  }catch(_){}
+}
+
+// Cronotipo: se calcula igual para Perfil y para Resumen, así que vive en
+// una sola función. Es async porque el MCTQ sale del diario.
+async function dmCronotipoBody(u, email){
+  let cronotipoBody = '';
+  try {
+    // Edad del paciente: determina qué instrumentos de cronotipo son aplicables.
+    const _dobC = u.dob ? new Date(u.dob) : null;
+    const _ageC = _dobC ? Math.floor((Date.now() - _dobC)/31557600000) : null;
+    const _isMinor = _ageC != null && _ageC < 13;
+    // MEQ (preferencial)
+    const meqRec2 = (S.viewRecs||[]).filter(r=>r.scale_id==='meq').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+    let meqBlock;
+    if(_isMinor && !meqRec2){
+      // En menores de 13 el MEQ no está validado: no lo ofrecemos ni lo mostramos vacío.
+      meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">Preferencial</div>' +
+        '<div style="font-size:12px;color:rgba(244,239,229,.82);line-height:1.4">El MEQ no está validado en menores de 13 años. El instrumento apropiado es el CCTQ (4–12) o el MESC (11–17), pendientes de licencia.</div>';
+    } else {
+      meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">Preferencial (MEQ)</div>' +
+        '<div style="font-size:13px;font-weight:500;color:rgba(244,239,229,.9);font-style:italic">Sin datos</div>';
+    }
+    let meqTag = null;
+    if(meqRec2){
+      const s = meqRec2.score;
+      let label;
+      if(s>=70){ label='Matutino definido'; meqTag='M+'; }
+      else if(s>=59){ label='Matutino moderado'; meqTag='M'; }
+      else if(s>=42){ label='Intermedio'; meqTag='I'; }
+      else if(s>=31){ label='Vespertino moderado'; meqTag='V'; }
+      else { label='Vespertino definido'; meqTag='V+'; }
+      meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">Preferencial (MEQ)</div>' +
+        '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+label+' <span style="color:rgba(244,239,229,.92);font-size:12px">('+s+'/86)</span></div>';
+    }
+    // MCTQ biológico desde diario (necesita S.viewData._diaryAll o refetch)
+    // El diario ya fue cargado en la pestaña Diario sueño y guardado como S._drDiaryCache
+    // Si no está en caché, hacemos un fetch rápido (solo columnas necesarias).
+    let diaryForMCTQ = S._drDiaryCache && S._drDiaryCache.email === email ? S._drDiaryCache.data : null;
+    if(!diaryForMCTQ){
+      try {
+        diaryForMCTQ = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+'&select=bedtime,wake_time,sleep_minutes,day_type,diary_date,exercise_mins,exercise_time,coffee_cups,alcohol_drinks,screen_minutes&order=diary_date.desc&limit=60').catch(()=>null);
+        S._drDiaryCache = { email, data: diaryForMCTQ };
+      } catch(_ex) { diaryForMCTQ = null; }
+    }
+    const mctq = diaryForMCTQ ? computeMCTQFromDiary(diaryForMCTQ) : null;
+    // En menores, el MSFsc del diario es el ÚNICO instrumento de cronotipo disponible
+    // sin licencia (es una fórmula publicada, no un cuestionario). Lo destacamos.
+    const _bioLabel = _isMinor
+      ? 'Biológico (MSFsc · diario) <span style="color:#7EC8A4;font-weight:600">· instrumento principal</span>'
+      : 'Biológico (MCTQ · diario)';
+    let mctqBlock;
+    if(!mctq){
+      mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">'+_bioLabel+'</div>' +
+        '<div style="font-size:13px;color:rgba(244,239,229,.9);font-style:italic">Sin datos de diario</div>';
+    } else if(mctq.error === 'insufficient_free_days'){
+      mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">'+_bioLabel+'</div>' +
+        '<div style="font-size:12px;color:rgba(244,239,229,.82);font-style:italic">Necesita ≥2 noches marcadas como "día libre" (tiene '+mctq.n_free+')</div>';
+    } else {
+      const debtSuffix = mctq.sleep_debt_h > 0.5 ? ' <span style="color:#C8A96E">· deuda '+mctq.sleep_debt_h.toFixed(1)+'h</span>' : '';
+      const _varMsg = _isMinor
+        ? '⚠ Alta variabilidad entre días libres — revisar consistencia del registro'
+        : '⚠ Alta variabilidad — revisar posible trabajo por turnos';
+      const varWarn = mctq.high_variability ? '<div style="font-size:10px;color:#C8A96E;margin-top:2px">'+_varMsg+'</div>' : '';
+      const _pedNote = _isMinor
+        ? '<div style="font-size:10px;color:rgba(244,239,229,.9);margin-top:3px;line-height:1.35">Los cortes de categoría derivan de población adulta (Roenneberg 2007). En pediatría interpretar como tendencia, no como diagnóstico.</div>'
+        : '';
+      mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">'+_bioLabel+'</div>' +
+        '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+mctq.category+'</div>' +
+        '<div style="font-size:11px;color:rgba(244,239,229,.84);margin-top:2px">MSFsc: '+mctq.MSFsc+' · '+mctq.n_free+' libres, '+mctq.n_work+' laborables'+debtSuffix+'</div>' +
+        varWarn + _pedNote;
+    }
+    // Comparación (si tenemos ambos)
+    let compareBlock = '';
+    if(meqTag && mctq && !mctq.error && !_isMinor){
+      const tagOrder = { 'M+':1, 'M':2, 'M-':3, 'I':4, 'V-':5, 'V':6, 'V+':7 };
+      const diff = Math.abs((tagOrder[meqTag]||4) - (tagOrder[mctq.tag]||4));
+      if(diff >= 2){
+        compareBlock = '<div style="background:rgba(200,169,110,0.12);border-left:2px solid #C8A96E;padding:8px 10px;margin-top:10px;border-radius:4px">' +
+          '<div style="font-size:11px;color:#C8A96E;font-weight:600">⚠ Discrepancia relevante</div>' +
+          '<div style="font-size:11px;color:rgba(244,239,229,.9);margin-top:2px">Preferencial y biológico difieren ≥2 categorías. Puede indicar misalineación circadiana (jet lag social, obligaciones vs. cronotipo natural).</div>' +
+          '</div>';
+      }
+    }
+    cronotipoBody = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
+      '<div>'+meqBlock+'</div>' +
+      '<div>'+mctqBlock+'</div>' +
+    '</div>' + compareBlock;
+  } catch(_cron){ cronotipoBody = '<div style="color:rgba(244,239,229,.9);font-style:italic;font-size:12px">Sin datos</div>'; }
+  return cronotipoBody;
+}
 
 async function showDrPTab_(tab){
+  dmMarcarPestana(tab);
   const cont=document.getElementById('drp-content');cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';const email=S.viewEmail;
   cont.dataset.tab=tab; // hook para CSS por pestaña (ver body.dr-desktop #drp-content[data-tab=...])
   if(tab==='informe'){
@@ -15877,89 +16000,7 @@ async function showDrPTab_(tab){
           '</div>';
       const ocupacionBody = '<div style="font-size:13px;font-weight:500;color:#F4EFE5">'+(trActivity(u.activity_type)||'No especificada')+'</div>';
       // ─── Card de Cronotipo: comparar MEQ (preferencial) vs MCTQ biológico ───
-      let cronotipoBody = '';
-      try {
-        // Edad del paciente: determina qué instrumentos de cronotipo son aplicables.
-        const _dobC = u.dob ? new Date(u.dob) : null;
-        const _ageC = _dobC ? Math.floor((Date.now() - _dobC)/31557600000) : null;
-        const _isMinor = _ageC != null && _ageC < 13;
-        // MEQ (preferencial)
-        const meqRec2 = (S.viewRecs||[]).filter(r=>r.scale_id==='meq').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
-        let meqBlock;
-        if(_isMinor && !meqRec2){
-          // En menores de 13 el MEQ no está validado: no lo ofrecemos ni lo mostramos vacío.
-          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">Preferencial</div>' +
-            '<div style="font-size:12px;color:rgba(244,239,229,.82);line-height:1.4">El MEQ no está validado en menores de 13 años. El instrumento apropiado es el CCTQ (4–12) o el MESC (11–17), pendientes de licencia.</div>';
-        } else {
-          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">Preferencial (MEQ)</div>' +
-            '<div style="font-size:13px;font-weight:500;color:rgba(244,239,229,.9);font-style:italic">Sin datos</div>';
-        }
-        let meqTag = null;
-        if(meqRec2){
-          const s = meqRec2.score;
-          let label;
-          if(s>=70){ label='Matutino definido'; meqTag='M+'; }
-          else if(s>=59){ label='Matutino moderado'; meqTag='M'; }
-          else if(s>=42){ label='Intermedio'; meqTag='I'; }
-          else if(s>=31){ label='Vespertino moderado'; meqTag='V'; }
-          else { label='Vespertino definido'; meqTag='V+'; }
-          meqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">Preferencial (MEQ)</div>' +
-            '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+label+' <span style="color:rgba(244,239,229,.92);font-size:12px">('+s+'/86)</span></div>';
-        }
-        // MCTQ biológico desde diario (necesita S.viewData._diaryAll o refetch)
-        // El diario ya fue cargado en la pestaña Diario sueño y guardado como S._drDiaryCache
-        // Si no está en caché, hacemos un fetch rápido (solo columnas necesarias).
-        let diaryForMCTQ = S._drDiaryCache && S._drDiaryCache.email === email ? S._drDiaryCache.data : null;
-        if(!diaryForMCTQ){
-          try {
-            diaryForMCTQ = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+'&select=bedtime,wake_time,sleep_minutes,day_type,diary_date,exercise_mins,exercise_time,coffee_cups,alcohol_drinks,screen_minutes&order=diary_date.desc&limit=60').catch(()=>null);
-            S._drDiaryCache = { email, data: diaryForMCTQ };
-          } catch(_ex) { diaryForMCTQ = null; }
-        }
-        const mctq = diaryForMCTQ ? computeMCTQFromDiary(diaryForMCTQ) : null;
-        // En menores, el MSFsc del diario es el ÚNICO instrumento de cronotipo disponible
-        // sin licencia (es una fórmula publicada, no un cuestionario). Lo destacamos.
-        const _bioLabel = _isMinor
-          ? 'Biológico (MSFsc · diario) <span style="color:#7EC8A4;font-weight:600">· instrumento principal</span>'
-          : 'Biológico (MCTQ · diario)';
-        let mctqBlock;
-        if(!mctq){
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">'+_bioLabel+'</div>' +
-            '<div style="font-size:13px;color:rgba(244,239,229,.9);font-style:italic">Sin datos de diario</div>';
-        } else if(mctq.error === 'insufficient_free_days'){
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">'+_bioLabel+'</div>' +
-            '<div style="font-size:12px;color:rgba(244,239,229,.82);font-style:italic">Necesita ≥2 noches marcadas como "día libre" (tiene '+mctq.n_free+')</div>';
-        } else {
-          const debtSuffix = mctq.sleep_debt_h > 0.5 ? ' <span style="color:#C8A96E">· deuda '+mctq.sleep_debt_h.toFixed(1)+'h</span>' : '';
-          const _varMsg = _isMinor
-            ? '⚠ Alta variabilidad entre días libres — revisar consistencia del registro'
-            : '⚠ Alta variabilidad — revisar posible trabajo por turnos';
-          const varWarn = mctq.high_variability ? '<div style="font-size:10px;color:#C8A96E;margin-top:2px">'+_varMsg+'</div>' : '';
-          const _pedNote = _isMinor
-            ? '<div style="font-size:10px;color:rgba(244,239,229,.9);margin-top:3px;line-height:1.35">Los cortes de categoría derivan de población adulta (Roenneberg 2007). En pediatría interpretar como tendencia, no como diagnóstico.</div>'
-            : '';
-          mctqBlock = '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-bottom:4px">'+_bioLabel+'</div>' +
-            '<div style="font-size:14px;font-weight:500;color:#F4EFE5">'+mctq.category+'</div>' +
-            '<div style="font-size:11px;color:rgba(244,239,229,.84);margin-top:2px">MSFsc: '+mctq.MSFsc+' · '+mctq.n_free+' libres, '+mctq.n_work+' laborables'+debtSuffix+'</div>' +
-            varWarn + _pedNote;
-        }
-        // Comparación (si tenemos ambos)
-        let compareBlock = '';
-        if(meqTag && mctq && !mctq.error && !_isMinor){
-          const tagOrder = { 'M+':1, 'M':2, 'M-':3, 'I':4, 'V-':5, 'V':6, 'V+':7 };
-          const diff = Math.abs((tagOrder[meqTag]||4) - (tagOrder[mctq.tag]||4));
-          if(diff >= 2){
-            compareBlock = '<div style="background:rgba(200,169,110,0.12);border-left:2px solid #C8A96E;padding:8px 10px;margin-top:10px;border-radius:4px">' +
-              '<div style="font-size:11px;color:#C8A96E;font-weight:600">⚠ Discrepancia relevante</div>' +
-              '<div style="font-size:11px;color:rgba(244,239,229,.9);margin-top:2px">Preferencial y biológico difieren ≥2 categorías. Puede indicar misalineación circadiana (jet lag social, obligaciones vs. cronotipo natural).</div>' +
-              '</div>';
-          }
-        }
-        cronotipoBody = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
-          '<div>'+meqBlock+'</div>' +
-          '<div>'+mctqBlock+'</div>' +
-        '</div>' + compareBlock;
-      } catch(_cron){ cronotipoBody = '<div style="color:rgba(244,239,229,.9);font-style:italic;font-size:12px">Sin datos</div>'; }
+      let cronotipoBody = await dmCronotipoBody(u, email);
       // ─── Etiquetas clínicas: tarjeta editable (el pill del encabezado es solo lectura) ───
       let tagsCardBody = '<div style="color:rgba(244,239,229,.9);font-style:italic;font-size:12px">Cargando…</div>';
       try{
@@ -16931,45 +16972,72 @@ async function showDrPTab_(tab){
               y:{min:200,max:450,ticks:{callback:v=>v+'ms',font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}}}}}); 
       },150);
     }else if(tab==='cuestionarios'){
-      // Dos vistas: "Última" (el estado actual de cada escala, que es lo que se
-      // mira en la consulta) e "Historial" (todas las tomas). Antes lo primero
-      // vivía en Resumen y lo segundo era una pestaña suelta.
+      // Una sola vista: cada cuestionario es una tarjeta. Al tocarla se abre
+      // ahí mismo su evolución, sin cambiar de pestaña ni de subvista.
+      // "Última / Historial" se eliminó: obligaba a elegir entre dos listas de
+      // lo mismo, cuando lo que se quiere es ver una escala y su historia.
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);
       S.viewRecs=recs||[];
-      const sub = (window._dmSubCuest==='hist') ? 'hist' : 'ult';
-      const subBar =
-        '<div style="display:inline-flex;gap:2px;background:rgba(126,200,164,0.08);border:0.5px solid rgba(126,200,164,0.2);border-radius:999px;padding:3px;margin:2px 0 14px">'+
-          '<button type="button" onclick="dmSubCuest(\'ult\')" style="appearance:none;border:none;cursor:pointer;font-family:inherit;border-radius:999px;padding:7px 15px;font-size:12px;font-weight:700;background:'+(sub==='ult'?'rgba(126,200,164,0.22)':'transparent')+';color:'+(sub==='ult'?'#7EC8A4':'rgba(244,239,229,0.6)')+'">Última</button>'+
-          '<button type="button" onclick="dmSubCuest(\'hist\')" style="appearance:none;border:none;cursor:pointer;font-family:inherit;border-radius:999px;padding:7px 15px;font-size:12px;font-weight:700;background:'+(sub==='hist'?'rgba(126,200,164,0.22)':'transparent')+';color:'+(sub==='hist'?'#7EC8A4':'rgba(244,239,229,0.6)')+'">Historial</button>'+
-        '</div>';
+      if(!recs||!recs.length){ cont.innerHTML='<div class="empty-state">Sin cuestionarios cargados</div>'; return; }
 
-      if(!recs||!recs.length){ cont.innerHTML=subBar+'<div class="empty-state">Sin cuestionarios cargados</div>'; return; }
+      // Agrupar por escala, la más reciente primero.
+      const porEscala={};
+      recs.forEach(function(r){ (porEscala[r.scale_id]=porEscala[r.scale_id]||[]).push(r); });
 
-      if(sub==='ult'){
-        // Última toma de cada escala, las alteradas primero.
-        const ult={};
-        recs.forEach(r=>{ if(!ult[r.scale_id]) ult[r.scale_id]=r; });   // recs viene desc
-        const filas=Object.values(ult).map(r=>{
-          const sc=SCALES.find(s=>s.id===r.scale_id);
-          const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};
-          const alterada=(i.bg==='#fee2e2'||i.bg==='#fef2f2');
-          const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
-          return {alterada, html:
-            '<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswersById(\''+r.id+'\')">'+
-              '<div><div style="font-size:14px;font-weight:500;color:#F4EFE5">'+(sc?sc.name:r.scale_name)+'</div>'+
-              '<div style="font-size:12px;color:rgba(244,239,229,.92);margin-top:2px">'+d+'</div></div>'+
-              '<div style="text-align:right;display:flex;align-items:center;gap:8px"><div>'+
-                '<div style="font-size:16px;font-weight:600;color:'+(alterada?'#E88':'#F4EFE5')+'">'+r.score+'/'+(r.max_score||(sc&&sc.max)||'—')+'</div>'+
-                '<span class="badge" style="background:#F4EFE5;color:'+i.c+';border:none;font-weight:600;padding:3px 10px;margin-top:4px;display:inline-block">'+i.l+'</span>'+
-              '</div><span style="color:rgba(244,239,229,.9);font-size:16px">›</span></div></div>'
-          };
-        }).sort((a,b)=>(b.alterada?1:0)-(a.alterada?1:0)).map(x=>x.html).join('');
-        cont.innerHTML=subBar+filas;
-        return;
-      }
-      // sub==='hist': todas las tomas, como estaba en la pestaña Historial.
-      if(!recs||!recs.length){cont.innerHTML=subBar+'<div class="empty-state">Sin evaluaciones</div>';return;}
-      cont.innerHTML=subBar+recs.map(r=>{const sc=SCALES.find(s=>s.id===r.scale_id);const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});return`<div class="hist-entry" style="cursor:pointer" onclick="showDrEvalAnswersById('${r.id}')"><div><div style="font-size:14px;font-weight:500;color:#F4EFE5">${r.scale_name}</div><div style="font-size:12px;color:rgba(244,239,229,.92);margin-top:2px">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:8px"><div><div style="font-size:16px;font-weight:600;color:#F4EFE5">${r.score}/${r.max_score || (sc&&sc.max) || '—'}</div><span class="badge" style="background:#F4EFE5;color:${i.c};border:none;font-weight:600;padding:3px 10px;margin-top:4px;display:inline-block">${i.l}</span></div><span style="color:rgba(244,239,229,.9);font-size:16px">›</span></div></div>`;}).join('');
+      const tarjetas=Object.keys(porEscala).map(function(id){
+        const tomas=porEscala[id];
+        const r=tomas[0];
+        const sc=SCALES.find(function(x){ return x.id===id; });
+        const i=sc?sc.interp(r.score):{l:'',c:'#888',bg:'#eee'};
+        const alterada=(i.bg==='#fee2e2'||i.bg==='#fef2f2');
+        const col=alterada?'#E88':'#7EC8A4';
+        const d=new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+        const varias=tomas.length>1;
+
+        // Toda la tarjeta abre las respuestas de la última toma. Si hay más de
+        // una, la flecha —y solo la flecha— despliega las anteriores. Antes
+        // había un botón "Ver respuestas" que estiraba la tarjeta hacia abajo.
+        const flecha = varias
+          ? '<button type="button" onclick="event.stopPropagation();dmTogglearCuest(\'' + id + '\')" '+
+            'aria-label="Ver tomas anteriores" '+
+            'style="appearance:none;border:none;background:none;cursor:pointer;padding:2px 4px;margin-left:8px;'+
+            'color:#7EC8A4;font-size:14px;font-family:inherit"><span id="cq-f-'+id+'" style="display:inline-block">▾</span></button>'
+          : '';
+
+        const historia = varias
+          ? '<div id="cq-h-'+id+'" style="display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(126,200,164,0.14)">'+
+              tomas.slice(1).map(function(t){
+                const ti=sc?sc.interp(t.score):{l:''};
+                const td=new Date(t.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+                return '<div onclick="event.stopPropagation();showDrEvalAnswersById(\''+t.id+'\')" '+
+                  'style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;cursor:pointer">'+
+                  '<span style="font-size:12.5px;color:rgba(244,239,229,.82)">'+td+'</span>'+
+                  '<span style="font-size:12.5px;color:#F4EFE5;font-weight:600">'+t.score+'/'+(t.max_score||(sc&&sc.max)||'—')+' · '+ti.l+'</span></div>';
+              }).join('')+
+            '</div>'
+          : '';
+
+        return '<div class="dm-card" style="margin-bottom:0;cursor:pointer" '+
+            'onclick="showDrEvalAnswersById(\''+r.id+'\')">'+
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">'+
+              '<div style="min-width:0">'+
+                '<div style="font-size:14.5px;font-weight:600;color:#F4EFE5;line-height:1.35">'+(sc?sc.name:r.scale_name)+'</div>'+
+                '<div style="font-size:12px;color:rgba(244,239,229,.78);margin-top:3px">'+d+
+                  (varias?' · '+tomas.length+' tomas':'')+'</div>'+
+              '</div>'+
+              '<div style="display:flex;align-items:flex-start">'+
+                '<div style="text-align:right;white-space:nowrap">'+
+                  '<div style="font-size:19px;font-weight:700;color:'+col+'">'+r.score+
+                    '<span style="font-size:13px;font-weight:500;color:rgba(244,239,229,.7)">/'+(r.max_score||(sc&&sc.max)||'—')+'</span></div>'+
+                  '<div style="font-size:12px;color:'+col+';font-weight:600;margin-top:2px">'+i.l+'</div>'+
+                '</div>'+ flecha +
+              '</div>'+
+            '</div>'+
+            historia +
+          '</div>';
+      }).join('');
+
+      cont.innerHTML='<div class="dm-cuest-grid">'+tarjetas+'</div>';
       return;
     }else if(tab==='history'){
       const recs=await db.get(`evaluations?patient_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`);S.viewRecs=recs||[];
@@ -17072,20 +17140,54 @@ async function showDrPTab_(tab){
           }
         });
       };
+      // Una escala de la lista. Se extrajo para poder reusarla dentro de
+      // cada grupo temático.
+      const _sugItem = function(sc){
+        const desc = scaleDescs[sc.id] || sc.desc || '';
+        return '<label class="suggest-label" style="display:flex;gap:10px;align-items:flex-start;'+
+          'background:var(--bg-secondary);border-radius:10px;padding:10px 13px;cursor:pointer;'+
+          'border:1.5px solid transparent;margin-bottom:6px">'+
+          '<input type="checkbox" value="'+sc.id+'" style="accent-color:#1a4a3a;margin-top:3px;'+
+            'flex-shrink:0;width:16px;height:16px">'+
+          '<div style="min-width:0"><div style="font-size:13.5px;font-weight:500;color:var(--label)">'+sc.name+'</div>'+
+          '<div style="font-size:11.5px;color:var(--label-2);margin-top:2px;line-height:1.4">'+desc+'</div></div>'+
+        '</label>';
+      };
+
       hdr.innerHTML='<div class="sec-title" style="margin-top:14px">Sugerir escalas al paciente</div>'+
         '<div style="font-size:13px;color:var(--label-2);margin-bottom:12px;line-height:1.5">Seleccioná una o más escalas. Le aparecerán al paciente con tu nombre y el mensaje.</div>'+
         '<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Paquetes sugeridos</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">'+_suggestBundlesHtml+'</div>'+
         '<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Escalas</div>'+
-        '<div id="suggest-scale-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">'+
-        SCALES.filter(s=>isScaleVisibleForProfile(s, S.viewData)).map(s=>{
-          const desc=scaleDescs[s.id]||s.desc||'';
-          return '<label style="display:flex;gap:10px;align-items:flex-start;background:var(--bg-secondary);border-radius:10px;padding:11px 14px;cursor:pointer;border:1.5px solid transparent" class="suggest-label">'+
-            '<input type="checkbox" value="'+s.id+'" style="accent-color:#1a4a3a;margin-top:3px;flex-shrink:0;width:16px;height:16px">'+
-            '<div><div style="font-size:14px;font-weight:500;color:var(--label)">'+s.name+'</div>'+
-            '<div style="font-size:12px;color:var(--label-2);margin-top:2px;line-height:1.4">'+desc+'</div></div>'+
-            '</label>';
-        }).join('')+
+        '<div id="suggest-scale-list" class="dm-sug-grid" style="margin-bottom:14px">'+
+        (function(){
+          // Agrupadas por tema: una lista plana de 25 escalas obliga a leerlas
+          // todas para encontrar la que se busca. Los grupos siguen el orden en
+          // que se piensa una consulta: primero cribar, después el motivo, y al
+          // final lo que se evalúa si algo lo sugiere.
+          const GRUPOS = [
+            ['Cribado inicial',        ['gasq','psqi','sated']],
+            ['Insomnio',               ['isi','dbas','psas']],
+            ['Somnolencia y vigilia',  ['ess','fosq10','fss']],
+            ['Respiratorio',           ['stopbang','sassv']],
+            ['Movimiento y parasomnias',['irls','rbdq','sns','pdss']],
+            ['Ritmo circadiano',       ['meq','mctq','swi']],
+            ['Salud mental',           ['phq9','gad7','pcl5']]
+          ];
+          const visibles = SCALES.filter(s=>isScaleVisibleForProfile(s, S.viewData));
+          const usados = {};
+          GRUPOS.forEach(g=>g[1].forEach(id=>{ usados[id]=1; }));
+          const otras = visibles.filter(s=>!usados[s.id]);
+          const bloques = GRUPOS.map(g=>[g[0], visibles.filter(s=>g[1].indexOf(s.id)>=0)])
+                                .filter(g=>g[1].length);
+          if(otras.length) bloques.push(['Otras', otras]);
+          return bloques.map(function(g){
+            return '<div class="dm-sug-grupo">'+
+              '<div class="dm-sug-tit">'+g[0]+'</div>'+
+              g[1].map(_sugItem).join('')+
+            '</div>';
+          }).join('');
+        })()+
         '</div>'+
         '<div class="form-group"><label class="form-label">Mensaje para el paciente (opcional)</label>'+
         '<textarea class="form-input" id="suggest-msg" rows="2" placeholder="Ej: Completá estas escalas antes de tu próxima consulta..."></textarea></div>';

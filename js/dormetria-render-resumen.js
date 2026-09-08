@@ -77,6 +77,12 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
       '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px">Cargando…</div>' +
     '</div>');
 
+  // ── Cronotipo (se rellena async: el MCTQ sale del diario) ──────────
+  const tarjetaCrono = dmCardResumen('🌙', 'Cronotipo',
+    '<div id="drp-crono-card-body">' +
+      '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px">Cargando…</div>' +
+    '</div>');
+
   // ── Datos rápidos ──────────────────────────────────────────────────
   const tarjetaDatos = dmCardResumen('🆔', 'Datos',
     dmKv('Edad / IMC', edadImc, true) +
@@ -179,11 +185,14 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   // ── Punto 9: evolución con las 4 métricas del demo ─────────────────
   let tarjetaEvolucion = '';
   if (modo === 'esp') {
+    // Compacto: cuatro cifras en una sola fila, en línea. Antes eran cuatro
+    // recuadros grandes de 2x2 y la tarjeta ocupaba media pantalla para
+    // mostrar cuatro números.
     const celda = function (rotulo, valor, pie) {
-      return '<div style="background:rgba(126,200,164,0.07);border:0.5px solid rgba(126,200,164,0.14);border-radius:12px;padding:11px 10px;text-align:center">' +
-        '<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(244,239,229,.76);margin-bottom:6px">' + rotulo + '</div>' +
-        '<div style="font-size:19px;font-weight:600;color:#F4EFE5;line-height:1.1">' + valor + '</div>' +
-        (pie ? '<div style="font-size:11px;color:rgba(244,239,229,.76);margin-top:4px">' + pie + '</div>' : '') +
+      return '<div style="flex:1 1 0;min-width:0;padding:0 10px;border-left:0.5px solid rgba(126,200,164,0.14)">' +
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(244,239,229,.76)">' + rotulo + '</div>' +
+        '<div style="font-size:16px;font-weight:600;color:#F4EFE5;line-height:1.25;margin-top:2px">' + valor + '</div>' +
+        (pie ? '<div style="font-size:10.5px;color:rgba(244,239,229,.72);margin-top:1px">' + pie + '</div>' : '') +
       '</div>';
     };
 
@@ -198,18 +207,27 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
     const veredicto = e && e.veredicto ? e.veredicto : 'Sin datos suficientes';
     const colorVer = (e && e.delta >= 5) ? '#7EC8A4' : (e && e.delta <= -5) ? '#E88' : 'rgba(244,239,229,0.7)';
 
-    tarjetaEvolucion = dmCardResumen('📈', 'Evolución en un vistazo',
-      '<div style="display:inline-flex;align-items:center;gap:7px;background:rgba(126,200,164,0.08);border-radius:999px;padding:5px 12px;margin-bottom:12px">' +
-        '<span style="width:7px;height:7px;border-radius:50%;background:' + colorVer + '"></span>' +
-        '<span style="font-size:12.5px;font-weight:600;color:' + colorVer + '">' + escHtml(veredicto) + '</span>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">' +
-        celda('Latencia', num(met.latenciaMedia, ' min'), met.latenciaMedia > 30 ? 'sobre umbral' : 'dentro de rango') +
-        celda('Eficiencia', num(e ? e.actual : met.eficiencia, '%'), efPie) +
-        celda('Despertares', (met.despertaresMedia == null || isNaN(met.despertaresMedia)) ? '—' : met.despertaresMedia + ' /noche', '') +
-        celda('Adherencia', e ? num(e.adherencia, '%') : '—', motorResult.nochesRegistradas ? motorResult.nochesRegistradas + ' noches' : '') +
-      '</div>');
+    // El veredicto va en la misma fila, a la izquierda, en vez de ocupar un
+    // renglón propio arriba.
+    tarjetaEvolucion =
+      '<div class="dm-card" style="padding:12px 14px">' +
+        '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">' +
+          '<div style="flex:0 0 auto;display:flex;align-items:center;gap:7px;min-width:0">' +
+            '<span style="font-size:14px">📈</span>' +
+            '<span style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.055em;color:#8FD4B0;white-space:nowrap">Evolución</span>' +
+            '<span style="width:7px;height:7px;border-radius:50%;background:' + colorVer + ';margin-left:4px;flex:0 0 auto"></span>' +
+            '<span style="font-size:12px;font-weight:600;color:' + colorVer + ';white-space:nowrap">' + escHtml(veredicto) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;flex:1 1 340px;min-width:0">' +
+            celda('Latencia', num(met.latenciaMedia, ' min'), met.latenciaMedia > 30 ? 'sobre umbral' : 'en rango') +
+            celda('Eficiencia', num(e ? e.actual : met.eficiencia, '%'), efPie) +
+            celda('Despertares', (met.despertaresMedia == null || isNaN(met.despertaresMedia)) ? '—' : met.despertaresMedia + ' /noche', '') +
+            celda('Adherencia', e ? num(e.adherencia, '%') : '—', motorResult.nochesRegistradas ? motorResult.nochesRegistradas + ' noches' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
   }
+
 
   // ── Cuestionarios (solo especialista) ──────────────────────────────
   // El Resumen es una vista de decisión: si entran las ocho escalas con su
@@ -232,7 +250,7 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
         const i = sc.interp(r.score) || {};
         const alterada = i.bg === '#fee2e2' || i.bg === '#fef2f2';
         return { nombre: sc.name, score: r.score, max: r.max_score || sc.max || null,
-                 etiqueta: i.l || '', alterada: alterada, fecha: r.created_at };
+                 etiqueta: i.l || '', alterada: alterada, fecha: r.created_at, id: r.id };
       }).filter(Boolean)
         .sort(function (a, b) { return (b.alterada ? 1 : 0) - (a.alterada ? 1 : 0); });
 
@@ -243,7 +261,8 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
 
       filas = alteradas.map(function (x) {
         const f = x.fecha ? new Date(x.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '';
-        return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-top:0.5px solid rgba(126,200,164,0.08)">' +
+        // Clicable: abre las respuestas del cuestionario sin salir del Resumen.
+        return '<div onclick="showDrEvalAnswersById(\'' + x.id + '\')" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-top:0.5px solid rgba(126,200,164,0.08);cursor:pointer">' +
           '<span style="font-size:13px;color:#F4EFE5;font-weight:600">' + escHtml(x.nombre) + '</span>' +
           '<span style="font-size:12.5px;color:#E88;font-weight:700;white-space:nowrap">' +
             x.score + (x.max ? '/' + x.max : '') + ' · ' + escHtml(x.etiqueta) +
@@ -263,6 +282,39 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
       filas = '<div style="font-size:12.5px;color:rgba(244,239,229,.78);font-style:italic">No se pudieron leer los cuestionarios.</div>';
     }
     tarjetaEscalas = dmCardResumen('📊', 'Cuestionarios', filas);
+  }
+
+  // ── Criterios y fuentes (solo especialista) ────────────────────────
+  // Va plegado: no estorba la lectura, pero permite auditar de dónde sale
+  // cada umbral sin salir de la ficha.
+  let tarjetaCriterios = '';
+  if (modo === 'esp' && typeof dmCriteriosYFuentes === 'function') {
+    try {
+      const cf = dmCriteriosYFuentes();
+      const items = (cf.criterios || []).map(function (c) {
+        return '<div style="padding:11px 0;border-top:0.5px solid rgba(126,200,164,0.10)">' +
+          '<div style="font-size:13px;font-weight:700;color:#F4EFE5;line-height:1.4">' + escHtml(c.criterio) + '</div>' +
+          '<div style="font-size:12.5px;color:rgba(244,239,229,.9);line-height:1.55;margin-top:4px">' + escHtml(c.operacionalizado || '') + '</div>' +
+          (c.fuente ? '<div style="font-size:12px;color:#7EC8A4;line-height:1.55;margin-top:5px">' + escHtml(c.fuente) + '</div>' : '') +
+          (c.accion ? '<div style="font-size:12px;color:rgba(244,239,229,.82);line-height:1.55;margin-top:4px">→ ' + escHtml(c.accion) + '</div>' : '') +
+          (c.nota ? '<div style="font-size:12px;color:#C8A96E;line-height:1.55;margin-top:5px">' + escHtml(c.nota) + '</div>' : '') +
+        '</div>';
+      }).join('');
+
+      tarjetaCriterios =
+        '<details class="dm-card" style="padding:0">' +
+          '<summary style="list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+            '<span style="margin:0;display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;' +
+              'text-transform:uppercase;letter-spacing:0.055em;color:#8FD4B0">' +
+              '<span style="font-size:14px">📐</span><span>' + escHtml(cf.titulo || 'Criterios y fuentes') + '</span></span>' +
+            '<span style="color:#7EC8A4;font-size:15px">▾</span>' +
+          '</summary>' +
+          '<div style="padding:0 16px 14px">' +
+            '<div style="font-size:12.5px;color:rgba(244,239,229,.86);line-height:1.6;margin-bottom:2px">' + escHtml(cf.intro || '') + '</div>' +
+            items +
+          '</div>' +
+        '</details>';
+    } catch (_) {}
   }
 
   // ── Material para el paciente ──────────────────────────────────────
@@ -305,8 +357,8 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   // ancho empujaban la orientación clínica —lo que el profesional viene a
   // leer— por debajo del pliegue. Van en una fila de dos columnas.
   const cabecera =
-    '<div class="dm-resumen-head" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start">' +
-      tarjetaTags + tarjetaDatos +
+    '<div class="dm-resumen-head" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:start">' +
+      tarjetaTags + tarjetaDatos + tarjetaCrono +
     '</div>';
 
   // En generalista eran tres tarjetas de ancho completo apiladas: en monitor
@@ -321,9 +373,15 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
       '</div>' +
       barraMaterial;
   }
-  return toggle + cabecera +
+  // "Evolución en un vistazo" va a lo ancho, justo debajo de la cabecera: son
+  // cuatro cifras en fila y dentro de una columna quedaban apretadas.
+  return toggle + cabecera + tarjetaEvolucion +
     '<div class="dm-resumen-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">' +
       '<div>' + tarjetaOrientacion + tarjetaConducta + '</div>' +
-      '<div>' + tarjetaBanderas + tarjetaEscalas + tarjetaEvolucion + tarjetaMaterial + '</div>' +
-    '</div>';
+      '<div>' + tarjetaBanderas + tarjetaEscalas + tarjetaMaterial + '</div>' +
+    '</div>' +
+    // "Criterios y fuentes" va a lo ancho, abajo de todo: es material de
+    // consulta, no parte de la lectura clínica, y sacándolo de la columna
+    // derecha las dos quedan parejas (2 tarjetas altas vs 4 cortas).
+    tarjetaCriterios;
 }

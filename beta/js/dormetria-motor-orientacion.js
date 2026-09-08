@@ -146,46 +146,77 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
   // Detectar insomnio por tipo según diario + ISI
   const metrics = dmMetricasDiario(diarySlice);
 
-  // REGLA: Detectar PRIMERO si hay AMBOS problemas = mixto
-  if (metrics.vigiliaIntrasueño > 60 && metrics.latenciaMedia > 30) {
+  // Los dos ejes se evalúan POR SEPARADO y recién después se combinan.
+  //
+  // Antes esto era una cadena de if/else donde el criterio de mantenimiento
+  // incluía "|| eficiencia < 75", y esa rama se evaluaba ANTES que la de
+  // conciliación. Una paciente con 106 min de latencia y 42 de vigilia caía en
+  // "mantenimiento" y la latencia no se miraba nunca. El error de fondo es que
+  // la eficiencia (TST/TIB) no distingue POR QUÉ es baja: una latencia larga la
+  // hunde igual que los despertares. Usarla como criterio de mantenimiento
+  // confunde causa con consecuencia.
+  //
+  // Ahora el mantenimiento se define por vigilia intrasueño (WASO), que es lo
+  // que realmente mide despertarse durante la noche. La eficiencia baja sin
+  // ninguno de los dos ejes alterados queda como alteración inespecífica.
+  // Umbrales: Lichstein et al. 2003 (Behav Res Ther), "Quantitative criteria
+  // for insomnia": latencia o WASO ≥31 min, ≥3 noches por semana. Es el corte
+  // cuantitativo mejor sostenido de la literatura.
+  //
+  // OJO: NO son de la ICSD-3, como decía este comentario antes. La ICSD-3 no
+  // fija umbrales numéricos; define el insomnio por la queja, la frecuencia
+  // (≥3 noches/semana), la repercusión diurna y la duración (≥3 meses para el
+  // subtipo crónico). Por eso el motor dice "compatible con patrón de..." y
+  // deja la cronicidad y la repercusión para la entrevista.
+  //
+  // El WASO estaba en 60 min, que es criterio de inclusión de ensayos
+  // clínicos, no umbral diagnóstico: dejaba afuera pacientes con despertares
+  // clínicamente relevantes. Se baja a 30 para alinearlo con la fuente citada.
+  // GUARDARRAÍL: sin un mínimo de noches no se emite ninguna lectura del
+  // diario. Antes esto no existía y un paciente con cero noches recibía
+  // igual una orientación, construida sobre ceros. Tres noches es el mínimo
+  // que ya usa el resto de la app para promediar.
+  if (!metrics.nochesValidas || metrics.nochesValidas < 3) {
+    if (isiScore >= 15) {
+      orientacion.texto = 'Insomnio clínicamente significativo por escala, sin diario para caracterizarlo';
+      orientacion.base = `ISI ${isiScore}/28. Todavía no hay diario suficiente ` +
+        `(${metrics.nochesValidas || 0} de las 3 noches mínimas), así que no se puede decir si es de ` +
+        `conciliación, de mantenimiento o mixto. Pedir el registro de al menos una semana.`;
+    } else if (isiScore) {
+      orientacion.texto = 'Sin diario suficiente para orientar';
+      orientacion.base = `ISI ${isiScore}/28, por debajo del umbral de significación clínica. ` +
+        `Con ${metrics.nochesValidas || 0} noches cargadas no se puede caracterizar el patrón.`;
+    } else {
+      orientacion.texto = 'Sin datos suficientes para orientar';
+      orientacion.base = 'No hay diario ni escalas que permitan una lectura.';
+    }
+    return orientacion;
+  }
+
+  const conciliacion  = metrics.latenciaMedia > 30;
+  const mantenimiento = metrics.vigiliaIntrasueño > 30;
+  const nNoches = diarySlice.length;
+  const cifras = `Latencia ~${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ~${Math.round(metrics.vigiliaIntrasueño)} min, eficiencia ${Math.round(metrics.eficiencia)}%. ${nNoches} noches registradas.`;
+
+  if (conciliacion && mantenimiento) {
     orientacion.texto = 'Compatible con patrón de insomnio mixto';
-    orientacion.base = `Tiene ambos problemas: tarda en conciliar (~${Math.round(metrics.latenciaMedia)} min) Y se despierta durante la noche (~${Math.round(metrics.vigiliaIntrasueño)} min de vigilia). Eficiencia ${Math.round(metrics.eficiencia)}%. ${diarySlice.length} noches registradas.`;
-    orientacion.preguntas.push({
-      id: 'duracion',
-      texto: '¿Desde cuándo tiene ambos síntomas?',
-      criterio: 'ICSD-3 requiere ≥3 meses de duración para insomnio crónico'
-    });
-  }
-  // REGLA: Patrón de mantenimiento = vigilia intrasueño alto O eficiencia baja (<75%)
-  // Fuente: ICSD-3, criterios operacionales
-  else if (metrics.vigiliaIntrasueño > 60 || metrics.eficiencia < 75) {
+    orientacion.base = `Tiene los dos problemas: tarda en conciliar y además se despierta durante la noche. ${cifras}`;
+  } else if (mantenimiento) {
     orientacion.texto = 'Compatible con patrón de insomnio de mantenimiento';
-    orientacion.base = `Se despierta durante la noche (~${Math.round(metrics.vigiliaIntrasueño)} min de vigilia total). Concilia adecuadamente (latencia ~${Math.round(metrics.latenciaMedia)} min). Eficiencia ${Math.round(metrics.eficiencia)}%. ${diarySlice.length} noches registradas.`;
-    orientacion.preguntas.push({
-      id: 'duracion',
-      texto: '¿Desde cuándo se despierta durante la noche?',
-      criterio: 'ICSD-3 requiere ≥3 meses de duración para insomnio crónico'
-    });
-  }
-  // REGLA: Patrón de conciliación = latencia alta (sin mantenimiento)
-  else if (metrics.latenciaMedia > 30) {
+    orientacion.base = `Se despierta durante la noche. Concilia en tiempo adecuado. ${cifras}`;
+  } else if (conciliacion) {
     orientacion.texto = 'Compatible con patrón de insomnio de conciliación';
-    orientacion.base = `Tarda en conciliar el sueño (~${Math.round(metrics.latenciaMedia)} min en promedio). Una vez dormido, mantiene el sueño (vigilia ~${Math.round(metrics.vigiliaIntrasueño)} min). Eficiencia ${Math.round(metrics.eficiencia)}%. ${diarySlice.length} noches registradas.`;
-    orientacion.preguntas.push({
-      id: 'duracion',
-      texto: '¿Desde cuándo tiene dificultad para conciliar?',
-      criterio: 'ICSD-3 requiere ≥3 meses de duración para insomnio crónico'
-    });
-  }
-  // REGLA: Patrón leve con algún criterio presente
-  else if (metrics.latenciaMedia > 15 || metrics.vigiliaIntrasueño > 30) {
+    orientacion.base = `Tarda en conciliar el sueño. Una vez dormida, lo mantiene. ${cifras}`;
+  } else if (metrics.eficiencia < 75) {
+    // Eficiencia baja sin latencia ni WASO alterados: suele ser exceso de
+    // tiempo en cama despierto (se acuesta muy temprano o se queda en la cama
+    // después de despertarse), que es lo que corrige la restricción de tiempo
+    // en cama. No es lo mismo que insomnio y no conviene llamarlo así.
+    orientacion.texto = 'Eficiencia de sueño baja, sin patrón de insomnio definido';
+    orientacion.base = `Pasa más tiempo en la cama del que duerme, pero ni la latencia ni los despertares están alterados. ${cifras}`;
+  } else if (metrics.latenciaMedia > 15 || metrics.vigiliaIntrasueño > 30) {
     orientacion.texto = 'Patrón de sueño con alteraciones leves';
-    orientacion.base = `Latencia ${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ${Math.round(metrics.vigiliaIntrasueño)} min, eficiencia ${Math.round(metrics.eficiencia)}%. ${diarySlice.length} noches registradas.`;
-    orientacion.preguntas.push({
-      id: 'duracion',
-      texto: '¿Desde cuándo nota estas alteraciones?',
-      criterio: 'ICSD-3 requiere ≥3 meses de duración para insomnio crónico'
-    });
+    orientacion.base = cifras;
   } else {
     orientacion.texto = 'Patrón de sueño dentro de límites normales';
     orientacion.base = `Métricas: latencia ${Math.round(metrics.latenciaMedia)} min, vigilia ${Math.round(metrics.vigiliaIntrasueño)} min, eficiencia ${Math.round(metrics.eficiencia)}%.`;
@@ -430,7 +461,12 @@ function dmCalcularEvolucion(diaryEntries) {
  * USO: campos reales de la BD si existen, sino estima
  */
 function dmMetricasDiario(entries) {
-  const vacio = { latenciaMedia: 0, vigiliaIntrasueño: 0, eficiencia: 0, despertaresMedia: 0, tst: 0, tib: 0 };
+  // OJO: acá se devolvían ceros cuando no había ninguna noche cargada, y un 0
+  // es indistinguible de un dato real bajo. Con "eficiencia: 0" la regla
+  // `eficiencia < 75` daba verdadero y el motor informaba "eficiencia de sueño
+  // baja" a un paciente SIN diario. Ausencia de dato es null, no cero.
+  const vacio = { latenciaMedia: null, vigiliaIntrasueño: null, eficiencia: null,
+                  despertaresMedia: null, tst: null, tib: null, nochesValidas: 0 };
   const valid = (entries || []).filter(e => e && e.sleep_minutes && e.diary_date);
   if (!valid.length) return vacio;
 
@@ -502,7 +538,8 @@ function dmMetricasDiario(entries) {
     ? Math.round(prom(despertares) * 10) / 10
     : (vigiliaIntrasueño > 0 ? Math.max(1, Math.round(vigiliaIntrasueño / 45)) : 0);
 
-  return { latenciaMedia, vigiliaIntrasueño, eficiencia, despertaresMedia, tst, tib };
+  return { latenciaMedia, vigiliaIntrasueño, eficiencia, despertaresMedia, tst, tib,
+           nochesValidas: valid.length };
 }
 
 /**
@@ -570,43 +607,75 @@ function dmMedicacionCombinada(doctorData, diarySlice) {
 }
 
 /**
- * Genera el bloque de criterios y fuentes (para modo especialista)
+ * Criterios y fuentes del motor. Se muestra en el modo especialista.
+ *
+ * CORRECCIÓN IMPORTANTE: hasta acá el código atribuía los cortes numéricos de
+ * latencia y vigilia a la ICSD-3. Es incorrecto. La ICSD-3 NO fija umbrales
+ * cuantitativos: define el insomnio por la queja de dificultad para iniciar o
+ * mantener el sueño, con frecuencia ≥3 noches/semana, repercusión diurna y
+ * ≥3 meses para el subtipo crónico. Los cortes numéricos vienen de la
+ * literatura cuantitativa, no de la clasificación.
  */
 function dmCriteriosYFuentes() {
   return {
-    titulo: 'Criterios y fuentes del motor de orientación',
+    titulo: 'Criterios y fuentes',
+    intro: 'La orientación se arma con reglas explícitas. Acá está cada umbral con su origen. ' +
+           'Ninguna de estas reglas reemplaza el juicio clínico ni constituye un diagnóstico.',
     criterios: [
       {
-        criterio: 'Insomnio (tipo)',
-        operacionalizado: 'Patrón de mantenimiento: vigilia intrasueño >60 min O eficiencia <75%',
-        operacionalizado2: 'Patrón de conciliación: latencia >30 min',
-        operacionalizado3: 'Patrón mixto: latencia >15 min Y vigilia >30 min',
-        fuente: 'ICSD-3 (International Classification of Sleep Disorders, 3rd ed)',
-        nota: '⚠️ IMPORTANTE: Requiere duración ≥3 meses para etiquetarse como "crónico"'
+        criterio: 'Tipo de insomnio (conciliación / mantenimiento / mixto)',
+        operacionalizado:
+          'Conciliación: latencia media >30 min. · Mantenimiento: vigilia intrasueño (WASO) media >30 min. · Mixto: ambos.',
+        fuente:
+          'Lichstein KL et al., "Quantitative criteria for insomnia", Behaviour Research and Therapy 2003: ' +
+          'latencia o WASO ≥31 min, ≥3 noches por semana, es el corte cuantitativo más defendible de la literatura.',
+        nota:
+          'La ICSD-3 no fija umbrales numéricos: define el insomnio por la queja del paciente más frecuencia ' +
+          '(≥3 noches/semana), repercusión diurna y duración (≥3 meses para el subtipo crónico). Por eso el motor ' +
+          'dice "compatible con patrón de..." y nunca "insomnio crónico": la cronicidad y la repercusión diurna ' +
+          'las establece la entrevista, no el diario.'
       },
       {
-        criterio: 'Apnea probable',
-        operacionalizado: 'STOP-BANG ≥ 3/8',
-        fuente: 'AASM (American Academy of Sleep Medicine), criterios de riesgo de apnea del sueño',
-        accion: 'Derivar a PSG antes de sostener hipnóticos'
+        criterio: 'Eficiencia de sueño baja',
+        operacionalizado: 'Tiempo dormido / tiempo en cama <85%.',
+        fuente:
+          'Umbral de uso corriente en terapia de restricción de tiempo en cama (Spielman), incorporado a los ' +
+          'protocolos de TCC-I.',
+        nota:
+          'La eficiencia NO se usa para definir el tipo de insomnio, porque no distingue la causa: una latencia ' +
+          'larga la baja igual que los despertares. Se informa aparte.'
+      },
+      {
+        criterio: 'Primera línea de tratamiento',
+        operacionalizado: 'TCC-I antes que fármaco, en insomnio crónico del adulto.',
+        fuente:
+          'Edinger JD, Arnedt JT, Bertisch SM et al., "Behavioral and psychological treatments for chronic ' +
+          'insomnia disorder in adults: an AASM clinical practice guideline", J Clin Sleep Med 2021;17(2). ' +
+          'Recomendación FUERTE para TCC-I; avalada por la World Sleep Society.'
+      },
+      {
+        criterio: 'Riesgo de apnea del sueño',
+        operacionalizado: 'STOP-BANG ≥3/8 (riesgo intermedio o alto).',
+        fuente: 'Chung F et al., cuestionario STOP-BANG, validado para cribado preoperatorio y clínico de AOS.',
+        accion: 'Descartar AOS con estudio de sueño antes de sostener hipnóticos.'
       },
       {
         criterio: 'Somnolencia diurna',
-        operacionalizado: 'ESS ≥ 10 (leve), ≥ 13 (moderada a severa)',
-        fuente: 'Johns MW, Epworth Sleepiness Scale (1991)',
-        accion: 'Si ≥13: evaluar restricciones de conducción'
+        operacionalizado: 'Epworth ≥10 (excesiva), ≥13 (moderada a severa).',
+        fuente: 'Johns MW, "A new method for measuring daytime sleepiness: the Epworth Sleepiness Scale", Sleep 1991.',
+        accion: 'Con ≥13, conversar sobre conducción y actividades de riesgo.'
       },
       {
         criterio: 'Síntomas depresivos',
-        operacionalizado: 'PHQ-9 ≥ 10 (síntomas presentes), ≥ 15 (depresión moderada-severa)',
-        fuente: 'DSM-5-TR (Diagnostic and Statistical Manual, 5th Edition, Text Revision)',
-        accion: 'Si ≥15: considerar psiquiatría en paralelo'
+        operacionalizado: 'PHQ-9 ≥10 (síntomas presentes), ≥15 (moderada a severa).',
+        fuente: 'Kroenke K, Spitzer RL, Williams JB, "The PHQ-9", J Gen Intern Med 2001.',
+        accion: 'Es un cribado, no un diagnóstico. Con ≥15, evaluación del ánimo en paralelo.'
       },
       {
-        criterio: 'Medicación actual',
-        operacionalizado: 'Benzodiacepina en >8 de las últimas 14 noches del diario',
-        fuente: 'Criterio temporal: deprescripción indicada si duración >8 semanas (guías AASM)',
-        nota: '⚠️ IMPORTANTE: La duración debe confirmarse clínicamente; no se asume "crónica" con solo el diario'
+        criterio: 'Medicación hipnótica registrada',
+        operacionalizado: 'Se informa qué tomó y en cuántas de las noches cargadas. No se marca alerta por sí solo.',
+        fuente: 'Sin umbral automático: la duración real del tratamiento no surge del diario.',
+        nota: 'Para hablar de uso crónico y plantear deprescripción hace falta el dato temporal, que lo aporta la consulta.'
       }
     ]
   };

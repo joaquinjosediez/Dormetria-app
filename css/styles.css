@@ -545,11 +545,25 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   }
   body.dr-desktop #drp-content[data-tab="summary"] .dm-card-title{
     margin-bottom:9px;
+    /* Los títulos de tarjeta quedaban muy chicos frente al contenido. */
+    font-size:12.5px;
+    letter-spacing:0.05em;
   }
   /* Las dos columnas del modo especialista: cada columna maneja su propio
      apilado, así que la última tarjeta de cada una no arrastra margen. */
   body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-cols > div > .dm-card:last-child{
     margin-bottom:0 !important;
+  }
+  /* El desplegable de criterios va a lo ancho, separado de las columnas. */
+  body.dr-desktop #drp-content[data-tab="summary"] > details.dm-card{
+    margin-top:16px;
+  }
+  body.dr-desktop #drp-content[data-tab="summary"] > details.dm-card summary{
+    /* Safari dibuja su propio triangulo ademas del nuestro. */
+    list-style:none;
+  }
+  body.dr-desktop #drp-content[data-tab="summary"] > details.dm-card summary::-webkit-details-marker{
+    display:none;
   }
   /* Debajo de 1100px las dos columnas se apilan: a esa altura quedaban
      tarjetas de ~300px con texto clínico partido en muchas líneas. */
@@ -557,6 +571,13 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
     body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-cols,
     body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-head{
       grid-template-columns:1fr !important;
+    }
+  }
+  /* Entre 1100 y 1400 la cabecera pasa a dos columnas: tres tarjetas ahí
+     dejan el cronotipo con dos palabras por renglón. */
+  @media (min-width:1101px) and (max-width:1400px){
+    body.dr-desktop #drp-content[data-tab="summary"] .dm-resumen-head{
+      grid-template-columns:1fr 1fr !important;
     }
   }
   /* Fila de cabecera (Etiquetas + Datos): el margen inferior de la tarjeta
@@ -1051,11 +1072,37 @@ input, select, textarea{ color: inherit; }
   color:var(--label-2);background:none;font-family:var(--font);white-space:nowrap;
 }
 .tab.active{color:#1a4a3a;border-bottom-color:#1a4a3a;}
+
+/* Ficha del paciente: el subrayado de 1px sobre el verde oscuro casi no se
+   distinguía, y con diez pestañas costaba saber en cuál estabas. Se engrosa
+   el borde, se le da peso a la tipografía y un fondo muy leve. */
+#screen-doctor-patient .tab-bar .tab.active{
+  /* La barra de esta ficha tiene fondo CLARO. El verde menta (#7EC8A4) está
+     pensado para pantalla oscura y sobre blanco quedaba lavado, restándole
+     contraste justo a la pestaña que hay que distinguir. Se usa el verde
+     noche de la marca, que sobre claro es el que más contrasta. */
+  color:#0F2820 !important;
+  border-bottom-color:#1A4A3A !important;
+  border-bottom-width:3px !important;
+  font-weight:700 !important;
+  background:transparent !important;
+}
 @media (min-width:900px){
   /* Ficha del paciente: las pestañas reparten todo el ancho disponible
      en vez de amontonarse a la izquierda. */
   body.dr-desktop #screen-doctor-patient .tab-bar .tab{
-    flex:1;text-align:center;padding:12px 8px;
+    /* flex:1 repartía el ancho en partes IGUALES, así que "Alerta" ocupaba lo
+       mismo que "Sugerir escalas" y los espacios entre palabras quedaban
+       dispares. Cada botón se ajusta a su texto y el aire lo da un padding
+       parejo: así la separación se ve constante. */
+    flex:0 0 auto;
+    text-align:center;
+    padding:12px 14px;
+    white-space:nowrap;
+  }
+  body.dr-desktop #screen-doctor-patient .tab-bar{
+    gap:2px;
+    justify-content:flex-start;
   }
 }
 
@@ -3845,6 +3892,20 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 }
 .dm-quees-txt.dm-abierto{ display:block; }
 
+/* Variante sobre fondo CLARO. El "¿qué es esto?" de Deuda de sueño y Jet lag
+   social vive dentro de .dm-metricas-claro, que es una tarjeta blanca: con el
+   color cream de arriba quedaba texto blanco sobre blanco y el recuadro se
+   veía vacío. Es el mismo error que ya apareció con los chips de medicación:
+   un estilo pensado para pantalla oscura reutilizado en una tarjeta clara. */
+.dm-metricas-claro .dm-quees-txt,
+.dm-card.dm-light .dm-quees-txt{
+  background:rgba(26,74,58,.06);
+  border-left-color:rgba(26,74,58,.35);
+  color:#3f4b45;
+}
+.dm-metricas-claro .dm-quees button,
+.dm-card.dm-light .dm-quees button{ color:#1a4a3a; }
+
 /* ── La explicación del score ────────────────────────────────────────── */
 .dm-expli{
   background:rgba(255,255,255,.05); border:1px solid rgba(126,200,164,.18);
@@ -4567,3 +4628,24 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 body.dm-rol-pro #dr-bottomnav{ display:flex !important; }
 /* Y la del paciente, al revés */
 body.dm-rol-pro #main-nav{ display:none !important; }
+
+
+/* Cuestionarios: dos columnas en escritorio, una en pantallas chicas. */
+body.dr-desktop #drp-content[data-tab="cuestionarios"]{
+  display:block !important;
+  padding-top:16px;
+}
+.dm-cuest-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+.dm-cuest-grid > .dm-card{ margin-bottom:0 !important; }
+@media (max-width:1100px){ .dm-cuest-grid{ grid-template-columns:1fr; } }
+
+
+/* Sugerir escalas: dos columnas agrupadas por tema. Una lista plana de 25
+   escalas obliga a recorrerlas todas para encontrar una. */
+.dm-sug-grid{ columns:2; column-gap:16px; }
+.dm-sug-grupo{ break-inside:avoid; page-break-inside:avoid; margin-bottom:14px; display:inline-block; width:100%; }
+.dm-sug-tit{
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
+  color:#8FD4B0; margin-bottom:7px;
+}
+@media (max-width:1000px){ .dm-sug-grid{ columns:1; } }

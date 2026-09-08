@@ -74,6 +74,24 @@ function renderResumenWithMode(modo, cont) {
   // mismas funciones de la app para que sigan siendo editables (toggleDrTag
   // busca #drp-tags-card-body, que es el id que usa el render).
   dmPintarEtiquetasResumen();
+  dmPintarCronotipoResumen();
+}
+
+// El cronotipo se calcula con la misma función que usa Perfil, así que las
+// dos pestañas no pueden divergir.
+async function dmPintarCronotipoResumen() {
+  const slot = document.getElementById('drp-crono-card-body');
+  if (!slot) return;
+  if (typeof dmCronotipoBody !== 'function') {
+    slot.innerHTML = '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px">No disponible</div>';
+    return;
+  }
+  try {
+    slot.innerHTML = await dmCronotipoBody(S.viewData || {}, dmCurrentEmail);
+  } catch (err) {
+    console.warn('[Resumen] cronotipo:', err);
+    slot.innerHTML = '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px">Sin datos</div>';
+  }
 }
 
 async function dmPintarEtiquetasResumen() {
