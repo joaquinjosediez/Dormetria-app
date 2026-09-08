@@ -1331,7 +1331,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod186-beta"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod187-beta"></script>
 <!-- BETA: cache-busting por timestamp. Cada recarga trae la última versión del
      motor sin necesidad de vaciar caché. En producción se reemplaza por ?v=modNNN. -->
 <script>
@@ -1365,7 +1365,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod186-beta';
+const APP_VERSION='mod187-beta';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -8738,10 +8738,31 @@ window.dmPlegar = dmPlegar;
 function dmPasoGuardar(){
   // El boton original sigue en el DOM, oculto: se lo dispara para que toda la
   // logica de guardado corra exactamente igual que antes.
+  //
+  // Dos cosas que hacian que "Guardar mi noche" no hiciera NADA, sin error:
+  //  - si el boton habia quedado disabled de un guardado anterior, el click
+  //    se descarta en silencio. Se lo re-habilita antes de disparar.
+  //  - saveDiary es async: una excepcion suya se convierte en una promesa
+  //    rechazada que nadie escucha. Ahora se atrapa y se muestra.
   const b=document.getElementById('save-diary-btn');
-  if(b){ b.click(); return; }
-  if(typeof saveDiary==='function') saveDiary();
+  try{
+    if(b){ b.disabled=false; b.click(); return; }
+    if(typeof saveDiary==='function'){
+      const p=saveDiary();
+      if(p && typeof p.catch==='function') p.catch(dmFalloAlGuardar);
+      return;
+    }
+    dmFalloAlGuardar(new Error('no se encontro la funcion de guardado'));
+  }catch(e){ dmFalloAlGuardar(e); }
 }
+
+// Un guardado que falla tiene que decirlo. El silencio es el peor resultado
+// posible: el paciente cree que cargo la noche y no cargo nada.
+function dmFalloAlGuardar(e){
+  console.error('[DIARIO] no se pudo guardar:', e);
+  try{ toast('No se pudo guardar: '+((e&&e.message)||'error inesperado')+'. Probá de nuevo.'); }catch(_){}
+}
+window.dmFalloAlGuardar = dmFalloAlGuardar;
 
 async function dmCifrasInicio(){
   try{
@@ -12197,7 +12218,7 @@ async function editChildDiaryEntry(id){
           if(Array.isArray(aws)){ _childAwakenings = aws; if(typeof renderChildAwakenings==='function') renderChildAwakenings(); }
         }
       }catch(_){}
-      const saveBtn=document.getElementById('save-diary-btn');
+      const saveBtn=document.getElementById('save-child-diary-btn');
       if(saveBtn) saveBtn.textContent='Actualizar registro';
     }, 200);
   }catch(err){ toast('Error: '+err.message); }
@@ -12781,6 +12802,10 @@ async function saveDiary(){
   // exactas de diferencia. Es el error mas frecuente y silencioso del diario,
   // y arrastra el promedio de sueño de la persona por horas. Se pregunta en
   // el momento, que es cuando ella todavia se acuerda de la respuesta.
+  // La hora de levantarse se lee ACA, antes de usarse. Estaba declarada mas
+  // abajo con const y el bloque de "no me dormi" la tocaba antes: zona muerta
+  // temporal -> ReferenceError -> promesa rechazada sin handler -> silencio.
+  const getup=document.getElementById('d-getup')?.value||null;
   const _sinDormir = (String(document.getElementById('d-latency')?.value||'')==='-1');
   if(_sinDormir){
     if(!bed || !getup){ toast('Poné a qué hora te acostaste y a qué hora te levantaste'); return; }
@@ -12808,7 +12833,6 @@ async function saveDiary(){
       if(!ok){ const _w=document.getElementById('d-wake'); if(_w) _w.focus(); return; }
     }
   }
-  const getup=document.getElementById('d-getup')?.value||null;
   // -1 es el codigo de "no me dormi": no es una latencia, es la ausencia de
   // sueño. Se guarda como latencia nula y sueño cero, con la marca aparte.
   const _latRaw=parseInt(document.getElementById('d-latency')?.value);
@@ -13056,6 +13080,11 @@ async function saveDiary(){
     }, 320);
   }catch(e){
     toast('Error al guardar: '+e.message);
+  }finally{
+    // Siempre, tambien despues de guardar bien. Antes solo se re-habilitaba
+    // al fallar: guardada la primera noche, el boton quedaba muerto y el
+    // paciente tocaba "Guardar mi noche" sin que pasara nada ni apareciera
+    // ningun error. Se recuperaba solo cerrando y reabriendo la app.
     if(btn) btn.disabled=false;
   }
 }
@@ -20597,7 +20626,7 @@ function showChildDiaryNew(){
 
     <div class="sec-title">Notas (opcional)</div>
     <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..." style="margin-bottom:14px"></textarea>
-    <button class="btn btn-g" onclick="saveChildDiary()" id="save-diary-btn" style="margin-bottom:28px">Guardar registro</button>
+    <button class="btn btn-g" onclick="saveChildDiary()" id="save-child-diary-btn" style="margin-bottom:28px">Guardar registro</button>
   `;
 }
 
@@ -20725,7 +20754,7 @@ async function saveChildDiary(){
   if(latency) totalMin=Math.max(0,totalMin-latency);
   if(childWaso) totalMin=Math.max(0,totalMin-childWaso);
 
-  const btn=document.getElementById('save-diary-btn');
+  const btn=document.getElementById('save-child-diary-btn');
   if(btn) btn.disabled=true;
   try{
     const body={
