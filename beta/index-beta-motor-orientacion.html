@@ -1331,7 +1331,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod187-beta"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod188-beta"></script>
 <!-- BETA: cache-busting por timestamp. Cada recarga trae la última versión del
      motor sin necesidad de vaciar caché. En producción se reemplaza por ?v=modNNN. -->
 <script>
@@ -1365,7 +1365,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod187-beta';
+const APP_VERSION='mod188-beta';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -7014,6 +7014,38 @@ function setDayType(t,btn,manual){
     }
   }
 }
+// El diario habla de tres momentos distintos —la tarde y el dia previos, la
+// noche, y la mañana en que se desperto— y hasta ahora todos decian "ayer".
+// "Ayer" solo es cierto si la persona registra a la mañana siguiente; cuando
+// completa una noche atrasada apunta al dia equivocado. Se nombra el dia
+// concreto, calculado desde la fecha del propio registro.
+function dmDiaPrevioTxt(){
+  const dEl=document.getElementById('d-date');
+  if(!dEl || !dEl.value) return null;
+  const d=new Date(dEl.value+'T12:00');
+  if(isNaN(d)) return null;
+  d.setDate(d.getDate()-1);
+  const hoy=new Date(); hoy.setHours(12,0,0,0);
+  const dif=Math.round((hoy-d)/86400000);
+  const nombre=d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  if(dif===0) return 'hoy';
+  if(dif===1) return 'ayer';
+  return nombre;
+}
+
+function dmPintarAyudasDelDia(){
+  const dia=dmDiaPrevioTxt();
+  const pm=document.getElementById('d-energy-pm-ayuda');
+  if(pm) pm.textContent = dia
+    ? 'La tarde del día anterior a esa noche — '+dia+', aproximadamente entre las 14 y las 17.'
+    : 'La tarde anterior a esa noche, aproximadamente entre las 14 y las 17.';
+  const np=document.getElementById('d-nap-ayuda');
+  if(np) np.textContent = dia
+    ? 'Durante el día anterior a esa noche: '+dia+'.'
+    : 'Durante el día anterior a esa noche.';
+}
+window.dmPintarAyudasDelDia = dmPintarAyudasDelDia;
+
 // Auto-detect day type basado en la fecha del registro (sábado/domingo = libre, resto = laboral).
 // Se llama al abrir el diario y cuando cambia la fecha.
 function autoDetectDayType(){
@@ -7502,6 +7534,90 @@ function maybePromptProfileCompletion(){
     homeScroll.insertBefore(banner, homeScroll.firstChild);
   }
 }
+
+// ─── Aviso de recordatorios sin configurar, en el home del paciente ───
+// El diario depende de que la persona se acuerde. Quien nunca configuró el
+// recordatorio no sabe que existe: no hay nada en el home que se lo diga, y
+// el interruptor vive detrás del ícono 🔔 de una pantalla interna.
+//
+// Se avisa también en el caso peor, que hoy es invisible: recordatorio
+// activado pero permiso del navegador denegado. Ahí la persona cree que le
+// van a avisar y no le llega nada nunca.
+//
+// Lo que NO se hace es insistirle a quien lo apagó a propósito. Esa es una
+// decisión tomada, no un olvido.
+function maybePromptRecordatorios(){
+  if(!S.user || !S.user.email) return;
+  if(S.role === 'doctor') return;
+  // Un solo empujón por vez: si el de perfil incompleto está en pantalla,
+  // este espera. Dos carteles seguidos no se leen, se saltean.
+  if(document.getElementById('profile-reminder-banner')) return;
+  if(document.getElementById('recordatorio-banner')) return;
+
+  const dismissKey = 'dm_recordatorio_dismiss_'+(S.user.email||'').toLowerCase();
+  try{
+    const dismissAt = parseInt(localStorage.getItem(dismissKey)||'0');
+    if(dismissAt && (Date.now()-dismissAt) < 7*86400000) return;
+  }catch(_){}
+
+  // ¿Lo configuró alguna vez? El default de getReminderPrefs es enabled:false,
+  // así que "apagado" y "nunca lo tocó" se ven iguales desde ahí. La diferencia
+  // está en si existe algo guardado.
+  let tocado = false;
+  try{
+    tocado = !!(localStorage.getItem('dm_reminder_prefs') || localStorage.getItem('reminder_diary'));
+  }catch(_){}
+  try{ if(S.user.recordatorio_on != null) tocado = true; }catch(_){}
+
+  let prefs = { enabled:false };
+  try{ prefs = getReminderPrefs() || prefs; }catch(_){}
+  const permiso = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+
+  let titulo, detalle;
+  if(!tocado){
+    titulo  = 'Activá el recordatorio del diario';
+    detalle = 'Te avisamos una vez por día a la hora que elijas. Registrar todas las noches es lo que hace que los datos sirvan.';
+  } else if(prefs.enabled && permiso === 'denied'){
+    titulo  = 'Tu recordatorio no te está llegando';
+    detalle = 'Lo tenés activado, pero este dispositivo tiene las notificaciones bloqueadas para Dormetria. Hay que habilitarlas en los ajustes del teléfono.';
+  } else if(prefs.enabled && permiso === 'default'){
+    titulo  = 'Falta un permiso para que te llegue';
+    detalle = 'Tenés el recordatorio activado pero todavía no diste permiso de notificaciones en este dispositivo.';
+  } else {
+    return;   // apagado a propósito, o activado y funcionando
+  }
+
+  const homeScroll = document.querySelector('#screen-home .scroll');
+  if(!homeScroll) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'recordatorio-banner';
+  banner.style.cssText='background:linear-gradient(135deg,rgba(126,200,164,0.16),rgba(126,200,164,0.06));border:1px solid rgba(126,200,164,0.38);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer';
+  banner.innerHTML = '<div style="font-size:22px;flex-shrink:0">🔔</div>'+
+    '<div style="flex:1;min-width:0">'+
+      '<div style="font-size:13.5px;font-weight:700;color:#fff;line-height:1.3">'+titulo+'</div>'+
+      '<div style="font-size:11.5px;color:rgba(255,255,255,.9);margin-top:3px;line-height:1.4">'+detalle+'</div>'+
+    '</div>'+
+    '<button id="recordatorio-dismiss" aria-label="Descartar" style="background:none;border:none;color:rgba(255,255,255,.72);font-size:20px;cursor:pointer;padding:0 4px;line-height:1">×</button>'+
+    '<div style="color:#7EC8A4;font-size:18px;flex-shrink:0">›</div>';
+  banner.onclick = function(e){
+    if(e.target.id === 'recordatorio-dismiss') return;
+    try{ showReminderSettings('diary'); }catch(_){}
+  };
+  banner.querySelector('#recordatorio-dismiss').onclick = function(e){
+    e.stopPropagation();
+    try{ localStorage.setItem(dismissKey, String(Date.now())); }catch(_){}
+    banner.remove();
+  };
+
+  const metaEl = document.getElementById('home-meta');
+  if(metaEl && metaEl.parentNode === homeScroll){
+    metaEl.insertAdjacentElement('afterend', banner);
+  } else {
+    homeScroll.insertBefore(banner, homeScroll.firstChild);
+  }
+}
+window.maybePromptRecordatorios = maybePromptRecordatorios;
 
 // ─── Recordatorio de re-evaluación de escalas patológicas ───
 // Si una escala dio resultado patológico hace ≥30 días y no se repitió, sugerir repetirla.
@@ -9083,6 +9199,7 @@ async function showHome(){
   try{ loadPatientEducation(); }catch(_){}
   try{ maybePromptDoctorLink(); }catch(_){}
   try{ maybePromptProfileCompletion(); }catch(_){}
+  try{ maybePromptRecordatorios(); }catch(_){}
   // (El recordatorio de repetir una escala ya no va como banner suelto: pasa a
   //  ocupar la tarjeta "Escala del día", con su etiqueta de reevaluación.)
   try{ renderHomeQuickActions(); }catch(_){}
@@ -12365,9 +12482,13 @@ function showDiaryNew(){
   // Auto-detect día laboral/libre desde la fecha y re-detectar si cambia
   setTimeout(()=>{
     try{ autoDetectDayType(); }catch(_){}
+    try{ dmPintarAyudasDelDia(); }catch(_){}
     const dEl=document.getElementById('d-date');
     if(dEl && !dEl._daytypeWired){
-      dEl.addEventListener('change', ()=>{ try{ autoDetectDayType(); }catch(_){} });
+      dEl.addEventListener('change', ()=>{
+        try{ autoDetectDayType(); }catch(_){}
+        try{ dmPintarAyudasDelDia(); }catch(_){}
+      });
       dEl._daytypeWired=true;
     }
   },180);
@@ -12530,8 +12651,8 @@ function showDiaryNew(){
     </div>
 
     <div class="dm-campo">
-      <label class="dm-lbl">Y a media tarde</label>
-      <div class="dm-ayuda">Entre las 14 y las 17 de ayer.</div>
+      <label class="dm-lbl">Tu energía a media tarde de ayer</label>
+      <div class="dm-ayuda" id="d-energy-pm-ayuda">La tarde anterior a esa noche, aproximadamente entre las 14 y las 17.</div>
       <div class="dm-emojis emoji-row">
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="1">🪫<div>Sin energía</div></button>
         <button class="emoji-btn" onclick="selEmoji(this,'d-energy-pm')" data-val="2">😴<div>Poca</div></button>
@@ -12543,6 +12664,7 @@ function showDiaryNew(){
 
     <div class="dm-campo">
       <label class="dm-lbl">¿Dormiste siesta ayer?</label>
+      <div class="dm-ayuda" id="d-nap-ayuda">Durante el día anterior a esa noche.</div>
       <div class="dm-ops">
         <button id="nap-no-btn" class="dm-op" onclick="setNap(false)">No</button>
         <button id="nap-yes-btn" class="dm-op" onclick="setNap(true)">Sí</button>
