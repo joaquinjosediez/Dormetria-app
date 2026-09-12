@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod188-92edd341">
+<link rel="stylesheet" href="css/styles.css?v=mod189-d5045b96">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1328,10 +1328,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod188-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod188-f6ca2d32"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod188-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod188-6ca784ce"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod189-26264729"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod189-f6ca2d32"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod189-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod189-6ca784ce"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1350,7 +1350,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod188';
+const APP_VERSION='mod189';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -10969,11 +10969,6 @@ function renderProfileView(){
         <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
       </div>
 
-      <!-- Perfiles de hijos. Estaba solo en "Mi código", tres pantallas
-           adentro, así que en la práctica nadie lo encontraba. Va acá, en
-           "Yo", que es donde se administran los perfiles. -->
-      <div id="profile-children"></div>
-
       <!-- Diario de sueño -->
       <div onclick="navTo('diary')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
         <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -11000,6 +10995,11 @@ function renderProfileView(){
         <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mi historial</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px">Evolución de mis evaluaciones</div></div>
         <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
       </div>
+
+      <!-- Perfiles de hijos. Estaba arriba de todo y empujaba el diario, las
+           escalas y el historial fuera de la primera pantalla: "Yo" es
+           primero lo propio del adulto. -->
+      <div id="profile-children"></div>
 
       <!-- Mis estudios -->
       <div onclick="showDocsScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -11611,9 +11611,9 @@ async function showDiaryTab_(tab){
           <span>📝 Comentario de esa noche</span>
         </div>
 
-        <button class="dm-plegar" onclick="dmPlegar(this)" aria-expanded="false">
+        <button class="dm-plegar" onclick="dmPlegar(this)" aria-expanded="true">
           <span>Tus números</span><span class="dm-plegar-f">▾</span></button>
-        <div class="dm-plegable">
+        <div class="dm-plegable dm-abierta">
           <div id="diary-clinical-metrics"></div>
         </div>
 
@@ -12741,13 +12741,15 @@ function updateAwakeInBed(){
   if(diff < 0) diff += 1440; // cruce de medianoche defensivo
   if(diff === 0){
     hint.textContent = '✓ Te levantaste apenas te despertaste.';
-    hint.style.color = 'var(--label-2)';
+    // var(--label-2) es el gris para fondo claro: sobre el verde del diario
+    // no se leía. Este renglón vive siempre en pantalla oscura.
+    hint.style.color = 'rgba(244,239,229,.78)';
   } else if(diff <= 20){
     hint.textContent = 'Estuviste ' + diff + ' min despierto/a en la cama antes de levantarte.';
-    hint.style.color = 'var(--label-2)';
+    hint.style.color = 'rgba(244,239,229,.78)';
   } else {
     hint.textContent = '⚠ Estuviste ' + diff + ' min (' + (diff/60).toFixed(1) + ' h) despierto/a en la cama. Levantarse al despertar ayuda a dormir mejor.';
-    hint.style.color = '#d97706';
+    hint.style.color = '#C8A96E';
   }
   hint.style.display = 'block';
 }
@@ -13101,6 +13103,12 @@ async function saveDiary(){
       vs.forEach(function(v){ o[v.id] = !!_dmVarsNoche[v.id]; });
       return o;
     })(),
+    // OJO al interpretarlo: la pregunta es por la tarde del dia ANTERIOR a
+    // esta noche, asi que esa tarde es consecuencia de la noche PREVIA, no de
+    // la que se esta registrando. Cualquier analisis que lo cruce con metricas
+    // tiene que correrlo una noche hacia atras. Hoy no se analiza en ningun
+    // lado, asi que todavia no hay nada mal calculado — pero el dia que se
+    // grafique o entre al informe, este es el desfasaje.
     energy_afternoon: energyPm,
     no_sleep: _sinDormir ? true : false,
     // Sin hora de despertar propia: la noche termina cuando se levanta.
@@ -17159,18 +17167,39 @@ async function showDrPTab_(tab){
           if(_cEl){
             if(!_rQty&&!_rFrag&&!_rReg){ _cEl.textContent='Percepción vs. datos: se necesitan al menos 5 noches con calidad reportada para comparar.'; }
             else {
-              // Lenguaje simple: qué tanto coincide lo que el paciente SIENTE
-              // con lo que MIDEN los pilares. |r|≥0.5 coincide bastante,
-              // 0.3–0.5 coincide algo, <0.3 casi no coincide.
-              const _word=v=>v==null?null:(Math.abs(v.r)>=0.5?'coincide bastante':Math.abs(v.r)>=0.3?'coincide algo':'casi no coincide');
+              // El número es la r de Pearson, de −1 a +1, entre la calidad que
+              // el paciente reporta y el puntaje del pilar (donde más alto es
+              // mejor). El SIGNO no es un detalle:
+              //   r > 0  → se siente mejor las noches que el pilar mide mejor.
+              //   r < 0  → al revés: dice haber dormido bien justo las noches
+              //            que el registro marca peor.
+              //   r ≈ 0  → una cosa no dice nada de la otra.
+              // Antes se leía Math.abs(r), así que un −0,55 se anunciaba como
+              // "coincide bastante", que es exactamente lo contrario de lo que
+              // significa. |r|≥0.5 fuerte, 0.3–0.5 moderado, <0.3 nada.
+              const _word=function(v){
+                if(v==null) return null;
+                const a=Math.abs(v.r);
+                if(a<0.3) return 'casi no se relaciona con';
+                if(v.r>0) return a>=0.5 ? 'acompaña bastante a' : 'acompaña algo a';
+                return a>=0.5 ? 'va bastante al revés de' : 'va algo al revés de';
+              };
               const _parts=[];
-              if(_rQty) _parts.push(_word(_rQty)+' con las horas dormidas ('+_fmt(_rQty)+')');
-              if(_rFrag) _parts.push(_word(_rFrag)+' con los despertares ('+_fmt(_rFrag)+')');
-              if(_rReg) _parts.push(_word(_rReg)+' con la regularidad ('+_fmt(_rReg)+')');
-              const _allLow=[_rQty,_rFrag,_rReg].filter(Boolean).every(v=>Math.abs(v.r)<0.3);
+              if(_rQty) _parts.push(_word(_rQty)+' las horas dormidas ('+_fmt(_rQty)+')');
+              if(_rFrag) _parts.push(_word(_rFrag)+' los despertares ('+_fmt(_rFrag)+')');
+              if(_rReg) _parts.push(_word(_rReg)+' la regularidad ('+_fmt(_rReg)+')');
+              const _hay=[_rQty,_rFrag,_rReg].filter(Boolean);
+              const _allLow=_hay.every(v=>Math.abs(v.r)<0.3);
+              const _invertido=_hay.some(v=>v.r<=-0.3);
+              let _nota='';
+              if(_invertido){
+                _nota=' <span style="font-style:italic">Hay al menos un pilar con signo negativo: reporta mejor calidad justo las noches que el registro mide peor. Es el patrón que más orienta a insomnio paradójico.</span>';
+              } else if(_allLow){
+                _nota=' <span style="font-style:italic">Como no se relaciona con ningún pilar, su percepción va por un carril distinto al registro — patrón que amerita descartar insomnio paradójico.</span>';
+              }
               _cEl.innerHTML='<strong>¿La sensación del paciente refleja sus datos?</strong> La calidad que reporta cada mañana '+_parts.join(', ')+
-                (_rQty?' — sobre '+_rQty.n+' noches.':'.')+
-                (_allLow?' <span style="font-style:italic">Como no coincide con ningún pilar, su percepción va por un carril distinto al registro — patrón que amerita descartar insomnio paradójico.</span>':'');
+                (_rQty?' — sobre '+_rQty.n+' noches.':'.')+ _nota +
+                '<span style="display:block;margin-top:6px;opacity:.72;font-size:11.5px">El número va de −1 a +1: cerca de +1 la sensación acompaña al dato, cerca de −1 va al revés, cerca de 0 no se relacionan.</span>';
             }
           }
         }catch(_conc){}

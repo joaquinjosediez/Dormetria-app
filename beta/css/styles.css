@@ -167,6 +167,25 @@
   body.dr-desktop .dm-resumen-cols{ grid-template-columns:1fr 1fr !important; }
 }
 
+/* La cabecera del resumen (Etiquetas · Datos · Cronotipo) trae las tres
+   columnas en estilo inline, y el inline le gana a la hoja: en celular cada
+   tarjeta quedaba en ~110px, con las etiquetas cortadas a la mitad. Se apila
+   salvo que haya ancho de verdad. */
+.dm-resumen-head{ grid-template-columns:1fr !important; }
+@media (min-width:760px){
+  .dm-resumen-head{ grid-template-columns:1fr 1fr !important; }
+}
+@media (min-width:1100px){
+  body.dr-desktop .dm-resumen-head{ grid-template-columns:1fr 1fr 1fr !important; }
+}
+
+/* Nada de la ficha del paciente puede desbordar hacia el costado: en celular
+   la pastilla de una etiqueta larga empujaba la tarjeta fuera de la pantalla. */
+@media (max-width:759px){
+  #drp-content .dm-card{ min-width:0; }
+  #drp-content .dm-card *{ overflow-wrap:anywhere; }
+}
+
 .dm-grid2{ display:block; }
 .dm-grid2 > *{ margin-bottom:8px; }
 @media (min-width:900px){
