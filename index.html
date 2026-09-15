@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod190-bfae7e4c">
+<link rel="stylesheet" href="css/styles.css?v=mod191-bfae7e4c">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1328,10 +1328,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod190-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod190-f6ca2d32"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod190-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod190-aca8cf86"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod191-26264729"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod191-f6ca2d32"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod191-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod191-aca8cf86"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1350,7 +1350,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod190';
+const APP_VERSION='mod191';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -13786,7 +13786,17 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
   // enterarse. Se muestra una vez por sesión y se puede posponer una semana.
   setTimeout(function(){ try{ dmAvisarPerfilIncompleto(); }catch(_){} }, 1500);
   setTimeout(()=>{ try{ dmSyncTopbarMenu(); }catch(_){} }, 2500);
-  setTimeout(()=>{ try{ if(!document.body.classList.contains('dr-has-patient')) dmMaybeAutoStartTour('doctor_home'); }catch(_){} }, 900);
+  setTimeout(function esperarSiembra(intentos){
+    intentos = intentos || 0;
+    try{
+      // Si todavia se estan trayendo los ejemplos, se espera: arrancar antes
+      // deja el paso de "los cinco ejemplos" apuntando a una lista vacia.
+      if(window._dmSembrandoDemos && intentos < 20){
+        return setTimeout(function(){ esperarSiembra(intentos+1); }, 400);
+      }
+      if(!document.body.classList.contains('dr-has-patient')) dmMaybeAutoStartTour('doctor_home');
+    }catch(_){}
+  }, 900);
   // Merge localStorage profile data into S.user, then refresh from DB
   if(S.user){
     const drKey='dm_dr_profile_'+(S.user.email||'');
@@ -13891,6 +13901,7 @@ function dmBuildDoctorTopbar(){
           '<button id="dr-tb-admin" style="display:none" onclick="dmTopbarCloseMenu();showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Panel Admin</button>'+
           '<hr>'+
           '<button onclick="dmTopbarCloseMenu();dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo se usa</button>'+
+          '<button onclick="dmTopbarCloseMenu();dmQuitarDemos()">'+ic('M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16')+'Quitar los ejemplos</button>'+
           '<button onclick="dmTopbarCloseMenu();showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'Ayudanos a mejorar</button>'+
           '<hr>'+
           '<button class="danger" onclick="doLogout()">'+ic('M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1')+'Salir</button>'+
@@ -14075,6 +14086,20 @@ async function showDrTab_(tab){
           localStorage.setItem(cacheKey,JSON.stringify(cachedEmails));
         }
       }catch(e){/* RLS blocked - use cache only */}
+      // Panel vacío: antes de mostrar el cartel, se traen los pacientes de
+      // ejemplo. Un colega que entra por primera vez no tiene con qué probar
+      // nada, y no va a esperar dos semanas de diario para poder juzgar.
+      if(!cachedEmails.length){
+        try{
+          cont.innerHTML='<div class="empty-state"><div class="empty-icon">⏳</div>Preparando pacientes de ejemplo…</div>';
+          const _demos = await dmSembrarDemos(false);
+          if(_demos && _demos.length){
+            cachedEmails = cachedEmails.concat(_demos);
+            try{ localStorage.setItem(cacheKey, JSON.stringify(cachedEmails)); }catch(_){}
+            window._dmDemosRecienSembrados = true;
+          }
+        }catch(e){ console.warn('[DEMOS] siembra:', e && e.message); }
+      }
       if(!cachedEmails.length){
         cont.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>No tenés pacientes vinculados.<br><br><button class="btn btn-g" style="max-width:240px;margin:0 auto" onclick="showDrTab(\'link\',document.getElementById(\'drnav-metrics\'))">+ Vincular paciente por código</button></div>';
         return;
@@ -14126,6 +14151,88 @@ async function showDrTab_(tab){
       window._drToggleArchive = toggleArchive;
       let currentView = 'active'; // 'active' | 'archived'
       let _tagFilter = null; // null=todas, o id de PATHOLOGY_TAGS
+
+// ─── Pacientes de ejemplo ──────────────────────────────────────────────
+// Un colega que entra por primera vez ve un panel vacío y no tiene con qué
+// probar nada: no puede juzgar la app hasta conseguir su primer paciente y
+// esperar dos semanas de diario. Estos cinco ya están cargados con noches y
+// escalas, así que el panel arranca con algo para recorrer.
+//
+// Se siembran SOLO cuando el listado está vacío. Quien ya tiene pacientes
+// propios no se los encuentra de golpe mezclados con su cartera.
+const DM_CODIGOS_DEMO = ['KAFKA1','CURIE1','PETER1','KAHLO1','WINKLE'];
+
+function dmClaveDemos(){
+  return 'dm_demos_sembrados_' + String((S.user&&S.user.email)||'').toLowerCase();
+}
+
+async function dmSembrarDemos(forzar){
+  if(!S.user || !S.user.email) return [];
+  if(!forzar){
+    try{ if(localStorage.getItem(dmClaveDemos())) return []; }catch(_){}
+  }
+  window._dmSembrandoDemos = true;
+  const sumados = [];
+  for(let i=0;i<DM_CODIGOS_DEMO.length;i++){
+    const codigo = DM_CODIGOS_DEMO[i];
+    try{
+      // Se resuelve por código, no por email: el código es lo único estable
+      // que conocemos de cada demo desde el cliente.
+      const res = await supa.rpc('find_patient_by_code', { p_code: codigo });
+      const found = res && res.data;
+      if(res && res.error) { console.warn('[DEMOS]', codigo, res.error.message); continue; }
+      if(!found || !found.length) { console.warn('[DEMOS] sin resultado:', codigo); continue; }
+      const p = found[0];
+      try{ await db.post('doctor_patients', {doctor_email:S.user.email, patient_email:p.email}, ''); }
+      catch(_dup){ /* ya estaba vinculado */ }
+      sumados.push(p.email);
+    }catch(e){ console.warn('[DEMOS]', codigo, e && e.message); }
+  }
+  try{ localStorage.setItem(dmClaveDemos(), '1'); }catch(_){}
+  window._dmSembrandoDemos = false;
+  if(sumados.length) console.log('[DEMOS] vinculados:', sumados.length);
+  return sumados;
+}
+window.dmSembrarDemos = dmSembrarDemos;
+
+// Sacarlos de encima cuando ya no hacen falta. No se borran de la base —son
+// de todos los profesionales—: se desvincula este panel y nada más.
+async function dmQuitarDemos(){
+  if(!confirm('¿Sacar los pacientes de ejemplo de tu listado?\n\nNo se borran: dejan de aparecer solo en tu panel.')) return;
+  const cacheKey = 'dm_dr_pts_' + S.user.email;
+  let quitados = 0;
+  for(let i=0;i<DM_CODIGOS_DEMO.length;i++){
+    try{
+      const res = await supa.rpc('find_patient_by_code', { p_code: DM_CODIGOS_DEMO[i] });
+      const found = res && res.data;
+      if(!found || !found.length) continue;
+      const email = found[0].email;
+      try{
+        await fetch(SU+'/rest/v1/doctor_patients?doctor_email=eq.'+encodeURIComponent(S.user.email)+
+                    '&patient_email=eq.'+encodeURIComponent(email),
+                    {method:'DELETE',headers:{'apikey':SK,'Authorization':await db._getAuthHeader()}});
+      }catch(_){}
+      try{
+        const ca=JSON.parse(localStorage.getItem(cacheKey)||'[]').filter(function(e){
+          return String(e).toLowerCase()!==String(email).toLowerCase(); });
+        localStorage.setItem(cacheKey, JSON.stringify(ca));
+      }catch(_){}
+      quitados++;
+    }catch(_){}
+  }
+  try{ localStorage.setItem(dmClaveDemos(), '1'); }catch(_){}
+  toast(quitados ? '✓ Ejemplos quitados de tu listado' : 'No había ejemplos para quitar');
+  if(typeof loadDoctorPatients==='function') loadDoctorPatients();
+}
+window.dmQuitarDemos = dmQuitarDemos;
+
+// Un demo se reconoce por la marca de la base; si la columna no vino, por el
+// dominio del correo, que es el patrón con el que se dieron de alta.
+function dmEsDemo(u){
+  if(!u) return false;
+  if(u.is_demo === true) return true;
+  return /\.demo@dormetria\.com$/i.test(String(u.email||''));
+}
 
 function formatPatientName(u){
   if(!u) return '';
@@ -14187,7 +14294,7 @@ async function renderPatientList(filter){
             return escHtml(ln ? (ln + ', ' + fn) : (fn || u.email));
           })();
           const isArch = archived.has(u.email.toLowerCase());
-          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,.72);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
+          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}${dmEsDemo(u)?' <span style="background:rgba(200,169,110,.20);border:1px solid rgba(200,169,110,.45);color:#C8A96E;font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:1px 6px;border-radius:999px;vertical-align:middle">EJEMPLO</span>':''}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,.72);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
         const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
@@ -26285,17 +26392,39 @@ const DM_TOURS = {
     ]
   },
 
-  // Tour del PROFESIONAL — primera vez en el panel
+  // Tour del PROFESIONAL — primera vez en el panel.
+  // Se rehizo alrededor de los pacientes de ejemplo: antes el paso 2 mandaba
+  // a conseguir un código, o sea a esperar. Ahora el panel ya trae cinco
+  // casos cargados y el recorrido es sobre datos reales que se pueden tocar.
   'doctor_home': {
     steps: [
-      { target:null, title:'\ud83d\udc4b Bienvenido/a a tu panel', body:'Te muestro el recorrido en el orden en que vas a usarlo: <strong>1)</strong> cargás tus datos, <strong>2)</strong> vincul\u00e1s pacientes, <strong>3)</strong> trabaj\u00e1s con cada uno. Menos de un minuto, y pod\u00e9s reverlo desde <strong>TCC-I \u2192 C\u00f3mo se usa</strong>.', placement:'center' },
-      { target:()=>dmTourNav('profile'), title:'1\ufe0f\u20e3 Primero: tu perfil', body:'Ac\u00e1 carg\u00e1s tus datos profesionales: especialidad, matr\u00edcula, lugar de atenci\u00f3n y una rese\u00f1a. <strong>Complet\u00e1 esto antes que nada</strong>: es lo que ven tus pacientes cuando te vinculan, y lo que te hace aparecer en el directorio para que te encuentren.', placement:'top', padding:6 },
-      { target:()=>dmTourVincularBtn(), title:'2\ufe0f\u20e3 Despu\u00e9s: vincul\u00e1 pacientes', body:'Tu paciente crea su cuenta solo y desde su app obtiene un <strong>c\u00f3digo de 6 caracteres</strong>. Te lo comparte, lo peg\u00e1s en \u201c+ Vincular\u201d y queda conectado a tu panel. No necesit\u00e1s cargarle nada vos.', placement:'bottom', padding:6, waitFor:()=>dmTourVincularBtn(), waitTimeout:1000 },
-      { target:()=>dmTourNav('patients'), title:'3\ufe0f\u20e3 Tu listado de pacientes', body:'Ac\u00e1 aparecen todos, ordenados por apellido, con la edad a la derecha. Las <strong>franjas de color</strong> a la izquierda marcan la patolog\u00eda. Toc\u00e1 cualquiera para abrir su ficha.', placement:'top', padding:6 },
-      { target:()=>dmTourNav('patients'), title:'\ud83d\udccb Qu\u00e9 ves de cada paciente', body:'Dentro de la ficha ten\u00e9s todo lo que registr\u00f3: <strong>perfil cl\u00ednico</strong>, <strong>diario de sue\u00f1o</strong>, <strong>actograma</strong>, <strong>escalas</strong> (pod\u00e9s pedirle las que necesites) y el <strong>score con sus pilares</strong>. Desde ah\u00ed tambi\u00e9n manej\u00e1s el m\u00f3dulo TCC-I.', placement:'top', padding:6 },
-      { target:()=>dmTourNav('alerts'), title:'\ud83d\udd14 Alertas: tu revisi\u00f3n diaria', body:'Cuando una escala cae en rango patol\u00f3gico, aparece ac\u00e1 agrupada por paciente, con un bot\u00f3n para contactarlo por WhatsApp o mail. Es lo primero que conviene mirar cada d\u00eda.', placement:'top', padding:6 },
-      { target:()=>dmTourNav('metrics'), title:'\ud83d\udcca M\u00e9tricas: la vista global', body:'El sem\u00e1foro de adherencia de toda tu cartera: qui\u00e9n registra, qui\u00e9n afloj\u00f3, qui\u00e9n abandon\u00f3, si mejora o empeora, y cu\u00e1ntas escalas respondi\u00f3 de las que pediste. Tambi\u00e9n ves las calificaciones que te dejan.', placement:'top', padding:6 },
-      { target:null, title:'\u2728 Listo', body:'Ese es el circuito completo. Si te qued\u00f3 alguna duda, pod\u00e9s volver a ver este recorrido cuando quieras desde <strong>TCC-I \u2192 C\u00f3mo se usa</strong>.', placement:'center' }
+      { target:null, title:'\ud83d\udc4b Bienvenido/a a tu panel',
+        body:'Para que no tengas que esperar a tu primer paciente, tu listado ya viene con <strong>cinco casos de ejemplo</strong>, cada uno con semanas de diario y cuestionarios cargados. Son de prueba y están marcados como tales: podés abrirlos, romperlos y mirar todo. Menos de un minuto de recorrido.',
+        placement:'center' },
+      { target:()=>dmTourNav('patients'), title:'\ud83e\uddea Los cinco ejemplos',
+        body:'Cada uno muestra algo distinto: <strong>insomnio de conciliación</strong>, <strong>apnea junto a insomnio</strong>, un <strong>adolescente con retraso de fase</strong>, <strong>piernas inquietas</strong> y una <strong>hipersomnia</strong>. Llevan la etiqueta <strong>EJEMPLO</strong> al lado del nombre. Abrí cualquiera.',
+        placement:'top', padding:6 },
+      { target:()=>dmTourNav('patients'), title:'\ud83e\udded Resumen: la orientación',
+        body:'Al abrir una ficha, lo primero es el <strong>Resumen</strong>. Ahí está la orientación clínica —qué patrón sugieren los datos y con qué cifras—, las etiquetas de patología y el cronotipo. Con el selector <strong>Generalista / Especialista</strong> cambiás cuánto detalle querés ver.',
+        placement:'top', padding:6 },
+      { target:()=>dmTourNav('patients'), title:'\ud83c\udf19 Diario y actograma',
+        body:'La pestaña <strong>Diario sueño</strong> tiene el score con sus pilares, el actograma noche por noche, y los dos cruces: <strong>percepción vs. lo medido</strong> y <strong>hábitos vs. la calidad que reporta</strong>. En el adolescente se ve bien el corrimiento de fase.',
+        placement:'top', padding:6 },
+      { target:()=>dmTourNav('patients'), title:'\ud83d\udccb Cuestionarios',
+        body:'Cada escala es una tarjeta con su puntaje, su interpretación y las tomas anteriores. Desde <strong>Sugerir escalas</strong> le pedís al paciente las que necesites: le llegan a su app y las completa solo.',
+        placement:'top', padding:6 },
+      { target:()=>dmTourNav('alerts'), title:'\ud83d\udd14 Alertas: tu revisión diaria',
+        body:'Cuando una escala cae en rango patológico aparece acá, agrupada por paciente, con un botón para contactarlo por WhatsApp o mail. Es lo primero que conviene mirar cada día.',
+        placement:'top', padding:6 },
+      { target:()=>dmTourNav('metrics'), title:'\ud83d\udcca Métricas: la vista global',
+        body:'El semáforo de adherencia de toda tu cartera: quién registra, quién aflojó, quién abandonó, si mejora o empeora, y cuántas escalas respondió de las que pediste.',
+        placement:'top', padding:6 },
+      { target:()=>dmTourNav('profile'), title:'\u2705 Ahora sí: tu perfil',
+        body:'Antes de sumar pacientes reales, cargá tus datos: especialidad, matrícula, lugar de atención, a quiénes atendés y una reseña. Es lo que ven tus pacientes al vincularte y lo que te hace aparecer en el directorio.',
+        placement:'top', padding:6 },
+      { target:()=>dmTourVincularBtn(), title:'\ud83d\udd17 Y tus pacientes reales',
+        body:'Tu paciente crea su cuenta solo y obtiene un <strong>código de 6 caracteres</strong> desde su app. Te lo comparte, lo pegás en “+ Vincular” y queda conectado. Cuando los ejemplos te sobren, los sacás desde <strong>Más opciones → Quitar los ejemplos</strong>. Este recorrido lo podés volver a ver desde <strong>Cómo se usa</strong>.',
+        placement:'bottom', padding:6, waitFor:()=>dmTourVincularBtn(), waitTimeout:1000 }
     ]
   }
 };
