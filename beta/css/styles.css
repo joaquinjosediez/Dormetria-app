@@ -183,7 +183,11 @@
    la pastilla de una etiqueta larga empujaba la tarjeta fuera de la pantalla. */
 @media (max-width:759px){
   #drp-content .dm-card{ min-width:0; }
-  #drp-content .dm-card *{ overflow-wrap:anywhere; }
+  #drp-content .dm-card *{ overflow-wrap:break-word; }
+  /* Lo que evita el desborde lateral es esto, no el corte de palabra: los
+     contenedores flex arrancan con min-width:auto y por eso una pastilla
+     larga empujaba la tarjeta fuera de pantalla. */
+  #drp-content .dm-card [style*="display:flex"]{ min-width:0; }
 }
 
 .dm-grid2{ display:block; }
@@ -4542,10 +4546,11 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 
   #screen-doctor-patient.active .dm-diary-score   { order:1; }
   #screen-doctor-patient.active .dm-diary-pillars { order:2; }
-  #screen-doctor-patient.active #dr-weekly-prog   { order:3; }
-  #screen-doctor-patient.active .dm-diary-acto    { order:4; }
-  #screen-doctor-patient.active #dr-clinical-metrics { order:5; }
-  #screen-doctor-patient.active #dr-reg-slot      { order:6; }
+  #screen-doctor-patient.active #dr-factores-card { order:3; }
+  #screen-doctor-patient.active #dr-weekly-prog   { order:4; }
+  #screen-doctor-patient.active .dm-diary-acto    { order:5; }
+  #screen-doctor-patient.active #dr-clinical-metrics { order:6; }
+  #screen-doctor-patient.active #dr-reg-slot      { order:7; }
 
   /* ── El bloque de botones sueltos, plegado detrás de "Más" ────────── */
   /* !important porque los dos divs traen style="display:flex" escrito en la
@@ -4680,3 +4685,25 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 .dm-perfil-datos{ columns:2; column-gap:26px; }
 .dm-perfil-datos > div{ break-inside:avoid; }
 @media (max-width:900px){ .dm-perfil-datos{ columns:1; } }
+
+/* ── Evolución del resumen: las cifras se acomodan solas ───────────────── */
+/* Eran cinco celdas en una fila flex con flex:1 1 0. En 390px cada una queda
+   en ~70px y los rótulos salen partidos en tres renglones. Con grid entran
+   las que entren por fila y el resto baja. El separador va por outline de la
+   grilla, no por border-left de cada celda: así no queda una línea colgando
+   cuando la fila envuelve. */
+.dm-evo-cifras{
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(104px,1fr));
+  gap:12px 0;
+}
+.dm-evo-celda{
+  min-width:0; padding:0 8px;
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  border-left:0.5px solid rgba(126,200,164,0.14);
+}
+.dm-evo-celda:first-child{ border-left:0; }
+@media (max-width:520px){
+  .dm-evo-cifras{ grid-template-columns:repeat(2,1fr); gap:14px 0; }
+  .dm-evo-celda:nth-child(odd){ border-left:0; }
+}

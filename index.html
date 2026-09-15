@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod189-d5045b96">
+<link rel="stylesheet" href="css/styles.css?v=mod190-bfae7e4c">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1328,10 +1328,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod189-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod189-f6ca2d32"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod189-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod189-6ca784ce"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod190-26264729"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod190-f6ca2d32"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod190-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod190-aca8cf86"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1350,7 +1350,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod189';
+const APP_VERSION='mod190';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -6414,7 +6414,7 @@ function renderHabitsImpactHtml(entries, audiencia){
   };
   const colFor=s=> s>0?'#16a34a' : s<0?'#dc2626' : '#6b7280';
   let html='<div class="dm-card" style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px">'+
-    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Factores asociados al sueño '+
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Hábitos vs. calidad que reporta '+
       '<span style="font-weight:400;color:var(--label-3);font-size:11px">· '+R.n+' noches</span></div>'+
     '<div style="font-size:11px;color:var(--label-3);line-height:1.5;margin-bottom:11px">'+
       'Compara las noches con y sin cada factor <em>en este mismo paciente</em>, con <strong>t de Welch</strong> (dos colas, no asume varianzas iguales). Se marca como efecto solo si la diferencia supera el umbral clínico <em>y</em> p&lt;0,05.</div>'+
@@ -9474,7 +9474,10 @@ const GASQ_SUGGESTIONS = {
   parasomnia:{scales:['rbdq'],        label:'Parasomnias',  reason:'Tus respuestas sugieren conductas anormales durante el sueño'},
   mood:      {scales:['phq9','gad7'], label:'Ánimo',        reason:'El sueño está afectando tu estado de ánimo'},
   sexuality: {scales:['iief','fsfi'], label:'Sexualidad',   reason:'Tus respuestas sugieren impacto en la función sexual'},
-  tech:      {scales:['sassv'],       label:'Pantallas',    reason:'El uso del smartphone podría estar afectando tu sueño'},
+  // OJO: la escala de pantallas es `sassv_screen` (SAS-SV, Kwon 2013).
+  // `sassv` es la de sintomas de APNEA. Decia 'sassv' y por lo tanto, cuando
+  // el GASQ marcaba uso de pantallas, sugeria el cuestionario de apnea.
+  tech:      {scales:['sassv_screen'], label:'Pantallas',    reason:'El uso del smartphone podría estar afectando tu sueño'},
 };
 
 function getGASQSuggestions(answers, gasqScale){
@@ -9588,7 +9591,8 @@ function renderScales(targetId){
       }
       // Q11: Pantallas / celular
       if(gq(10)>=1 || gasqScore>=5){
-        suggestedIds.add('sassv');
+        // sassv_screen = SAS-SV (smartphone). `sassv` es la de apnea.
+        suggestedIds.add('sassv_screen');
       }
       
       // ── CASCADE RULES (cross-scale) ──
@@ -9912,8 +9916,9 @@ function dmIrAGraficos(){
 function dmCabeceraMovil(){
   try{
     if(window.innerWidth >= 900) return;
-    [['screen-doctor-home','Mis pacientes', null],
-     ['screen-doctor-patient','Paciente', 'dmVolverAlPanel'],
+    // screen-doctor-home no lleva encabezado: no tiene adonde volver, y el
+    // titulo repetia lo que la propia pantalla ya dice debajo del logo.
+    [['screen-doctor-patient','Paciente', 'dmVolverAlPanel'],
      ['screen-admin','Administración', 'dmVolverAlPanel']].forEach(function(cfg){
       const pant = document.getElementById(cfg[0]);
       if(!pant || pant.querySelector('.dr-cab-movil')) return;
@@ -16488,9 +16493,16 @@ async function showDrPTab_(tab){
           <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
           <div id="dr-pillar-legend"></div>
           <div id="dr-quality-concord" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
-          <!-- "Factores asociados al sueño" se movió a la columna derecha:
-               acá alargaba la izquierda, que ya tiene score y pilares,
-               mientras la derecha llevaba solo el actograma. -->
+        </div>
+        <!-- Los dos paneles de correlación se llamaban casi igual y se
+             confundían. Este cruza la calidad reportada con los HÁBITOS del
+             diario (café, alcohol, ejercicio, pantallas, ciclo). El otro,
+             adentro de Pilares, la cruza con lo MEDIDO (latencia, despertares,
+             regularidad). Va acá, debajo de Pilares, que es de donde sale la
+             pregunta. -->
+        <div class="dm-card dm-light" id="dr-factores-card">
+          <div class="dm-card-title">🔍 Hábitos y calidad reportada</div>
+          <div id="dr-quality-factores"></div>
         </div>
         <div class="dm-card dm-light" id="dr-weekly-prog" style="display:none"></div>
         <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
@@ -16525,10 +16537,6 @@ async function showDrPTab_(tab){
           </div>
         </div>
         <div id="dr-reg-slot"></div>
-        <div class="dm-card dm-light">
-          <div class="dm-card-title">🔍 Factores asociados al sueño</div>
-          <div id="dr-quality-factores"></div>
-        </div>
         </div>
         </div>
         <div id="dr-abajo-slot"></div>`;
@@ -17197,7 +17205,7 @@ async function showDrPTab_(tab){
               } else if(_allLow){
                 _nota=' <span style="font-style:italic">Como no se relaciona con ningún pilar, su percepción va por un carril distinto al registro — patrón que amerita descartar insomnio paradójico.</span>';
               }
-              _cEl.innerHTML='<strong>¿La sensación del paciente refleja sus datos?</strong> La calidad que reporta cada mañana '+_parts.join(', ')+
+              _cEl.innerHTML='<strong>Percepción vs. lo medido.</strong> La calidad que reporta cada mañana '+_parts.join(', ')+
                 (_rQty?' — sobre '+_rQty.n+' noches.':'.')+ _nota +
                 '<span style="display:block;margin-top:6px;opacity:.72;font-size:11.5px">El número va de −1 a +1: cerca de +1 la sensación acompaña al dato, cerca de −1 va al revés, cerca de 0 no se relacionan.</span>';
             }
@@ -17441,7 +17449,8 @@ async function showDrPTab_(tab){
         sns:'Narcolepsia — cribado simplificado',
         rbdq:'Trastorno conductual del sueño REM',
         pdss:'Alteraciones del sueño en enfermedad de Parkinson',
-        sassv:'Adicción al smartphone — impacto en el sueño',
+        sassv:'Síntomas de apnea del sueño — cribado clínico',
+        sassv_screen:'Adicción al smartphone — impacto en el sueño',
         iief:'Función eréctil (IIEF-5)',
         fsfi:'Función sexual femenina (FSFI)',
         bisq:'Sueño infantil — problemas en menores de 3 años',

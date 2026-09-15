@@ -10,6 +10,13 @@ Estado: `abierto` · `en progreso` · `diferido` · `resuelto`
 
 ## Abiertos / diferidos
 
+### Diario de sueño de hijos no se puede guardar — RLS en sleep_diary
+- Estado: abierto
+- Prioridad: 🔴
+- Descripción: falta en `sleep_diary` la excepción padre/hijo que `patients` ya tiene (policy `"parents read their children"`). Un padre que carga el diario de un hijo hace INSERT con `patient_email` del hijo, pero el login sigue siendo el del padre — la RLS actual compara `patient_email` contra `auth.jwt()->>'email'` y rechaza el insert. Diagnóstico completo y SQL de fix (4 policies nuevas, permisivas, no tocan las existentes) en `SQL-rls-diario-de-hijos.md`.
+- Impacto clínico: paciente pediátrico real afectado (mencionado en el diagnóstico) — no puede registrar sueño, pérdida directa de datos clínicos del piloto.
+- Avance (2026-09-12): diagnóstico documentado en `SQL-rls-diario-de-hijos.md`, SQL listo para correr en Supabase (pendiente de ejecución — no aplicado todavía). El propio documento señala revisar `evaluations` y `pvt_tests` por el mismo problema una vez confirmado esto.
+
 ### Centrado de eje del actograma
 - Estado: diferido
 - Prioridad: ⚪

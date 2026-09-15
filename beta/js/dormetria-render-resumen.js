@@ -189,14 +189,16 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
     // recuadros grandes en 2x2 y la tarjeta ocupaba media pantalla.
     // primera = sin divisor a la izquierda; si no queda una línea suelta
     // separando la celda del rótulo "Evolución".
-    let _celdaN = 0;
+    // Las cinco cifras van en grilla (.dm-evo-cifras), no en una fila flex:
+    // en un telefono cada celda quedaba en ~70px y "TIEMPO DE SUEÑO" salia
+    // partido en tres renglones. El separador lo pone el CSS, que sabe cual
+    // es la primera de cada fila; con border-left por celda quedaba una
+    // linea colgando al envolver.
     const celda = function (rotulo, valor, pie) {
-      const divisor = (_celdaN++ === 0) ? '' : 'border-left:0.5px solid rgba(126,200,164,0.14);';
-      return '<div style="flex:1 1 0;min-width:0;padding:0 10px;' + divisor +
-          'display:flex;flex-direction:column;align-items:center;text-align:center">' +
-        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(244,239,229,.76);text-align:center">' + rotulo + '</div>' +
-        '<div style="font-size:16px;font-weight:600;color:#F4EFE5;line-height:1.25;margin-top:2px;text-align:center">' + valor + '</div>' +
-        (pie ? '<div style="font-size:10.5px;color:rgba(244,239,229,.72);margin-top:1px;text-align:center">' + pie + '</div>' : '') +
+      return '<div class="dm-evo-celda">' +
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:rgba(244,239,229,.76);line-height:1.3">' + rotulo + '</div>' +
+        '<div style="font-size:17px;font-weight:600;color:#F4EFE5;line-height:1.2;margin-top:3px;white-space:nowrap">' + valor + '</div>' +
+        (pie ? '<div style="font-size:10.5px;color:rgba(244,239,229,.72);margin-top:2px;line-height:1.3">' + pie + '</div>' : '') +
       '</div>';
     };
 
@@ -238,12 +240,12 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
               '<span style="font-size:12px;font-weight:600;color:' + colorVer + ';white-space:nowrap">' + escHtml(veredicto) + '</span>' +
             '</div>' +
           '</div>' +
-          '<div style="display:flex;flex:1 1 400px;min-width:0">' +
+          '<div class="dm-evo-cifras" style="flex:1 1 320px;min-width:0">' +
             celda('Tiempo de sueño', (met.tst == null || isNaN(met.tst)) ? '—' :
                   (Math.floor(met.tst/60) + 'h ' + String(Math.round(met.tst%60)).padStart(2,'0') + 'm'), 'promedio') +
             celda('Latencia', num(met.latenciaMedia, ' min'), met.latenciaMedia > 30 ? 'sobre umbral' : 'en rango') +
             celda('Eficiencia', num(e ? e.actual : met.eficiencia, '%'), efPie) +
-            celda('Despertares', (met.despertaresMedia == null || isNaN(met.despertaresMedia)) ? '—' : met.despertaresMedia + ' /noche', '') +
+            celda('Despertares', (met.despertaresMedia == null || isNaN(met.despertaresMedia)) ? '—' : String(met.despertaresMedia), 'por noche') +
             celda('Adherencia', e ? num(e.adherencia, '%') : '—', '') +
           '</div>' +
         '</div>' +
