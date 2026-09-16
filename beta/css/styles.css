@@ -4071,7 +4071,9 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
 }
 #diary-pillar-bars > div > div{
   min-width:0 !important;
-  overflow-wrap:anywhere;
+  /* `anywhere` cortaba las palabras por la mitad: "REGU / LARI / DAD".
+     break-word solo parte si la palabra sola no entra. */
+  overflow-wrap:break-word;
 }
 
 
@@ -4706,4 +4708,41 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 @media (max-width:520px){
   .dm-evo-cifras{ grid-template-columns:repeat(2,1fr); gap:14px 0; }
   .dm-evo-celda:nth-child(odd){ border-left:0; }
+}
+
+/* ── Los tres pilares, parejos ─────────────────────────────────────────
+   Las tarjetas se armaban con estilos en linea y cada una media lo que
+   media su contenido: "REGULARIDAD" ocupa dos renglones donde "CANTIDAD"
+   ocupa uno, asi que el numero, el estado y el pie de esa tarjeta caian
+   mas abajo que los de las otras dos. En el celular se veia torcido.
+   La grilla estira las tres a la misma altura; el rotulo reserva dos
+   renglones siempre; el pie se apoya abajo. */
+.dm-pil-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px; margin-top:4px; align-items:stretch;
+}
+.dm-pil-card{
+  min-width:0; border-radius:15px; padding:13px 12px;
+  display:flex; flex-direction:column;
+  overflow-wrap:break-word; hyphens:none;
+}
+.dm-pil-rot{
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.05em; line-height:1.25;
+  min-height:2.5em;            /* dos renglones, entren uno o dos */
+  display:flex; align-items:flex-start;
+}
+.dm-pil-val{ font-size:25px; font-weight:700; line-height:1.1; margin:2px 0; }
+.dm-pil-est{ font-size:12px; font-weight:600; margin-bottom:6px; }
+.dm-pil-pie{ font-size:11.5px; line-height:1.4; margin-top:auto; padding-top:6px; }
+
+/* En pantallas angostas el rotulo no entra a 11px con ese espaciado. */
+@media (max-width:430px){
+  .dm-pil-grid{ gap:6px; }
+  .dm-pil-card{ padding:11px 9px; }
+  .dm-pil-rot{ font-size:9.5px; letter-spacing:.02em; min-height:2.6em; }
+  .dm-pil-val{ font-size:21px; }
+  .dm-pil-est{ font-size:11px; }
+  .dm-pil-pie{ font-size:10.5px; }
 }

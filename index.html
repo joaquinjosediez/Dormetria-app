@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod191-bfae7e4c">
+<link rel="stylesheet" href="css/styles.css?v=mod192-fc1834e0">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1328,10 +1328,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod191-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod191-f6ca2d32"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod191-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod191-aca8cf86"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod192-26264729"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod192-f6ca2d32"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod192-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod192-aca8cf86"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1350,7 +1350,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod191';
+const APP_VERSION='mod192';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4488,14 +4488,18 @@ async function loadAdminTab(tab){
       // admin. Si no está, solo se ven las filas propias y el resto da 0.
       // Se detecta y se avisa, en vez de mostrar un cero que parece un dato.
       try{
-        const _v = await db.get('doctor_patients?select=doctor_email');
-        const _c = {};
+        const _v = await db.get('doctor_patients?select=doctor_email,patient_email');
+        const _c = {}, _porDoc = {};
         (_v||[]).forEach(function(r){
           if(!r || !r.doctor_email) return;
           const k = String(r.doctor_email).toLowerCase();
           _c[k] = (_c[k]||0) + 1;
+          if(r.patient_email){
+            (_porDoc[k] = _porDoc[k] || []).push(String(r.patient_email).toLowerCase());
+          }
         });
         window._admVincPorDoc = _c;
+        window._admPacientesPorDoc = _porDoc;
         // ¿Estamos viendo solo lo nuestro? Si hay un único profesional con
         // vínculos y resulta ser el que está mirando, es la señal.
         const _claves = Object.keys(_c);
@@ -4532,6 +4536,55 @@ async function loadAdminTab(tab){
         window._admDiasDoc = {}; window._admUltIngreso = {}; window._admHayAccesos = false;
         console.warn('[ADMIN] accesos_diarios:', e && e.message);
       }
+      // ── Cómo le va a la cartera de cada profesional ──────────────────
+      // Cuántos de sus pacientes llegaron a registrar, y cuántos sostuvieron
+      // el diario. Es lo que distingue a un profesional que dio de alta
+      // cuentas de uno cuyos pacientes efectivamente usan la app.
+      try{
+        const _sd = await db.get('sleep_diary?select=patient_email,diary_date&limit=50000');
+        const _noches = {};
+        (_sd||[]).forEach(function(r){
+          if(!r || !r.patient_email) return;
+          const k = String(r.patient_email).toLowerCase();
+          _noches[k] = (_noches[k]||0) + 1;
+        });
+        window._admNochesPorPaciente = _noches;
+      }catch(e){
+        window._admNochesPorPaciente = null;
+        console.warn('[ADMIN] sleep_diary:', e && e.message);
+      }
+
+      // El mínimo de 5 es deliberado: con menos, un porcentaje es una
+      // fracción con nombre de estadística. Tres pacientes y uno que registra
+      // dan "33%", que no significa nada y se lee como si significara algo.
+      const DM_ADM_MIN = 5;
+      window._dmCarteraDoc = function(email){
+        const pac = (window._admPacientesPorDoc||{})[String(email||'').toLowerCase()] || [];
+        const noches = window._admNochesPorPaciente;
+        if(noches === null) return { estado:'sin-datos' };
+        if(pac.length < DM_ADM_MIN) return { estado:'pocos', n:pac.length };
+        let activaron = 0, sostuvieron = 0;
+        pac.forEach(function(p){
+          const n = noches[p] || 0;
+          if(n >= 1)  activaron++;
+          if(n >= 14) sostuvieron++;
+        });
+        return {
+          estado:'ok', n:pac.length,
+          activaron:  Math.round(activaron  / pac.length * 100),
+          sostuvieron:Math.round(sostuvieron / pac.length * 100)
+        };
+      };
+      window._dmCeldaCartera = function(email, campo){
+        const c = window._dmCarteraDoc(email);
+        if(c.estado === 'sin-datos') return '<span title="No se pudieron leer los diarios" style="color:#94a3b8">?</span>';
+        if(c.estado === 'pocos')     return '<span title="'+c.n+' paciente'+(c.n===1?'':'s')+' — hacen falta '+DM_ADM_MIN+' para mostrar un porcentaje" style="color:#94a3b8">—</span>';
+        const v = c[campo];
+        const col = v >= 70 ? '#15803d' : v >= 40 ? '#92400e' : '#991b1b';
+        return '<span style="font-weight:700;color:'+col+'">'+v+'%</span>'+
+               '<span style="color:var(--label-3);font-size:10px"> n='+c.n+'</span>';
+      };
+
       if(!docs||!docs.length){cont.innerHTML='<div class="empty-state">Sin profesionales registrados.</div>';return;}
       // Qué mide realmente cada columna. Sin esto, un "sin registro" se lee
       // como "no entró nunca" y se toman decisiones sobre un dato que no es.
@@ -4548,7 +4601,14 @@ async function loadAdminTab(tab){
           '<b>Último ingreso</b> es la última vez que abrió la app. '+
           'Ambos empiezan a contar desde que se instaló el registro, así que lo anterior no aparece. '+
           '<b>Última actividad</b> mira solo las escalas sugeridas: sirve como referencia histórica, '+
-          'pero alguien puede entrar y trabajar sin sugerir ninguna.'+
+          'pero alguien puede entrar y trabajar sin sugerir ninguna. '+
+          '<b>Activaron</b> es el porcentaje de sus pacientes que registró al menos una noche; '+
+          '<b>14+ noches</b>, el que llegó a catorce. La primera mide si el paciente arranca —eso '+
+          'depende de cómo se lo presenta el profesional—; la segunda, si sostiene. '+
+          'Con menos de 5 pacientes no se muestra porcentaje: tres pacientes y uno que registra '+
+          'dan "33%", que se lee como un dato y no lo es. El <b>n</b> al lado de cada porcentaje '+
+          'es sobre cuántos está calculado. '+
+          'Los pacientes de ejemplo cuentan como pacientes: descontalos a ojo en las carteras chicas.'+
         '</div>';
       const _appList3=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
@@ -4568,6 +4628,8 @@ async function loadAdminTab(tab){
         '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Especialidad</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Estado</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Pacientes</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)" title="Porcentaje de sus pacientes que registró al menos una noche">Activaron</th>'+
+        '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)" title="Porcentaje de sus pacientes que llegó a 14 noches registradas">14+ noches</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Días que entró</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Último ingreso</th>'+
         '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--sep-opaque)">Tiempo de uso</th>'+
@@ -4591,6 +4653,8 @@ async function loadAdminTab(tab){
               if(n) return n;
               return window._admConteoParcial ? '<span style="color:#b45309;font-weight:400" title="No se puede contar: falta el permiso de lectura">?</span>' : '0';
             })()}</td>
+            <td style="padding:8px;text-align:center;white-space:nowrap">${window._dmCeldaCartera(d.email,'activaron')}</td>
+            <td style="padding:8px;text-align:center;white-space:nowrap">${window._dmCeldaCartera(d.email,'sostuvieron')}</td>
             <td style="padding:8px;text-align:center;font-weight:700;color:var(--label)">${(function(){
               const k = String(d.email||'').toLowerCase();
               const n = (window._admDiasDoc||{})[k] || 0;
@@ -17219,11 +17283,15 @@ async function showDrPTab_(tab){
             ? 'background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16)'
             : 'background:#fff;border:1px solid var(--sep-opaque);box-shadow:0 1px 3px rgba(0,0,0,.05)';
           const colSub = _oscuroP ? 'rgba(244,239,229,.66)' : '#5c6b63';
-          return '<div style="'+caja+';border-top:3px solid '+cP+';border-radius:15px;padding:13px 14px">'+
-            '<div style="font-size:11px;font-weight:700;color:'+cP+';text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+title+'</div>'+
-            '<div style="font-size:25px;font-weight:700;color:'+cV+';line-height:1.1;margin:3px 0">'+valHtml+'</div>'+
-            '<div style="font-size:12px;font-weight:600;color:'+cV+';margin-bottom:6px">'+status+'</div>'+
-            '<div style="font-size:11.5px;color:'+colSub+';margin-top:6px;line-height:1.4">'+sub+'</div>'+
+          // Clases para que el CSS pueda alinear las tres tarjetas entre si:
+          // el rotulo ocupa siempre dos renglones aunque entre en uno, y el
+          // pie se pega abajo. Sin eso, "REGULARIDAD" partia en dos lineas y
+          // corria hacia abajo su numero y su estado respecto de las otras.
+          return '<div class="dm-pil-card" style="'+caja+';border-top:3px solid '+cP+'">'+
+            '<div class="dm-pil-rot" style="color:'+cP+'">'+title+'</div>'+
+            '<div class="dm-pil-val" style="color:'+cV+'">'+valHtml+'</div>'+
+            '<div class="dm-pil-est" style="color:'+cV+'">'+status+'</div>'+
+            '<div class="dm-pil-pie" style="color:'+colSub+'">'+sub+'</div>'+
           '</div>';
         }
         if(pEl){
@@ -17253,7 +17321,7 @@ async function showDrPTab_(tab){
               return pillarCard(p.l, p.v+'<span style="font-size:15px;font-weight:400;opacity:.55">%</span>', dmColorEstado(st, c), st, sub, p.pillarC);
             }).join('');
           }
-          pEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">'+cards+'</div>'+
+          pEl.innerHTML='<div class="dm-pil-grid">'+cards+'</div>'+
             (_pedP?'<div style="font-size:9.5px;color:var(--label-3);margin-top:8px;line-height:1.4;font-style:italic">Modo pediátrico: los cortes de adulto (SRI, índice de fragmentación) no están validados en menores de 13 años. El puntaje de sueño toma cantidad (por edad), calidad reportada y regularidad por jet lag social.</div>':'');
         }
         // Concordancia subjetivo↔objetivo: correlación de Pearson entre la
@@ -23109,6 +23177,12 @@ function toggleMedPicker(){
 function renderMedInline(){
   const cont = document.getElementById('med-inline-content');
   if(!cont) return;
+  // Lo que ya tenia tipeado el paciente se conserva: esta funcion se vuelve
+  // a llamar cada vez que toca una pastilla, y sin esto le borraba el campo
+  // a medio escribir.
+  const _nPrev = (document.getElementById('med-otro-nombre')||{}).value || '';
+  const _dPrev = (document.getElementById('med-otro-dosis')||{}).value || '';
+
   const cats = [...new Set(COMMON_MEDS.map(m=>m.cat))];
   let html = '';
   cats.forEach(cat=>{
@@ -23122,8 +23196,65 @@ function renderMedInline(){
     });
     html += '</div>';
   });
+
+  // ── Otro ──
+  // La lista fija no cubre todo lo que de verdad toma la gente. La
+  // progesterona, por ejemplo, no entra en ninguna categoria y en menopausia
+  // es muy frecuente que ayude a dormir. Sin esta caja, ese dato no existia:
+  // el campo de medicamento libre estaba en un modal viejo que ya no se abre.
+  html += '<div class="dm-med-cat" style="margin-top:12px">Otro</div>' +
+    '<div style="font-size:11.5px;color:rgba(244,239,229,.72);line-height:1.45;margin-bottom:7px">' +
+      'Cualquier cosa que tomes para dormir y no esté en la lista: hormonas, ' +
+      'suplementos, gotas, lo que sea.</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+      '<input type="text" id="med-otro-nombre" placeholder="Nombre" ' +
+        'autocomplete="off" maxlength="60" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();dmAgregarMedOtro();}" ' +
+        'style="flex:2 1 150px;min-width:0;padding:10px 12px;border:1px solid rgba(126,200,164,.3);' +
+        'border-radius:10px;font-size:14px;font-family:var(--font);' +
+        'background:rgba(255,255,255,.07);color:#F4EFE5">' +
+      '<input type="text" id="med-otro-dosis" placeholder="Dosis" ' +
+        'autocomplete="off" maxlength="24" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();dmAgregarMedOtro();}" ' +
+        'style="flex:1 1 90px;min-width:0;padding:10px 12px;border:1px solid rgba(126,200,164,.3);' +
+        'border-radius:10px;font-size:14px;font-family:var(--font);' +
+        'background:rgba(255,255,255,.07);color:#F4EFE5">' +
+      '<button type="button" onclick="dmAgregarMedOtro()" ' +
+        'style="flex:0 0 auto;padding:10px 16px;border:none;border-radius:10px;' +
+        'background:#7EC8A4;color:#0F2820;font-size:14px;font-weight:700;' +
+        'cursor:pointer;font-family:var(--font)">Agregar</button>' +
+    '</div>';
+
   cont.innerHTML = html;
+  const _n = document.getElementById('med-otro-nombre');
+  const _d = document.getElementById('med-otro-dosis');
+  if(_n) _n.value = _nPrev;
+  if(_d) _d.value = _dPrev;
 }
+
+// Agrega un medicamento escrito a mano. Se guarda igual que los de la lista,
+// asi que entra en el diario, en la ficha y en el conteo de noches.
+function dmAgregarMedOtro(){
+  const elN = document.getElementById('med-otro-nombre');
+  const elD = document.getElementById('med-otro-dosis');
+  const nombre = (elN && elN.value || '').trim().replace(/\s+/g,' ');
+  const dosis  = (elD && elD.value || '').trim();
+  if(!nombre){ if(elN) elN.focus(); return; }
+  // Si ya esta —tipeado o elegido de la lista— se actualiza la dosis en vez
+  // de duplicar la fila.
+  const ya = _medModalMeds.find(function(m){
+    return String(m.name).toLowerCase() === nombre.toLowerCase(); });
+  if(ya){ if(dosis) ya.dose = dosis; }
+  else { _medModalMeds.push({ name: nombre, dose: dosis }); }
+  if(elN) elN.value = '';
+  if(elD) elD.value = '';
+  renderMedInline();
+  renderMedList();
+  try{ toast(ya ? '✓ Dosis actualizada' : '✓ '+nombre+' agregado'); }catch(_){}
+  const foco = document.getElementById('med-otro-nombre');
+  if(foco) foco.focus();
+}
+window.dmAgregarMedOtro = dmAgregarMedOtro;
 
 function toggleInlineMed(name){
   const idx = _medModalMeds.findIndex(m=>m.name===name);

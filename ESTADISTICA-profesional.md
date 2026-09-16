@@ -86,10 +86,12 @@ etiquetada: ISI en insomnio, ESS en somnolencia, IRLS en SPI.
 
 Dos cuidados antes de mostrar un número:
 
-1. **La diferencia mínima clínicamente relevante del ISI está entre 6 y 8
-   puntos según la fuente** (Yang 2009 vs. Morin 2011). Antes de clavar un
-   umbral en el código hay que decidir cuál se usa y que figure citado, como
-   hicimos con Lichstein para los umbrales del diario.
+1. **El umbral del ISI es el de Morin et al. 2011** (*Sleep* 34(5):601-8):
+   8,4 puntos de cambio clínicamente significativo. Operativamente, **≥8
+   puntos de descenso = mejoró**, ≥8 de aumento = empeoró, el resto sin cambio
+   relevante. La cita va en el panel de criterios y fuentes, igual que
+   Lichstein para los umbrales del diario. (La otra referencia habitual,
+   Yang 2009, usa 6 puntos; se descartó.)
 2. **No comparar tomas de versiones distintas de la escala.** Ya tenemos el
    guard para DBAS y PSAS; acá aplica igual.
 
@@ -201,18 +203,63 @@ vez y se pide que revisen esos casos.
 
 ---
 
-## 7. Lo que hay que decidir
+## 7. Decidido
 
-1. **¿Seis opciones de desenlace o menos?** Mi recomendación: estas seis. Si
-   te parecen muchas, la que sacaría es `alta_diagnostico`.
-2. **¿Qué MCID se usa para el ISI?** Hay que elegir una fuente y citarla.
-3. **¿Métricas comparativas entre profesionales?** Un "tu tasa de alta vs. el
-   promedio de la plataforma" es atractivo y es otra cosa en términos
-   regulatorios: implica procesar datos de pacientes de terceros para un fin
-   distinto del de la atención. Eso toca la Ley 25.326 y el protocolo de
-   ética. **Mi recomendación es dejarlo afuera de la primera versión** y que
-   cada profesional vea solo lo suyo.
-4. **Umbral de n mínimo para mostrar un corte.** Propongo no mostrar ninguna
-   celda con menos de 5 pacientes, y que siempre figure el n al lado de cada
-   porcentaje. Con 77 pacientes, un "67% de alta" que son 2 de 3 no es un
-   dato: es ruido con formato de dato.
+- **Seis opciones de desenlace**, las de la sección 2.
+- **MCID del ISI: Morin et al. 2011** (*Sleep* 34(5):601-8) — 8,4 puntos para
+  cambio clínicamente significativo. Se usa **≥8 puntos de descenso** = mejoró,
+  **≥8 de aumento** = empeoró, el resto sin cambio relevante. La cita va en el
+  panel de criterios y fuentes, como Lichstein en el diario.
+- **n mínimo de 5** para mostrar cualquier porcentaje, con el n siempre al lado.
+- **Sin comparativa contra la media de la plataforma** para el profesional.
+  Cada uno ve lo suyo.
+- **Métricas de profesionales para el administrador, sí.** Es otra cosa: no es
+  darle a un profesional el rendimiento de sus colegas, es el operador de la
+  plataforma mirando cómo se usa. Primera parte implementada en mod192 (ver
+  sección 8).
+
+## 8. Panel de administración — lo que ya está
+
+En Administración → Profesionales, dos columnas nuevas por profesional:
+
+| Columna | Qué mide |
+|---|---|
+| **Activaron** | % de sus pacientes que registró al menos una noche |
+| **14+ noches** | % de sus pacientes que llegó a catorce noches |
+
+La distinción importa: **Activaron mide al profesional** —si el paciente
+arranca depende casi por completo de cómo se lo presentó en la consulta—
+mientras que **14+ noches mide si el paciente sostiene**, que ya es otra cosa.
+Un profesional con 90% de activación y 20% de permanencia tiene un problema
+distinto del que tiene 30% y 25%.
+
+Ambas respetan el n≥5: por debajo muestran un guion, no un porcentaje.
+
+**Ojo:** los pacientes de ejemplo cuentan como pacientes vinculados. En una
+cartera de seis, cinco son demos y el número no dice nada. Cuando haya
+volumen conviene excluirlos por `is_demo`.
+
+### Lo que falta en el panel de administración
+
+- **Mediana de días hasta la primera noche**, por profesional. Es el mejor
+  indicador de onboarding y hoy no está.
+- **Permanencia a 4 y 12 semanas**, para ver si la caída es temprana o tardía.
+- **Escalas pedidas vs. respondidas**, por profesional.
+- Todo lo que dependa de **desenlace** — o sea, la mitad de la sección 5 —
+  espera la migración.
+
+## 9. Lo que sigue abierto
+
+1. **Correr la migración de la sección 6.** Es el único bloqueante real: sin
+   `archived_at` y `archive_reason` en la base, el eje de desenlace no existe
+   y con él se cae la mitad de las comparaciones de la sección 5.
+2. **Qué hacer con los archivados que hoy están en localStorage.** Se pueden
+   subir con `archive_reason='otro'` la primera vez que la app abra después
+   del cambio, para que el profesional los revise. O se descartan y se empieza
+   limpio. Mi recomendación: subirlos, porque un archivado perdido se lee
+   después como un paciente activo que nunca volvió.
+3. **Excluir los pacientes de ejemplo de las métricas** cuando haya volumen
+   suficiente. Hoy inflan las carteras chicas.
+4. **Verificar las policies de `doctor_patients` antes de escribir más ahí.**
+   En `BUGS.md` quedó anotado que tiene dos políticas de UPDATE redundantes y
+   que `dp_medico_vincula` no valida consentimiento.

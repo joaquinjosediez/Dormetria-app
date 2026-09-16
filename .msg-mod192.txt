@@ -1,0 +1,29 @@
+mod192: medicamento libre en el diario; pilares parejos; métricas de cartera para el admin
+
+- Medicación: caja "Otro" en el selector, con nombre y dosis. Existía una
+  addCustomMed(), pero sus campos vivían en un modal viejo que ya no se abre:
+  desde el selector actual no había forma de agregar nada fuera de la lista
+  fija. Progesterona, hormonas, suplementos y gotas ahora entran. Si el
+  nombre ya estaba, actualiza la dosis en vez de duplicar la fila, y lo
+  tipeado sobrevive al re-render que dispara cada pastilla.
+
+- Pilares del sueño: las tres tarjetas se armaban con estilos en línea y cada
+  una medía lo que medía su contenido, así que "REGULARIDAD" —dos renglones
+  donde "CANTIDAD" tiene uno— corría hacia abajo su número y su estado. Y el
+  overflow-wrap:anywhere del contenedor la partía por la mitad:
+  "REGU / LARI / DAD". Pasan a clases propias: grilla con minmax(0,1fr),
+  rótulo con dos renglones reservados, pie apoyado abajo, break-word y
+  hyphens:none. Sirve para la vista del paciente y la del profesional.
+
+- Administración → Profesionales: dos columnas nuevas por profesional.
+  "Activaron" (% de sus pacientes que registró al menos una noche) y
+  "14+ noches" (% que llegó a catorce). La primera mide al profesional —que
+  el paciente arranque depende de cómo se lo presentó—; la segunda, si el
+  paciente sostiene. Con menos de 5 pacientes muestran un guion, no un
+  porcentaje, y el n va siempre al lado.
+
+- ESTADISTICA-profesional.md: quedan fijadas las decisiones — seis desenlaces,
+  MCID del ISI de Morin 2011 (≥8 puntos), n mínimo 5, sin comparativa contra
+  la media para el profesional. Y lo que sigue bloqueado por la migración.
+
+Prueba nueva 19-medicacion-y-pilares.js. 19 de 19 pasan.
