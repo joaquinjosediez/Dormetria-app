@@ -1,0 +1,30 @@
+mod193: las consultas del panel de administración devolvían cualquier cosa
+
+Reporte: una paciente que carga el diario todos los días aparecía como
+"hace 5 días" en Administración → Pacientes.
+
+Causa: las consultas de actividad iban con `limit` y SIN `order`. PostgREST no
+garantiza ningún orden sin ORDER BY, así que el límite recorta un subconjunto
+arbitrario: a unos pacientes les llegan sus filas más nuevas y a otros no. El
+número no era ruidoso, era falso, y desde la pantalla no había forma de
+notarlo.
+
+- sleep_diary y evaluations, en la pestaña Pacientes: order=created_at.desc y
+  tope 20000. Pidiendo de lo más nuevo a lo más viejo, la última actividad de
+  cada paciente está siempre, aunque el tope recorte.
+- Lo mismo en la pestaña Estadísticas, donde se calcula "activos en los
+  últimos 7 y 30 días" — justo la métrica que se rompe si faltan las filas
+  nuevas. Y en el conteo de noches por paciente de la pestaña Profesionales.
+- Cuando la consulta llega al tope, el panel lo dice: la última actividad
+  sigue siendo correcta, pero Días activos y Tiempo de uso quedan cortos en
+  los pacientes más antiguos. Antes mostraba un número que parecía completo.
+- La última actividad del diario ahora toma la más reciente entre created_at
+  (cuándo lo cargó) y diary_date (de qué noche habla), leída al mediodía para
+  no correrse de zona horaria. Quien carga la noche a la mañana siguiente ya
+  no aparece un día más atrasado de lo que está.
+
+Prueba nueva 20-las-consultas-del-admin-no-mienten.js: recorre TODAS las
+consultas a sleep_diary y evaluations y falla si alguna recorta sin ordenar.
+Encontró dos que yo no había tocado, en la pestaña Estadísticas.
+
+20 de 20 pasan.

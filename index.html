@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod192-fc1834e0">
+<link rel="stylesheet" href="css/styles.css?v=mod193-fc1834e0">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1328,10 +1328,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod192-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod192-f6ca2d32"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod192-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod192-aca8cf86"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod193-26264729"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod193-f6ca2d32"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod193-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod193-aca8cf86"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1350,7 +1350,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod192';
+const APP_VERSION='mod193';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4541,7 +4541,12 @@ async function loadAdminTab(tab){
       // el diario. Es lo que distingue a un profesional que dio de alta
       // cuentas de uno cuyos pacientes efectivamente usan la app.
       try{
-        const _sd = await db.get('sleep_diary?select=patient_email,diary_date&limit=50000');
+        // Con `order`: sin ORDER BY, PostgREST devuelve un subconjunto
+        // arbitrario cuando el limite recorta, y el conteo de noches queda
+        // corto para unos pacientes y no para otros.
+        const _TOPE_SD = 50000;
+        const _sd = await db.get('sleep_diary?select=patient_email,diary_date&order=diary_date.desc&limit='+_TOPE_SD);
+        window._admRecorteDoc = (_sd||[]).length >= _TOPE_SD;
         const _noches = {};
         (_sd||[]).forEach(function(r){
           if(!r || !r.patient_email) return;
@@ -4686,10 +4691,21 @@ async function loadAdminTab(tab){
       // Activity per patient: count distinct active days from diary + evals, and last activity timestamp
       const activityByEmail = {};
       try{
+        // ORDER Y TOPE. Antes iban sin `order`: PostgREST no garantiza ningun
+        // orden sin ORDER BY, asi que el `limit` recortaba un subconjunto
+        // arbitrario y a algunos pacientes les faltaban justo las filas mas
+        // nuevas. De ahi que un paciente que carga el diario todos los dias
+        // apareciera con "hace 5 dias". Pidiendo de la mas nueva a la mas
+        // vieja, la ultima actividad de cada uno esta siempre.
+        const _TOPE = 20000;
         const [diaryRows, evalRows] = await Promise.all([
-          db.get("sleep_diary?select=patient_email,created_at,diary_date&limit=10000").catch(()=>[]),
-          db.get("evaluations?select=patient_email,created_at&limit=10000").catch(()=>[])
+          db.get("sleep_diary?select=patient_email,created_at,diary_date&order=created_at.desc&limit="+_TOPE).catch(()=>[]),
+          db.get("evaluations?select=patient_email,created_at&order=created_at.desc&limit="+_TOPE).catch(()=>[])
         ]);
+        // Si volvio exactamente el tope, hubo recorte: los dias activos de los
+        // pacientes mas viejos quedan cortos. Se avisa en vez de mostrar un
+        // numero que parece completo.
+        window._admRecorte = ((diaryRows||[]).length >= _TOPE) || ((evalRows||[]).length >= _TOPE);
         const upsertActivity = (email, ts, dayKey)=>{
           if(!email) return;
           const e=email.toLowerCase();
@@ -4701,10 +4717,17 @@ async function loadAdminTab(tab){
           }
         };
         (diaryRows||[]).forEach(r=>{
-          // El día de actividad real es created_at (cuándo cargó el registro), no diary_date
-          const ts=r.created_at||r.diary_date;
-          const day = ts ? new Date(ts).toISOString().slice(0,10) : null;
-          upsertActivity(r.patient_email, ts, day);
+          // El dia de actividad real es created_at (cuando cargo el registro).
+          // Pero hay filas sin created_at —importadas o viejas— y filas donde
+          // la persona carga la noche de hoy a la manana siguiente. Se toma la
+          // mas reciente de las dos: lo que interesa es si el paciente sigue
+          // usando la app, y cualquiera de las dos lo prueba.
+          const _c = r.created_at ? new Date(r.created_at).getTime() : null;
+          const _d = r.diary_date ? new Date(r.diary_date+'T12:00:00').getTime() : null;
+          const tsNum = (_c!=null && _d!=null) ? Math.max(_c,_d) : (_c!=null ? _c : _d);
+          if(tsNum==null) return;
+          const day = new Date(tsNum).toISOString().slice(0,10);
+          upsertActivity(r.patient_email, tsNum, day);
         });
         (evalRows||[]).forEach(r=>{
           const day = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : null;
@@ -4775,13 +4798,22 @@ async function loadAdminTab(tab){
       const NOW = Date.now();
       const D7 = NOW - 7*86400000;
       const D30 = NOW - 30*86400000;
+      // Mismo problema que en la pestana de pacientes: `limit` sin `order`
+      // recorta un subconjunto arbitrario, y aca lo que se calcula es
+      // "activos en los ultimos 7 y 30 dias" — justo lo que se rompe si
+      // faltan las filas mas nuevas. Todas pedidas de lo mas nuevo a lo mas
+      // viejo, y con aviso cuando el tope se alcanza.
+      const _T = { pts:2000, drs:500, diary:20000, evals:20000, sugg:10000 };
       const [allPts, allDrs, diaryRows, evalRows, suggRows] = await Promise.all([
-        db.get("patients?select=created_at,email&limit=500").catch(()=>[]),
-        db.get("doctors?select=created_at,email,listed,public_profile,cv_url&limit=200").catch(()=>[]),
-        db.get("sleep_diary?select=patient_email,created_at&limit=10000").catch(()=>[]),
-        db.get("evaluations?select=patient_email,created_at&limit=10000").catch(()=>[]),
-        db.get("doctor_suggestions?select=doctor_email,created_at&limit=5000").catch(()=>[])
+        db.get("patients?select=created_at,email&order=created_at.desc&limit="+_T.pts).catch(()=>[]),
+        db.get("doctors?select=created_at,email,listed,public_profile,cv_url&order=created_at.desc&limit="+_T.drs).catch(()=>[]),
+        db.get("sleep_diary?select=patient_email,created_at&order=created_at.desc&limit="+_T.diary).catch(()=>[]),
+        db.get("evaluations?select=patient_email,created_at&order=created_at.desc&limit="+_T.evals).catch(()=>[]),
+        db.get("doctor_suggestions?select=doctor_email,created_at&order=created_at.desc&limit="+_T.sugg).catch(()=>[])
       ]);
+      window._admStatsRecorte =
+        (allPts||[]).length   >= _T.pts   || (allDrs||[]).length  >= _T.drs ||
+        (diaryRows||[]).length>= _T.diary || (evalRows||[]).length>= _T.evals;
       const totalPts=(allPts||[]).length, totalDrs=(allDrs||[]).length;
       // Pacientes activos: emails distintos con actividad (diary o eval) en la ventana
       const activeIn = (ms)=>{
@@ -5020,6 +5052,12 @@ function renderAdminPatientsTable(){
       filtro('_admSoloVinc','🔗 Ocultar sin vincular ('+_nSin+')')+
     '</div>'+
     '<div style="font-size:11px;color:var(--label-3);margin-bottom:10px">'+inact30+' sin actividad hace +30 días · '+never+' nunca registraron nada</div>'+
+    (window._admRecorte
+      ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 13px;margin-bottom:10px;font-size:12px;color:#92400e;line-height:1.5">'+
+        '<b>Hay más registros de los que entran en una consulta.</b> La última actividad sigue '+
+        'siendo correcta (se piden del más nuevo al más viejo), pero <b>Días activos</b> y '+
+        '<b>Tiempo de uso</b> pueden quedar cortos en los pacientes más antiguos.</div>'
+      : '')+
     '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
     '<thead><tr style="background:var(--bg-secondary)">'+
     '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--sep-opaque)">Nombre</th>'+
