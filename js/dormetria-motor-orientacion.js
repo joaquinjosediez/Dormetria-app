@@ -468,7 +468,9 @@ function dmMetricasDiario(entries) {
   // `eficiencia < 75` daba verdadero y el motor informaba "eficiencia de sueño
   // baja" a un paciente SIN diario. Ausencia de dato es null, no cero.
   const vacio = { latenciaMedia: null, vigiliaIntrasueño: null, eficiencia: null,
-                  despertaresMedia: null, tst: null, tib: null, nochesValidas: 0 };
+                  despertaresMedia: null, tst: null, tib: null, nochesValidas: 0,
+                  siestaNoches: 0, siestaDias: null, siestaFrecPct: null,
+                  siestaMediaMin: null, siestaCantMedia: null, tst24: null };
   const valid = (entries || []).filter(e => e && e.sleep_minutes && e.diary_date);
   if (!valid.length) return vacio;
 
@@ -540,8 +542,60 @@ function dmMetricasDiario(entries) {
     ? Math.round(prom(despertares) * 10) / 10
     : (vigiliaIntrasueño > 0 ? Math.max(1, Math.round(vigiliaIntrasueño / 45)) : 0);
 
+  // ── SIESTAS ──────────────────────────────────────────────────────────
+  // El TST de arriba es sueño NOCTURNO: sale de sleep_minutes, que se calcula
+  // de bedtime a wake_time. Las siestas nunca entraron ahí, salvo en el
+  // puntaje de cantidad de los menores de 6 años. En un adulto con insomnio
+  // eso importa: una siesta diaria de 90 min cambia la lectura del cuadro y
+  // es un objetivo directo del tratamiento conductual.
+  //
+  // nap_minutes es el TOTAL dormido en siestas de ese día; 0 significa "no
+  // durmió siesta" (respuesta), null significa "no se preguntó" (sin dato).
+  // El detalle de cada siesta vive en el JSON de notes.
+  const conDato = valid.filter(function (e) {
+    return e && e.nap_minutes != null && !isNaN(Number(e.nap_minutes)); });
+  const conSiesta = conDato.filter(function (e) { return Number(e.nap_minutes) > 0; });
+
+  const siestaDias = conDato.length || null;
+  const siestaNoches = conSiesta.length;
+  const siestaFrecPct = conDato.length
+    ? Math.round(conSiesta.length / conDato.length * 100) : null;
+  // Duración media de las siestas de los días en que hubo, no del total de
+  // días: promediar los ceros diría que "duerme 12 minutos de siesta", que no
+  // describe a nadie.
+  const siestaMediaMin = conSiesta.length
+    ? Math.round(conSiesta.reduce(function (a, e) { return a + Number(e.nap_minutes); }, 0) / conSiesta.length)
+    : null;
+  // Cuántas siestas por día en los días que hubo. Sale del detalle; si no está
+  // cargado se asume una.
+  const siestaCantMedia = conSiesta.length
+    ? Math.round(conSiesta.reduce(function (a, e) {
+        return a + Math.max(1, dmContarSiestas(e)); }, 0) / conSiesta.length * 10) / 10
+    : null;
+  // Sueño en 24 h = nocturno + siestas, promediado sobre los días con dato de
+  // siesta. Se devuelve aparte y NUNCA se mezcla con tst.
+  const tst24 = (tst != null && conDato.length)
+    ? Math.round(tst + conDato.reduce(function (a, e) { return a + Number(e.nap_minutes); }, 0) / conDato.length)
+    : null;
+
   return { latenciaMedia, vigiliaIntrasueño, eficiencia, despertaresMedia, tst, tib,
-           nochesValidas: valid.length };
+           nochesValidas: valid.length,
+           siestaNoches, siestaDias, siestaFrecPct, siestaMediaMin, siestaCantMedia, tst24 };
+}
+
+/**
+ * Cuántas siestas distintas tuvo ese día. El detalle se guarda en notes como
+ * "Siestas: [{start,end}]" — el mismo formato del diario infantil. Si no está,
+ * devuelve 0 y quien llama decide qué hacer con eso.
+ */
+function dmContarSiestas(e) {
+  if (!e || !e.notes) return 0;
+  const m = /Siestas: (\[.*?\])(?: \||$)/.exec(e.notes);
+  if (!m) return 0;
+  try {
+    const arr = JSON.parse(m[1]);
+    return Array.isArray(arr) ? arr.filter(function (n) { return n && n.start; }).length : 0;
+  } catch (_) { return 0; }
 }
 
 /**

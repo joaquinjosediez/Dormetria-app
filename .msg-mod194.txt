@@ -1,0 +1,25 @@
+mod194: las siestas entran en las métricas del profesional
+
+Respuesta a la pregunta: NO, las siestas nunca estuvieron en el tiempo total
+de sueño. sleep_minutes se calcula de bedtime a wake_time, así que el TST que
+ve el profesional es nocturno. La única excepción es el puntaje de cantidad de
+los menores de 6 años, donde el sueño de 24 h sí las suma. En un adulto las
+siestas solo aparecían como barritas azules en el actograma y como factor en
+el análisis de hábitos.
+
+- dmMetricasDiario() devuelve ahora siestaFrecPct, siestaMediaMin,
+  siestaCantMedia, siestaNoches, siestaDias y tst24. La duración media se
+  calcula sobre los días CON siesta, no sobre el total: promediar los ceros
+  daría "12 minutos de siesta", que no describe a nadie. Y "no duerme siesta"
+  (nap_minutes = 0) se distingue de "no se preguntó" (null).
+
+- Resumen → Evolución: celda nueva de Siestas con la frecuencia y la duración
+  media. El tiempo de sueño queda rotulado "nocturno" y, cuando hay siestas
+  cargadas, el pie da el total en 24 h. SEPARADOS a propósito: fundirlos en
+  una sola cifra esconde justo lo que hay que ver en un insomnio.
+
+- dmDatosParaInforme() lleva un bloque `siestas`, con una aclaración explícita
+  de que sueno_total_promedio_min es nocturno y no las incluye — para que el
+  modelo no las sume dos veces ni las dé por contadas.
+
+Prueba nueva 21-las-siestas-existen.js, con datos simulados. 21 de 21 pasan.

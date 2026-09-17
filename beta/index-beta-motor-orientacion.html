@@ -798,8 +798,13 @@
       <option value="9">Más de 8 horas</option>
     </select>
     <div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Duración del test</div>
+    <!-- La opcion de 1 minuto se saco: no existe un PVT de un minuto validado.
+         El estandar son 10 min (Dinges & Powell 1985) y la version breve
+         validada es el PVT-B de 3 min (Basner, Mollicone & Dinges 2011). Con
+         estimulos cada 2-10 s, un minuto da unas 6-12 respuestas: no alcanza
+         para estimar lapsos, que es la medida principal. Daba un resultado con
+         forma de resultado y sin nada atras. -->
     <div style="display:flex;gap:8px;margin-bottom:18px" id="dur-opts">
-      <button class="dur-opt" data-d="1" onclick="setPVTDur(1,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">1 min</button>
       <button class="dur-opt" data-d="3" onclick="setPVTDur(3,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">3 min</button>
       <button class="dur-opt active-dur" data-d="5" onclick="setPVTDur(5,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:#eef8f5;border:1.5px solid #1a4a3a;font-family:var(--font);cursor:pointer;font-size:14px;font-weight:500;color:#1a4a3a">5 min</button>
       <button class="dur-opt" data-d="10" onclick="setPVTDur(10,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">10 min</button>
@@ -1331,7 +1336,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod193-beta"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod196-beta"></script>
 <!-- BETA: cache-busting por timestamp. Cada recarga trae la última versión del
      motor sin necesidad de vaciar caché. En producción se reemplaza por ?v=modNNN. -->
 <script>
@@ -1365,7 +1370,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod193-beta';
+const APP_VERSION='mod196-beta';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4631,7 +4636,8 @@ async function loadAdminTab(tab){
           'Los pacientes de ejemplo cuentan como pacientes: descontalos a ojo en las carteras chicas.'+
         '</div>';
       const _appList3=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-      const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico'};
+      // Faltaban nutrition y other: aparecian crudos, en ingles, en la tabla.
+const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',other_health:'Otro',physician:'Médico',nutrition:'Nutrición',other:'Otro'};
       const _rejList3=JSON.parse(localStorage.getItem('dm_rejected_doctors')||'{}');
       const approvedDocs=(docs||[]).filter(d=>_appList3[d.email]);
       const rejectedDocs=(docs||[]).filter(d=>_rejList3[d.email]);
@@ -4666,7 +4672,7 @@ async function loadAdminTab(tab){
             :'<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px">No solicitó</span>';
           return `<tr style="border-bottom:1px solid var(--sep-opaque)">
             <td style="padding:8px"><div style="font-weight:600">${d.name} ${d.lname||''}</div><div style="color:var(--label-3);font-size:11px">${d.email}</div></td>
-            <td style="padding:8px;color:var(--label-2)">${d.specialty||'—'}</td>
+            <td style="padding:8px;color:var(--label-2)">${_specL[d.specialty]||d.specialty||'—'}</td>
             <td style="padding:8px;text-align:center">${badge}</td>
             <td style="padding:8px;text-align:center;color:var(--label-2);font-weight:600">${(function(){
               const n = (window._admVincPorDoc||{})[String(d.email||'').toLowerCase()];
@@ -12315,6 +12321,10 @@ function dmAplicarSinAlcohol(){
   try{ sin = localStorage.getItem('dm_sin_alcohol')==='1'; }catch(_){}
   const campo=document.getElementById('dm-campo-alcohol');
   if(!campo || !sin) return;
+  // Esta funcion corre a los 220 ms de abrir el formulario, tambien cuando se
+  // esta EDITANDO. Si la noche que se edita tiene alcohol cargado, esconder el
+  // campo le muestra "Alcohol: ninguno" encima de un dato que existe.
+  if(typeof alcItems!=='undefined' && alcItems && alcItems.length) return;
   campo.classList.add('dm-alc-oculto');
   if(!document.getElementById('dm-alc-aviso')){
     const av=document.createElement('div');
@@ -12556,8 +12566,29 @@ async function editDiaryEntry(id){
         if(e.alcohol_drinks>0){
           alcItems=[{label:'Registrado previamente', ua:e.alcohol_drinks}];
           if(typeof renderAlcItems==='function') renderAlcItems();
+          // Si en algun momento marco "no tomo alcohol", el campo se esconde
+          // solo a los 220 ms de abrir el formulario — TAMBIEN al editar una
+          // noche donde SI habia tomado. Se veia "Alcohol: ninguno" sobre un
+          // dato que existia. Con items cargados, el campo no se esconde.
+          try{ dmVuelvoATomar(); }catch(_){}
         }
       }catch(_ca){}
+      // ── Variables propias ──
+      // No se restauraban: al editar aparecian todas desmarcadas y, si la
+      // paciente guardaba sin volver a tocarlas, custom_flags se sobrescribia
+      // en false. O sea que editar una noche BORRABA lo que habia marcado.
+      try{
+        _dmVarsNoche = {};
+        let _cf = e.custom_flags;
+        if(typeof _cf === 'string' && _cf) { try{ _cf = JSON.parse(_cf); }catch(_){ _cf = null; } }
+        if(_cf && typeof _cf === 'object'){
+          Object.keys(_cf).forEach(function(k){ _dmVarsNoche[k] = (_cf[k] === true); });
+        }
+        const _slotV = document.getElementById('dm-vars-slot');
+        if(_slotV && typeof dmRenderVarsPersonales === 'function'){
+          _slotV.innerHTML = dmRenderVarsPersonales();
+        }
+      }catch(_cv){ console.warn('[editar] variables propias:', _cv); }
       // Medicación
       try{
         if(e.medications && e.medications!=='[]' && e.medications!==''){
@@ -13360,13 +13391,19 @@ function showPVTTab(tab, btn){
 }
 function showPVT(){
   setTimeout(showPVTIntroDeviceNote, 100);
-  setTimeout(updateCalibButton, 150);S.pvtRTs=[];S.pvtState='idle';if(!S.pvtDuration||S.pvtDuration<1)S.pvtDuration=5;S.pvtPriorSleep=null;showScreen('pvt-intro');if(!S.user)return;
+  setTimeout(updateCalibButton, 150);S.pvtRTs=[];S.pvtState='idle';
+  // Piso de 3 minutos: la duracion mas corta con validacion (PVT-B). Quien
+  // tenia 1 guardado de antes pasa a 5, no se queda con una opcion que ya no
+  // existe en la pantalla.
+  if(!S.pvtDuration||S.pvtDuration<3)S.pvtDuration=5;
+  S.pvtPriorSleep=null;showScreen('pvt-intro');if(!S.user)return;
 db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=diary_date.desc&limit=1&select=diary_date,sleep_minutes').then(rows=>{const disp=document.getElementById('pvt-sleep-display');if(!disp)return;if(rows&&rows.length&&rows[0].sleep_minutes){const hrs=Math.round(rows[0].sleep_minutes/60*10)/10;S.pvtPriorSleep=hrs;disp.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><input class="form-input" type="number" id="pvt-sleep-hrs" min="0" max="16" step="0.5" value="'+hrs+'" style="max-width:100px;font-size:18px;font-weight:500;text-align:center" oninput="S.pvtPriorSleep=parseFloat(this.value)||null"><span style="font-size:14px;color:var(--ink3)">horas (del diario '+rows[0].diary_date+')</span></div>';}else{pvtAskSleep();}}).catch(()=>pvtAskSleep());}
 function pvtAskSleep(){S.pvtPriorSleep=null;const disp=document.getElementById('pvt-sleep-display');if(!disp)return;disp.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><input class="form-input" type="number" id="pvt-sleep-hrs" min="0" max="16" step="0.5" placeholder="ej: 7" style="max-width:100px;font-size:18px;font-weight:500;text-align:center" oninput="S.pvtPriorSleep=parseFloat(this.value)||null"><span style="font-size:14px;color:var(--ink3)">horas dormidas anoche</span></div>';}
 function selectPVTDur(mins,el){S.pvtDuration=mins;document.querySelectorAll('.pvt-dur-btn').forEach(b=>{b.style.border='1px solid var(--border)';b.style.background='white';});el.style.border='2px solid var(--g700)';el.style.background='var(--g50)';}
 
 function setPVTDur(mins,el){
-  S.pvtDuration=mins;
+  // Por las dudas quede algun camino que pida menos de 3.
+  S.pvtDuration=Math.max(3, mins);
   document.querySelectorAll('.dur-opt').forEach(b=>{b.style.background='var(--bg-secondary)';b.style.borderColor='transparent';b.style.color='var(--label)';b.style.fontWeight='400';});
   el.style.background='#eef8f5';el.style.borderColor='#1a4a3a';el.style.color='#1a4a3a';el.style.fontWeight='500';
 }
@@ -13797,7 +13834,9 @@ async function pvtFinish(){
   if(deviation<=20&&lapses<=Math.max(0,lapseRef)){level='Alerta normal';emoji='🟢';color='#14532d';msg='Tu tiempo de reacción está dentro del rango esperado para este horario.';}
   else if(deviation<=60&&lapses<=lapseRef+2){level='Alerta levemente reducida';emoji='🟡';color='#92400e';msg='Tu tiempo de reacción está algo por encima de lo esperado. Procedé con atención.';}
   else{level='Alerta reducida';emoji='🔴';color='#9b1c1c';msg='Tiempo de reacción significativamente elevado. Se recomienda descanso antes de conducir u operar maquinaria.';}
-  if(dur>=1&&S.user){
+  // Antes alcanzaba con dur>=1: un test de un minuto se guardaba como si
+  // midiera lo mismo que uno de diez.
+  if(dur>=3&&S.user){
     console.log('Simple PVT save: rt='+meanRT+' lapses='+lapses+' dur='+S.pvtDuration);
   const isMob=window.matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;const deviceType=isMob?'móvil':'web';
   const e={patient_email:S.user.email,mean_rt:meanRT,lapses,alert_score:Math.max(0,Math.round(100-(deviation/3)-(lapses*8))),alert_level:level+' ('+dur+'min)',test_hour:testHour,prior_sleep_hours:priorSleep||null,device_type:deviceType};
@@ -13806,7 +13845,14 @@ async function pvtFinish(){
       const pvtResp=await fetch(SU+'/rest/v1/pvt_tests',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(e)});
       if(!pvtResp.ok&&pvtResp.status!==201){const ed=await pvtResp.json().catch(()=>({}));console.error('PVT save FAILED:',pvtResp.status,JSON.stringify(ed));toast('Error guardando test: '+pvtResp.status+(ed.message?' — '+ed.message:''));}
       else{console.log('PVT saved OK');showSuccessBanner('Test guardado ✓ — TR: '+meanRT+'ms');}
-    }catch(e1){console.error('PVT fetch error:',e1.message);}
+    }catch(e1){
+      console.error('PVT fetch error:',e1.message);
+      toast('El resultado NO se guardó: '+(e1.message||'error de conexión'));
+    }
+  } else if(!S.user){
+    // Sin sesion no hay adonde guardarlo. Antes se mostraba el resultado igual,
+    // asi que la persona hacia el test creyendo que quedaba registrado.
+    toast('Este resultado no se guarda: no hay sesión iniciada.');
   }
   const timeStr=now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});const dateStr=now.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
   const cont=document.getElementById('pvt-result-content');
@@ -15796,6 +15842,25 @@ function dmDatosParaInforme(entries, evals, edad, sexo){
       jet_lag_social_min: m.socialJetLag,
       pct_noches_menos_de_7h: m.under7Pct
     };
+    // Las siestas faltaban en el paquete. sueno_total_promedio_min es NOCTURNO
+    // —sale de bedtime a wake_time— asi que un modelo que lea solo eso no
+    // puede saber cuanto duerme la persona en 24 h ni que hay una siesta
+    // diaria, que en insomnio es un dato de peso.
+    try{
+      const _conDato = (validas||[]).filter(function(e){
+        return e && e.nap_minutes != null && !isNaN(Number(e.nap_minutes)); });
+      const _conSiesta = _conDato.filter(function(e){ return Number(e.nap_minutes) > 0; });
+      paquete.siestas = _conDato.length ? {
+        dias_con_dato: _conDato.length,
+        dias_con_siesta: _conSiesta.length,
+        frecuencia_pct: Math.round(_conSiesta.length / _conDato.length * 100),
+        duracion_promedio_min: _conSiesta.length
+          ? Math.round(_conSiesta.reduce(function(a,e){ return a+Number(e.nap_minutes); },0) / _conSiesta.length)
+          : 0,
+        // Explicito, para que no se sume dos veces ni se confunda con el TST.
+        aclaracion: 'sueno_total_promedio_min es nocturno y NO incluye estas siestas'
+      } : null;
+    }catch(_){ paquete.siestas = null; }
   }
   if(reg){
     paquete.regularidad = {
@@ -17383,25 +17448,54 @@ async function showDrPTab_(tab){
         // sigue a sus despertares; un r bajo sugiere disociación (típico de
         // insomnio paradójico) — dato clínicamente interesante en sí mismo.
         try{
+          // r de Pearson con su intervalo de confianza del 95% por la
+          // transformacion z de Fisher. El IC no es adorno: con 13 noches una
+          // r de 0,35 tiene un intervalo que va de −0,25 a +0,75, o sea que
+          // incluye el cero y no permite afirmar nada. Antes se anunciaba
+          // "acompaña algo" igual, que es exactamente el tipo de afirmacion
+          // que el panel de habitos —al lado— se cuida de no hacer.
           const _pearson=(xs,ys)=>{
             const pares=xs.map((x,i)=>[x,ys[i]]).filter(p=>p[0]!=null&&p[1]!=null&&!isNaN(p[0])&&!isNaN(p[1]));
-            const n=pares.length; if(n<5) return null;
+            const n=pares.length;
+            // 10 pares como minimo. Con menos, el IC es tan ancho que la
+            // cuenta no aporta nada sobre mirar el grafico.
+            if(n<10) return null;
             const mx=pares.reduce((a,p)=>a+p[0],0)/n, my=pares.reduce((a,p)=>a+p[1],0)/n;
             let num=0,dx=0,dy=0;
             pares.forEach(p=>{ num+=(p[0]-mx)*(p[1]-my); dx+=(p[0]-mx)**2; dy+=(p[1]-my)**2; });
             if(dx===0||dy===0) return null;
-            return {r:num/Math.sqrt(dx*dy), n};
+            let r=num/Math.sqrt(dx*dy);
+            r=Math.max(-0.999999,Math.min(0.999999,r));
+            const z=Math.atanh(r), se=1/Math.sqrt(n-3);
+            const lo=Math.tanh(z-1.96*se), hi=Math.tanh(z+1.96*se);
+            // Si el intervalo cruza el cero, el signo no esta establecido.
+            return { r, n, lo, hi, firme:(lo>0 || hi<0) };
           };
           const _qual=sorted.map(e=>e.sleep_quality||null);
           const _ener=sorted.map(e=>e.energy||null);
           const _fmt=v=>v==null?'s/d':((v.r>=0?'+':'−')+Math.abs(v.r).toFixed(2));
-          const _rQty=_pearson(_qual,pillarData.map(p=>p.qty));
-          const _rFrag=_pearson(_qual,pillarData.map(p=>p.frag));
+          const _fmtIC=v=>v==null?'':('IC95% '+(v.lo>=0?'+':'−')+Math.abs(v.lo).toFixed(2)+
+                                      ' a '+(v.hi>=0?'+':'−')+Math.abs(v.hi).toFixed(2));
+          // ── QUE se correlaciona ──────────────────────────────────────────
+          // Antes se usaban los PUNTAJES de los pilares y se los nombraba como
+          // si fueran las mediciones crudas. Dos problemas:
+          //  · el puntaje de cantidad no es monotono — sube hasta 7-9 h y
+          //    vuelve a bajar — asi que una r contra el mezcla "durmio poco"
+          //    con "durmio de mas" y no se puede leer.
+          //  · el de fragmentacion es 20 − despertares×5: mas alto significa
+          //    MENOS despertares, o sea que el rotulo "los despertares" decia
+          //    lo contrario del signo que mostraba.
+          // Ahora van las variables crudas, que si son monotonas y se llaman
+          // como lo que son.
+          const _horas=sorted.map(e=>(e.sleep_minutes!=null&&e.sleep_minutes>0)?e.sleep_minutes/60:null);
+          const _desp =sorted.map(e=>(e.awakenings!=null&&!isNaN(e.awakenings))?Number(e.awakenings):null);
+          const _rQty=_pearson(_qual,_horas);
+          const _rFrag=_pearson(_qual,_desp);
           const _rReg=_pearson(_qual,pillarData.map(p=>p.regNight));
           const _rEner=_pearson(_qual,_ener);
           const _cEl=document.getElementById('dr-quality-concord');
           if(_cEl){
-            if(!_rQty&&!_rFrag&&!_rReg){ _cEl.textContent='Percepción vs. datos: se necesitan al menos 5 noches con calidad reportada para comparar.'; }
+            if(!_rQty&&!_rFrag&&!_rReg){ _cEl.textContent='Percepción vs. lo medido: hacen falta al menos 10 noches con calidad reportada y horarios cargados.'; }
             else {
               // El número es la r de Pearson, de −1 a +1, entre la calidad que
               // el paciente reporta y el puntaje del pilar (donde más alto es
@@ -17413,29 +17507,50 @@ async function showDrPTab_(tab){
               // Antes se leía Math.abs(r), así que un −0,55 se anunciaba como
               // "coincide bastante", que es exactamente lo contrario de lo que
               // significa. |r|≥0.5 fuerte, 0.3–0.5 moderado, <0.3 nada.
-              const _word=function(v){
+              // `esperado` dice hacia donde deberia ir el signo si la persona
+              // percibe lo que le pasa: mas horas → mejor calidad (+); mas
+              // despertares → peor calidad (−); mas regularidad → mejor (+).
+              // Sin esto no se puede decir si una r negativa es lo normal o
+              // es el hallazgo.
+              const _frase=function(v, rotulo, esperado){
                 if(v==null) return null;
-                const a=Math.abs(v.r);
-                if(a<0.3) return 'casi no se relaciona con';
-                if(v.r>0) return a>=0.5 ? 'acompaña bastante a' : 'acompaña algo a';
-                return a>=0.5 ? 'va bastante al revés de' : 'va algo al revés de';
+                const cifra=' ('+_fmt(v)+', '+_fmtIC(v)+')';
+                // Si el intervalo cruza el cero, no hay nada que afirmar. Se
+                // dice, en vez de ponerle un adjetivo a un numero que podria
+                // ser cero.
+                if(!v.firme) return 'no alcanza para decir nada sobre '+rotulo+cifra;
+                const acorde = (v.r>0) === (esperado>0);
+                const fuerza = Math.abs(v.r)>=0.5 ? 'claramente' : 'moderadamente';
+                return (acorde ? ('acompaña '+fuerza+' a ') : ('va al revés de '))+rotulo+cifra;
               };
-              const _parts=[];
-              if(_rQty) _parts.push(_word(_rQty)+' las horas dormidas ('+_fmt(_rQty)+')');
-              if(_rFrag) _parts.push(_word(_rFrag)+' los despertares ('+_fmt(_rFrag)+')');
-              if(_rReg) _parts.push(_word(_rReg)+' la regularidad ('+_fmt(_rReg)+')');
+              const _parts=[
+                _frase(_rQty,  'las horas que durmió', +1),
+                _frase(_rFrag, 'los despertares',      -1),
+                _frase(_rReg,  'la regularidad',       +1)
+              ].filter(Boolean);
+
               const _hay=[_rQty,_rFrag,_rReg].filter(Boolean);
-              const _allLow=_hay.every(v=>Math.abs(v.r)<0.3);
-              const _invertido=_hay.some(v=>v.r<=-0.3);
+              const _firmes=_hay.filter(v=>v.firme);
+              // Discordancia = una relacion ESTABLECIDA que va al reves de lo
+              // esperado. Antes alcanzaba con una r negativa cualquiera, aunque
+              // su intervalo incluyera el cero.
+              const _discorda =
+                (_rQty  && _rQty.firme  && _rQty.r  < 0) ||
+                (_rFrag && _rFrag.firme && _rFrag.r > 0) ||
+                (_rReg  && _rReg.firme  && _rReg.r  < 0);
               let _nota='';
-              if(_invertido){
-                _nota=' <span style="font-style:italic">Hay al menos un pilar con signo negativo: reporta mejor calidad justo las noches que el registro mide peor. Es el patrón que más orienta a insomnio paradójico.</span>';
-              } else if(_allLow){
-                _nota=' <span style="font-style:italic">Como no se relaciona con ningún pilar, su percepción va por un carril distinto al registro — patrón que amerita descartar insomnio paradójico.</span>';
+              if(_discorda){
+                _nota=' <span style="font-style:italic">Al menos una relación va en sentido contrario al esperado: reporta mejor calidad justo cuando el registro mide peor. Es el patrón que más orienta a insomnio paradójico.</span>';
+              } else if(_hay.length && !_firmes.length){
+                _nota=' <span style="font-style:italic">Ninguna relación queda establecida con estas noches. No significa que la percepción no acompañe al registro: significa que todavía no hay con qué afirmarlo. Con más noches el intervalo se angosta.</span>';
               }
-              _cEl.innerHTML='<strong>Percepción vs. lo medido.</strong> La calidad que reporta cada mañana '+_parts.join(', ')+
-                (_rQty?' — sobre '+_rQty.n+' noches.':'.')+ _nota +
-                '<span style="display:block;margin-top:6px;opacity:.72;font-size:11.5px">El número va de −1 a +1: cerca de +1 la sensación acompaña al dato, cerca de −1 va al revés, cerca de 0 no se relacionan.</span>';
+              const _nMax=_hay.length ? Math.max.apply(null,_hay.map(function(v){return v.n;})) : 0;
+              _cEl.innerHTML='<strong>Percepción vs. lo medido.</strong> La calidad que reporta cada mañana '+_parts.join('; ')+
+                (_nMax?' — sobre '+_nMax+' noches.':'.')+ _nota +
+                '<span style="display:block;margin-top:6px;opacity:.72;font-size:11.5px">'+
+                'El número va de −1 a +1 y mide si las dos cosas suben y bajan juntas, no si una causa la otra. '+
+                'El IC95% es el rango donde está el valor real: si incluye el 0, el signo todavía no está establecido y no se afirma nada.'+
+                '</span>';
             }
           }
         }catch(_conc){}
@@ -20138,7 +20253,9 @@ async function finishDrivePVT(){
   let level='Alerta normal',emoji='🟢';
   if(lapses>3||meanRT>420){level='Alerta reducida';emoji='🔴';}
   else if(lapses>1||meanRT>340){level='Alerta levemente reducida';emoji='🟡';}
-  if(dur>=1&&S.user){
+  // Antes alcanzaba con dur>=1: un test de un minuto se guardaba como si
+  // midiera lo mismo que uno de diez.
+  if(dur>=3&&S.user){
     console.log('Saving drive PVT: dur='+dur+' rt='+meanRT+' rts='+rts.length);
     try{
       const alert_score=Math.max(0,Math.round(100-(deviation/3)-(lapses*8)));
@@ -20168,7 +20285,10 @@ async function finishDrivePVT(){
         toast('Error al guardar: '+resp.status+(ed.message?' — '+ed.message:''));
       }
     }catch(e){ console.error('Drive PVT save error:',e.message); toast('Error de red al guardar'); }
-  } else { console.log('Not saving: dur='+dur+' user='+!!S.user); }
+  } else {
+    console.log('Not saving: dur='+dur+' user='+!!S.user);
+    if(!S.user) toast('Este resultado no se guarda: no hay sesión iniciada.');
+  }
   showPVT();
   toast(emoji+' '+level+' — TR: '+meanRT+'ms, '+rts.length+' reacciones, '+DG.crashes+' choques');
 }
@@ -22115,7 +22235,9 @@ async function submitChangePassword(){
   try{
     if(!supa){ initSupabase(); }
     const {error}=await supa.auth.updateUser({password:p1, data:{must_change_password:false}});
-    if(error){ err.textContent='Error: '+error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Guardar contraseña'; return; }
+    // El mensaje de Supabase viene en ingles. Se traduce con el mismo mapa
+    // que ya usa el alta, en vez de mostrarlo crudo.
+    if(error){ err.textContent=dmAuthErrorMsg(error,'reset-guardar'); err.style.display='block'; btn.disabled=false; btn.textContent='Guardar contraseña'; return; }
     document.getElementById('dm-chpass').remove();
     toast('✓ Contraseña actualizada');
   }catch(e){ err.textContent='No se pudo guardar.'; err.style.display='block'; btn.disabled=false; btn.textContent='Guardar contraseña'; }
@@ -22137,7 +22259,7 @@ function showForgotPasswordPrompt(){
     redirectTo: redirect
   }).then(({error}) => {
     if(error){
-      toast('Error: '+error.message);
+      toast(dmAuthErrorMsg(error,'reset-enviar'));
     } else {
       toast('Te enviamos un mail con instrucciones. Revisá también la carpeta de spam.');
     }
@@ -23497,7 +23619,7 @@ function dmScoreTxt(score, maxScore, scaleId){
 // Por qué sí/no y no una escala: para comparar noches con y sin, que es lo
 // único que se puede hacer con 30 registros. Una escala de 1 a 5 partiría la
 // muestra en pedazos demasiado chicos.
-const DM_MAX_VARS = 2;
+const DM_MAX_VARS = 5;
 
 // De quien son las variables que hay que leer.
 // Cuando el profesional abre la ficha de un paciente, S.user sigue siendo EL
@@ -23545,13 +23667,15 @@ function dmRenderVarsPersonales(){
   return '<div class="dm-diary-block">'+
     '<div class="sec-title" style="margin-top:0">Tus variables</div>'+
     vars.map(function(v){
+      const _on = !!_dmVarsNoche[v.id];
       return '<button type="button" onclick="dmToggleVarPersonal(\''+v.id+'\',this)" '+
-        'style="display:flex;align-items:center;gap:10px;width:100%;background:rgba(255,255,255,0.06);'+
-        'border:1.5px solid rgba(255,255,255,0.16);border-radius:12px;padding:12px 14px;margin-bottom:8px;'+
+        'style="display:flex;align-items:center;gap:10px;width:100%;'+
+        'background:'+(_on?'rgba(126,200,164,0.28)':'rgba(255,255,255,0.06)')+';'+
+        'border:1.5px solid '+(_on?'#7EC8A4':'rgba(255,255,255,0.16)')+';border-radius:12px;padding:12px 14px;margin-bottom:8px;'+
         'cursor:pointer;font-family:var(--font);text-align:left">'+
         '<span style="font-size:16px">'+(v.icon||'⭐')+'</span>'+
         '<span style="flex:1;font-size:13.5px;color:#F4EFE5;font-weight:500">'+escHtml(v.label)+'</span>'+
-        '<span class="dm-var-chk" style="font-size:15px">⬜</span></button>';
+        '<span class="dm-var-chk" style="font-size:15px">'+(_dmVarsNoche[v.id]?'✅':'⬜')+'</span></button>';
     }).join('')+
     '<button type="button" onclick="dmAbrirVarsPersonales()" style="background:none;border:none;color:rgba(126,200,164,0.8);font-size:12px;cursor:pointer;font-family:var(--font);padding:4px 0">Editar mis variables</button>'+
   '</div>';
@@ -23567,11 +23691,24 @@ function dmAbrirVarsPersonales(){
   const inp='width:100%;box-sizing:border-box;background:#fff;border:1px solid #d8d4cb;border-radius:11px;padding:11px 12px;font-size:14px;font-family:var(--font);color:#10231c';
   w.innerHTML='<div style="background:#F4EFE5;border-radius:20px;padding:22px 20px;width:100%;max-width:420px;max-height:86vh;overflow-y:auto">'+
     '<div style="font-size:17px;font-weight:700;color:#10231c;margin-bottom:5px">Tus variables</div>'+
-    '<div style="font-size:12.5px;color:#5c6b64;margin-bottom:16px;line-height:1.5">Hasta dos cosas que quieras seguir. Las vas a marcar cada noche y la app te dirá si se asocian a mejor o peor sueño.</div>'+
-    '<label style="font-size:10.5px;letter-spacing:.05em;color:#5c6b64;display:block;margin-bottom:4px">VARIABLE 1</label>'+
-    '<input id="dm-var1" type="text" maxlength="34" placeholder="Ej: tomé la medicación" value="'+((vars[0]&&vars[0].label||'').replace(/"/g,'&quot;'))+'" style="'+inp+';margin-bottom:12px">'+
-    '<label style="font-size:10.5px;letter-spacing:.05em;color:#5c6b64;display:block;margin-bottom:4px">VARIABLE 2 (opcional)</label>'+
-    '<input id="dm-var2" type="text" maxlength="34" placeholder="Ej: dormí con mi hijo" value="'+((vars[1]&&vars[1].label||'').replace(/"/g,'&quot;'))+'" style="'+inp+'">'+
+    '<div style="font-size:12.5px;color:#5c6b64;margin-bottom:16px;line-height:1.5">Hasta '+DM_MAX_VARS+' cosas que quieras seguir. Las vas a marcar cada noche y la app te dirá si se asocian a mejor o peor sueño. Para borrar una, dejá el campo vacío.</div>'+
+    (function(){
+      // Un campo por variable cargada, mas uno libre para agregar. Antes eran
+      // dos casillas fijas y no habia forma de tener una tercera.
+      const _ej=['Ej: tomé la medicación','Ej: dormí con mi hijo','Ej: tuve guardia',
+                 'Ej: entrené fuerte','Ej: discutí en casa'];
+      const n=Math.min(DM_MAX_VARS, vars.length+1);
+      let h='';
+      for(let i=0;i<n;i++){
+        h+='<label style="font-size:10.5px;letter-spacing:.05em;color:#5c6b64;display:block;margin-bottom:4px">'+
+             'VARIABLE '+(i+1)+(i>0?' (opcional)':'')+'</label>'+
+           '<input id="dm-var'+(i+1)+'" type="text" maxlength="34" placeholder="'+_ej[i]+'" '+
+             'data-vid="'+((vars[i]&&vars[i].id)||'')+'" '+
+             'value="'+((vars[i]&&vars[i].label||'').replace(/"/g,'&quot;'))+'" '+
+             'style="'+inp+';margin-bottom:12px">';
+      }
+      return h;
+    })()+
     '<div style="background:rgba(0,0,0,.04);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:11.5px;color:#5c6b64;line-height:1.5">'+
       'Elegí algo que <strong>cambie</strong> de una noche a otra. Si pasa todas las noches o ninguna, no hay con qué comparar.</div>'+
     '<div style="display:flex;gap:8px;margin-top:16px">'+
@@ -23590,13 +23727,16 @@ async function dmAceptarVarSugerida(id, label){
     return String((v&&v.label)||'').trim().toLowerCase() === label.toLowerCase();
   });
   if(!yaEsta){
-    // Solo entran dos. Si ya tenia dos, la nueva reemplaza a la segunda y se
-    // avisa: borrar una en silencio seria peor que no dejar agregarla.
+    // Si ya llego al maximo, la nueva reemplaza a la ultima y se avisa:
+    // borrar una en silencio seria peor que no dejar agregarla.
     if(vars.length >= DM_MAX_VARS){
       vars = vars.slice(0, DM_MAX_VARS - 1);
-      toast('Reemplacé la segunda: solo entran dos variables');
+      toast('Reemplacé la última: entran hasta '+DM_MAX_VARS+' variables');
     }
-    vars = vars.concat([{ id:'v'+(vars.length+1), label:label, icon:'⭐' }]);
+    // Id libre, no por posicion: con ids por posicion, agregar o quitar una
+    // dejaria huerfanas las noches ya marcadas en custom_flags.
+    let _k=1; while(vars.some(function(v){ return v.id==='v'+_k; })) _k++;
+    vars = vars.concat([{ id:'v'+_k, label:label, icon:'⭐' }]);
     try{
       await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email), {custom_vars: vars});
       S.user.custom_vars = vars;
@@ -23619,11 +23759,31 @@ async function dmAceptarVarSugerida(id, label){
 window.dmAceptarVarSugerida = dmAceptarVarSugerida;
 
 async function dmGuardarVarsPersonales(){
-  const l1=(document.getElementById('dm-var1')?.value||'').trim();
-  const l2=(document.getElementById('dm-var2')?.value||'').trim();
+  const ICONOS=['⭐','✨','🔖','🧩','🎯'];
+  const previas = dmGetVarsPersonales();
+  const usados = {};
   const vars=[];
-  if(l1) vars.push({id:'v1', label:l1, icon:'⭐'});
-  if(l2) vars.push({id:'v2', label:l2, icon:'✨'});
+  for(let i=0;i<DM_MAX_VARS;i++){
+    const el=document.getElementById('dm-var'+(i+1));
+    if(!el) continue;
+    const label=(el.value||'').trim();
+    if(!label) continue;
+    // El id se conserva: es la clave con la que quedaron guardadas las noches
+    // en custom_flags. Si se reasignara por posicion, mover una variable de
+    // lugar borraria su historial sin que nadie se entere.
+    let id = el.getAttribute('data-vid') || '';
+    if(!id){
+      const igual = previas.filter(function(p){
+        return String(p.label||'').trim().toLowerCase()===label.toLowerCase(); })[0];
+      id = igual ? igual.id : '';
+    }
+    if(!id || usados[id]){
+      let k=1; while(usados['v'+k] || previas.some(function(p){ return p.id==='v'+k; })) k++;
+      id='v'+k;
+    }
+    usados[id]=1;
+    vars.push({ id:id, label:label, icon:(previas.filter(function(p){return p.id===id;})[0]||{}).icon || ICONOS[i] || '⭐' });
+  }
   try{
     await db.patch('patients?email=eq.'+encodeURIComponent(S.user.email), {custom_vars: vars});
     S.user.custom_vars = vars;

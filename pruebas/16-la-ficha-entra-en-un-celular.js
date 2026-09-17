@@ -65,9 +65,11 @@ r.ok(iHist > 0 && iHijos > 0 && iHijos > iHist,
 
 r.seccion('El signo de la correlación dice lo que significa:');
 
+// El bloque pasó a llamarse _frase: además del signo mira si el intervalo
+// de confianza cruza el cero (ver prueba 22).
 const bloqueCorr = html.slice(
-  html.indexOf('const _word=function(v){'),
-  html.indexOf('const _word=function(v){') + 700);
+  html.indexOf('const _frase=function(v, rotulo, esperado){'),
+  html.indexOf('const _frase=function(v, rotulo, esperado){') + 900);
 r.ok(bloqueCorr.length > 100, 'encuentro la lectura de concordancia');
 r.ok(/v\.r>0/.test(bloqueCorr),
      'mira el signo, no solo la magnitud');

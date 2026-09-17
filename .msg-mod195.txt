@@ -1,0 +1,63 @@
+mod195: siestas en las métricas; la correlación deja de afirmar de más
+
+
+Respuesta a la pregunta: NO, las siestas nunca estuvieron en el tiempo total
+de sueño. sleep_minutes se calcula de bedtime a wake_time, así que el TST que
+ve el profesional es nocturno. La única excepción es el puntaje de cantidad de
+los menores de 6 años, donde el sueño de 24 h sí las suma. En un adulto las
+siestas solo aparecían como barritas azules en el actograma y como factor en
+el análisis de hábitos.
+
+- dmMetricasDiario() devuelve ahora siestaFrecPct, siestaMediaMin,
+  siestaCantMedia, siestaNoches, siestaDias y tst24. La duración media se
+  calcula sobre los días CON siesta, no sobre el total: promediar los ceros
+  daría "12 minutos de siesta", que no describe a nadie. Y "no duerme siesta"
+  (nap_minutes = 0) se distingue de "no se preguntó" (null).
+
+- Resumen → Evolución: celda nueva de Siestas con la frecuencia y la duración
+  media. El tiempo de sueño queda rotulado "nocturno" y, cuando hay siestas
+  cargadas, el pie da el total en 24 h. SEPARADOS a propósito: fundirlos en
+  una sola cifra esconde justo lo que hay que ver en un insomnio.
+
+- dmDatosParaInforme() lleva un bloque `siestas`, con una aclaración explícita
+  de que sueno_total_promedio_min es nocturno y no las incluye — para que el
+  modelo no las sume dos veces ni las dé por contadas.
+
+Prueba nueva 21-las-siestas-existen.js, con datos simulados. 21 de 21 pasan.
+
+────────
+
+
+Dos problemas, uno anterior a la estadística.
+
+1. Los rótulos no nombraban lo que se correlacionaba. "Las horas dormidas" era
+   en realidad el PUNTAJE de cantidad, que no es monótono —sube hasta 7-9 h y
+   vuelve a bajar—, así que una r contra él mezcla "durmió poco" con "durmió de
+   más". Y "los despertares" era el puntaje de fragmentación, que es
+   20 − despertares×5: más alto significa MENOS despertares, o sea que el
+   rótulo decía lo contrario del signo. Ahora se usan las variables crudas
+   (horas y cantidad de despertares) y se llaman como lo que son.
+
+2. No había ninguna medida de incertidumbre. Caso real: "acompaña algo a los
+   despertares (+0,35)" sobre 13 noches. El IC95% de r=0,35 con n=13 va de
+   −0,25 a +0,76: incluye el cero, así que ni el signo está establecido. El
+   panel de hábitos, que está justo al lado, sí es cuidadoso (Welch, p<0,05,
+   mínimo por grupo, marca de preliminar). Dos tablas contiguas con dos varas.
+
+   Ahora cada r trae su IC95% por la z de Fisher, el mínimo pasa de 5 a 10
+   pares, y si el intervalo cruza el cero se dice "no alcanza para decir nada"
+   en vez de ponerle un adjetivo. La nota de insomnio paradójico aparece solo
+   si la discordancia está establecida, comparando contra el signo ESPERADO de
+   cada variable (más despertares → peor calidad, etc.).
+
+3. Castellano: la tabla de Administración mostraba las especialidades en
+   inglés (psychiatry, other_health) teniendo el mapa de traducción a mano en
+   la misma función. Se le agregan nutrition y other, que faltaban. Y los
+   errores del flujo de recuperación de contraseña pasan por dmAuthErrorMsg(),
+   que ya traducía los del alta: eran los únicos que todavía salían crudos.
+
+Pruebas nuevas 22-la-correlacion-no-afirma-de-mas.js; la 16 se actualiza al
+contrato nuevo. 22 de 22 pasan.
+
+APARTE, sin implementar: SUPABASE-correos-en-castellano.md — el mail de reset
+lo manda Supabase con sus plantillas, no la app. Hay que editarlas en el panel.

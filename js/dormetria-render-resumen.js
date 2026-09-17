@@ -242,10 +242,30 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
           '</div>' +
           '<div class="dm-evo-cifras" style="flex:1 1 320px;min-width:0">' +
             celda('Tiempo de sueño', (met.tst == null || isNaN(met.tst)) ? '—' :
-                  (Math.floor(met.tst/60) + 'h ' + String(Math.round(met.tst%60)).padStart(2,'0') + 'm'), 'promedio') +
+                  (Math.floor(met.tst/60) + 'h ' + String(Math.round(met.tst%60)).padStart(2,'0') + 'm'),
+                  (met.tst24 != null && met.tst != null && met.tst24 > met.tst)
+                    ? ('nocturno · ' + Math.floor(met.tst24/60) + 'h ' +
+                       String(Math.round(met.tst24%60)).padStart(2,'0') + 'm en 24 h')
+                    : 'nocturno') +
             celda('Latencia', num(met.latenciaMedia, ' min'), met.latenciaMedia > 30 ? 'sobre umbral' : 'en rango') +
             celda('Eficiencia', num(e ? e.actual : met.eficiencia, '%'), efPie) +
             celda('Despertares', (met.despertaresMedia == null || isNaN(met.despertaresMedia)) ? '—' : String(met.despertaresMedia), 'por noche') +
+            // Siestas. El tiempo de sueño de la izquierda es NOCTURNO; esto va
+            // aparte a proposito, y el pie dice el total en 24 h cuando se
+            // puede calcular. Mezclarlos en una sola cifra esconde justo lo
+            // que hay que ver en un insomnio.
+            celda('Siestas',
+              (met.siestaFrecPct == null)
+                ? '—'
+                : (met.siestaNoches === 0
+                    ? 'No'
+                    : met.siestaFrecPct + '%'),
+              (met.siestaFrecPct == null)
+                ? 'sin dato'
+                : (met.siestaNoches === 0
+                    ? 'ningun dia'
+                    : (met.siestaMediaMin + ' min' +
+                       (met.siestaCantMedia > 1.4 ? ' · ' + met.siestaCantMedia + '/dia' : '')))) +
             celda('Adherencia', e ? num(e.adherencia, '%') : '—', '') +
           '</div>' +
         '</div>' +
