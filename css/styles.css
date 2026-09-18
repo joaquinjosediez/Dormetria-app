@@ -4746,3 +4746,25 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
   .dm-pil-est{ font-size:11px; }
   .dm-pil-pie{ font-size:10.5px; }
 }
+
+/* ── Tablas del panel de administración: el encabezado no se va ────────
+   Eran <div overflow-x:auto> sueltos: al bajar por sesenta filas se perdía
+   qué columna era cada una. Para que `position:sticky` tenga contra qué
+   pegarse, el contenedor tiene que ser el que scrollea, así que lleva una
+   altura máxima propia en vez de scrollear con la página entera. */
+.dm-tabla-fija{
+  overflow:auto;
+  max-height:calc(100vh - 300px);
+  min-height:260px;
+  border:1px solid var(--sep-opaque);
+  border-radius:10px;
+}
+.dm-tabla-fija thead th{
+  position:sticky; top:0; z-index:3;
+  background:var(--bg-secondary);
+  /* El borde de la celda no viaja con sticky: se dibuja con una sombra. */
+  box-shadow:inset 0 -1px 0 var(--sep-opaque);
+}
+@media (max-width:900px){
+  .dm-tabla-fija{ max-height:calc(100vh - 240px); }
+}

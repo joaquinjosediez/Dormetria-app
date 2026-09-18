@@ -59,9 +59,11 @@ r.seccion('El botón de marcar prueba dice lo que hace:');
 // Se mira lo que se RENDERIZA, no el comentario que cuenta por qué cambió.
 r.ok(!/>· demo\?</.test(html),
      'ya no dice "demo?" pegado al nombre del profesional');
-r.ok(/marcar como prueba<\/button>/.test(html),
-     'es un botón con texto claro');
-r.ok(/Marcar esta ficha como cuenta de prueba, para que no cuente en las métricas/.test(html),
-     'y explica para qué sirve');
+// Pasó a ser una casilla en su propia columna: un botón por fila, con un
+// texto que había que leer sesenta veces, era ruido.
+r.ok(/>Prueba<\/th>/.test(html), 'es una columna con su encabezado');
+r.ok(/Las marcadas no cuentan en ninguna estadística/.test(html),
+     'y el encabezado explica para qué sirve, una sola vez');
+r.ok(/onchange="dmMarcarDemo\(/.test(html), 'la casilla marca y desmarca');
 
 r.cerrar('Mandarle "completá tu diario" a alguien que no tiene cuenta no falla: no significa nada.');
