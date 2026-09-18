@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod197-fc1834e0">
+<link rel="stylesheet" href="css/styles.css?v=mod198-fc1834e0">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1333,10 +1333,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod197-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod197-0fe4b16e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod197-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod197-306bbb5c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod198-26264729"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod198-0fe4b16e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod198-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod198-306bbb5c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1355,7 +1355,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod197';
+const APP_VERSION='mod198';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5088,8 +5088,21 @@ function renderAdminPatientsTable(){
     const _auto = !p.is_demo && esDemo(p);   // detectado solo, no se puede desmarcar
     const drTxt = esDemo(p)
       ? '<span onclick="dmMarcarDemo('+JSON.stringify(p.email)+','+(p.is_demo?'false':'true')+')" title="'+(_auto?'Detectado por el mail o el profesional':'Tocá para quitar la marca')+'" style="cursor:pointer;background:#ede9fe;color:#5b21b6;font-weight:700;font-size:10px;padding:2px 7px;border-radius:999px;letter-spacing:.04em">DEMO</span>'
-      : (p.doctors.length ? p.doctors.map(e=>e.split('@')[0]).join(', ')+' <span onclick="dmMarcarDemo('+JSON.stringify(p.email)+',true)" title="Marcar como cuenta de prueba" style="cursor:pointer;color:var(--label-3);font-size:10px;opacity:.5">· demo?</span>'
-                          : '<span style="color:var(--label-3)">Sin vincular</span> <span onclick="dmMarcarDemo('+JSON.stringify(p.email)+',true)" title="Marcar como cuenta de prueba" style="cursor:pointer;color:var(--label-3);font-size:10px;opacity:.5">· demo?</span>');
+      : (function(){
+          // "· demo?" era un BOTON para marcar la ficha como cuenta de prueba,
+          // pero iba pegado al nombre del profesional y con opacidad 0.5, asi
+          // que se leia como una duda SOBRE EL PROFESIONAL. Ahora se separa y
+          // dice lo que hace.
+          const _quien = p.doctors.length
+            ? escHtml(p.doctors.map(function(e){ return e.split('@')[0]; }).join(', '))
+            : '<span style="color:var(--label-3)">Sin vincular</span>';
+          const _marcar = '<button type="button" onclick="dmMarcarDemo('+JSON.stringify(p.email)+',true)" '+
+            'title="Marcar esta ficha como cuenta de prueba, para que no cuente en las métricas" '+
+            'style="display:block;margin-top:3px;background:none;border:1px solid var(--sep-opaque);'+
+            'border-radius:6px;padding:1px 6px;color:var(--label-3);font-size:9.5px;cursor:pointer;'+
+            'font-family:var(--font)">marcar como prueba</button>';
+          return _quien + _marcar;
+        })();
     const regDate=p.created_at?new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}):'—';
     return '<tr style="border-bottom:1px solid var(--sep-opaque)">'+
       '<td style="padding:8px"><div style="font-weight:600">'+(p.name||'—')+'</div><div style="color:var(--label-3);font-size:11px">'+p.email+'</div></td>'+
@@ -15063,7 +15076,12 @@ async function renderDoctorAdherence(){
     if(!emails.length){ el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,.72)">Todavía no tenés pacientes vinculados.</div>'; return; }
     const inList='('+emails.map(e=>encodeURIComponent(e)).join(',')+')';
     const [pats, diary, evals, suggs] = await Promise.all([
-      db.get('patients?email=in.'+inList+'&select=email,name,lname,phone,dob,height_cm,weight_kg').catch(()=>[]),
+      // auth_id y code: auth_id queda NULL hasta que la persona termina de
+      // registrarse, asi que es la forma exacta de distinguir "nunca entro a
+      // la app" de "entro y dejo de registrar". Son dos problemas distintos y
+      // se arreglan distinto. El code va para poder reenviar la invitacion.
+      db.get('patients?email=in.'+inList+'&select=email,name,lname,phone,dob,height_cm,weight_kg,auth_id,code').catch(()=>
+        db.get('patients?email=in.'+inList+'&select=email,name,lname,phone,dob,height_cm,weight_kg').catch(()=>[])),
       db.get('sleep_diary?patient_email=in.'+inList+'&select=patient_email,created_at,diary_date,sleep_minutes,awakenings,sleep_latency_mins,bedtime,wake_time,day_type&limit=8000').catch(()=>[]),
       db.get('evaluations?patient_email=in.'+inList+'&select=patient_email,created_at,scale_id,score,max_score&limit=8000').catch(()=>[]),
       db.get('doctor_suggestions?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&select=patient_email,scale_id,created_at&limit=3000').catch(()=>[])
@@ -15120,7 +15138,12 @@ async function renderDoctorAdherence(){
               lname:p.lname||'', fname:p.name||'',
               email:p.email, phone:p.phone||'',
               daysSince, d7:i.d7, d30:i.d30, nDiary:i.nDiary, nEval:i.nEval, faltaDatos,
-              delta, pedidas:pedidas.length, respondidas, conEvolucion, alta};
+              delta, pedidas:pedidas.length, respondidas, conEvolucion, alta,
+              // Ficha creada por el profesional que la persona nunca activo.
+              // Si la columna auth_id no vino en el select, no se afirma nada.
+              sinCuenta: (p.auth_id === null || p.auth_id === undefined)
+                         ? (('auth_id' in p) ? true : null) : false,
+              code: p.code || null};
     });
     const mode=window._drAdhSort||'abandono';
     const cmpAp=(a,b)=>((a.lname||a.fname||a.email).toLowerCase()).localeCompare((b.lname||b.fname||b.email).toLowerCase(),'es',{sensitivity:'base'});
@@ -15131,9 +15154,15 @@ async function renderDoctorAdherence(){
     else if(mode==='incompletos') rows.sort((a,b)=>(b.faltaDatos?1:0)-(a.faltaDatos?1:0)||cmpAp(a,b));
     else if(mode==='empeorando') rows.sort((a,b)=>((a.delta==null?999:a.delta)-(b.delta==null?999:b.delta)));
     else if(mode==='escalas') rows.sort((a,b)=>((a.pedidas-a.respondidas)<(b.pedidas-b.respondidas)?1:-1));
+    else if(mode==='sincuenta') rows.sort((a,b)=>((b.sinCuenta===true?1:0)-(a.sinCuenta===true?1:0))||cmpAp(a,b));
     const alDia=rows.filter(r=>r.daysSince!=null&&r.daysSince<=3).length;
     const tibios=rows.filter(r=>r.daysSince!=null&&r.daysSince>3&&r.daysSince<=14).length;
-    const perdidos=rows.filter(r=>r.daysSince==null||r.daysSince>14).length;
+    // "Nunca entro" sale de su propia caja: antes caia dentro de "Sin
+    // registrar" junto al que registro un mes y aflojo. Son dos problemas
+    // distintos — uno es de invitacion, el otro de adherencia — y el mensaje
+    // que hay que mandarles no se parece en nada.
+    const sinCuenta=rows.filter(r=>r.sinCuenta===true && r.daysSince==null).length;
+    const perdidos=rows.filter(r=>(r.daysSince==null||r.daysSince>14) && !(r.sinCuenta===true && r.daysSince==null)).length;
     const drFirst=(S.user.name||'tu profesional').split(' ')[0];
     const card=(n,l,c)=>'<div style="flex:1;background:rgba(255,255,255,0.06);border-radius:12px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:'+c+'">'+n+'</div><div style="font-size:10px;color:rgba(255,255,255,.82);line-height:1.25;margin-top:2px">'+l+'</div></div>';
     const sbtn=(m,l)=>'<span onclick="setDrAdhSort(\''+m+'\')" style="cursor:pointer;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:999px;white-space:nowrap;border:1px solid '+(mode===m?'#7EC8A4':'rgba(255,255,255,0.18)')+';background:'+(mode===m?'rgba(126,200,164,0.16)':'transparent')+';color:'+(mode===m?'#7EC8A4':'rgba(255,255,255,0.55)')+'">'+l+'</span>';
@@ -15156,7 +15185,8 @@ async function renderDoctorAdherence(){
       '<div style="font-size:11px;color:rgba(255,255,255,.72);letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase">'+t+'</div>'+
       '<div style="position:relative;height:'+(extra||150)+'px"><canvas id="'+id+'"></canvas></div></div>';
     let html='<div style="display:flex;gap:8px;margin-bottom:12px">'+
-      card(alDia,'Al día<br>(≤3 días)','#7EC8A4')+card(tibios,'Aflojando<br>(4–14 días)','#C8A96E')+card(perdidos,'Sin registrar<br>(+14 días)','#fca5a5')+
+      card(alDia,'Al día<br>(≤3 días)','#7EC8A4')+card(tibios,'Aflojando<br>(4–14 días)','#C8A96E')+card(perdidos,'Dejó de registrar<br>(+14 días)','#fca5a5')+
+      (sinCuenta?card(sinCuenta,'Nunca entró<br>(sin cuenta)','#C084FC'):'')+
       '</div>'+
       '<div class="dm-adh-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">'+
         chartBox('Adherencia','drChAdh',210)+
@@ -15166,20 +15196,37 @@ async function renderDoctorAdherence(){
       '</div>'+
       '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;align-items:center">'+
         '<span style="font-size:10.5px;color:rgba(255,255,255,.72);margin-right:2px">Ordenar:</span>'+
-        sbtn('abandono','⚠️ Más abandonados')+sbtn('empeorando','↘ Empeorando')+sbtn('escalas','📋 Escalas pendientes')+sbtn('uso','📊 Más uso')+sbtn('alfa','🔤 Apellido')+sbtn('incompletos','📝 Datos incompletos')+
+        sbtn('abandono','⚠️ Más abandonados')+sbtn('sincuenta','🚪 Nunca entraron')+sbtn('empeorando','↘ Empeorando')+sbtn('escalas','📋 Escalas pendientes')+sbtn('uso','📊 Más uso')+sbtn('alfa','🔤 Apellido')+sbtn('incompletos','📝 Datos incompletos')+
       '</div>';
     const pill=(txt,bg,fg)=>'<span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:99px;background:'+bg+';color:'+fg+';white-space:nowrap">'+txt+'</span>';
     html+=rows.map(r=>{
-      const estado = r.daysSince==null?'Nunca registró':r.daysSince===0?'Hoy':r.daysSince===1?'Ayer':'hace '+r.daysSince+' días';
-      const col = r.daysSince==null?'#fca5a5':r.daysSince<=3?'#7EC8A4':r.daysSince<=14?'#C8A96E':'#fca5a5';
-      const msg='¡Hola '+(r.fname||r.name.split(',')[0])+'! Soy '+drFirst+'. Te escribo para recordarte que completes tu diario de sueño en Dormetria — con registros constantes puedo ver mucho mejor cómo venís y ajustar lo que haga falta. ¡Gracias!';
+      const _nunca = (r.sinCuenta===true && r.daysSince==null);
+      const estado = _nunca ? 'Nunca activó su cuenta'
+                   : r.daysSince==null?'Sin registros todavía'
+                   : r.daysSince===0?'Hoy':r.daysSince===1?'Ayer':'hace '+r.daysSince+' días';
+      const col = _nunca?'#C084FC':r.daysSince==null?'#fca5a5':r.daysSince<=3?'#7EC8A4':r.daysSince<=14?'#C8A96E':'#fca5a5';
+      const _nom = (r.fname||r.name.split(',')[0]);
+      // Dos mensajes distintos, porque son dos situaciones distintas. Al que
+      // nunca entro, pedirle que "complete su diario" no le dice nada: la
+      // ficha existe pero la cuenta no, y lo que necesita son los tres pasos
+      // para crearla con ESE mail.
+      const msg = _nunca
+        ? ('¡Hola '+_nom+'! Soy '+drFirst+'. Te dejé tu perfil armado en Dormetria, con tus datos ya cargados, pero todavía no lo activaste.\n\n'+
+           '1) Entrá a app.dormetria.com\n'+
+           '2) Registrate como paciente con este mismo mail: '+r.email+'\n'+
+           '3) Listo, vas a ver tu ficha completa'+(r.code?' (si te lo pide, tu código es '+r.code+')':'')+'.\n\n'+
+           'Son dos minutos y me sirve muchísimo para seguirte bien.')
+        : ('¡Hola '+_nom+'! Soy '+drFirst+'. Te escribo para recordarte que completes tu diario de sueño en Dormetria — con registros constantes puedo ver mucho mejor cómo venís y ajustar lo que haga falta. ¡Gracias!');
+      const _asunto = _nunca ? 'Activá tu perfil en Dormetria' : 'Tu diario de sueño en Dormetria';
+      const _rotuloWa = _nunca ? '💬 Invitar' : '💬 Recordar';
       const tel=(r.phone||'').replace(/[^0-9]/g,'');
-      const wa = tel? '<a href="https://wa.me/'+tel+'?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" style="text-decoration:none;background:#25D366;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">💬 Recordar</a>'
+      const wa = tel? '<a href="https://wa.me/'+tel+'?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" style="text-decoration:none;background:#25D366;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">'+_rotuloWa+'</a>'
                    : '<span style="font-size:10px;color:rgba(255,255,255,.72);padding:5px 8px">sin tel.</span>';
-      const mail='<a href="mailto:'+r.email+'?subject='+encodeURIComponent('Tu diario de sueño en Dormetria')+'&body='+encodeURIComponent(msg)+'" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">✉️ Mail</a>';
+      const mail='<a href="mailto:'+r.email+'?subject='+encodeURIComponent(_asunto)+'&body='+encodeURIComponent(msg)+'" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px">✉️ Mail</a>';
       // Señales clínicas accionables
       const chips=[];
       if(r.alta) chips.push(pill('✓ Alta','rgba(126,200,164,0.2)','#7EC8A4'));
+      else if(_nunca) chips.push(pill('🚪 Falta activar la cuenta','rgba(192,132,252,0.18)','#e9d5ff'));
       else if(r.daysSince!=null && r.daysSince>30) chips.push(pill('⚠ Posible abandono','rgba(239,68,68,0.18)','#fca5a5'));
       if(r.delta!=null){
         if(r.delta>=5) chips.push(pill('↗ Mejorando +'+r.delta,'rgba(34,197,94,0.18)','#86efac'));
