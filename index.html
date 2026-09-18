@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod196-fc1834e0">
+<link rel="stylesheet" href="css/styles.css?v=mod197-fc1834e0">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -145,21 +145,21 @@
 
       <!-- Paso 2: ¿Objetivo? -->
       <div class="ob-step" id="ob-step-2">
-        <div class="ob-title">¿Cuál es tu objetivo principal?</div>
-        <div class="ob-sub">Podés cambiar esto después desde tu perfil.</div>
-        <div class="ob-opt" onclick="obSelect(2,'explore',this)">
+        <div class="ob-title">¿Qué buscás en Dormetria?</div>
+        <div class="ob-sub">Podés elegir más de uno. Cambiás esto cuando quieras desde tu perfil.</div>
+        <div class="ob-opt" onclick="obToggleGoal('explore',this)">
           <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg></div>
           <div><div class="ob-opt-text">Explorar y conocerme mejor</div><div class="ob-opt-sub">Entender mis patrones de sueño</div></div>
         </div>
-        <div class="ob-opt" onclick="obSelect(2,'diagnose',this)">
+        <div class="ob-opt" onclick="obToggleGoal('diagnose',this)">
           <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
           <div><div class="ob-opt-text">Evaluar un posible trastorno</div><div class="ob-opt-sub">Sospechas de insomnio, apnea u otros</div></div>
         </div>
-        <div class="ob-opt" onclick="obSelect(2,'habits',this)">
+        <div class="ob-opt" onclick="obToggleGoal('habits',this)">
           <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg></div>
           <div><div class="ob-opt-text">Mejorar mis hábitos de sueño</div><div class="ob-opt-sub">Horarios, higiene del sueño, rutinas</div></div>
         </div>
-        <div class="ob-opt" onclick="obSelect(2,'followup',this)">
+        <div class="ob-opt" onclick="obToggleGoal('followup',this)">
           <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div><div class="ob-opt-text">Seguimiento de un tratamiento</div><div class="ob-opt-sub">Ya estoy bajo cuidado médico</div></div>
         </div>
@@ -1333,10 +1333,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod196-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod196-0fe4b16e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod196-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod196-306bbb5c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod197-26264729"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod197-0fe4b16e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod197-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod197-306bbb5c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1355,7 +1355,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod196';
+const APP_VERSION='mod197';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -9499,8 +9499,13 @@ function renderHomeQuickActions(){
   // (El acceso rápido al diario se quitó: la tarjeta dorada "Registrá tu
   //  noche de ayer" de arriba ya cumple ese rol y estaba duplicado.)
 
-  // Based on goal
-  if(ob.goal==='diagnose'||ob.goal==='followup'){
+  // Con varios objetivos posibles, la pregunta es si ESTA entre los elegidos,
+  // no si es EL elegido. `goals` puede no existir en registros viejos: ahi se
+  // cae a `goal`, que siempre estuvo.
+  var _metas = (ob.goals && ob.goals.length) ? ob.goals : (ob.goal ? [ob.goal] : []);
+  var _quiere = function(g){ return _metas.indexOf(g) >= 0; };
+
+  if(_quiere('diagnose') || _quiere('followup')){
     actions.push({
       icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>',
       title:'Escalas clínicas',
@@ -9519,7 +9524,7 @@ function renderHomeQuickActions(){
   });
 
   // Historial if followup
-  if(ob.goal==='followup'){
+  if(_quiere('followup')){
     actions.push({
       icon:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
       title:'Historial clínico',
@@ -24476,7 +24481,9 @@ var OB_ICONS = {
   schedule:   '<svg width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"white\" stroke-width=\"1.8\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16 14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>',
 };
 
-var OB = { for: null, goal: null, concerns: [] };
+// `goal` se conserva —es lo que lee el resto de la app y la columna de la
+// base— y pasa a ser el PRIMERO de los elegidos. `goals` es la lista completa.
+var OB = { for: null, goal: null, goals: [], concerns: [] };
 
 var OB_CONCERNS_ADULT = [
   {id:'insomnia',  icon:'😴', label:'Dificultad para dormir', sub:'Insomnio de inicio o mantenimiento'},
@@ -24504,7 +24511,6 @@ function obSelect(step, val, el) {
   container.querySelectorAll('.ob-opt').forEach(function(o){ o.classList.remove('selected'); });
   el.classList.add('selected');
   if (step === 1) OB.for  = val;
-  if (step === 2) OB.goal = val;
   var btn = document.getElementById('ob-next-' + step);
   if (btn) { btn.classList.add('ready'); }
 
@@ -24525,6 +24531,19 @@ function obSelect(step, val, el) {
   }
 }
 
+// Los objetivos se marcan como los sintomas: varios. El primero que elige
+// queda como principal, que es el que usan las tarjetas del inicio.
+function obToggleGoal(id, el) {
+  el.classList.toggle('selected');
+  var idx = OB.goals.indexOf(id);
+  if (idx === -1) OB.goals.push(id);
+  else OB.goals.splice(idx, 1);
+  OB.goal = OB.goals.length ? OB.goals[0] : null;
+  var btn = document.getElementById('ob-next-2');
+  if (btn) btn.classList.toggle('ready', OB.goals.length > 0);
+}
+window.obToggleGoal = obToggleGoal;
+
 function obToggleConcern(id, el) {
   el.classList.toggle('selected');
   var idx = OB.concerns.indexOf(id);
@@ -24544,16 +24563,21 @@ function obNext(step) {
 }
 
 function obFinish() {
-  var data = { for: OB.for, goal: OB.goal, concerns: OB.concerns };
+  var data = { for: OB.for, goal: OB.goal, goals: OB.goals, concerns: OB.concerns };
   localStorage.setItem('dm_onboarding', JSON.stringify(data));
   if (S && S.user && S.user.email) {
     try {
-      db.patch('patients?email=eq.' + encodeURIComponent(S.user.email), {
+      // patchFlexible y no patch: si la columna onboarding_goals todavia no
+      // existe en la base, la descarta y guarda el resto. Con patch fallaba
+      // el guardado ENTERO — y el .catch vacio de antes lo hacia en silencio.
+      var _guardar = (db.patchFlexible ? db.patchFlexible : db.patch);
+      _guardar('patients?email=eq.' + encodeURIComponent(S.user.email), {
         onboarding_for: OB.for,
         onboarding_goal: OB.goal,
+        onboarding_goals: OB.goals,
         onboarding_concerns: OB.concerns
-      }).catch(function(){});
-    } catch(e){}
+      }).catch(function(e){ console.warn('[onboarding] no se pudo guardar:', e && e.message); });
+    } catch(e){ console.warn('[onboarding]', e); }
   }
   try {
     showHome();
@@ -24570,7 +24594,7 @@ function obSkipAll() {
 
 function showOnboarding() {
   // Reset state
-  OB = { for: null, goal: null, concerns: [] };
+  OB = { for: null, goal: null, goals: [], concerns: [] };
   document.querySelectorAll('.ob-step').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById('ob-step-1').classList.add('active');
   document.querySelectorAll('.ob-opt').forEach(function(o){ o.classList.remove('selected'); });
