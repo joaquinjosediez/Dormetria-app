@@ -4,8 +4,16 @@ El mail de recuperación de contraseña **no lo manda la app**: lo manda Supabas
 Auth con sus plantillas de fábrica, que vienen en inglés. No hay nada que
 tocar en el código — hay que editarlas en el panel.
 
-**Supabase → Authentication → Emails → Templates.** Hay una plantilla por tipo
-de correo y cada una tiene asunto y cuerpo.
+**Supabase → Authentication → Emails → Templates.** Link directo:
+`supabase.com/dashboard/project/_/auth/templates` (el `_` lo resuelve solo al
+proyecto activo). Hay una pestaña por tipo de correo, cada una con asunto y
+cuerpo en HTML crudo — no hay editor visual.
+
+> **Ojo con el plan.** Desde el 3 de junio de 2026, los proyectos **nuevos** en
+> plan gratuito que usan el mail por defecto de Supabase ya no pueden editar
+> estas plantillas. Los proyectos creados antes conservan la edición, y el
+> nuestro es de abril de 2026, así que entra. Configurar SMTP propio devuelve
+> la edición en cualquier plan — y conviene por otra razón, abajo.
 
 Las variables (`{{ .ConfirmationURL }}`, `{{ .Email }}`) van tal cual, con las
 llaves dobles. Si se rompen, el enlace deja de funcionar.
@@ -99,12 +107,37 @@ Te invitaron a Dormetria
 
 ---
 
-## Dos cosas más del mismo panel
+## Lo que el idioma NO arregla
 
-**El nombre del remitente.** En *Project Settings → Authentication → SMTP
-Settings*, el campo *Sender name*. Si dice "Supabase Auth", el paciente recibe
-un correo de un remitente que no conoce y lo manda a spam. Tiene que decir
-**Dormetria**.
+Traducir las plantillas hace que el correo se entienda. **No hace que llegue.**
+Son dos problemas distintos y conviene no confundirlos:
+
+| Síntoma | Causa | Arreglo |
+|---|---|---|
+| Llega en inglés | Plantillas de fábrica | Las de arriba |
+| No llega / va a spam | Remitente compartido de Supabase, sin SPF/DKIM de tu dominio | SMTP propio |
+
+Mientras los correos salgan por el servidor compartido de Supabase, el
+remitente no es dormetria.com y no hay firma de tu dominio: los filtros de
+Gmail y Hotmail lo tratan como correo de un tercero hablando en tu nombre. Ese
+es el motivo más probable de que a los pacientes de Eduardo Ruffa no les haya
+llegado nada.
+
+**SMTP propio** — *Project Settings → Authentication → SMTP Settings*. Cualquier
+proveedor sirve (Resend, Postmark, SendGrid, Amazon SES). Hay que:
+
+1. Verificar el dominio `dormetria.com` en el proveedor.
+2. Cargar los registros **SPF** y **DKIM** que te dé, en el DNS de DonWeb.
+3. Poner el host, puerto, usuario y contraseña en Supabase.
+4. *Sender name*: **Dormetria**. *Sender email*: algo como
+   `no-responder@dormetria.com`.
+
+Recién con eso el correo sale firmado por tu dominio. Es media hora de trabajo
+y es lo que mueve la aguja de verdad.
+
+**El nombre del remitente**, aunque no hagas lo anterior: en *SMTP Settings*,
+el campo *Sender name*. Si dice "Supabase Auth", el paciente recibe un correo
+de alguien que no conoce.
 
 **El idioma de los errores.** Los mensajes que devuelve Supabase Auth ("Invalid
 login credentials", "Email not confirmed") son del servidor y vienen siempre en
@@ -114,6 +147,15 @@ contraseña, que era el único que todavía los mostraba crudos.
 
 ## Cómo verificar que quedó
 
-Pedí un reset a una casilla tuya y revisá tres cosas: que el asunto esté en
-castellano, que el remitente diga Dormetria, y que el enlace abra la pantalla
-de contraseña nueva y no la de inicio de sesión.
+Pedí un reset a una casilla tuya —mejor una de Gmail y otra de Hotmail, que son
+las que usan tus pacientes— y revisá cuatro cosas:
+
+1. Que el asunto esté en castellano.
+2. Que el remitente diga **Dormetria** y la dirección sea de dormetria.com.
+3. Que haya caído en Recibidos y no en Spam.
+4. Que el enlace abra la pantalla de contraseña nueva y no la de inicio de
+   sesión.
+
+Si ya hiciste lo del SMTP, en Gmail: abrí el mail → los tres puntos → *Mostrar
+original*. Tienen que decir **PASS** tanto SPF como DKIM. Si alguno dice FAIL,
+falta un registro en el DNS.

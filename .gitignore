@@ -1,2 +1,9 @@
 .DS_Store
 **/.DS_Store
+
+# Documentos generados a partir de los .md — se regeneran con
+# ./herramientas/a-docx.sh y no hace falta versionarlos.
+docs/*.docx
+docs/*.pdf
+docs/*.jpg
+.~lock.*#

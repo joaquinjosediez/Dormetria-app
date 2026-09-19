@@ -42,6 +42,19 @@ Si algo de esto falla, reportar la línea exacta del desbalance y detenerse — 
 ## Estado técnico conocido
 El registro de bugs vive en `BUGS.md`, en la raíz del repo. No duplicar esa lista acá — este archivo es contexto general, `BUGS.md` es la fuente de verdad para triage.
 
+## Formato de los documentos
+- Los `.md` de la raíz son la fuente y van al repo. Joaquín **no los lee en
+  markdown**: cuando un documento es para que lo lea él —un borrador para
+  decidir, un instructivo— hay que entregarlo en `.docx`.
+- Se generan con `./herramientas/a-docx.sh archivo.md` y quedan en `docs/`,
+  que está en `.gitignore` porque se regeneran solos.
+- El script hace un post-proceso obligatorio: pandoc 2.9 escribe las tablas
+  sin `<w:tblGrid>` ni `<w:tcW>` y tanto Word como LibreOffice colapsan todas
+  las columnas menos la primera. `herramientas/arreglar_tablas_docx.py` se los
+  agrega.
+- Excepción: si el `.md` es para el repo y no para leer (SQL para correr,
+  notas técnicas), queda en markdown y listo.
+
 ## Convenciones de trabajo
 - Cambios en producción requieren pasar primero por `/staging/` cuando el cambio toca lógica de negocio o datos de pacientes
 - Cualquier hallazgo de exposición de datos o falla de RLS se reporta de inmediato, no se resuelve en silencio

@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod199-5c732752">
+<link rel="stylesheet" href="css/styles.css?v=mod200-5c732752">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1333,10 +1333,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod199-26264729"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod199-0fe4b16e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod199-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod199-306bbb5c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod200-7ecc00a5"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod200-0fe4b16e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod200-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod200-306bbb5c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1355,7 +1355,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod199';
+const APP_VERSION='mod200';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -17487,13 +17487,43 @@ async function showDrPTab_(tab){
         const regResult = computeSleepRegularity(sorted);
         // Edad del paciente para ajustar el pilar "cantidad" (un niño que
         // duerme 10h no debe puntuar como un adulto que duerme 10h).
-        let _ageForPillar=null;
-        try{ const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null; if(_d) _ageForPillar=Math.floor((Date.now()-_d)/31557600000); }catch(_){}
-        const _optH=optimalSleepHours(_ageForPillar);
+        let _ageForPillar=null, _mesesPil=null;
+        try{
+          const _dob = S.viewData && S.viewData.dob ? S.viewData.dob : null;
+          // En MESES: con años, un bebé de 2 meses y uno de 11 caen los dos en
+          // "0 años" y comparten rango, y los rangos son distintos.
+          _mesesPil = (typeof edadEnMeses==='function') ? edadEnMeses(_dob) : null;
+          if(_mesesPil!=null) _ageForPillar = _mesesPil/12;
+          else if(_dob) _ageForPillar = Math.floor((Date.now()-new Date(_dob))/31557600000);
+        }catch(_){}
+        const _optH=(typeof rangoSuenoPorMeses==='function' && _mesesPil!=null)
+                      ? rangoSuenoPorMeses(_mesesPil)
+                      : optimalSleepHours(_ageForPillar);
+        // Antes de los 6 años el sueño se mide en 24 h: la siesta es parte del
+        // sueño, no un extra. Midiendo solo la noche, un lactante de 9 meses
+        // que duerme 11 h de noche + 3 h de siestas quedaba 5 h por debajo de
+        // su rango y el pilar lo marcaba en rojo. El score del paciente ya lo
+        // hacía así (computePillarScore); esta vista, la del profesional, no.
+        const _ped24 = (_ageForPillar!=null && _ageForPillar<6);
+        const _minutos24 = function(e){
+          let m = e.sleep_minutes||0;
+          if(_ped24){
+            try{
+              if(typeof parseChildNaps==='function'){
+                const ns = parseChildNaps(e);
+                if(ns.length) m += ns.reduce(function(a,n){ return a+(typeof _napDurationMin==='function'?_napDurationMin(n):0); },0);
+                else if(e.nap_minutes>0) m += Number(e.nap_minutes);
+              } else if(e.nap_minutes>0){ m += Number(e.nap_minutes); }
+            }catch(_){}
+          }
+          return m;
+        };
         let _awakSum=0, _awakN=0;
         const pillarData=sorted.map((e,i)=>{
-          const hrs=(e.sleep_minutes||0)/60;
-          const qty=qtyScoreForAge(hrs, _ageForPillar);
+          const hrs=_minutos24(e)/60;
+          const qty=(typeof qtyScoreForMeses==='function' && _mesesPil!=null)
+                      ? qtyScoreForMeses(hrs, _mesesPil)
+                      : qtyScoreForAge(hrs, _ageForPillar);
           const frag=Math.max(0,20-(e.awakenings||0)*5);
           if(e.sleep_minutes){ _awakSum+=(e.awakenings||0); _awakN++; }
           const groupReg = regResult.score !== null ? regResult.score : 0;
@@ -17544,7 +17574,18 @@ async function showDrPTab_(tab){
             const cQ=pColor(avgQtyP);
             const stQ=avgQtyP>=90?'Muy bien':avgQtyP>=80?'Bien':avgQtyP>=70?'Mejorable':avgQtyP>=60?'Regular':'Requiere atención';
             cards =
-              pillarCard('Cantidad', avgQtyP+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">%</span>', cQ, stQ, _optH.lo+'–'+_optH.hi+'h recomendado'+(_ageForPillar!=null?' (para '+_ageForPillar+' años)':'')+' · Paruthi/AASM 2016', '#1a4a3a')+
+              pillarCard('Cantidad', avgQtyP+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">%</span>', cQ, stQ,
+                (function(){
+                  const edad = (typeof etiquetaEdad==='function' && _mesesPil!=null) ? etiquetaEdad(_mesesPil) : null;
+                  let t = _optH.lo+'–'+_optH.hi+'h en 24 h, siestas incluidas';
+                  if(edad) t += ' (para '+edad+')';
+                  t += ' · '+(_optH.fuente||'NSF 2015');
+                  // Donde las dos sociedades no coinciden, se dice. Un 15,5 h
+                  // en un lactante queda fuera del rango NSF y dentro del de
+                  // la AASM: el profesional tiene que poder verlo.
+                  if(_optH.aasm) t += ' (AASM 2016: '+_optH.aasm[0]+'–'+_optH.aasm[1]+'h)';
+                  return t;
+                })(), '#1a4a3a')+
               pillarCard('Fragmentación', (_awakAvg>0?_awakAvg.toFixed(1):'0')+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.72)"> desp/noche</span>', '#44403c', 'Descriptivo', 'En niños la fragmentación por diario/actigrafía se sobreestima y no tiene cortes clínicos validados. Se informa como observación, no puntúa.', '#0e7490')+
               pillarCard('Regularidad', (_sjlP==null?'—':_sjlP+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.72)"> min</span>'), _sjlStatus.c, _sjlStatus.t, 'Jet lag social (finde vs. semana). Es la métrica de regularidad con respaldo pediátrico (Sun 2019). Este pilar SÍ pesa en el puntaje.', '#e67e22');
           } else {
