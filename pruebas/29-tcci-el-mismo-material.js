@@ -43,7 +43,11 @@ r.ok(ids.length === mod.P.modules.reduce(function(n,m){ return n + m.items.lengt
 
 r.seccion('El profesional puede ver ese texto:');
 
-r.ok(/Ver lo que lee el paciente/.test(html), 'hay un desplegable por ítem');
+r.ok(/En la app del paciente/.test(html), 'hay un desplegable por ítem');
+r.ok(/cbti-verpac-tarjeta/.test(html),
+     'y muestra el texto como lo ve el paciente: título arriba, texto debajo');
+r.ok(/palabras/.test(html.slice(html.indexOf('const _pal ='), html.indexOf('const _pal =')+700)),
+     'con el largo del texto a la vista, que es lo que decide si alcanza');
 r.ok(/CBTI_PATIENT_CONTENT\[it\.id\]/.test(
        html.slice(html.indexOf('// ── Lo que lee el paciente'),
                   html.indexOf('// ── Lo que lee el paciente') + 1400)),
@@ -77,7 +81,7 @@ r.ok(/cbti-lock-/.test(bloqueBarras),
 
 r.seccion('Y un ítem sin texto no pasa desapercibido:');
 
-r.ok(/no tiene texto para el paciente/.test(html),
+r.ok(/no tiene texto propio/.test(html),
      'si algún día falta un texto, el profesional lo ve dicho');
 
 r.seccion('La biblioteca no cuelga de TCC-I:');
@@ -85,6 +89,11 @@ r.seccion('La biblioteca no cuelga de TCC-I:');
 // La pestaña se llama TCC-I y el material educativo sirve para cualquier
 // paciente, con protocolo o sin él. Vive en la pestaña Material de cada ficha,
 // que además es donde se asigna y donde figura si lo leyó.
+r.seccion('Y la nota del clínico no ocupa media pantalla:');
+r.ok(/class="cbti-nota"/.test(html), 'la nota va plegada');
+r.ok(/\(_hayNota\?' open':''\)/.test(html),
+     'salvo que tenga algo escrito, que entonces se ve sola');
+
 const bloqueMas = html.slice(html.indexOf("if(tab==='more'){"),
                              html.indexOf("if(tab==='more'){") + 2200);
 r.ok(!/showEduLibrary\(\)/.test(bloqueMas),

@@ -4776,25 +4776,62 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 .cbti-verpac{ font-family:var(--font); }
 .cbti-verpac summary{
   cursor:pointer; list-style:none;
-  font-size:11.5px; font-weight:600; color:#7EC8A4;
+  display:flex; align-items:center; gap:8px;
   padding:3px 0; -webkit-tap-highlight-color:transparent;
 }
 .cbti-verpac summary::-webkit-details-marker{ display:none; }
 .cbti-verpac summary::before{
-  content:'▸'; display:inline-block; margin-right:5px;
+  content:'▸'; display:inline-block; color:#7EC8A4; font-size:11px;
   transition:transform .15s ease;
 }
 .cbti-verpac[open] summary::before{ transform:rotate(90deg); }
-.cbti-verpac-lock{ color:rgba(244,239,229,.55); font-weight:400; }
-.cbti-verpac-cuerpo{
-  margin-top:5px; padding:9px 11px;
+.cbti-verpac-tit{ font-size:11.5px; font-weight:600; color:#7EC8A4; }
+.cbti-verpac-meta{
+  font-size:10px; color:rgba(244,239,229,.5);
+  border:1px solid rgba(255,255,255,.12); border-radius:99px; padding:1px 7px;
+}
+.cbti-verpac-lock{ font-size:10px; color:rgba(200,169,110,.9); }
+.cbti-verpac-cuerpo{ margin-top:7px; }
+
+/* La tarjeta imita lo que ve el paciente: título arriba, texto debajo. Así
+   se lee como "esto es lo que le llega" y no como un renglón suelto. */
+.cbti-verpac-tarjeta{
   background:rgba(126,200,164,.07);
-  border-left:2px solid rgba(126,200,164,.35);
-  border-radius:0 8px 8px 0;
-  font-size:12.5px; line-height:1.55; color:rgba(244,239,229,.92);
+  border:1px solid rgba(126,200,164,.22);
+  border-radius:11px; padding:11px 13px;
+}
+.cbti-verpac-cab{
+  font-size:12.5px; font-weight:700; color:#F4EFE5; line-height:1.35;
+  padding-bottom:7px; margin-bottom:8px;
+  border-bottom:1px solid rgba(126,200,164,.18);
+}
+.cbti-verpac-txt{
+  font-size:13px; line-height:1.6; color:rgba(244,239,229,.94);
 }
 .cbti-verpac-nota{
   margin-top:6px; font-size:11px; color:rgba(200,169,110,.95);
+}
+
+/* La nota del clínico, plegada. Veintisiete cajas de texto siempre abiertas
+   ocupaban media pantalla y casi ninguna tenía nada escrito. */
+.cbti-nota{ font-family:var(--font); }
+.cbti-nota summary{
+  cursor:pointer; list-style:none;
+  font-size:11.5px; font-weight:600; color:rgba(244,239,229,.62);
+  padding:2px 0; -webkit-tap-highlight-color:transparent;
+}
+.cbti-nota summary::-webkit-details-marker{ display:none; }
+.cbti-nota summary::before{
+  content:'✎'; margin-right:6px; opacity:.75;
+}
+.cbti-nota[open] summary{ color:rgba(244,239,229,.85); }
+.cbti-nota textarea{
+  width:100%; box-sizing:border-box; margin-top:6px;
+  padding:9px 11px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1); border-radius:9px;
+  color:#fff; font-family:var(--font); font-size:12.5px;
+  line-height:1.55; resize:vertical; min-height:56px;
 }
 
 /* ── Panel de administración · Estadísticas ────────────────────────────
@@ -4853,3 +4890,10 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
   .dm-est-grid{ grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:7px; }
   .dm-est-val{ font-size:22px; }
 }
+
+/* ── Protocolo TCC-I · menos aire ──────────────────────────────────────
+   Cada ítem tenía 10px arriba, 10 abajo, una caja de nota siempre abierta y
+   un desplegable: con 27 ítems eso es una pantalla de scroll por módulo. */
+#cbti-protocol-content .cbti-mod-body > div{ padding:8px 0 !important; }
+#cbti-protocol-content .dm-card,
+#cbti-protocol-content details{ min-width:0; }
