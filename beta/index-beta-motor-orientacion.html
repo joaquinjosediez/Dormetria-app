@@ -1336,7 +1336,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod202-beta"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod203-beta"></script>
 <!-- BETA: cache-busting por timestamp. Cada recarga trae la última versión del
      motor sin necesidad de vaciar caché. En producción se reemplaza por ?v=modNNN. -->
 <script>
@@ -1370,7 +1370,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod202-beta';
+const APP_VERSION='mod203-beta';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -2024,6 +2024,24 @@ const db={
     return r.status===204?null:r.json().catch(()=>null);
   },
   async get(path){return this.q(path);},
+  // Cuántas filas hay DE VERDAD en el servidor, sin traerlas.
+  // Sirve para lo único que desde el cliente no se puede distinguir de otra
+  // manera: si una consulta devuelve pocas filas porque hay pocas, o porque
+  // las reglas de acceso están filtrando el resto. Las dos cosas se ven igual
+  // —una lista corta— y se leen como "este paciente no registró nada".
+  async contar(path){
+    try{
+      const authHeader = await this._getAuthHeader();
+      const sep = path.indexOf('?')>=0 ? '&' : '?';
+      const r = await fetch(SU+'/rest/v1/'+path+sep+'select=*&limit=1', {
+        method:'GET',
+        headers:{'apikey':SK,'Authorization':authHeader,'Prefer':'count=exact','Range-Unit':'items','Range':'0-0'}
+      });
+      const cr = r.headers.get('content-range') || '';   // "0-0/12345"
+      const m = /\/(\d+)$/.exec(cr);
+      return m ? parseInt(m[1],10) : null;
+    }catch(e){ console.warn('[DB] contar:', e && e.message); return null; }
+  },
   async post(table,data,ret='representation'){
     return this.q(table,{method:'POST',body:JSON.stringify(data),
       headers:{'Prefer':ret&&ret.length?'return='+ret:'return=minimal'}});
@@ -4581,6 +4599,13 @@ async function loadAdminTab(tab){
         // se cuenta abajo.
         const _sd = await db.get('sleep_diary?select=patient_email,diary_date&order=diary_date.desc&limit='+_TOPE_SD);
         window._admRecorteDoc = (_sd||[]).length >= _TOPE_SD;
+        // Mismo control que en la pestaña Pacientes: si el servidor dice que
+        // hay más noches de las que podemos leer, estas columnas mienten.
+        try{
+          const _real = await db.contar('sleep_diary');
+          window._admDocSinPermiso = (_real != null) && (_real > (_sd||[]).length) && !window._admRecorteDoc;
+          window._admDocTotalReal = _real; window._admDocLeidas = (_sd||[]).length;
+        }catch(_){ window._admDocSinPermiso = false; }
         const _noches = {};
         (_sd||[]).forEach(function(r){
           if(!r || !r.patient_email) return;
@@ -4630,6 +4655,14 @@ async function loadAdminTab(tab){
       // Qué mide realmente cada columna. Sin esto, un "sin registro" se lee
       // como "no entró nunca" y se toman decisiones sobre un dato que no es.
       const _notaColumnas =
+        (window._admDocSinPermiso
+          ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:11px 14px;margin-top:14px;font-size:12.5px;color:#991b1b;line-height:1.55">'+
+            '<b>Activaron y 14+ noches no son confiables ahora mismo.</b> En la base hay <b>'+
+            (window._admDocTotalReal||0).toLocaleString('es-AR')+'</b> noches y esta cuenta solo puede leer <b>'+
+            (window._admDocLeidas||0).toLocaleString('es-AR')+'</b>: las reglas de acceso de <code>sleep_diary</code> '+
+            'no dejan al administrador ver los diarios de los pacientes de otros profesionales. '+
+            'Esas dos columnas van a dar bajo para todos menos para vos.</div>'
+          : '')+
         (window._admHayAccesos === false
           ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:11px 14px;margin-top:14px;font-size:12.5px;color:#92400e;line-height:1.55">'+
             '<b>Todavía no hay ingresos anotados.</b> El registro empieza a contar desde que se instaló: '+
@@ -4743,6 +4776,19 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
         // pacientes mas viejos quedan cortos. Se avisa en vez de mostrar un
         // numero que parece completo.
         window._admRecorte = ((diaryRows||[]).length >= _TOPE) || ((evalRows||[]).length >= _TOPE);
+        // ¿Estamos viendo TODAS las noches, o las reglas de acceso nos dejan
+        // ver solo las de nuestros propios pacientes? Desde el cliente las dos
+        // cosas se ven igual: una lista corta. La única forma de distinguirlas
+        // es preguntarle al servidor cuántas filas hay.
+        try{
+          const _totalReal = await db.contar('sleep_diary');
+          window._admDiarioTotalReal = _totalReal;
+          window._admDiarioLeidas    = (diaryRows||[]).length;
+          // Si hay más filas de las que pudimos leer y NO fue por el tope,
+          // entonces nos están filtrando.
+          window._admSinPermisoDiario =
+            (_totalReal != null) && (_totalReal > (diaryRows||[]).length) && !window._admRecorte;
+        }catch(_){ window._admSinPermisoDiario = false; }
         const upsertActivity = (email, ts, dayKey)=>{
           if(!email) return;
           const e=email.toLowerCase();
@@ -4851,6 +4897,13 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
       window._admStatsRecorte =
         (allPts||[]).length   >= _T.pts   || (allDrs||[]).length  >= _T.drs ||
         (diaryRows||[]).length>= _T.diary || (evalRows||[]).length>= _T.evals;
+      // "Activos en los últimos 7 y 30 días" es la métrica que más se mira, y
+      // es la que más se distorsiona si no se pueden leer todos los diarios.
+      try{
+        const _realD = await db.contar('sleep_diary');
+        window._admStatsSinPermiso = (_realD != null) && (_realD > (diaryRows||[]).length) && !window._admStatsRecorte;
+        window._admStatsTotalReal = _realD; window._admStatsLeidas = (diaryRows||[]).length;
+      }catch(_){ window._admStatsSinPermiso = false; }
       // Las cuentas de prueba salen de TODO lo que se cuenta acá. Hay cinco
       // vinculadas a cada profesional y registran todas las noches: dejarlas
       // adentro infla los activos de 7 y 30 días justo en la métrica que uno
@@ -4926,6 +4979,14 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
       }catch(_){ window._admSinProf = null; }
       cont.innerHTML=`<div class="sec-title" style="margin-top:10px">Estadísticas de uso</div>
         <div style="font-size:11px;color:var(--label-3);margin:2px 0 10px">Computado en vivo desde diario y evaluaciones</div>
+        ${window._admStatsSinPermiso
+          ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:11px 14px;margin-bottom:10px;font-size:12.5px;color:#991b1b;line-height:1.55">'+
+            '<b>Los activos están subestimados.</b> En la base hay <b>'+
+            (window._admStatsTotalReal||0).toLocaleString('es-AR')+'</b> noches registradas y esta cuenta solo '+
+            'puede leer <b>'+(window._admStatsLeidas||0).toLocaleString('es-AR')+'</b>. Las reglas de acceso de '+
+            '<code>sleep_diary</code> no dejan al administrador ver los diarios de los pacientes de otros '+
+            'profesionales, así que los activos de 7 y 30 días cuentan casi solo a los tuyos.</div>'
+          : ''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
           ${[
             {icon:'👥',label:'Cuentas de paciente',val:totalPts,sub:'total creadas'},
@@ -5144,6 +5205,19 @@ function renderAdminPatientsTable(){
         '<b>Hay más registros de los que entran en una consulta.</b> La última actividad sigue '+
         'siendo correcta (se piden del más nuevo al más viejo), pero <b>Días activos</b> y '+
         '<b>Tiempo de uso</b> pueden quedar cortos en los pacientes más antiguos.</div>'
+      : '')+
+    // Esto es lo que hacía que los pacientes de otro profesional aparecieran
+    // todos como "Nunca": no es que no registraran, es que esta cuenta no
+    // puede leer sus diarios. Un cero sin permiso no es un cero.
+    (window._admSinPermisoDiario
+      ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:11px 14px;margin-bottom:10px;font-size:12.5px;color:#991b1b;line-height:1.55">'+
+        '<b>Esta tabla NO es confiable ahora mismo.</b> En la base hay <b>'+
+        (window._admDiarioTotalReal||0).toLocaleString('es-AR')+'</b> noches registradas y esta cuenta '+
+        'solo puede leer <b>'+(window._admDiarioLeidas||0).toLocaleString('es-AR')+'</b>. '+
+        'Las reglas de acceso de <code>sleep_diary</code> no dejan al administrador ver los diarios '+
+        'de los pacientes de otros profesionales, así que esos aparecen como si nunca hubieran '+
+        'registrado. <b>Días activos, Tiempo de uso y Última actividad de esos pacientes están mal.</b> '+
+        'Se arregla con una política de lectura para el administrador.</div>'
       : '')+
     '<div class="dm-tabla-fija"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
     '<thead><tr style="background:var(--bg-secondary)">'+

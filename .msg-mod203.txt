@@ -1,0 +1,35 @@
+mod203: el panel avisa cuando no puede leer, en vez de mostrar ceros
+
+Ruffa aparecía con toda su cartera inactiva y me mandó capturas de actogramas
+llenos. No estaban inactivos: la cuenta de administrador NO PUEDE LEER sus
+diarios. Las policies de sleep_diary dejan leer una fila al propio paciente y
+al profesional vinculado; el administrador no es ninguno de los dos para los
+pacientes de otro colega, así que esas filas no vuelven. Desde el cliente eso
+se ve idéntico a "no registró nada": una lista vacía.
+
+Es la misma familia que el limit-sin-order de mod193, pero peor: ahí faltaban
+filas por un descuido nuestro y acá faltan por diseño, y mirando las filas no
+hay forma de notarlo. La única manera es preguntarle al servidor cuántas hay.
+
+- db.contar(tabla): pide Prefer: count=exact con Range 0-0, así que trae una
+  sola fila y el total viene en la cabecera content-range.
+- Las tres vistas del panel (Pacientes, Profesionales, Estadísticas) comparan
+  ese total contra lo que pudieron leer y, si no coincide —descartando el caso
+  de haber llegado al tope de la consulta—, muestran un cartel rojo diciendo
+  que esos números NO son confiables, con cuántas filas hay contra cuántas se
+  leyeron, y por qué.
+
+Prueba nueva 30-un-cero-sin-permiso-no-es-un-cero.js. 30 de 30 pasan.
+
+PARA CORRER EN SUPABASE: SQL-admin-puede-leer.sql. Crea app_admins + es_admin()
+y agrega policies de SOLO LECTURA para el administrador en sleep_diary,
+evaluations, patients y doctor_patients. No toca ninguna policy existente y no
+da permiso de escritura. Queda anotado que a partir de ahí el administrador sí
+accede a datos clínicos de pacientes de otros profesionales, y que eso conviene
+documentarlo en la política de privacidad.
+
+APARTE: FIX-informe-clinico-edge-function.md. El error de Ruffa
+("This model does not support assistant message prefill") es de la Edge
+Function informe-clinico, que no está en el repo: termina la conversación con
+un mensaje del asistente y claude-sonnet-5 no lo acepta. Hay que sacar ese
+mensaje y pedir el formato en el texto del usuario.
