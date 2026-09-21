@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod203-a1c7c0a5">
+<link rel="stylesheet" href="css/styles.css?v=mod204-955f68b5">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1333,10 +1333,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod203-cdd22dfc"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod203-0fe4b16e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod203-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod203-306bbb5c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod204-cdd22dfc"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod204-0fe4b16e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod204-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod204-306bbb5c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1355,7 +1355,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod203';
+const APP_VERSION='mod204';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -4582,15 +4582,37 @@ async function loadAdminTab(tab){
         const _TOPE_SD = 50000;
         // Emails de las cuentas de prueba, para descontarlas de todo lo que
         // se cuenta abajo.
-        const _sd = await db.get('sleep_diary?select=patient_email,diary_date&order=diary_date.desc&limit='+_TOPE_SD);
+        // ── Primero, por la vía correcta ──────────────────────────────
+        // admin_stats_profesionales() cuenta del lado del servidor y devuelve
+        // SOLO números: cuántos pacientes, cuántos activaron, cuántos
+        // llegaron a 14 noches. No trae ninguna noche, así que no hay techo
+        // de filas que la recorte ni datos clínicos que viajen al navegador.
+        // Si la función todavía no está creada, se cae a contar acá, que es
+        // lo que había antes y sale corto.
+        window._admCarteraServidor = null;
+        try{
+          const { data:_agg, error:_aggErr } = await supa.rpc('admin_stats_profesionales');
+          if(!_aggErr && Array.isArray(_agg) && _agg.length){
+            const _m = {};
+            _agg.forEach(function(r){ _m[String(r.doctor_email||'').toLowerCase()] = r; });
+            window._admCarteraServidor = _m;
+          }
+        }catch(_){}
+
+        const _sd = window._admCarteraServidor ? [] :
+          await db.get('sleep_diary?select=patient_email,diary_date&order=diary_date.desc&limit='+_TOPE_SD);
         window._admRecorteDoc = (_sd||[]).length >= _TOPE_SD;
         // Mismo control que en la pestaña Pacientes: si el servidor dice que
         // hay más noches de las que podemos leer, estas columnas mienten.
-        try{
-          const _real = await db.contar('sleep_diary');
-          window._admDocSinPermiso = (_real != null) && (_real > (_sd||[]).length) && !window._admRecorteDoc;
-          window._admDocTotalReal = _real; window._admDocLeidas = (_sd||[]).length;
-        }catch(_){ window._admDocSinPermiso = false; }
+        if(window._admCarteraServidor){
+          window._admDocSinPermiso = false;   // los números vienen del servidor
+        } else {
+          try{
+            const _real = await db.contar('sleep_diary');
+            window._admDocSinPermiso = (_real != null) && (_real > (_sd||[]).length);
+            window._admDocTotalReal = _real; window._admDocLeidas = (_sd||[]).length;
+          }catch(_){ window._admDocSinPermiso = false; }
+        }
         const _noches = {};
         (_sd||[]).forEach(function(r){
           if(!r || !r.patient_email) return;
@@ -4608,6 +4630,16 @@ async function loadAdminTab(tab){
       // dan "33%", que no significa nada y se lee como si significara algo.
       const DM_ADM_MIN = 5;
       window._dmCarteraDoc = function(email){
+        // Camino bueno: los números ya vienen contados del servidor.
+        const _srv = window._admCarteraServidor
+                   && window._admCarteraServidor[String(email||'').toLowerCase()];
+        if(_srv){
+          const _n = Number(_srv.pacientes)||0;
+          if(_n < DM_ADM_MIN) return { estado:'pocos', n:_n };
+          return { estado:'ok', n:_n,
+                   activaron:   Math.round((Number(_srv.activaron)||0)   / _n * 100),
+                   sostuvieron: Math.round((Number(_srv.sostuvieron)||0) / _n * 100) };
+        }
         const _demoSet = window._admDemoEmails || {};
         const pac = ((window._admPacientesPorDoc||{})[String(email||'').toLowerCase()] || [])
                       .filter(function(p){ return !_demoSet[p]; });
@@ -4641,12 +4673,13 @@ async function loadAdminTab(tab){
       // como "no entró nunca" y se toman decisiones sobre un dato que no es.
       const _notaColumnas =
         (window._admDocSinPermiso
-          ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:11px 14px;margin-top:14px;font-size:12.5px;color:#991b1b;line-height:1.55">'+
-            '<b>Activaron y 14+ noches no son confiables ahora mismo.</b> En la base hay <b>'+
-            (window._admDocTotalReal||0).toLocaleString('es-AR')+'</b> noches y esta cuenta solo puede leer <b>'+
-            (window._admDocLeidas||0).toLocaleString('es-AR')+'</b>: las reglas de acceso de <code>sleep_diary</code> '+
-            'no dejan al administrador ver los diarios de los pacientes de otros profesionales. '+
-            'Esas dos columnas van a dar bajo para todos menos para vos.</div>'
+          ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:11px 14px;margin-top:14px;font-size:12.5px;color:#92400e;line-height:1.55">'+
+            '<b>Activaron y 14+ noches salen cortos.</b> En la base hay <b>'+
+            (window._admDocTotalReal||0).toLocaleString('es-AR')+'</b> noches y esta consulta trajo <b>'+
+            (window._admDocLeidas||0).toLocaleString('es-AR')+'</b>'+
+            (window._admDocLeidas===1000 ? ' — que es justo el tope de filas del servidor' : '')+
+            '. Los porcentajes están calculados sobre lo que se pudo traer, así que van a dar bajo. '+
+            'Se arregla contando del lado del servidor: correr <code>SQL-estadisticas-admin.sql</code>.</div>'
           : '')+
         (window._admHayAccesos === false
           ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:11px 14px;margin-top:14px;font-size:12.5px;color:#92400e;line-height:1.55">'+
@@ -4965,33 +4998,72 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
       cont.innerHTML=`<div class="sec-title" style="margin-top:10px">Estadísticas de uso</div>
         <div style="font-size:11px;color:var(--label-3);margin:2px 0 10px">Computado en vivo desde diario y evaluaciones</div>
         ${window._admStatsSinPermiso
-          ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:11px 14px;margin-bottom:10px;font-size:12.5px;color:#991b1b;line-height:1.55">'+
+          ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:11px 14px;margin-bottom:10px;font-size:12.5px;color:#92400e;line-height:1.55">'+
             '<b>Los activos están subestimados.</b> En la base hay <b>'+
-            (window._admStatsTotalReal||0).toLocaleString('es-AR')+'</b> noches registradas y esta cuenta solo '+
-            'puede leer <b>'+(window._admStatsLeidas||0).toLocaleString('es-AR')+'</b>. Las reglas de acceso de '+
-            '<code>sleep_diary</code> no dejan al administrador ver los diarios de los pacientes de otros '+
-            'profesionales, así que los activos de 7 y 30 días cuentan casi solo a los tuyos.</div>'
+            (window._admStatsTotalReal||0).toLocaleString('es-AR')+'</b> noches y esta consulta trajo <b>'+
+            (window._admStatsLeidas||0).toLocaleString('es-AR')+'</b>'+
+            (window._admStatsLeidas===1000 ? ' — que es justo el tope de filas del servidor' : '')+
+            '. Se arregla contando del lado del servidor: correr <code>SQL-estadisticas-admin.sql</code>.</div>'
           : ''}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
-          ${[
-            {icon:'👥',label:'Cuentas de paciente',val:totalPts,sub:'total creadas'},
-            {icon:'🔗',label:'Sin profesional',val:(window._admSinProf!=null?window._admSinProf:'—'),sub:'no vinculados a nadie'},
-            {icon:'🩺',label:'Médicos',val:totalDrs,sub:'registrados'},
-            {icon:'🟢',label:'Activos (7d)',val:activePts7,sub:'pacientes con actividad',hi:activePts7>0},
-            {icon:'🟡',label:'Activos (30d)',val:activePts30,sub:'pacientes con actividad',hi:activePts30>0},
-            {icon:'📥',label:'Ingresos 7d',val:ingresos7d,sub:'registros + evaluaciones'},
-            {icon:'⏱',label:'Permanencia',val:avgStay+' d',sub:'promedio de uso'},
-            {icon:'✅',label:'En directorio',val:listedDrs,sub:'profesionales'},
-            {icon:'⏳',label:'Pendientes',val:pendingDrs,sub:'solicitudes al directorio'},
-            {icon:'📝',label:'Sin solicitar',val:registeredNotListed,sub:'registrados, no pidieron directorio'},
-            {icon:'📅',label:'Médicos activos (30d)',val:activeDrs30,sub:'sugerencias enviadas'},
-          ].map(s=>`<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;text-align:center;${s.hi?'border:1px solid #86efac':''}">
-            <div style="font-size:22px">${s.icon}</div>
-            <div style="font-size:24px;font-weight:700;color:var(--label)">${s.val}</div>
-            <div style="font-size:11px;font-weight:600;color:var(--label)">${s.label}</div>
-            <div style="font-size:10px;color:var(--label-3)">${s.sub}</div>
-          </div>`).join('')}
-        </div>
+        ${(function(){
+          // ── Rediseño ──────────────────────────────────────────────────
+          // Eran once tarjetas iguales, en dos columnas gigantes, con un
+          // emoji enorme arriba: media pantalla de aire y ninguna jerarquía.
+          // Once números sin orden no son un tablero, son una lista.
+          // Ahora: tres bloques con sentido —embudo de pacientes, uso,
+          // profesionales—, grilla densa que se acomoda al ancho, y las
+          // proporciones dichas con una barra en vez de hacerlas de cabeza.
+          const n   = (v) => (v==null || v==='—') ? '—' : Number(v).toLocaleString('es-AR');
+          const pct = (a,b) => (!b || b<=0) ? null : Math.round(a/b*100);
+
+          const barra = (p, color) => p==null ? '' :
+            '<div class="dm-est-barra"><span style="width:'+Math.max(2,Math.min(100,p))+'%;background:'+color+'"></span></div>';
+
+          const dato = (o) => '<div class="dm-est-card'+(o.acento?' dm-est-card-on':'')+'">'+
+              '<div class="dm-est-rot">'+o.label+'</div>'+
+              '<div class="dm-est-val" style="color:'+(o.color||'var(--label)')+'">'+o.val+
+                (o.unidad?'<span class="dm-est-un">'+o.unidad+'</span>':'')+'</div>'+
+              (o.p!=null ? barra(o.p, o.color||'#1a4a3a') : '')+
+              '<div class="dm-est-sub">'+o.sub+'</div>'+
+            '</div>';
+
+          const bloque = (titulo, cards) =>
+            '<div class="dm-est-bloque"><div class="dm-est-tit">'+titulo+'</div>'+
+            '<div class="dm-est-grid">'+cards.join('')+'</div></div>';
+
+          const vinculados = (window._admSinProf!=null) ? (totalPts - window._admSinProf) : null;
+
+          const b1 = bloque('Pacientes', [
+            dato({label:'Cuentas creadas', val:n(totalPts), sub:'en total'}),
+            dato({label:'Vinculados', val:vinculados==null?'—':n(vinculados),
+                  sub:vinculados==null?'sin dato':'a algún profesional',
+                  p:pct(vinculados, totalPts), color:'#1a4a3a'}),
+            dato({label:'Sin profesional', val:n(window._admSinProf), sub:'no llegaron a vincularse',
+                  p:pct(window._admSinProf, totalPts), color:'#b45309'}),
+            dato({label:'Activos · 7 días', val:n(activePts7), sub:'registraron algo',
+                  p:pct(activePts7, totalPts), color:'#15803d', acento:true}),
+            dato({label:'Activos · 30 días', val:n(activePts30), sub:'registraron algo',
+                  p:pct(activePts30, totalPts), color:'#15803d'}),
+          ]);
+
+          const b2 = bloque('Uso', [
+            dato({label:'Ingresos · 7 días', val:n(ingresos7d), sub:'registros + escalas'}),
+            dato({label:'Permanencia', val:n(avgStay), unidad:'d', sub:'del alta a la última señal'}),
+          ]);
+
+          const b3 = bloque('Profesionales', [
+            dato({label:'Registrados', val:n(totalDrs), sub:'en total'}),
+            dato({label:'Activos · 30 días', val:n(activeDrs30), sub:'sugirieron escalas',
+                  p:pct(activeDrs30, totalDrs), color:'#15803d'}),
+            dato({label:'En directorio', val:n(listedDrs), sub:'visibles al público',
+                  p:pct(listedDrs, totalDrs), color:'#1a4a3a'}),
+            dato({label:'Pendientes', val:n(pendingDrs), sub:'esperando aprobación',
+                  color: pendingDrs>0 ? '#b45309' : 'var(--label-3)', acento:pendingDrs>0}),
+            dato({label:'Sin solicitar', val:n(registeredNotListed), sub:'nunca pidieron entrar'}),
+          ]);
+
+          return b1 + b2 + b3;
+        })()}
         <div class="sec-title" style="margin-top:20px">Administradores activos</div>
         <div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-top:8px">
           ${getAdminEmails().length===0
@@ -5195,14 +5267,13 @@ function renderAdminPatientsTable(){
     // todos como "Nunca": no es que no registraran, es que esta cuenta no
     // puede leer sus diarios. Un cero sin permiso no es un cero.
     (window._admSinPermisoDiario
-      ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:11px 14px;margin-bottom:10px;font-size:12.5px;color:#991b1b;line-height:1.55">'+
-        '<b>Esta tabla NO es confiable ahora mismo.</b> En la base hay <b>'+
-        (window._admDiarioTotalReal||0).toLocaleString('es-AR')+'</b> noches registradas y esta cuenta '+
-        'solo puede leer <b>'+(window._admDiarioLeidas||0).toLocaleString('es-AR')+'</b>. '+
-        'Las reglas de acceso de <code>sleep_diary</code> no dejan al administrador ver los diarios '+
-        'de los pacientes de otros profesionales, así que esos aparecen como si nunca hubieran '+
-        'registrado. <b>Días activos, Tiempo de uso y Última actividad de esos pacientes están mal.</b> '+
-        'Se arregla con una política de lectura para el administrador.</div>'
+      ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:11px 14px;margin-bottom:10px;font-size:12.5px;color:#92400e;line-height:1.55">'+
+        '<b>Estos números salen cortos.</b> En la base hay <b>'+
+        (window._admDiarioTotalReal||0).toLocaleString('es-AR')+'</b> noches y esta consulta trajo <b>'+
+        (window._admDiarioLeidas||0).toLocaleString('es-AR')+'</b>'+
+        (window._admDiarioLeidas===1000 ? ' — que es justo el tope de filas del servidor' : '')+
+        '. <b>Días activos, Tiempo de uso y Última actividad están subestimados.</b> '+
+        'Se arregla contando del lado del servidor: correr <code>SQL-estadisticas-admin.sql</code>.</div>'
       : '')+
     '<div class="dm-tabla-fija"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
     '<thead><tr style="background:var(--bg-secondary)">'+

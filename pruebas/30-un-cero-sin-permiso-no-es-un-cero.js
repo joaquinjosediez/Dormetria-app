@@ -1,16 +1,22 @@
-// Le escribí a Ruffa porque el panel decía que todos sus pacientes estaban
+// Le escribí a Ruffa porque el panel decía que sus pacientes estaban
 // inactivos. Me mandó capturas de actogramas llenos.
 //
-// No estaban inactivos: la cuenta de administrador NO PUEDE LEER sus diarios.
-// Las policies de sleep_diary dejan leer una fila al propio paciente y al
-// profesional vinculado; el administrador no es ninguno de los dos para los
-// pacientes de otro colega, así que esas filas no vuelven. Desde el cliente
-// eso se ve idéntico a "no registró nada": una lista vacía.
+// El panel traía las noches al navegador para contarlas ahí, y el servidor
+// devuelve como mucho 1.000 filas (el tope de PostgREST). Con 2.318 noches en
+// la base, los conteos salían cortos y los pacientes que quedaban afuera del
+// recorte aparecían como si nunca hubieran registrado.
 //
-// Es la misma familia de errores que veníamos arrastrando —el cero que en
-// realidad es una ausencia de dato— pero acá el cero venía de un permiso, y
-// no hay forma de distinguirlo mirando las filas. Hay que preguntarle al
-// servidor cuántas hay.
+// Yo había diagnosticado RLS y afirmé esa causa en el cartel. Estaba mal: el
+// número leído era exactamente 1.000, que es la firma del tope, no de un
+// filtro de permisos. Esta prueba fija las dos lecciones:
+//
+//   1. El panel tiene que DETECTAR que le faltan filas — comparando contra el
+//      conteo real del servidor, porque una lista corta y una lista filtrada
+//      se ven igual.
+//   2. Y tiene que decir QUÉ observa, sin inventar la causa.
+//
+// La solución de fondo es no traer filas: contar del lado del servidor, que
+// además no expone ningún dato clínico.
 
 const C = require('./comun');
 const r = C.crearReporte('Un cero sin permiso no es un cero');
@@ -22,38 +28,44 @@ r.seccion('Se le puede preguntar al servidor cuántas filas hay:');
 r.ok(/async contar\(path\)\{/.test(html), 'existe db.contar()');
 const bloque = html.slice(html.indexOf('async contar(path){'),
                           html.indexOf('async contar(path){') + 900);
-r.ok(/'Prefer':'count=exact'/.test(bloque),
-     'pide el conteo exacto al servidor');
+r.ok(/'Prefer':'count=exact'/.test(bloque), 'pide el conteo exacto');
 r.ok(/'Range':'0-0'/.test(bloque),
      'y trae una sola fila: el número viene en la cabecera, no en el cuerpo');
-r.ok(/content-range/.test(bloque),
-     'que es de donde se lee el total');
 
-r.seccion('Las tres vistas del panel lo comprueban:');
+r.seccion('Las tres vistas comprueban que no les falten filas:');
 
-r.ok(/_admSinPermisoDiario/.test(html),   'la pestaña Pacientes');
-r.ok(/_admDocSinPermiso/.test(html),      'la de Profesionales');
-r.ok(/_admStatsSinPermiso/.test(html),    'y la de Estadísticas');
+r.ok(/_admSinPermisoDiario/.test(html), 'la pestaña Pacientes');
+r.ok(/_admDocSinPermiso/.test(html),    'la de Profesionales');
+r.ok(/_admStatsSinPermiso/.test(html),  'y la de Estadísticas');
 
-// La condición tiene que descartar el recorte por límite: si la consulta
-// llegó al tope, faltan filas por otro motivo y no hay que culpar a la RLS.
-const cond = html.slice(html.indexOf('window._admSinPermisoDiario ='),
-                        html.indexOf('window._admSinPermisoDiario =') + 260);
-r.ok(/!window\._admRecorte/.test(cond),
-     'y no confunden "me filtraron" con "llegué al tope de la consulta"');
+r.seccion('Y lo dicen sin inventar la causa:');
 
-r.seccion('Y lo dicen, en vez de mostrar ceros:');
-
-r.ok(/Esta tabla NO es confiable ahora mismo/.test(html),
-     'la tabla de pacientes avisa que no es confiable');
-r.ok(/Activaron y 14\+ noches no son confiables/.test(html),
-     'las columnas de cartera también');
-r.ok(/Los activos están subestimados/.test(html),
-     'y las estadísticas de plataforma');
-r.ok(/no dejan al administrador ver los diarios/.test(html),
-     'explicando la causa, no solo que algo falla');
-// Sin el número, el aviso es una sospecha; con él, es un diagnóstico.
+r.ok(/Estos números salen cortos/.test(html),
+     'describe lo que se observa');
+r.ok(/salen cortos|están subestimados/.test(html),
+     'y que el número está por debajo del real');
+// Afirmar RLS sobre un 1.000 exacto era adivinar. El tope del servidor deja
+// esa huella y el permiso no.
+r.ok(/es justo el tope de filas del servidor/.test(html),
+     'y cuando la huella es de tope de filas, lo nombra');
+r.ok(!/no dejan al administrador ver los diarios/.test(html),
+     'ya no afirma que es un problema de permisos');
 r.ok(/_admDiarioTotalReal/.test(html) && /_admDiarioLeidas/.test(html),
-     'y muestra cuántas filas hay contra cuántas se pudieron leer');
+     'muestra cuántas hay contra cuántas se trajeron');
 
-r.cerrar('Las reglas de acceso devuelven menos filas, no un error: el silencio se lee como ausencia.');
+r.seccion('El arreglo de fondo: contar en el servidor, sin traer datos:');
+
+r.ok(/admin_stats_profesionales/.test(html),
+     'el panel llama a la función agregada');
+const bloqueRpc = html.slice(html.indexOf("supa.rpc('admin_stats_profesionales')") - 900,
+                             html.indexOf("supa.rpc('admin_stats_profesionales')") + 700);
+r.ok(/SOLO números/.test(bloqueRpc),
+     'que devuelve números, no noches');
+r.ok(/window\._admCarteraServidor \? \[\] :/.test(html),
+     'y si contesta, ni siquiera se piden las filas');
+r.ok(/window\._admDocSinPermiso = false;   \/\/ los números vienen del servidor/.test(html),
+     'ahí el aviso desaparece, porque ya no hay recorte posible');
+r.ok(/if\(_srv\)\{/.test(html),
+     'las columnas de cartera usan ese resultado');
+
+r.cerrar('Una lista corta y una lista recortada se ven igual: hay que preguntar cuántas había.');
