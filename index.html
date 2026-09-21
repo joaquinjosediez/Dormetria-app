@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod200-5c732752">
+<link rel="stylesheet" href="css/styles.css?v=mod202-a1c7c0a5">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1333,10 +1333,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod200-7ecc00a5"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod200-0fe4b16e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod200-125b9410"></script>
-<script src="js/dormetria-render-resumen.js?v=mod200-306bbb5c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod202-cdd22dfc"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod202-0fe4b16e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod202-125b9410"></script>
+<script src="js/dormetria-render-resumen.js?v=mod202-306bbb5c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1355,7 +1355,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod200';
+const APP_VERSION='mod202';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -11863,33 +11863,52 @@ async function showDiaryTab_(tab){
         // "Siestas: [{start,end}]" (plural, JSON) y desde mod61 además usa
         // las columnas nap_start / nap_minutes. Por eso las siestas se
         // registraban pero jamás aparecían en el actograma.
-        const napBarData=sorted.map(e=>{
-          // 1) Columnas propias (lo que guarda la app desde mod61)
+        // ── Las siestas del día, TODAS ──────────────────────────────────
+        // Antes esto devolvía UNA sola por noche: preferia las columnas
+        // nap_start + nap_minutes, donde nap_minutes es el TOTAL del día, así
+        // que con dos siestas dibujaba un bloque único que arrancaba en la
+        // primera y duraba lo que duraban las dos juntas. Un lactante de 9
+        // meses, que normalmente hace dos o tres, aparecía haciendo una sola
+        // y más larga de lo que era.
+        // Ahora se prefiere el detalle del JSON, que tiene inicio y fin de
+        // cada una, y las columnas quedan de respaldo.
+        const napsPorNoche=sorted.map(e=>{
+          const tramo=(ini,fin)=>{
+            const st=timeToOffset(ini);
+            let f = fin ? timeToOffset(fin) : st+0.75;
+            if(f<=st) f=st+0.75;
+            return [st,f];
+          };
+          // 1) Detalle por siesta (es lo que guarda el diario)
+          if(e.notes){
+            const mj=e.notes.match(/Siestas: (\[.*?\])(?: \||$)/);
+            if(mj){
+              try{
+                const arr=JSON.parse(mj[1]);
+                if(Array.isArray(arr)){
+                  const ts=arr.filter(x=>x&&x.start).map(x=>tramo(x.start,x.end));
+                  if(ts.length) return ts;
+                }
+              }catch(_){}
+            }
+          }
+          // 2) Columnas propias, cuando no hay detalle
           if(e.nap_start && Number(e.nap_minutes)>0){
             const st=timeToOffset(e.nap_start);
-            return [st, st + Number(e.nap_minutes)/60];
+            return [[st, st + Number(e.nap_minutes)/60]];
           }
-          if(!e.notes) return null;
-          // 2) Formato JSON en notes (diario infantil y registros previos)
-          const mj=e.notes.match(/Siestas: (\[.*?\])(?: \||$)/);
-          if(mj){
-            try{
-              const arr=JSON.parse(mj[1]);
-              const n0=Array.isArray(arr)?arr.find(x=>x&&x.start):null;
-              if(n0){
-                const st=timeToOffset(n0.start);
-                let fin = n0.end ? timeToOffset(n0.end) : st+0.75;
-                if(fin<=st) fin=st+0.75;
-                return [st, fin];
-              }
-            }catch(_){}
+          // 3) Formato viejo escrito a mano
+          if(e.notes){
+            const m=e.notes.match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
+            if(m){ const s0=timeToOffset(m[1]); return [[s0, s0+(m[2]?parseInt(m[2])/60:0.5)]]; }
           }
-          // 3) Formato viejo por si quedó algo escrito a mano
-          const m=e.notes.match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
-          if(!m) return null;
-          const start=timeToOffset(m[1]); const dur=m[2]?parseInt(m[2])/60:0.5;
-          return [start,start+dur];
+          return [];
         });
+        // Un dataset por posición de siesta: Chart.js dibuja una barra por
+        // dataset y fila, así que con tres datasets entran hasta tres siestas
+        // en la misma noche sin pisarse.
+        const _maxNaps=napsPorNoche.reduce((a,n)=>Math.max(a,n.length),0);
+        const napBarData=napsPorNoche.map(n=>n[0]||null);
         // Unificado con computeDiaryMetrics: mismo set de noches y mismo método de promedio
         const _validForAvgP = sorted.filter(e=>e.bedtime && e.wake_time && e.sleep_minutes && e.sleep_minutes>=60 && !(e.notes&&e.notes.startsWith('Importado')));
         const _s2mP = t => { const [h,m]=t.split(':').map(Number); return h*60+m; };
@@ -11955,7 +11974,14 @@ async function showDiaryTab_(tab){
               datasets:[
                 {label:'Sueño nocturno',grouped:false,data:sleepBarData,backgroundColor:sleepBarColors,borderColor:sleepBarBorders,borderWidth:1,borderRadius:3,borderSkipped:false},
                 {label:'Siesta',data:napBarData,backgroundColor:'#185fa5aa',borderColor:'#185fa5',borderWidth:1,borderRadius:3,grouped:false,borderSkipped:false}
-              ]
+              ].concat(
+                // Segunda y tercera siesta del día, cada una en su dataset.
+                Array.from({length:Math.max(0,_maxNaps-1)}, function(_,k){
+                  return {label:'Siesta '+(k+2), data:napsPorNoche.map(n=>n[k+1]||null),
+                          backgroundColor:'#185fa5aa', borderColor:'#185fa5', borderWidth:1,
+                          borderRadius:3, grouped:false, borderSkipped:false};
+                })
+              )
             },
             options:{
               indexAxis:'y',
@@ -14993,23 +15019,22 @@ async function renderPatientList(filter){
     </div>
   </div>`;}
     if(tab==='more'){
+      // El material educativo salió de acá. Esta pestaña se llama TCC-I y la
+      // biblioteca no es del protocolo: sirve para cualquier paciente, con o
+      // sin TCC-I. Vive en la pestaña "Material" de cada ficha, que además es
+      // donde se asigna y donde se ve si el paciente lo leyó — o sea, mejor
+      // lugar que una biblioteca suelta.
       cont.innerHTML=`<div style="padding:0 4px">
-        <div style="margin:6px 0 16px;font-size:12px;color:rgba(255,255,255,.76);text-transform:uppercase;letter-spacing:0.06em">Herramientas clínicas</div>
         <div onclick="openCbtiModule()" style="background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);border:1px solid #C8A96E;border-radius:14px;padding:18px;cursor:pointer;margin-bottom:14px;position:relative">
           <div style="position:absolute;top:12px;right:14px;background:#C8A96E;color:#0F2820;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:8px;letter-spacing:0.06em">PREMIUM</div>
           <div style="font-size:30px;margin-bottom:6px">🌿</div>
-          <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:4px">Módulo CBT-I</div>
-          <div style="font-size:13px;color:rgba(255,255,255,.9);line-height:1.5">Protocolo guiado de terapia cognitivo-conductual para el insomnio (TCC-I / CBT-I). Seguimiento por paciente con checklist y progreso.</div>
+          <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:4px">Módulo TCC-I</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.9);line-height:1.5">Protocolo guiado de terapia cognitivo-conductual para el insomnio. Seguimiento por paciente, con checklist, notas y progreso.</div>
         </div>
-        <div onclick="showEduLibrary()" style="background:rgba(126,200,164,0.08);border:1px solid rgba(126,200,164,0.25);border-radius:12px;padding:14px;cursor:pointer">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="font-size:20px">📚</div>
-            <div style="flex:1">
-              <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:2px">Material educativo para pacientes</div>
-              <div style="font-size:12px;color:rgba(255,255,255,.84)">Biblioteca de fichas de educación al paciente — explicaciones claras y prácticas que podés revisar o compartir</div>
-            </div>
-            <div style="color:#7ec8a4;font-size:18px">›</div>
-          </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 15px;font-size:12.5px;color:rgba(244,239,229,.82);line-height:1.55">
+          <b style="color:#F4EFE5">¿Buscabas el material educativo?</b> Está en la pestaña
+          <b style="color:#7EC8A4">📚 Material</b> de cada paciente: ahí lo ves, lo asignás y
+          te dice si lo leyó.
         </div>
       </div>`;
     }
@@ -17115,11 +17140,11 @@ async function showDrPTab_(tab){
           // (que puede traer VARIAS siestas: en pediatría son 2 o 3 por día)
           // y, por último, el formato viejo.
           const drNapBars=sorted.map(e=>{
-            const salidas=[];
-            if(e.nap_start && Number(e.nap_minutes)>0){
-              const st=toOff(e.nap_start.slice(0,5));
-              salidas.push([st, st + Number(e.nap_minutes)/60]);
-            }
+            let salidas=[];
+            // El detalle MANDA sobre las columnas. Antes se empujaban los dos:
+            // nap_minutes es el TOTAL del día, así que con dos siestas salían
+            // tres barras — una falsa que arrancaba en la primera y duraba lo
+            // que duraban las dos juntas, encima de las dos verdaderas.
             const mj=(e.notes||'').match(/Siestas: (\[.*?\])(?: \||$)/);
             if(mj){
               try{
@@ -17131,6 +17156,10 @@ async function showDrPTab_(tab){
                   salidas.push([st, fin]);
                 });
               }catch(_){}
+            }
+            if(!salidas.length && e.nap_start && Number(e.nap_minutes)>0){
+              const st=toOff(e.nap_start.slice(0,5));
+              salidas.push([st, st + Number(e.nap_minutes)/60]);
             }
             if(!salidas.length){
               const m=(e.notes||'').match(/Siesta: (\d{2}:\d{2})(?: (\d+)min)?/);
@@ -19606,14 +19635,36 @@ function calcSleepScore(entries, ageYears){
   
   // Need at least 3 entries for a meaningful score
   if(entries.length < 3) return null;
-  
+
+  // La edad NO es opcional para un niño, y la mitad de las llamadas la omitía:
+  // el score de un bebé salía puntuado con el rango de un adulto (7-9 h) y le
+  // daba "Deficiente" con un sueño normal. Si no la pasan, se toma la del
+  // paciente que se está mirando, que es siempre de quien es el score.
+  if(ageYears == null){
+    try{
+      const _dob = (typeof S!=='undefined' && S.viewData && S.viewData.dob)
+                 || (typeof S!=='undefined' && S.user && S.user.dob) || null;
+      if(_dob && typeof edadAniosExacta==='function') ageYears = edadAniosExacta(_dob);
+    }catch(_){}
+  }
+  // Antes de los 6 años la siesta es parte del sueño de 24 h, no un extra.
+  const _ped24 = (ageYears != null && ageYears < 6);
+
   const scores = [];
   
   entries.forEach(e=>{
     if(!e.sleep_minutes || e.sleep_minutes < 60) return;
     
     // ── QUANTITY (0-50 pts) ──
-    const hrs = e.sleep_minutes / 60;
+    let _min24 = e.sleep_minutes;
+    if(_ped24){
+      try{
+        const _ns = (typeof parseChildNaps==='function') ? parseChildNaps(e) : [];
+        if(_ns.length) _min24 += _ns.reduce((a,n)=>a+(typeof _napDurationMin==='function'?_napDurationMin(n):0),0);
+        else if(e.nap_minutes>0) _min24 += Number(e.nap_minutes);
+      }catch(_){}
+    }
+    const hrs = _min24 / 60;
     let qty;
     if(ageYears!=null && typeof qtyScoreForAge==='function'){
       // Ajustado a la edad (un niño necesita más horas que un adulto).
@@ -19876,11 +19927,40 @@ function renderSleepScorePanel(entries, ageYears, audience){
     <details class="dm-expli${_claro?' dm-expli-claro':''}">
       <summary>¿Cómo se calcula este score?<span class="dm-expli-f">▾</span></summary>
       <div class="dm-expli-cuerpo">
-        <p>Combina los tres pilares que ves abajo.</p>
-        <p><b>Cantidad.</b> Lo óptimo está entre 7 y 9 horas. Menos de 7 baja el puntaje de a poco; más de 9 también lo baja.</p>
-        <p><b>Fragmentación.</b> Baja con cada despertar que anotás durante la noche.</p>
-        <p><b>Regularidad.</b> Qué tan parecidos son tus horarios de una noche a la otra.</p>
-        <p class="dm-expli-nota">El registro mide el tiempo entre que te acostás y te levantás, así que incluye los ratos en cama sin dormir. El sueño real suele ser algo menor.</p>
+        ${(function(){
+          // El texto decía 7 a 9 horas SIEMPRE. En la ficha de un bebé de 9
+          // meses eso es directamente falso: su rango es 12 a 15 en 24 h. Se
+          // arma con la edad de quien se está mirando.
+          const _r = (typeof optimalSleepHours==='function') ? optimalSleepHours(ageYears) : {lo:7,hi:9};
+          const _ped = (ageYears != null && ageYears < 13);
+          const _bebe = (ageYears != null && ageYears < 6);
+          const _edadTxt = (function(){
+            if(ageYears == null) return '';
+            const _m = Math.round(ageYears*12);
+            if(typeof etiquetaEdad==='function') return ' (para ' + etiquetaEdad(_m) + ')';
+            return '';
+          })();
+          let h = '<p>Combina los tres pilares que ves abajo.</p>';
+          h += '<p><b>Cantidad.</b> Lo esperable' + _edadTxt + ' está entre <b>' + _r.lo +
+               ' y ' + _r.hi + ' horas</b>' + (_bebe ? ' <b>en 24 horas, contando las siestas</b>' : '') +
+               '. Menos baja el puntaje de a poco; más también lo baja.' +
+               (_r.fuente ? ' <span style="opacity:.75">Referencia: ' + _r.fuente +
+                 (_r.aasm ? ' · AASM 2016: ' + _r.aasm[0] + '–' + _r.aasm[1] + ' h' : '') + '.</span>' : '') +
+               '</p>';
+          if(_ped){
+            h += '<p><b>Fragmentación.</b> Cuenta los despertares de la noche. ' +
+                 'En chicos el diario los sobreestima y no hay cortes validados, ' +
+                 'así que <b>se informa pero no puntúa</b>.</p>';
+            h += '<p><b>Regularidad.</b> En chicos se mide por el <b>jet lag social</b>: ' +
+                 'cuánto se corre el horario el fin de semana respecto de la semana.</p>';
+          } else {
+            h += '<p><b>Fragmentación.</b> Baja con cada despertar que anotás durante la noche.</p>';
+            h += '<p><b>Regularidad.</b> Qué tan parecidos son tus horarios de una noche a la otra.</p>';
+          }
+          h += '<p class="dm-expli-nota">El registro mide el tiempo entre que te acostás y te levantás, así que incluye los ratos en cama sin dormir. El sueño real suele ser algo menor.</p>';
+          if(_bebe) h += '<p class="dm-expli-nota">Antes de los 6 años la siesta no es un extra: es parte del sueño del día. Por eso el rango es de 24 horas.</p>';
+          return h;
+        })()}
       </div>
     </details>`;
   setTimeout(initProfileEditExtras,0);
@@ -24997,6 +25077,29 @@ function renderCbtiProtocol(){
       html += '<div style="flex:1"><div style="font-size:13px;color:'+(checked?'rgba(255,255,255,0.5)':'#fff')+';line-height:1.5;'+(checked?'text-decoration:line-through':'')+'">'+it.label+'</div>';
       if(completedDate) html += '<div style="font-size:10.5px;color:#7ec8a4;margin-top:2px">✓ '+completedDate+'</div>';
       html += '</div></label>';
+      // ── Lo que lee el paciente ──────────────────────────────────────
+      // El material es el mismo objeto para los dos perfiles, pero el
+      // profesional nunca veía el texto que le llega al paciente: tenía que
+      // abrir la app del paciente para saber qué decía. Va plegado, porque el
+      // contenido clínico ya lo sabe; lo que necesita es poder consultarlo.
+      // Solo se desbloquea del lado del paciente cuando este ítem está
+      // tildado, así que se avisa cuando todavía no lo está.
+      (function(){
+        const _txt = (typeof CBTI_PATIENT_CONTENT!=='undefined') ? (CBTI_PATIENT_CONTENT[it.id]||'') : '';
+        html += '<details class="cbti-verpac" style="margin:6px 0 0 28px">'+
+          '<summary>Ver lo que lee el paciente'+
+            '<span class="cbti-verpac-lock" id="cbti-lock-'+it.id+'"'+
+              (checked?' style="display:none"':'')+'> · todavía no lo ve</span>'+
+          '</summary>'+
+          '<div class="cbti-verpac-cuerpo">'+
+            (_txt
+              ? escHtml(_txt)
+              : '<span style="font-style:italic;opacity:.8">Este punto no tiene texto para el paciente. En su app aparece solo el título.</span>')+
+            '<div class="cbti-verpac-nota" id="cbti-locknota-'+it.id+'"'+
+              (checked?' style="display:none"':'')+'>Se le desbloquea cuando tildes este punto.</div>'+
+          '</div>'+
+        '</details>';
+      })();
       // Notas
       const showNotes = checked || (p.notes && p.notes.length);
       html += '<div style="margin-top:8px;margin-left:28px">';
@@ -25043,6 +25146,15 @@ function updateCbtiProgressBars(){
     if(mc) mc.textContent = modDone+'/'+mod.items.length+' items'+(modDone===mod.items.length?' · ✓ completo':'');
     const mp = document.getElementById('cbti-modpct-'+mod.id);
     if(mp) mp.textContent = modPct+'%';
+    // El aviso de "todavía no lo ve" del desplegable: el acordeón no se
+    // re-renderiza al tildar —para no cerrarse solo— así que se refresca acá.
+    mod.items.forEach(function(it){
+      const visto = !!(CBTI_STATE.progress[it.id] && CBTI_STATE.progress[it.id].completed);
+      const l = document.getElementById('cbti-lock-'+it.id);
+      if(l) l.style.display = visto ? 'none' : '';
+      const n = document.getElementById('cbti-locknota-'+it.id);
+      if(n) n.style.display = visto ? 'none' : '';
+    });
   });
 }
 

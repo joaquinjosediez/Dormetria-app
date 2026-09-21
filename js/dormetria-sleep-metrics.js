@@ -58,9 +58,29 @@ function etiquetaEdad(meses){
 }
 
 // Compatibilidad: sigue recibiendo AÑOS y acepta fracciones (0.75 = 9 meses).
+//
+// OJO con el año 0. Si llega un 0 entero —que es lo que da Math.floor sobre
+// cualquier bebé de menos de 12 meses— no se puede saber si son 2 meses o 11,
+// y los rangos son distintos (14-17 h contra 12-15 h). En ese caso se devuelve
+// el de 4-11 meses, que cubre la mayor parte del primer año, y se marca como
+// impreciso para que quien lo use sepa que conviene pasarle los meses.
 function optimalSleepHours(ageYears){
+  if(ageYears!=null && ageYears>=0 && ageYears<1 && ageYears===Math.floor(ageYears)){
+    const r0 = rangoSuenoPorMeses(9);
+    return {lo:r0.lo, hi:r0.hi, etiqueta:r0.etiqueta, fuente:r0.fuente, aasm:r0.aasm, impreciso:true};
+  }
   const r = rangoSuenoPorMeses(ageYears==null ? null : Math.round(ageYears*12));
   return {lo:r.lo, hi:r.hi, etiqueta:r.etiqueta, fuente:r.fuente, aasm:r.aasm};
+}
+
+// Edad en AÑOS con decimales. Math.floor manda a todo el primer año a "0", que
+// es justo donde los rangos cambian más rápido.
+function edadAniosExacta(dob){
+  if(!dob) return null;
+  const d = new Date(dob);
+  if(isNaN(d)) return null;
+  const a = (Date.now() - d.getTime()) / 31557600000;
+  return a < 0 ? null : a;
 }
 // ── Modo pediátrico ──
 // Umbral <13 años (escolares y menores). Fundamento: en niños los despertares

@@ -90,4 +90,53 @@ r.ok(qtyScoreForMeses(noche, 9) < 35,
 r.ok(qtyScoreForMeses(11 + 1.5, 24) === 50,
      'lo mismo con un preescolar de 2 años y su siesta de tarde');
 
+r.seccion('El score no se calcula con el rango de un adulto:');
+
+// La mitad de las llamadas a calcSleepScore omitía la edad, y sin edad el
+// score caía al rango del adulto (7-9 h): un bebé normal daba "Deficiente".
+const bloqueScore = html.slice(html.indexOf('function calcSleepScore(entries, ageYears){'),
+                               html.indexOf('function calcSleepScore(entries, ageYears){') + 1800);
+r.ok(/if\(ageYears == null\)\{/.test(bloqueScore.replace(/\s/g,'')) ||
+     /if\(ageYears == null\)\s*\{/.test(bloqueScore),
+     'si no se la pasan, la toma del paciente que se está mirando');
+r.ok(/edadAniosExacta\(_dob\)/.test(bloqueScore),
+     'y en años con decimales, no floor — que manda todo el primer año a "0"');
+r.ok(/const _ped24 = \(ageYears != null && ageYears < 6\)/.test(bloqueScore),
+     'antes de los 6 suma las siestas');
+
+r.ok(/function edadAniosExacta/.test(metrics), 'existe el cálculo de edad con decimales');
+// Un 0 entero no puede distinguir 2 meses de 11: se elige el rango que cubre
+// la mayor parte del primer año y se marca como impreciso.
+r.ok(optimalSleepHours(0).impreciso === true,
+     'un "0 años" entero se marca como impreciso en vez de fingir precisión');
+r.ok(optimalSleepHours(0.17).lo === 14, 'con decimales sí distingue a un bebé de 2 meses');
+
+r.seccion('La explicación del score habla de la edad que corresponde:');
+
+r.ok(!/Lo óptimo está entre 7 y 9 horas/.test(html),
+     'ya no dice "7 a 9 horas" en la ficha de un bebé');
+r.ok(/Lo esperable/.test(html) && /optimalSleepHours\(ageYears\)/.test(html),
+     'el rango sale de la edad');
+r.ok(/en 24 horas, contando las siestas/.test(html),
+     'y en menores de 6 aclara que es de 24 h');
+r.ok(/se informa pero no puntúa/.test(html),
+     'en chicos explica que la fragmentación no puntúa');
+r.ok(/jet lag social/.test(html),
+     'y que la regularidad se mide por jet lag social');
+
+r.seccion('El actograma dibuja todas las siestas:');
+
+r.ok(/const napsPorNoche=sorted\.map/.test(html),
+     'se recolectan todas, no solo la primera');
+r.ok(/_maxNaps/.test(html),
+     'y se arma un dataset por cada posición de siesta');
+const bloqueDr = html.slice(html.indexOf('const drNapBars=sorted.map'),
+                            html.indexOf('const drNapBars=sorted.map') + 900);
+r.ok(/if\(!salidas\.length && e\.nap_start/.test(bloqueDr),
+     'en la vista del profesional el detalle manda sobre las columnas');
+// Empujar los dos daba tres barras: las dos reales más una falsa que duraba
+// lo que las dos juntas.
+r.ok(bloqueDr.indexOf('Siestas:') < bloqueDr.indexOf('e.nap_start'),
+     'y ya no se suman las dos fuentes a la vez');
+
 r.cerrar('La siesta de un lactante no es un extra: es la mitad de por qué su sueño alcanza.');

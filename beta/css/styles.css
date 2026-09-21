@@ -4768,3 +4768,31 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 @media (max-width:900px){
   .dm-tabla-fija{ max-height:calc(100vh - 240px); }
 }
+
+/* ── TCC-I · "Ver lo que lee el paciente" ──────────────────────────────
+   El material del protocolo es el mismo para los dos perfiles, pero el
+   profesional no veía el texto que le llega al paciente. Va plegado: el
+   contenido clínico ya lo sabe, lo que necesita es poder consultarlo. */
+.cbti-verpac{ font-family:var(--font); }
+.cbti-verpac summary{
+  cursor:pointer; list-style:none;
+  font-size:11.5px; font-weight:600; color:#7EC8A4;
+  padding:3px 0; -webkit-tap-highlight-color:transparent;
+}
+.cbti-verpac summary::-webkit-details-marker{ display:none; }
+.cbti-verpac summary::before{
+  content:'▸'; display:inline-block; margin-right:5px;
+  transition:transform .15s ease;
+}
+.cbti-verpac[open] summary::before{ transform:rotate(90deg); }
+.cbti-verpac-lock{ color:rgba(244,239,229,.55); font-weight:400; }
+.cbti-verpac-cuerpo{
+  margin-top:5px; padding:9px 11px;
+  background:rgba(126,200,164,.07);
+  border-left:2px solid rgba(126,200,164,.35);
+  border-radius:0 8px 8px 0;
+  font-size:12.5px; line-height:1.55; color:rgba(244,239,229,.92);
+}
+.cbti-verpac-nota{
+  margin-top:6px; font-size:11px; color:rgba(200,169,110,.95);
+}

@@ -1,0 +1,32 @@
+mod202: TCC-I · el profesional puede leer lo que recibe el paciente
+
+El protocolo sale de un solo objeto (CBTI_PROTOCOL) y los textos del paciente
+de otro (CBTI_PATIENT_CONTENT), los dos con las mismas claves. Pero el
+profesional nunca veía los segundos: para saber qué le llega al paciente tenía
+que abrir la app del paciente.
+
+- Cada ítem del acordeón del profesional lleva ahora un desplegable
+  "Ver lo que lee el paciente", PLEGADO por defecto —el contenido clínico ya
+  lo sabe, lo que necesita es poder consultarlo— con el texto exacto que
+  recibe. Sale del mismo objeto, no de una copia: si se edita uno, cambian los
+  dos.
+- Avisa "· todavía no lo ve" cuando el ítem no está tildado, y explica que se
+  desbloquea al tildarlo. Eso no era obvio: el texto existe siempre, pero el
+  paciente solo lo ve cuando el profesional marca el punto.
+- El aviso se refresca al tildar sin re-renderizar el acordeón, que se cierra
+  solo si se re-renderiza.
+
+Prueba nueva 29-tcci-el-mismo-material.js: además de lo visual, evalúa los dos
+objetos y comprueba que estén alineados — hoy 27/27, sin ítems sin texto ni
+textos huérfanos. Un ítem sin texto no rompe nada y nadie se entera, así que
+conviene que falle una prueba.
+
+
+Y el botón de material educativo sale de la pestaña TCC-I. La pestaña se llama
+TCC-I y la biblioteca no es del protocolo: sirve para cualquier paciente, con
+o sin él. Vive en la pestaña "📚 Material" de cada ficha, que además es donde
+se asigna y donde figura si el paciente lo leyó — mejor lugar que una
+biblioteca suelta. Queda una línea diciendo adónde se mudó, para que no
+parezca que desapareció.
+
+29 de 29 pasan.
