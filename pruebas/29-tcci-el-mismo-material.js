@@ -98,7 +98,11 @@ const bloqueMas = html.slice(html.indexOf("if(tab==='more'){"),
                              html.indexOf("if(tab==='more'){") + 2200);
 r.ok(!/showEduLibrary\(\)/.test(bloqueMas),
      'la pestaña TCC-I ya no abre la biblioteca suelta');
-r.ok(/¿Buscabas el material educativo\?/.test(bloqueMas),
+// Desde mod206 el cartel no vive en una pantalla intermedia —que se
+// eliminó— sino al pie de la lista de pacientes del módulo, que es
+// adonde llega quien entró a TCC-I buscando la biblioteca.
+r.ok(/cbti-pie-material/.test(html) &&
+     /¿Buscabas el material educativo\?/.test(html),
      'y dice adónde se mudó, en vez de desaparecer sin más');
 r.ok(/showDrPTab\('edumat'/.test(html),
      'la pestaña Material de cada paciente sigue estando');

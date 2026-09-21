@@ -1,0 +1,31 @@
+mod206 · TCC-I: el profesional ve todo el texto del paciente
+
+El material del paciente vive en dos objetos, no en uno:
+
+  DM_TCCI_PROGRAMA      7 semanas, ~11.400 caracteres de prosa
+  CBTI_PATIENT_CONTENT  27 consignas del checklist, ~690 palabras
+
+El perfil profesional solo mostraba el segundo, y repartido de a una
+linea dentro de cada item. El programa --que es lo que el paciente
+realmente lee-- no aparecia en ningun lado: para saber que decia habia
+que entrar con la cuenta del paciente.
+
+- Pantalla nueva "Lo que lee el paciente" (screen-cbti-programa): las 7
+  semanas completas con objetivo, contenido y tareas, mas las 27
+  consignas agrupadas por modulo, mas el marco teorico del protocolo.
+  Renderiza los mismos objetos, sin recortar.
+- La pestaña TCC-I entra derecho a la lista de pacientes. La pantalla
+  intermedia era una tarjeta cuyo unico contenido era un boton: un clic
+  que no decidia nada. El acceso al material queda arriba de la lista.
+- El cartel del material educativo se muda al pie de esa lista, que es
+  adonde llega quien entro a TCC-I buscando la biblioteca.
+- Densidad en escritorio: modulos y pacientes en grilla (el modulo
+  abierto toma el ancho entero), contenido a 1180px, texto de semana a
+  dos columnas. Antes era una columna de celular estirada.
+- Panel admin: la columna "Ultima actividad" de profesionales pasa a
+  llamarse "Ultima sugerencia", que es lo que mide --la ultima escala
+  sugerida-- y explica por que queda en "—" para alguien que entro hoy.
+  El nombre viejo invitaba a leerla como "la ultima vez que hizo algo".
+- openCbtiModule() ya no asume que el DOM existe.
+
+Pruebas: 31/31. Nueva 31-tcci-el-profesional-ve-todo-el-texto.js.

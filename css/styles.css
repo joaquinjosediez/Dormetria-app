@@ -4897,3 +4897,139 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 #cbti-protocol-content .cbti-mod-body > div{ padding:8px 0 !important; }
 #cbti-protocol-content .dm-card,
 #cbti-protocol-content details{ min-width:0; }
+
+/* ── TCC-I · densidad en escritorio y material del paciente ────────────
+   El módulo estaba pensado para el celular: una columna, cajas grandes,
+   todo apilado. En una pantalla de 1600px eso deja dos tercios vacíos y
+   obliga a scrollear seis veces para ver seis módulos cerrados. */
+#cbti-protocol-content,
+#cbti-list-content,
+#cbti-programa-content{ max-width:1180px; margin:0 auto; }
+
+/* Los módulos cerrados van en grilla; el que se abre toma el ancho entero,
+   porque adentro hay texto para leer y no conviene angostarlo. */
+.cbti-mod-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
+.cbti-mod-grid > div{ margin-bottom:0 !important; }
+@media (min-width:900px){
+  .cbti-mod-grid{ grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); }
+  .cbti-mod-grid > div.abierto{ grid-column:1/-1; }
+}
+
+/* La lista de pacientes, lo mismo. */
+.cbti-pac-grid{ display:grid; grid-template-columns:1fr; gap:10px; }
+.cbti-pac-grid > div{ margin-bottom:0 !important; }
+@media (min-width:900px){
+  .cbti-pac-grid{ grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); }
+}
+
+/* Portada: el acceso al material del paciente, arriba de la lista. */
+.cbti-portada{
+  display:flex; align-items:center; gap:14px; cursor:pointer;
+  background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);
+  border:1px solid rgba(200,169,110,.55); border-radius:14px;
+  padding:15px 17px; margin-bottom:14px;
+}
+.cbti-portada:hover{ border-color:#C8A96E; }
+.cbti-portada-ic{ font-size:25px; line-height:1; flex-shrink:0; }
+.cbti-portada-tit{ font-size:15px; font-weight:700; color:#F4EFE5; }
+.cbti-portada-sub{
+  font-size:12px; color:rgba(244,239,229,.78); line-height:1.5; margin-top:3px;
+}
+.cbti-portada-chev{ font-size:20px; color:#C8A96E; flex-shrink:0; }
+
+/* ── Pantalla "Lo que lee el paciente" ───────────────────────────────── */
+.cbti-prog-marco{
+  background:rgba(126,200,164,.08); border-left:3px solid #7EC8A4;
+  border-radius:10px; padding:14px 16px; margin-bottom:20px;
+}
+.cbti-prog-marco-tit{
+  font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  font-weight:700; color:#7EC8A4; margin-bottom:6px;
+}
+.cbti-prog-marco-txt{
+  font-size:13px; color:rgba(244,239,229,.92); line-height:1.65;
+}
+.cbti-prog-rotulo{
+  font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+  font-weight:700; color:#C8A96E; margin:0 0 4px;
+}
+.cbti-prog-nota{
+  font-size:11.5px; color:rgba(244,239,229,.62); line-height:1.5; margin-bottom:10px;
+}
+.cbti-prog-rotulo + .cbti-prog-grid{ margin-top:10px; }
+.cbti-prog-grid{ display:grid; grid-template-columns:1fr; gap:10px; }
+@media (min-width:900px){
+  .cbti-prog-grid{ grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); align-items:start; }
+  .cbti-prog-grid > details[open]{ grid-column:1/-1; }
+}
+.cbti-prog-sem{
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12);
+  border-radius:13px; overflow:hidden; min-width:0;
+}
+.cbti-prog-sem[open]{ border-color:rgba(200,169,110,.5); }
+.cbti-prog-sem > summary{
+  display:flex; align-items:center; gap:11px; cursor:pointer;
+  padding:13px 15px; list-style:none;
+}
+.cbti-prog-sem > summary::-webkit-details-marker{ display:none; }
+.cbti-prog-n{
+  font-size:9.5px; letter-spacing:.08em; font-weight:700; color:#0F2820;
+  background:#C8A96E; border-radius:6px; padding:3px 7px; flex-shrink:0;
+}
+.cbti-prog-tit{
+  display:block; font-size:14px; font-weight:700; color:#F4EFE5; line-height:1.3;
+}
+.cbti-prog-sub{
+  display:block; font-size:11.5px; color:rgba(244,239,229,.7);
+  line-height:1.4; margin-top:2px;
+}
+.cbti-prog-tag{
+  font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; font-weight:700;
+  color:rgba(126,200,164,.9); border:1px solid rgba(126,200,164,.35);
+  border-radius:20px; padding:2px 8px; flex-shrink:0; white-space:nowrap;
+}
+.cbti-prog-cuerpo{ padding:0 16px 16px; }
+.cbti-prog-obj{
+  font-size:12.5px; color:rgba(244,239,229,.9); line-height:1.6;
+  background:rgba(126,200,164,.08); border-radius:8px; padding:10px 12px;
+  margin-bottom:13px;
+}
+.cbti-prog-txt{
+  font-size:14px; color:rgba(244,239,229,.96); line-height:1.72;
+  white-space:pre-line;
+}
+@media (min-width:1000px){
+  /* Dos columnas de lectura: una línea de 1100px es incómoda de seguir. */
+  .cbti-prog-txt{ columns:2; column-gap:34px; }
+}
+.cbti-prog-txt b{ color:#fff; }
+.cbti-prog-tareas{
+  margin-top:15px; background:rgba(255,255,255,.05);
+  border:1px solid rgba(126,200,164,.18); border-radius:11px; padding:12px 15px;
+}
+.cbti-prog-tareas-tit{
+  font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+  font-weight:700; color:#7EC8A4; margin-bottom:7px;
+}
+.cbti-prog-tareas ul{ margin:0; padding-left:18px; }
+.cbti-prog-tareas li{
+  font-size:13px; color:rgba(244,239,229,.92); line-height:1.55; margin-bottom:4px;
+}
+.cbti-prog-item{
+  padding:10px 0; border-bottom:1px solid rgba(255,255,255,.06);
+}
+.cbti-prog-item:last-child{ border-bottom:none; padding-bottom:0; }
+.cbti-prog-item-tit{
+  font-size:13px; font-weight:600; color:#F4EFE5; line-height:1.4; margin-bottom:3px;
+}
+.cbti-prog-item-txt{
+  font-size:13px; color:rgba(244,239,229,.84); line-height:1.6;
+}
+@media (min-width:1000px){
+  .cbti-prog-sem[open] .cbti-prog-cuerpo > div:not(.cbti-prog-txt):not(.cbti-prog-obj):not(.cbti-prog-tareas){ break-inside:avoid; }
+}
+.cbti-pie-material{
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+  border-radius:12px; padding:13px 15px; margin-top:18px;
+  font-size:12.5px; color:rgba(244,239,229,.82); line-height:1.55;
+}

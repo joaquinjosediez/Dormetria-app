@@ -33,7 +33,9 @@ ctx.__vacio = async () => [];
 ctx.__nada = () => {};
 corr('db.get=__vacio; db.post=__vacio; toast=__nada;');
 
-const PESTANAS = ['alerts', 'metrics', 'profile', 'more'];
+// 'more' salió de acá: desde mod206 no pinta dr-content, entra derecho al
+// módulo TCC-I. Se prueba en 29-tcci-el-mismo-material.js.
+const PESTANAS = ['alerts', 'metrics', 'profile'];
 
 (async () => {
   r.seccion('En un celular de 390 px:');
