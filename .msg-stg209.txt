@@ -1,0 +1,29 @@
+stg209 · staging al dia, y siete cambios de adherencia
+
+STAGING ESTABA ROTO COMO STAGING. Dos cosas:
+  - 175 versiones atras (hoy75-mod32 contra mod207)
+  - apunta al MISMO Supabase que produccion, no a dormetria-staging
+    como dice CLAUDE.md
+Refrescado al codigo de hoy y con cartel rojo fijo que lo dice, para que
+no se descubra escribiendo sobre pacientes reales.
+
+LOS SEIS DE REST, mas uno
+
+1. Ejemplo trabajado en cada pregunta del diario. El de despertares es
+   el que importa: de ese campo dependen eficiencia y vigilia intrasueno.
+2. Constancia de 7 dias en lugar de racha, como numero principal.
+3. Siete puntos, uno por dia. Una racha crea incentivo para completar
+   hacia atras una noche que no se recuerda: en un diario clinico eso es
+   integridad del dato, no UX.
+4. Desbloqueo progresivo en vez de muro: "Llevas 1 de 3 noches".
+5. Plan del dia 1 con habit stacking, mientras no haya ninguna noche.
+6. Paso "Revisa tu entrada" antes de guardar, cada linea editable.
+7. Disposicion al cambio antes de la TCC-I. DOS reglas y no una:
+   importancia y confianza son construcciones distintas y piden
+   intervenciones opuestas (Rollnick). Importancia baja -> trabajar el
+   porque; confianza baja -> achicar el primer paso. Mas la pregunta
+   "por que ese numero y no uno mas bajo". El programa ajusta lo que
+   promete segun con que llego.
+
+Para que el profesional vea la disposicion falta una tabla:
+SQL-disposicion-al-cambio.md.

@@ -153,7 +153,11 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   } else {
     tarjetaConducta = dmCardResumen('🩺', 'Conducta sugerida',
       dmKv('Primera línea', escHtml(c.primeraLinea || '—'), true) +
-      dmKv('Fármaco', '<span style="color:#C8A96E">' + escHtml(c.farmaco || '—') + '</span>') +
+      // La fila "Fármaco" salió de acá. Ver el comentario en el motor: sugerir
+      // una molécula para este paciente es conducir el cuidado clínico, no
+      // informarlo. En su lugar va la referencia de la guía, que es lo que
+      // el criterio 4 de ANMAT pide poder revisar.
+      (c.referencia ? dmKv('Según', '<span style="color:#C8A96E">' + escHtml(c.referencia) + '</span>') : '') +
       maticesHtml +
       '<div style="font-size:12px;color:rgba(244,239,229,.76);line-height:1.55;margin-top:10px">' + escHtml(c.base || '') + '</div>' +
       '<button type="button" style="width:100%;margin-top:12px;padding:11px;border:1px solid rgba(126,200,164,0.35);border-radius:9px;background:rgba(126,200,164,0.12);color:#7EC8A4;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">' +
@@ -195,6 +199,11 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
                 (viejo ? ' — conviene repetirla' : '') + '</div>';
             })() +
             (f.detalles ? '<div style="font-size:12.5px;color:rgba(244,239,229,.9);margin-top:5px;line-height:1.5">' + escHtml(f.detalles) + '</div>' : '') +
+            // La base del umbral, con su cita. El criterio 4 de exclusión de
+            // ANMAT pide que el usuario pueda "revisar de forma independiente
+            // la base de las recomendaciones": sin la referencia a la vista,
+            // el puntaje es un número que hay que creer.
+            (f.umbral ? '<div style="font-size:11px;color:rgba(244,239,229,.55);margin-top:5px;line-height:1.4">' + escHtml(f.umbral) + '</div>' : '') +
           '</div>';
         }).join('')
       : '<div style="font-size:12.5px;color:rgba(244,239,229,.72);font-style:italic">Sin banderas de alerta</div>';

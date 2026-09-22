@@ -1346,7 +1346,7 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod207-beta"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod208-beta"></script>
 <!-- BETA: cache-busting por timestamp. Cada recarga trae la última versión del
      motor sin necesidad de vaciar caché. En producción se reemplaza por ?v=modNNN. -->
 <script>
@@ -1380,7 +1380,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod207-beta';
+const APP_VERSION='mod208-beta';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -16383,15 +16383,69 @@ function dmEscapar(s){
 }
 
 // Convierte lo guardado (JSON o texto) en estructura, sin romperse nunca.
+//
+// Por qué esto es tan tolerante: la función de Supabase devuelve el JSON del
+// modelo en `texto` cuando no logra parsearlo, y acá caía en el `return null`
+// de abajo. El resultado era que al profesional le aparecía el JSON crudo en
+// pantalla —llaves, comillas y todo— en vez del informe. Le pasó a Eduardo
+// Ruffa el 22-09-2026 y es el peor final posible: parece que la app está rota
+// y encima el contenido clínico está ahí, ilegible.
+//
+// Tres cosas rompen el parseo y las tres son del modelo, no de la app:
+//   1. envuelve la respuesta en un bloque ```json ... ```
+//   2. antepone una línea de cortesía ("Aquí está el informe:")
+//   3. se queda sin tokens y corta el JSON por la mitad
+// Las tres se recuperan.
 function dmLeerEstructura(guardado){
   if(!guardado) return null;
   if(typeof guardado === 'object') return guardado;
-  const s = String(guardado).trim();
-  if(s[0] !== '{') return null;
+  let s = String(guardado).trim();
+  if(!s) return null;
+
+  // 1. Cercos de código, con o sin etiqueta de lenguaje.
+  s = s.replace(/^```[a-zA-Z]*\s*/, '').replace(/```\s*$/, '').trim();
+
+  // 2. Cualquier cosa antes de la primera llave y después de la última.
+  const i = s.indexOf('{');
+  if(i < 0) return null;
+  const j = s.lastIndexOf('}');
+  const cand = (j > i) ? s.slice(i, j+1) : s.slice(i);
+
+  const valido = function(o){ return (o && (o.secciones || o.resumen)) ? o : null; };
+
+  try{ return valido(JSON.parse(cand)); }catch(_){}
+
+  // 3. Truncado: se cierran las llaves y corchetes que quedaron abiertos.
+  //    Si el corte cayó dentro de un string o de un valor a medio escribir,
+  //    se retrocede hasta la última coma o llave de cierre completa.
   try{
-    const o = JSON.parse(s);
-    return (o && (o.secciones || o.resumen)) ? o : null;
+    let t = cand;
+    // Recortar una cola incompleta ("texto": "Sue  → se vuelve al último ítem cerrado)
+    const ult = Math.max(t.lastIndexOf('}'), t.lastIndexOf(']'));
+    if(ult > 0) t = t.slice(0, ult+1);
+    // Contar aperturas sin cerrar, ignorando lo que está dentro de strings.
+    const pila = []; let enStr = false, esc = false;
+    for(let k=0; k<t.length; k++){
+      const c = t[k];
+      if(esc){ esc = false; continue; }
+      if(c === '\\'){ esc = true; continue; }
+      if(c === '"'){ enStr = !enStr; continue; }
+      if(enStr) continue;
+      if(c === '{' || c === '[') pila.push(c);
+      else if(c === '}' || c === ']') pila.pop();
+    }
+    if(enStr) return null;                       // cortó dentro de un string
+    t = t.replace(/,\s*$/, '');
+    while(pila.length){ t += (pila.pop() === '{') ? '}' : ']'; }
+    return valido(JSON.parse(t));
   }catch(_){ return null; }
+}
+
+// ¿Esto que no se pudo parsear era, evidentemente, JSON? Sirve para no
+// volcárselo al profesional como si fuera el informe.
+function dmPareceJson(t){
+  const s = String(t||'').trim().replace(/^```[a-zA-Z]*\s*/, '');
+  return s.startsWith('{') || s.startsWith('[');
 }
 
 function dmRenderIA(estructura, textoPlano){
@@ -16399,6 +16453,23 @@ function dmRenderIA(estructura, textoPlano){
 
   // Sin estructura: párrafos. Feo pero legible, nunca una pantalla vacía.
   if(!e){
+    // Salvo que lo que haya sea JSON que no se pudo reparar. Mostrarlo en
+    // párrafos es mostrarle llaves y comillas a un médico: parece que la app
+    // se rompió y no se entiende nada. Mejor decir qué pasó y ofrecer rehacer.
+    if(dmPareceJson(textoPlano)){
+      return '<div class="dm-ia"><div style="background:rgba(200,169,110,.12);'+
+        'border:1px solid rgba(200,169,110,.35);border-radius:14px;padding:15px;'+
+        'font-size:14px;color:rgba(244,239,229,.97);line-height:1.55">'+
+        '<b>El informe llegó incompleto.</b> La respuesta se cortó antes de terminar '+
+        'y no se pudo armar el texto. No es un problema de los datos del paciente: '+
+        'probá con <b>Rehacer</b>.'+
+        '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;'+
+        'opacity:.8">Ver lo que devolvió</summary>'+
+        '<div style="margin-top:7px;font-size:11.5px;font-family:monospace;opacity:.7;'+
+        'white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto">'+
+        dmEscapar(String(textoPlano).slice(0, 4000))+'</div></details>'+
+        '</div></div>';
+    }
     return '<div class="dm-ia">'+
       String(textoPlano||'').split(/\n\s*\n/).map(function(par){
         return '<p class="dm-ia-p">'+dmEscapar(par.trim()).replace(/\n/g,'<br>')+'</p>';
@@ -16459,7 +16530,8 @@ window.dmLeerEstructura = dmLeerEstructura;
 // ── Texto plano, para el botón de copiar ──────────────────────────────
 function dmIAaTexto(estructura, textoPlano){
   const e = dmLeerEstructura(estructura);
-  if(!e) return String(textoPlano||'');
+  // Lo que se pega en la historia clínica no puede ser un JSON.
+  if(!e) return dmPareceJson(textoPlano) ? '' : String(textoPlano||'');
   const L = [];
   if(e.titulo) L.push(e.titulo.toUpperCase());
   if(e.subtitulo) L.push(e.subtitulo);
@@ -16702,7 +16774,10 @@ async function dmGenerarInforme(tipo){
     });
 
     const texto = resp.texto || '';
-    const estructura = resp.estructura || null;
+    // La función de Supabase manda `estructura` cuando pudo parsear. Cuando no
+    // pudo, el JSON viene igual adentro de `texto`: se intenta acá, que es
+    // donde vive la reparación.
+    const estructura = resp.estructura || dmLeerEstructura(texto) || null;
     if(!texto.trim() && !estructura){
       salida.innerHTML = '<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.35);border-radius:14px;padding:15px;font-size:14px;color:rgba(244,239,229,.97);line-height:1.55">'+
         'La IA respondió sin texto. Probá de nuevo; si se repite, revisá los logs de la función <b>informe-clinico</b> en Supabase.'+

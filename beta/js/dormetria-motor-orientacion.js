@@ -303,12 +303,20 @@ function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficien
     };
   }
 
-  // ── Hay un patrón de insomnio: primera línea TCC-I ────────────────────
+  // ── Hay un patrón de insomnio ─────────────────────────────────────────
+  // El campo `farmaco` salió de acá. Decía "Solo como puente, ≤ 4 semanas" y
+  // era, literalmente, una sugerencia farmacológica para ESTE paciente. En el
+  // marco de ANMAT (Disp. 64/25 y guía SaMD) eso no es "informar el manejo
+  // clínico" sino "conducir el cuidado clínico", que es una columna entera
+  // más arriba en la matriz de riesgo y arrastra al producto completo a
+  // Clase II. Lo que queda es lo que dice la guía publicada, con su cita, sin
+  // indicar nada para esta persona en particular.
   return {
     procede: true,
     primeraLinea: 'TCC-I (terapia cognitivo-conductual para el insomnio)',
-    farmaco: 'Solo como puente, ≤ 4 semanas',
-    base: 'Guías AASM / consenso. La sugerencia es de apoyo — la indicación la hacés vos.',
+    referencia: 'AASM 2021 · ESRS 2023',
+    base: 'Lo que dicen las guías de primera línea para insomnio crónico, no una ' +
+          'indicación para este paciente. La conducta la decidís vos.',
     matices: dmCalcularMatices(lastScales, diarySlice),
     ctaTexto: 'Iniciar TCC-I acompañada'
   };
@@ -348,17 +356,19 @@ function dmCalcularMatices(lastScales, diarySlice) {
 
   const stopbangScore = lastScales.stopbang?.score ?? 0;
   if (stopbangScore >= 3) {
-    matices.push('Si se confirma apnea: la TCC-I sigue indicada, pero tratar TRS en paralelo. Evitar hipnóticos miorrelajantes.');
+    // Redactado como lo que dicen las guías, no como indicación para esta
+    // persona: "evitar X" era una instrucción terapéutica.
+    matices.push('Con riesgo de apnea, las guías mantienen la TCC-I como primera línea para el insomnio y recomiendan tratar el trastorno respiratorio en paralelo. La literatura señala precaución con los hipnóticos de efecto miorrelajante en este contexto.');
   }
 
   const phq9Score = lastScales.phq9?.score ?? 0;
   if (phq9Score >= 15) {
-    matices.push('Con depresión moderada-severa: considerar psiquiatría en paralelo. Algunos hipnóticos pueden empeorar el ánimo.');
+    matices.push('Con sintomatología depresiva moderada-severa, las guías recomiendan abordar el cuadro anímico en paralelo al insomnio. El insomnio puede ser síntoma del cuadro y no un trastorno primario.');
   }
 
   const gadScore = lastScales.gad7?.score ?? 0;
   if (gadScore >= 10) {
-    matices.push('Ansiedad presente: la TCC-I incluye manejo de rumiaciones. Revisar medicación ansiolítica actual.');
+    matices.push('Con sintomatología ansiosa, la TCC-I incluye componentes de manejo de la rumiación. La medicación en curso es parte de lo que conviene revisar en la consulta.');
   }
 
   return matices;
@@ -378,25 +388,44 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
     return (r && r.created_at) ? r.created_at : null;
   };
 
-  // ROJO: Apnea probable (STOP-BANG ≥3)
+  // Riesgo de apnea según STOP-BANG.
+  //
+  // Decía "Apnea probable" y eso se lee como detección: la app no detecta
+  // apnea, muestra el puntaje de un cuestionario de riesgo contra su punto de
+  // corte publicado. La diferencia no es cosmética — ANMAT nombra la
+  // detección de apnea como ejemplo de software que SÍ es dispositivo médico.
+  // Misma información, dicha como lo que es.
   if (stopbangScore >= 3) {
     banderas.push({
       severidad: 'warn',
-      nombre: 'Apnea probable',
-      score: `STOP-BANG ${stopbangScore}/8`,
+      nombre: 'STOP-BANG sobre el punto de corte',
+      score: `${stopbangScore}/8`,
       fecha: fechaDe('stopbang'),
-      detalles: 'Derivar a PSG. No sostener hipnóticos sin descartar AOS.'
+      umbral: 'Punto de corte ≥3 (Chung et al.)',
+      detalles: 'Desde 3, la guía recomienda evaluar apnea con un estudio de sueño. ' +
+                'El cuestionario estima riesgo; confirmar o descartar AOS requiere ' +
+                'polisomnografía o poligrafía respiratoria.'
     });
   }
 
-  // NARANJA: Somnolencia al volante (ESS ≥13)
+  // Somnolencia diurna excesiva según Epworth.
+  //
+  // Esta es la bandera más delicada de todas. "Somnolencia al volante" con la
+  // indicación de "evaluar restricciones de conducción" es una conducta de
+  // corto plazo, y la aclaración de ANMAT al criterio de exclusión dice que
+  // "informar" implica que la información NO desencadena una acción inmediata
+  // o de corto plazo. No se saca —es la que más importa clínicamente— pero se
+  // redacta como hallazgo a evaluar con un profesional, no como indicación.
   if (essScore >= 13) {
     banderas.push({
       severidad: 'warn',
-      nombre: 'Somnolencia al volante',
-      score: `Epworth ${essScore}/24`,
+      nombre: 'Epworth sobre el punto de corte',
+      score: `${essScore}/24`,
       fecha: fechaDe('ess'),
-      detalles: 'Evaluar riesgo y restricciones de conducción.'
+      umbral: 'Punto de corte ≥11; ≥13 somnolencia moderada-grave (Johns)',
+      detalles: 'Puntajes en este rango se asocian con somnolencia diurna excesiva. ' +
+                'Conviene conversar con la persona cómo la afecta en actividades que ' +
+                'requieren atención sostenida, incluida la conducción.'
     });
   }
 
@@ -407,26 +436,33 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
   if (phq9Score >= 20) {
     banderas.push({
       severidad: 'crit',
-      nombre: 'Depresión severa',
-      score: `PHQ-9 ${phq9Score}/27`,
+      nombre: 'PHQ-9 en rango severo',
+      score: `${phq9Score}/27`,
       fecha: fechaDe('phq9'),
-      detalles: 'Evaluación psiquiátrica prioritaria. Indagar ideación (ítem 9) antes de definir conducta.'
+      umbral: 'Bandas: 5 leve · 10 moderada · 15 mod-severa · 20 severa (Kroenke)',
+      detalles: 'Puntajes en este rango corresponden a sintomatología depresiva severa. ' +
+                'El ítem 9 del cuestionario indaga ideación: conviene revisarlo con la ' +
+                'persona. El insomnio puede ser síntoma y no cuadro primario.'
     });
   } else if (phq9Score >= 15) {
     banderas.push({
       severidad: 'crit',
-      nombre: 'Depresión moderada-severa',
-      score: `PHQ-9 ${phq9Score}/27`,
+      nombre: 'PHQ-9 en rango moderado-severo',
+      score: `${phq9Score}/27`,
       fecha: fechaDe('phq9'),
-      detalles: 'Considerar psiquiatría en paralelo. El insomnio puede ser síntoma y no cuadro primario.'
+      umbral: 'Bandas: 5 leve · 10 moderada · 15 mod-severa · 20 severa (Kroenke)',
+      detalles: 'Puntajes en este rango corresponden a sintomatología depresiva moderada-severa. ' +
+                'El insomnio puede ser síntoma del cuadro anímico y no un trastorno primario.'
     });
   } else if (phq9Score >= 10) {
     banderas.push({
       severidad: 'warn',
-      nombre: 'Depresión moderada',
-      score: `PHQ-9 ${phq9Score}/27`,
+      nombre: 'PHQ-9 en rango moderado',
+      score: `${phq9Score}/27`,
       fecha: fechaDe('phq9'),
-      detalles: 'Tratar el ánimo en paralelo. La TCC-I sigue indicada y suele mejorar ambos.'
+      umbral: 'Bandas: 5 leve · 10 moderada · 15 mod-severa · 20 severa (Kroenke)',
+      detalles: 'Puntajes en este rango corresponden a sintomatología depresiva moderada. ' +
+                'La TCC-I sigue siendo primera línea para el insomnio y suele mejorar ambos cuadros.'
     });
   }
 
@@ -443,10 +479,13 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
   if (!phq9Score || phq9Score < 10) {
     banderas.push({
       severidad: 'ok',
-      nombre: 'Sin riesgo de ánimo',
-      score: phq9Score ? `PHQ-9 ${phq9Score}` : 'No evaluado',
+      nombre: 'PHQ-9 bajo el punto de corte',
+      score: phq9Score ? `${phq9Score}/27` : 'No evaluado',
       fecha: fechaDe('phq9'),
-      detalles: ''
+      umbral: phq9Score ? 'Por debajo de 10 (Kroenke)' : '',
+      detalles: phq9Score
+        ? 'El puntaje no alcanza el umbral de sintomatología depresiva clínicamente relevante.'
+        : 'El cuestionario no está cargado, así que no hay dato sobre el ánimo.'
     });
   }
 
