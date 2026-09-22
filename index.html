@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod206-163972f2">
+<link rel="stylesheet" href="css/styles.css?v=mod207-fb7b34a9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1343,10 +1343,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod206-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod206-c8925513"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod206-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=mod206-3ebecd1d"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod207-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod207-e67ceee8"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod207-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=mod207-b21338c5"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1365,7 +1365,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod206';
+const APP_VERSION='mod207';
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -3256,7 +3256,10 @@ function showScreen(id){
     // quedar atrapado en el ancho de celular (430px) en una pantalla grande.
     // El modulo TCC-I y el protocolo quedaban encerrados en el ancho de celular
     // (430 px) porque no estaban en ninguna de las dos listas.
-    document.body.classList.toggle('dr-wide', _isDr && (id === 'admin' || id === 'cbti-list' || id === 'cbti-protocol'));
+    // La pantalla del material del paciente faltaba en esta lista: quedaba
+    // encerrada en el shell de 430 px del celular, centrada en una pantalla
+    // de escritorio, con el texto en una columna de teléfono.
+    document.body.classList.toggle('dr-wide', _isDr && (id === 'admin' || id === 'cbti-list' || id === 'cbti-protocol' || id === 'cbti-programa'));
   }catch(_){}
   // Reset login overlay styling if it was used as an overlay
   const _lg=document.getElementById('screen-login');
@@ -17100,7 +17103,18 @@ async function showDrPTab_(tab){
         const _c=new Date(); _c.setDate(_c.getDate()-_per.valor);
         const _d = subjTodas.filter(e=>new Date(e.diary_date)>=_c);
         if(_d.length>=3) subj=_d;
+        // Si la ventana elegida no llega a 3 noches se vuelve al historial
+        // completo. Eso estaba bien, pero se hacía EN SILENCIO: el botón
+        // seguía marcando "7 d" y el score se calculaba sobre 23 noches de
+        // hace un mes. Un paciente que dejó de registrar hace tres semanas se
+        // veía igual que uno al día. Ahora se dice.
+        else window._drPeriodoIgnorado = {
+          pedidas: _per.valor,
+          hay: _d.length,
+          ultima: (subjTodas.length ? subjTodas[subjTodas.length-1].diary_date : null)
+        };
       }
+      if(!(_per.tipo==='dias' && _per.valor>0) || subj!==subjTodas) window._drPeriodoIgnorado = null;
       const cutoff30dr=new Date();cutoff30dr.setDate(cutoff30dr.getDate()-30);
       const cutoff7dr=new Date();cutoff7dr.setDate(cutoff7dr.getDate()-7);
       const subj30=subj.filter(e=>new Date(e.diary_date)>=cutoff30dr);
@@ -17109,9 +17123,11 @@ async function showDrPTab_(tab){
       // Ya viene recortado por el periodo: volver a filtrar 30 dias encima
       // haria que "julio" mostrara solo los ultimos 30 dias de julio.
       const drScoreEntries=subj;
-      // Evolución 7 días vs 7 anteriores — mismo patrón que la comparación de
-      // 14 vs 14 de Resumen, pero en la ventana corta que sirve para ver
-      // cambios recientes (ajuste de medicación, inicio de TCC-I, etc.).
+      // Evolución: las 7 últimas NOCHES REGISTRADAS contra las 7 anteriores.
+      // El rótulo decía "últimos 7 días" y no era cierto: slice(-7) cuenta
+      // registros, no días, y con huecos en el diario esas siete noches
+      // pueden abarcar tres semanas. Se compara por noches a propósito —con
+      // huecos es lo único comparable— pero ahora el rótulo lo dice.
       let weekCompareHtml='';
       try{
         const _last7=subj.slice(-7), _prev7=subj.slice(-14,-7);
@@ -17123,7 +17139,7 @@ async function showDrPTab_(tab){
             const _lbl=_delta>=5?'Mejorando':_delta<=-5?'Empeorando':'Estable';
             const _col=_delta>=5?'#14532d':_delta<=-5?'#9b1c1c':'#666';
             weekCompareHtml='<div style="background:#F4EFE5;border-radius:12px;padding:8px 12px;margin-top:8px">'+
-              '<div style="font-size:10.5px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:5px">Evolución · últimos 7 días vs 7 anteriores</div>'+
+              '<div style="font-size:10.5px;color:#666;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:5px">Evolución · últimas 7 noches vs 7 anteriores</div>'+
               '<div style="display:flex;align-items:baseline;gap:10px">'+
                 '<div style="font-size:17px;font-weight:600;color:'+_col+'">'+_arrow+' '+(_delta>=0?'+':'')+_delta+' pts</div>'+
                 '<div style="font-size:12px;color:#444">'+_lbl+'</div>'+
@@ -17133,7 +17149,15 @@ async function showDrPTab_(tab){
           }
         }
       }catch(_wkErr){}
+      const avisoPeriodo = (typeof dmAvisoPeriodoIgnorado==='function') ? dmAvisoPeriodoIgnorado() : '';
+      // Mismo par Generalista/Especialista que el Resumen, y la MISMA
+      // preferencia guardada: elegir en una pestaña y que la otra siga en el
+      // modo anterior sería peor que no tener el selector.
+      const _modoDia = (typeof dmModoClinico==='function') ? dmModoClinico() : 'gen';
       cont.innerHTML=`
+        ${avisoPeriodo}
+        ${dmToggleModoHtml(_modoDia, 'dmDiarioSetModo')}
+        <div id="dr-diary-modo" class="dm-modo-${_modoDia}">
         <div class="dm-diary-top">
         <div class="dm-diary-left">
         <div class="dm-card dm-light dm-diary-score">
@@ -17154,7 +17178,7 @@ async function showDrPTab_(tab){
           <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
           <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
           <div id="dr-pillar-legend"></div>
-          <div id="dr-quality-concord" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
+          <div id="dr-quality-concord" class="dm-solo-esp" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
         </div>
         <!-- Los dos paneles de correlación se llamaban casi igual y se
              confundían. Este cruza la calidad reportada con los HÁBITOS del
@@ -17162,12 +17186,12 @@ async function showDrPTab_(tab){
              adentro de Pilares, la cruza con lo MEDIDO (latencia, despertares,
              regularidad). Va acá, debajo de Pilares, que es de donde sale la
              pregunta. -->
-        <div class="dm-card dm-light" id="dr-factores-card">
+        <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
           <div class="dm-card-title">🔍 Hábitos y calidad reportada</div>
           <div id="dr-quality-factores"></div>
         </div>
-        <div class="dm-card dm-light" id="dr-weekly-prog" style="display:none"></div>
-        <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
+        <div class="dm-card dm-light dm-solo-esp" id="dr-weekly-prog" style="display:none"></div>
+        <div class="dm-diary-metrics dm-solo-esp" id="dr-clinical-metrics"></div>
         </div>
         <div class="dm-diary-right">
         <div class="dm-card dm-light dm-diary-acto">
@@ -17198,10 +17222,11 @@ async function showDrPTab_(tab){
             <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
           </div>
         </div>
-        <div id="dr-reg-slot"></div>
+        <div id="dr-reg-slot" class="dm-solo-esp"></div>
         </div>
         </div>
-        <div id="dr-abajo-slot"></div>`;
+        <div id="dr-abajo-slot"></div>
+        </div>`;
       setTimeout(()=>{
         // Métricas clínicas del médico — la función devuelve DOS cajas
         // (clínicas + regularidad técnica); la de regularidad se muda a la
@@ -20134,6 +20159,79 @@ function togglePillarSeries(chartKey, idx, containerId){
   buildPillarLegend(containerId, chartKey);
 }
 
+// De qué fechas sale el número que se está mostrando. Se usa en el panel del
+// score, que hasta ahora decía "basado en N noches" sin decir cuáles: con el
+// selector en "7 d" y el último registro de hace un mes, N venía del
+// historial completo y no había forma de notarlo desde la pantalla.
+function dmVentanaTexto(entries){
+  try{
+    const f = (entries||[]).map(function(e){ return e && e.diary_date; })
+                           .filter(Boolean).sort();
+    if(!f.length) return '';
+    const corta = function(d){
+      const p = String(d).slice(0,10).split('-');
+      return p.length===3 ? (p[2]+'-'+p[1]) : String(d);
+    };
+    return (f[0]===f[f.length-1]) ? corta(f[0]) : (corta(f[0])+' a '+corta(f[f.length-1]));
+  }catch(_){ return ''; }
+}
+
+// El cartel que aparece cuando el período elegido no tenía noches suficientes
+// y se cayó al historial completo.
+function dmAvisoPeriodoIgnorado(){
+  const a = window._drPeriodoIgnorado;
+  if(!a) return '';
+  const corta = function(d){
+    if(!d) return '';
+    const p = String(d).slice(0,10).split('-');
+    return p.length===3 ? (p[2]+'-'+p[1]) : String(d);
+  };
+  return '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;'+
+    'padding:9px 12px;margin-top:8px;font-size:11.5px;color:#92400e;line-height:1.5">'+
+    '<b>Estás viendo todo el historial, no los últimos '+a.pedidas+' días.</b> '+
+    'En esa ventana hay '+(a.hay===0?'noches sin registrar':(a.hay+' noche'+(a.hay===1?'':'s')))+
+    ', y hacen falta 3 para calcular. '+
+    (a.ultima ? 'El último registro es del '+corta(a.ultima)+'. ' : '')+
+    'Todo lo de abajo —score, pilares, actograma— es del historial completo.'+
+  '</div>';
+}
+
+// El modo clínico es del PROFESIONAL, no de la pestaña ni del paciente: una
+// sola preferencia guardada, compartida entre Resumen y Diario. La clave
+// 'dm-mode' es la que ya usaba el Resumen.
+function dmModoClinico(){
+  try{
+    const v = localStorage.getItem('dm-mode');
+    return (v==='esp') ? 'esp' : 'gen';
+  }catch(_){ return 'gen'; }
+}
+function dmToggleModoHtml(modo, fn){
+  const b = function(id,txt,on){
+    return '<button type="button" onclick="'+fn+'(\''+id+'\')" '+
+      'style="appearance:none;border:none;cursor:pointer;font-family:inherit;border-radius:999px;'+
+      'padding:6px 14px;font-size:12px;font-weight:700;background:'+
+      (on?'rgba(126,200,164,0.22)':'transparent')+';color:'+
+      (on?'#7EC8A4':'rgba(244,239,229,0.6)')+'">'+txt+'</button>';
+  };
+  return '<div style="display:inline-flex;gap:2px;background:rgba(255,255,255,0.05);'+
+    'border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:3px;margin-bottom:10px">'+
+    b('gen','Generalista', modo!=='esp')+b('esp','Especialista', modo==='esp')+'</div>';
+}
+// Cambia el modo sin volver a dibujar nada: los gráficos ya están montados y
+// re-renderizar la pestaña entera los destruiría y los volvería a crear por
+// un cambio que es solo de qué se muestra.
+function dmDiarioSetModo(m){
+  const modo = (m==='esp') ? 'esp' : 'gen';
+  try{ localStorage.setItem('dm-mode', modo); }catch(_){}
+  const cont = document.getElementById('dr-diary-modo');
+  if(cont){ cont.className = 'dm-modo-'+modo; }
+  // El par de botones vive fuera del contenedor: se repinta a mano.
+  try{
+    const w = cont && cont.previousElementSibling;
+    if(w) w.outerHTML = dmToggleModoHtml(modo, 'dmDiarioSetModo');
+  }catch(_){}
+}
+
 function renderSleepScorePanel(entries, ageYears, audience){
   // Igual que en las métricas: la misma función se dibuja sobre verde
   // oscuro (paciente) y sobre blanco (profesional).
@@ -20146,7 +20244,12 @@ function renderSleepScorePanel(entries, ageYears, audience){
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${sc.color};margin-bottom:6px">Score de sueño</div>
       <div style="font-size:64px;font-weight:300;color:${sc.color};line-height:1;letter-spacing:-0.03em">${sc.total}</div>
       <div style="font-size:15px;color:${sc.color};font-weight:600;margin-top:6px">${sc.label}</div>
-      <div style="font-size:11px;color:#77776e;margin-top:8px">Basado en ${sc.nNights} noches de registro</div>
+      <div style="font-size:11px;color:#77776e;margin-top:8px">Basado en ${sc.nNights} noches de registro${(function(){
+        // Sin esto, el número de arriba flota: el selector dice "7 d" y el
+        // score puede estar calculado sobre tres meses.
+        const _v = (typeof dmVentanaTexto==='function') ? dmVentanaTexto(entries) : '';
+        return _v ? ' · ' + _v : '';
+      })()}</div>
     </div>
 
     <details class="dm-expli${_claro?' dm-expli-claro':''}">
@@ -25288,6 +25391,16 @@ function renderCbtiProtocol(){
   let html = '';
   // Ventana de sueño: lo primero, porque es la intervención activa del protocolo.
   html += '<div id="cbti-window-box"></div>';
+  // El material completo, a un clic desde la ficha del paciente y no solo
+  // desde la lista: es acá donde surge la pregunta de qué le llega.
+  html += '<div class="cbti-portada cbti-portada-chica" onclick="dmCbtiVerPrograma()">'+
+    '<div class="cbti-portada-ic">📖</div>'+
+    '<div style="flex:1;min-width:0">'+
+      '<div class="cbti-portada-tit">Lo que lee el paciente</div>'+
+      '<div class="cbti-portada-sub">Las 7 semanas del programa y las 27 consignas, completas.</div>'+
+    '</div>'+
+    '<div class="cbti-portada-chev">›</div>'+
+  '</div>';
   // Barra de progreso global
   html += '<div style="background:rgba(126,200,164,0.08);border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:16px;margin-bottom:18px">';
   html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font-size:12px;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Progreso del protocolo</div><div id="cbti-global-pct" style="font-size:22px;font-weight:700;color:#C8A96E">'+pct+'%</div></div>';
@@ -25316,6 +25429,36 @@ function renderCbtiProtocol(){
     // Items (collapsible)
     html += '<div id="cbti-mod-'+mod.id+'" class="cbti-mod-body" style="display:none;padding:0 16px 14px">';
     html += '<div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:12px"></div>';
+    // Todo el material del paciente de este módulo, junto y con su texto
+    // entero. Va plegado: el contenido clínico ya lo sabe, lo que necesita es
+    // poder consultar qué le llega textualmente.
+    (function(){
+      const _t = (typeof CBTI_PATIENT_CONTENT!=='undefined') ? CBTI_PATIENT_CONTENT : {};
+      const _con = mod.items.filter(function(it){ return !!_t[it.id]; }).length;
+      html += '<details class="cbti-verpac" style="margin-bottom:12px">'+
+        '<summary>'+
+          '<span class="cbti-verpac-tit">Lo que lee el paciente en este módulo</span>'+
+          '<span class="cbti-verpac-meta">'+_con+' de '+mod.items.length+'</span>'+
+        '</summary>'+
+        '<div class="cbti-verpac-cuerpo">'+
+          mod.items.map(function(it){
+            const _visto = !!(CBTI_STATE.progress[it.id] && CBTI_STATE.progress[it.id].completed);
+            const _txt = _t[it.id]||'';
+            return '<div class="cbti-verpac-tarjeta">'+
+              '<div class="cbti-verpac-cab">'+escHtml(it.label)+
+                '<span class="cbti-verpac-lock" id="cbti-lock-'+it.id+'"'+
+                  (_visto?' style="display:none"':'')+'>todavía no lo ve</span>'+
+              '</div>'+
+              '<div class="cbti-verpac-txt">'+
+                (_txt ? escHtml(_txt)
+                      : '<span style="font-style:italic;opacity:.75">Este punto no tiene texto propio: el paciente ve el título y nada más.</span>')+
+              '</div>'+
+            '</div>';
+          }).join('')+
+          '<div class="cbti-verpac-nota">Cada punto se le desbloquea cuando lo tildás.</div>'+
+        '</div>'+
+      '</details>';
+    })();
     mod.items.forEach((it,iIdx)=>{
       const p = CBTI_STATE.progress[it.id]||{};
       const checked = !!p.completed;
@@ -25326,36 +25469,10 @@ function renderCbtiProtocol(){
       html += '<div style="flex:1"><div style="font-size:13px;color:'+(checked?'rgba(255,255,255,0.5)':'#fff')+';line-height:1.5;'+(checked?'text-decoration:line-through':'')+'">'+it.label+'</div>';
       if(completedDate) html += '<div style="font-size:10.5px;color:#7ec8a4;margin-top:2px">✓ '+completedDate+'</div>';
       html += '</div></label>';
-      // ── Lo que lee el paciente ──────────────────────────────────────
-      // El material es el mismo objeto para los dos perfiles, pero el
-      // profesional nunca veía el texto que le llega al paciente: tenía que
-      // abrir la app del paciente para saber qué decía. Va plegado, porque el
-      // contenido clínico ya lo sabe; lo que necesita es poder consultarlo.
-      // Solo se desbloquea del lado del paciente cuando este ítem está
-      // tildado, así que se avisa cuando todavía no lo está.
-      (function(){
-        const _txt = (typeof CBTI_PATIENT_CONTENT!=='undefined') ? (CBTI_PATIENT_CONTENT[it.id]||'') : '';
-        const _pal = _txt ? String(_txt).trim().split(/\s+/).length : 0;
-        html += '<details class="cbti-verpac" style="margin:7px 0 0 28px">'+
-          '<summary>'+
-            '<span class="cbti-verpac-tit">En la app del paciente</span>'+
-            '<span class="cbti-verpac-meta">'+(_pal?_pal+' palabras':'sin texto')+'</span>'+
-            '<span class="cbti-verpac-lock" id="cbti-lock-'+it.id+'"'+
-              (checked?' style="display:none"':'')+'>todavía no lo ve</span>'+
-          '</summary>'+
-          '<div class="cbti-verpac-cuerpo">'+
-            '<div class="cbti-verpac-tarjeta">'+
-              '<div class="cbti-verpac-cab">'+escHtml(it.label)+'</div>'+
-              '<div class="cbti-verpac-txt">'+
-                (_txt ? escHtml(_txt)
-                      : '<span style="font-style:italic;opacity:.75">Este punto no tiene texto propio: en su app el paciente ve el título de arriba y nada más.</span>')+
-              '</div>'+
-            '</div>'+
-            '<div class="cbti-verpac-nota" id="cbti-locknota-'+it.id+'"'+
-              (checked?' style="display:none"':'')+'>Se le desbloquea cuando tildes este punto.</div>'+
-          '</div>'+
-        '</details>';
-      })();
+      // El desplegable "En la app del paciente" vivía acá, uno por ítem:
+      // veintisiete cajas para veintisiete líneas sueltas, cada una con su
+      // propio título repetido. Se leía como un rótulo, no como el texto. El
+      // material del módulo entero va ahora en un solo desplegable arriba.
       // Notas
       // La nota del clínico estaba siempre abierta debajo de cada ítem:
       // veintisiete cajas vacías ocupaban media pantalla. Se pliega, salvo
@@ -25498,10 +25615,9 @@ function updateCbtiProgressBars(){
     // re-renderiza al tildar —para no cerrarse solo— así que se refresca acá.
     mod.items.forEach(function(it){
       const visto = !!(CBTI_STATE.progress[it.id] && CBTI_STATE.progress[it.id].completed);
+      // El aviso vive ahora dentro del desplegable del módulo, uno por punto.
       const l = document.getElementById('cbti-lock-'+it.id);
       if(l) l.style.display = visto ? 'none' : '';
-      const n = document.getElementById('cbti-locknota-'+it.id);
-      if(n) n.style.display = visto ? 'none' : '';
     });
   });
 }

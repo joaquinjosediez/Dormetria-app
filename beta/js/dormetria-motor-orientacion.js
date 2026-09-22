@@ -40,7 +40,23 @@ function dmMotorOrientacion(recs, diaryEntries, doctorData) {
   const stopbangScore = lastScales.stopbang?.score ?? 0;
   const gadScore = lastScales.gad7?.score ?? 0;
 
-  const diarySlice = (diaryEntries || []).slice(0, 14);  // últimas 14 noches
+  // ── LA VENTANA CLÍNICA, DEFINIDA UNA SOLA VEZ ──────────────────────
+  // Antes esto era `diaryEntries.slice(0, 14)` y la evolución, más abajo,
+  // armaba su propia ventana: filtraba por sleep_minutes ANTES de cortar.
+  // Con una noche sin horarios entre las 14 últimas, las dos ventanas dejaban
+  // de ser la misma —una usaba 13 noches, la otra alcanzaba una 15.ª más
+  // vieja— y la tarjeta de Evolución mostraba las dos cifras juntas: 87% de
+  // eficiencia en la orientación y 83% en la celda, bajo un mismo rótulo que
+  // decía "últimas 14 noches". Paciente Higgins, 22-sep-2026.
+  //
+  // Criterio único: las últimas 14 noches CON sueño registrado. Una noche sin
+  // horarios no es una medición, y ordenar acá hace que el motor no dependa
+  // del `order=` con que vino la consulta: si mañana alguien la pide
+  // ascendente, esto seguía devolviendo las 14 más VIEJAS sin avisar.
+  const diaryOrdenado = (diaryEntries || [])
+    .filter(e => e && e.diary_date && e.sleep_minutes)
+    .sort((a, b) => new Date(b.diary_date) - new Date(a.diary_date));
+  const diarySlice = diaryOrdenado.slice(0, 14);
   const diaryHasData = diarySlice.length >= 3;
 
   // ─── 3. Se decide ANTES de la conducta: sin base no se sugiere nada ───
@@ -55,9 +71,10 @@ function dmMotorOrientacion(recs, diaryEntries, doctorData) {
   // ─── 5. BANDERAS DE SEGURIDAD (siempre) ───
   result.banderas = dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diarySlice);
 
-  // ─── 6. EVOLUCIÓN (solo si hay >= 14 días) ───
-  if (diaryEntries && diaryEntries.length >= 14) {
-    result.evolucion = dmCalcularEvolucion(diaryEntries);
+  // ─── 6. EVOLUCIÓN (solo si hay >= 14 noches útiles) ───
+  // Recibe la lista ya ordenada y filtrada: misma ventana que todo lo demás.
+  if (diaryOrdenado.length >= 14) {
+    result.evolucion = dmCalcularEvolucion(diaryOrdenado);
   }
 
   // ─── 6b. MEDICACIÓN: el campo del perfil suele estar vacío porque la carga
@@ -75,6 +92,11 @@ function dmMotorOrientacion(recs, diaryEntries, doctorData) {
   // ─── 8. MÉTRICAS CRUDAS (el render las lee de motorResult.metricas) ───
   result.metricas = dmMetricasDiario(diarySlice);
   result.nochesRegistradas = diarySlice.length;
+  // Para que el rótulo pueda decir por qué la muestra es más chica que el
+  // total, en vez de dejar al profesional adivinando.
+  result.nochesDescartadas = (diaryEntries || []).length - diaryOrdenado.length;
+  result.ventanaDesde = diarySlice.length ? diarySlice[diarySlice.length - 1].diary_date : null;
+  result.ventanaHasta = diarySlice.length ? diarySlice[0].diary_date : null;
 
   return result;
 }
@@ -348,12 +370,21 @@ function dmCalcularMatices(lastScales, diarySlice) {
 function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diarySlice) {
   const banderas = [];
 
+  // De cuándo es cada puntaje. Una bandera de "depresión moderada-severa" que
+  // manda a derivar a psiquiatría no se lee igual si el PHQ-9 es de anteayer
+  // o de hace ocho meses, y hasta ahora la tarjeta no lo decía.
+  const fechaDe = function (id) {
+    const r = lastScales && lastScales[id];
+    return (r && r.created_at) ? r.created_at : null;
+  };
+
   // ROJO: Apnea probable (STOP-BANG ≥3)
   if (stopbangScore >= 3) {
     banderas.push({
       severidad: 'warn',
       nombre: 'Apnea probable',
       score: `STOP-BANG ${stopbangScore}/8`,
+      fecha: fechaDe('stopbang'),
       detalles: 'Derivar a PSG. No sostener hipnóticos sin descartar AOS.'
     });
   }
@@ -364,6 +395,7 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
       severidad: 'warn',
       nombre: 'Somnolencia al volante',
       score: `Epworth ${essScore}/24`,
+      fecha: fechaDe('ess'),
       detalles: 'Evaluar riesgo y restricciones de conducción.'
     });
   }
@@ -377,6 +409,7 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
       severidad: 'crit',
       nombre: 'Depresión severa',
       score: `PHQ-9 ${phq9Score}/27`,
+      fecha: fechaDe('phq9'),
       detalles: 'Evaluación psiquiátrica prioritaria. Indagar ideación (ítem 9) antes de definir conducta.'
     });
   } else if (phq9Score >= 15) {
@@ -384,6 +417,7 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
       severidad: 'crit',
       nombre: 'Depresión moderada-severa',
       score: `PHQ-9 ${phq9Score}/27`,
+      fecha: fechaDe('phq9'),
       detalles: 'Considerar psiquiatría en paralelo. El insomnio puede ser síntoma y no cuadro primario.'
     });
   } else if (phq9Score >= 10) {
@@ -391,6 +425,7 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
       severidad: 'warn',
       nombre: 'Depresión moderada',
       score: `PHQ-9 ${phq9Score}/27`,
+      fecha: fechaDe('phq9'),
       detalles: 'Tratar el ánimo en paralelo. La TCC-I sigue indicada y suele mejorar ambos.'
     });
   }
@@ -410,6 +445,7 @@ function dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diar
       severidad: 'ok',
       nombre: 'Sin riesgo de ánimo',
       score: phq9Score ? `PHQ-9 ${phq9Score}` : 'No evaluado',
+      fecha: fechaDe('phq9'),
       detalles: ''
     });
   }

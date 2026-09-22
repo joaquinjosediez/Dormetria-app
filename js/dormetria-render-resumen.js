@@ -175,6 +175,25 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
               '<span style="font-size:13.5px;font-weight:700;color:' + color + '">' + escHtml(f.nombre) + '</span>' +
               '<span style="font-size:12px;font-weight:600;color:' + color + ';white-space:nowrap">' + escHtml(f.score || '') + '</span>' +
             '</div>' +
+            // De cuándo es el puntaje. Una escala vieja no deja de ser un dato,
+            // pero deja de ser el estado actual del paciente, y la bandera se
+            // leía como si fuera de hoy.
+            (function () {
+              if (!f.fecha) return '';
+              const d = new Date(f.fecha);
+              if (isNaN(d)) return '';
+              const dias = Math.floor((Date.now() - d) / 86400000);
+              const txt = d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+              const viejo = dias >= 90;
+              const cuanto = dias < 1 ? 'hoy'
+                : dias < 30 ? ('hace ' + dias + ' d')
+                : dias < 365 ? ('hace ' + Math.round(dias / 30) + ' meses')
+                : ('hace ' + Math.floor(dias / 365) + ' año' + (dias >= 730 ? 's' : ''));
+              return '<div style="font-size:11px;margin-top:3px;color:' +
+                (viejo ? '#C8A96E' : 'rgba(244,239,229,.6)') + '">' +
+                txt + ' · ' + cuanto +
+                (viejo ? ' — conviene repetirla' : '') + '</div>';
+            })() +
             (f.detalles ? '<div style="font-size:12.5px;color:rgba(244,239,229,.9);margin-top:5px;line-height:1.5">' + escHtml(f.detalles) + '</div>' : '') +
           '</div>';
         }).join('')
@@ -217,9 +236,25 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
     // entraron en el cálculo. Es lo que resolvía la discrepancia con Diario.
     const totalNoches = motorResult.nochesTotalesDiario;
     const usadas = motorResult.nochesRegistradas;
-    const muestraTxt = (totalNoches != null && usadas != null && totalNoches !== usadas)
-      ? 'Últimas ' + usadas + ' de ' + totalNoches + ' noches registradas'
-      : (usadas != null ? usadas + ' noches registradas' : 'Sin noches registradas');
+    // El rótulo decía "Últimas 14 de 24" sin explicar qué pasó con las otras
+    // diez, y con una noche descartada por falta de horarios la cuenta no
+    // cerraba contra la pestaña Diario. Ahora dice el período y lo descartado.
+    const descartadas = motorResult.nochesDescartadas;
+    const fmtF = function (f) {
+      if (!f) return '';
+      const p = String(f).slice(0, 10).split('-');
+      return p.length === 3 ? (p[2] + '-' + p[1]) : String(f);
+    };
+    let muestraTxt = (usadas != null) ? (usadas + ' noches analizadas') : 'Sin noches registradas';
+    if (usadas != null && motorResult.ventanaDesde && motorResult.ventanaHasta) {
+      muestraTxt += ' · ' + fmtF(motorResult.ventanaDesde) + ' a ' + fmtF(motorResult.ventanaHasta);
+    }
+    if (usadas != null && totalNoches != null && totalNoches > usadas) {
+      muestraTxt += ' (de ' + totalNoches + ' cargadas';
+      muestraTxt += (descartadas > 0)
+        ? '; ' + descartadas + ' sin horarios, fuera del cálculo)'
+        : ')';
+    }
 
     tarjetaEvolucion =
       '<div class="dm-card" style="padding:12px 14px">' +
@@ -248,7 +283,13 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
                        String(Math.round(met.tst24%60)).padStart(2,'0') + 'm en 24 h')
                     : 'nocturno') +
             celda('Latencia', num(met.latenciaMedia, ' min'), met.latenciaMedia > 30 ? 'sobre umbral' : 'en rango') +
-            celda('Eficiencia', num(e ? e.actual : met.eficiencia, '%'), efPie) +
+            // Una sola fuente. Antes esta celda mostraba e.actual —la
+            // eficiencia de la ventana de la evolución— mientras las otras
+            // cuatro celdas y la orientación clínica mostraban met.*. Con
+            // ventanas distintas eso daba 83% acá y 87% tres centímetros
+            // más abajo. El delta del pie sigue siendo contra las 14
+            // anteriores, que es su trabajo.
+            celda('Eficiencia', num(met.eficiencia, '%'), efPie) +
             celda('Despertares', (met.despertaresMedia == null || isNaN(met.despertaresMedia)) ? '—' : String(met.despertaresMedia), 'por noche') +
             // Siestas. El tiempo de sueño de la izquierda es NOCTURNO; esto va
             // aparte a proposito, y el pie dice el total en 24 h cuando se

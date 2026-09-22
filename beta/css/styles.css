@@ -5033,3 +5033,28 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
   border-radius:12px; padding:13px 15px; margin-top:18px;
   font-size:12.5px; color:rgba(244,239,229,.82); line-height:1.55;
 }
+
+/* ── mod207 · el material del paciente, por módulo ─────────────────────
+   Pasó de 27 desplegables de una línea a uno por módulo con todo adentro.
+   Las tarjetas se apilan, y en escritorio van de a dos. */
+.cbti-verpac-cuerpo > .cbti-verpac-tarjeta + .cbti-verpac-tarjeta{ margin-top:8px; }
+.cbti-verpac-cab{ display:flex; align-items:baseline; gap:9px; }
+.cbti-verpac-cab > .cbti-verpac-lock{ margin-left:auto; flex:0 0 auto; white-space:nowrap; }
+@media (min-width:1000px){
+  .cbti-verpac-cuerpo{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    gap:8px; align-items:start;
+  }
+  .cbti-verpac-cuerpo > .cbti-verpac-tarjeta + .cbti-verpac-tarjeta{ margin-top:0; }
+  .cbti-verpac-cuerpo > .cbti-verpac-nota{ grid-column:1/-1; }
+}
+.cbti-portada-chica{ padding:11px 14px; margin-bottom:16px; }
+.cbti-portada-chica .cbti-portada-ic{ font-size:20px; }
+.cbti-portada-chica .cbti-portada-tit{ font-size:13.5px; }
+.cbti-portada-chica .cbti-portada-sub{ font-size:11.5px; }
+
+/* ── mod207 · Generalista / Especialista en la pestaña Diario ──────────
+   Mismo par que el Resumen y la misma preferencia guardada. Se resuelve por
+   clase y no re-renderizando: los gráficos ya están montados y volver a
+   dibujarlos por un cambio de visibilidad los destruye y recrea sin motivo. */
+.dm-modo-gen .dm-solo-esp{ display:none !important; }

@@ -43,15 +43,19 @@ r.ok(ids.length === mod.P.modules.reduce(function(n,m){ return n + m.items.lengt
 
 r.seccion('El profesional puede ver ese texto:');
 
-r.ok(/En la app del paciente/.test(html), 'hay un desplegable por ítem');
+// Desde mod207 no es un desplegable por ítem sino uno por módulo: 27 cajas
+// de una línea, cada una repitiendo su propio título, se leían como rótulos
+// y no como el texto. Ahora el material del módulo va junto y entero.
+r.ok(/Lo que lee el paciente en este módulo/.test(html),
+     'hay un desplegable por módulo con el material adentro');
 r.ok(/cbti-verpac-tarjeta/.test(html),
      'y muestra el texto como lo ve el paciente: título arriba, texto debajo');
-r.ok(/palabras/.test(html.slice(html.indexOf('const _pal ='), html.indexOf('const _pal =')+700)),
-     'con el largo del texto a la vista, que es lo que decide si alcanza');
-r.ok(/CBTI_PATIENT_CONTENT\[it\.id\]/.test(
-       html.slice(html.indexOf('// ── Lo que lee el paciente'),
-                  html.indexOf('// ── Lo que lee el paciente') + 1400)),
+const bloqueVer = html.slice(html.indexOf('Lo que lee el paciente en este módulo') - 900,
+                             html.indexOf('Lo que lee el paciente en este módulo') + 1600);
+r.ok(/_t\[it\.id\]/.test(bloqueVer) && /CBTI_PATIENT_CONTENT/.test(bloqueVer),
      'y muestra el mismo texto que recibe el paciente, no una copia');
+r.ok(/mod\.items\.map\(/.test(bloqueVer),
+     'con todos los puntos del módulo, no una muestra');
 
 r.seccion('Pero plegado, porque el contenido ya lo sabe:');
 
@@ -70,7 +74,7 @@ r.seccion('Dice si el paciente todavía no lo ve:');
 
 r.ok(/todavía no lo ve/.test(html),
      'avisa cuando el ítem no está tildado');
-r.ok(/Se le desbloquea cuando tildes este punto/.test(html),
+r.ok(/Cada punto se le desbloquea cuando lo tildás/.test(html),
      'y explica qué hace falta');
 // El acordeón no se re-renderiza al tildar, para no cerrarse solo: si el aviso
 // no se actualizara aparte, quedaría diciendo "no lo ve" sobre un ítem tildado.
