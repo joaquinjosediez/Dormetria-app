@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg211-812663f7">
+<link rel="stylesheet" href="css/styles.css?v=stg213-10c4d103">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1349,10 +1349,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg211-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg211-22b7ad61"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg211-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=stg211-593e5fee"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg213-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg213-22b7ad61"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg213-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=stg213-593e5fee"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1371,12 +1371,8 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg211';
-// ── AVISO DE ENTORNO ──────────────────────────────────────────────────
-// Este staging apunta al MISMO proyecto de Supabase que produccion
-// (sojvsbwpqdwjuvezdhby). CLAUDE.md dice que deberia usar el proyecto
-// `dormetria-staging` con datos ficticios, y no lo hace. Hasta que eso se
-// separe, todo lo que se guarde aca toca datos de pacientes reales.
+const APP_VERSION='stg213';
+// ── AVISO DE ENTORNO · staging comparte base con produccion ───────────
 (function(){
   try{
     var d=document.createElement('div');
@@ -1384,15 +1380,11 @@ const APP_VERSION='stg211';
     d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;'+
       'background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;'+
       'text-align:center;padding:6px 10px;letter-spacing:.02em';
-    d.innerHTML='ENTORNO DE PRUEBA · stg211 — <b>comparte la base con produccion</b>: '+
+    d.innerHTML='ENTORNO DE PRUEBA · stg213 — <b>comparte la base con produccion</b>: '+
       'lo que guardes aca toca datos reales';
-    function poner(){
-      if(!document.body) return;
-      document.body.appendChild(d);
-      document.body.style.paddingTop='26px';
-    }
-    if(document.body) poner();
-    else document.addEventListener('DOMContentLoaded', poner);
+    function poner(){ if(!document.body) return;
+      document.body.appendChild(d); document.body.style.paddingTop='26px'; }
+    if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
   }catch(_){}
 })();
 
@@ -6604,6 +6596,23 @@ function dmFmtP(p){
 // paciente, no un ensayo: sirve para generar hipótesis en consulta, no para
 // concluir causalidad. Por eso exigimos un mínimo de noches en AMBOS grupos y
 // mostramos siempre la n.
+// Minutos entre el final del ejercicio y la hora de acostarse. null si el
+// dato falta o si da un valor incoherente (más de 12 h: casi seguro es que
+// la persona cargó la hora de otro día).
+function dmMargenEjercicioMin(e){
+  if(!e || !e.exercise_end || !e.bedtime) return null;
+  const aMin = function(v){
+    const p = String(v).slice(0,5).split(':');
+    const h = parseInt(p[0],10), m = parseInt(p[1],10);
+    return (isNaN(h)||isNaN(m)) ? null : h*60+m;
+  };
+  const f = aMin(e.exercise_end), c = aMin(e.bedtime);
+  if(f==null || c==null) return null;
+  let d = c - f;
+  if(d < 0) d += 1440;
+  return (d > 12*60) ? null : d;
+}
+
 function computeHabitsImpact(entries){
   // Mismo criterio de noche valida que el actograma y las metricas. Importa:
   // una noche con AM/PM invertido mete 14 h de "sueno total" en uno de los dos
@@ -6618,6 +6627,73 @@ function computeHabitsImpact(entries){
     { id:'exercise', label:'Actividad física', icon:'🏃',
       has:e=>e.exercise_mins!=null, on:e=>Number(e.exercise_mins)>0,
       onTxt:'con actividad', offTxt:'sin actividad' },
+    // ── Ejercicio de noche contra ejercicio de día ─────────────────────
+    // OJO con lo que esto mide y con lo que dice la evidencia, porque la
+    // higiene del sueño clásica ("no entrenes de noche") no está sostenida
+    // por los trabajos grandes:
+    //
+    //   · Stutz, Eiholzer & Spengler (Sports Med 2019), metaanálisis de 23
+    //     ECAs: el ejercicio vespertino NO empeora el sueño —aumenta algo
+    //     el sueño de ondas lentas— SALVO el vigoroso que termina a menos
+    //     de 1 h de acostarse.
+    //   · Facer-Childs et al. (Nat Commun 2025), 14.689 personas y 4,08
+    //     millones de noches: hay dosis-respuesta entre intensidad y
+    //     proximidad. Terminando 4 h o más antes de dormir, no se asocia a
+    //     cambios en el sueño, cualquiera sea la intensidad.
+    //
+    // O sea: la variable de la evidencia es el MARGEN HASTA DORMIR y la
+    // INTENSIDAD, no la franja horaria. "Noche · 19 a 24" mete en la misma
+    // bolsa a quien entrena 19:00 y se acuesta 00:00 (5 h de margen) y a
+    // quien entrena 22:30 y se acuesta 23:30 (1 h). Los dos estudios dicen
+    // cosas opuestas sobre esos dos casos.
+    //
+    // Por eso este factor compara SOLO entre días con ejercicio: el grupo
+    // de referencia no es "sin ejercicio" sino "ejercicio de mañana o
+    // tarde". Así aísla el horario y no vuelve a medir el ejercicio en sí,
+    // que ya lo mide la fila de arriba.
+    { id:'exercise_night', label:'Ejercicio de noche', icon:'🌙',
+      has:e=>Number(e.exercise_mins)>0 && !!e.exercise_time,
+      on:e=>e.exercise_time==='evening',
+      onTxt:'ejercicio 19–24', offTxt:'ejercicio de mañana o tarde',
+      nota:'Compara entre días CON ejercicio: aísla el horario, no el ejercicio. '+
+           'La evidencia asocia el deterioro a la intensidad y a terminar cerca de '+
+           'la hora de dormir (Stutz 2019; Facer-Childs 2025), no a la franja en sí: '+
+           'terminando 4 h antes no se observan cambios. La franja 19–24 no distingue '+
+           'esos dos casos.' },
+    // Cuando la persona cargó la hora de fin, se puede medir lo que los
+    // estudios miden de verdad: el MARGEN hasta acostarse. Umbral de 4 h por
+    // Facer-Childs et al. (Nat Commun 2025). Este factor convive con el de
+    // arriba y lo reemplaza en la práctica cuando hay suficientes noches con
+    // la hora cargada.
+    { id:'exercise_margin', label:'Ejercicio a menos de 4 h de la cama', icon:'⏱',
+      has:function(e){
+        if(!(Number(e.exercise_mins)>0) || !e.exercise_end || !e.bedtime) return false;
+        return dmMargenEjercicioMin(e) != null;
+      },
+      on:function(e){ const m=dmMargenEjercicioMin(e); return m!=null && m<240; },
+      onTxt:'con menos de 4 h de margen', offTxt:'con 4 h o más',
+      nota:'Margen entre el final del ejercicio y la hora de acostarse. Es la variable '+
+           'que usan los trabajos: Facer-Childs et al. (Nat Commun 2025, 4,08 M de noches) '+
+           'no observó asociación con cambios en el sueño cuando el ejercicio terminaba '+
+           '4 h o más antes, cualquiera fuera la intensidad. Solo entran las noches donde '+
+           'se cargó la hora de fin.' },
+    // El cruce que mide Facer-Childs: intensidad ALTA y poco margen. Ninguno
+    // de los dos solo explica el efecto; es la combinación. Requiere las dos
+    // columnas cargadas, así que aparece cuando haya datos suficientes.
+    { id:'exercise_vig_late', label:'Ejercicio intenso a menos de 4 h de la cama', icon:'🔥',
+      has:function(e){
+        if(!(Number(e.exercise_mins)>0) || !e.exercise_intensity) return false;
+        return dmMargenEjercicioMin(e) != null;
+      },
+      on:function(e){
+        const m = dmMargenEjercicioMin(e);
+        return e.exercise_intensity==='vigorous' && m!=null && m<240;
+      },
+      onTxt:'intenso y con poco margen', offTxt:'el resto de los días con ejercicio',
+      nota:'La combinación que los trabajos asocian al deterioro: intensidad alta Y poco '+
+           'margen hasta la cama. Stutz 2019 encontró impacto solo con ejercicio vigoroso '+
+           'terminando a menos de 1 h; Facer-Childs 2025, dosis-respuesta entre esfuerzo y '+
+           'proximidad. Ninguno de los dos factores por separado explica el efecto.' },
     { id:'caffeine', label:'Cafeína', icon:'☕',
       has:e=>e.coffee_cups!=null, on:e=>Number(e.coffee_cups)>0,
       onTxt:'con cafeína', offTxt:'sin cafeína' },
@@ -6772,8 +6848,7 @@ function computeHabitsImpact(entries){
       const suma=netos.reduce((a,x)=>a+x.signo,0);
       veredicto = suma>0?'positivo' : suma<0?'negativo' : 'mixto';
     }
-    out.push({ id:hb.id, label:hb.label, icon:hb.icon, onTxt:hb.onTxt, offTxt:hb.offTxt,
-               nota:hb.nota||null,
+    out.push({ id:hb.id, label:hb.label, icon:hb.icon, onTxt:hb.onTxt, offTxt:hb.offTxt, nota:hb.nota||null,
                fisiologico:!!hb.fisiologico, personal:!!hb.personal, preliminar:_preliminar,
                nOn:on.length, nOff:off.length, efectos, veredicto });
   });
@@ -6887,9 +6962,13 @@ function renderHabitsImpactHtml(entries, audiencia){
         const bueno = hb.veredicto==='positivo';
         // Sobre verde oscuro, #15803d y #b91c1c no llegan a 4,5:1. Estos si.
         const col = bueno ? '#5ee08a' : '#ff9d9d';
+        // Para los factores que comparan dos variantes del mismo hábito
+        // —ejercicio de noche contra ejercicio de día— decir "y el resto"
+        // haría pensar que el grupo de comparación son las noches SIN.
+        const _contra = hb.offTxt ? ('las de <b>'+hb.offTxt+'</b>') : 'el resto';
         const texto = hay
-          ? 'Las noches <b>'+hb.onTxt+'</b> tenés <b style="color:'+col+'">'+frase(hb)+'</b>.'
-          : 'Entre las noches <b>'+hb.onTxt+'</b> y el resto, <b style="color:rgba(244,239,229,.82)">por ahora no se nota diferencia</b>.';
+          ? 'Comparando tus noches <b>'+hb.onTxt+'</b> con '+_contra+', tenés <b style="color:'+col+'">'+frase(hb)+'</b>.'
+          : 'Entre las noches <b>'+hb.onTxt+'</b> y '+_contra+', <b style="color:rgba(244,239,229,.82)">por ahora no se nota diferencia</b>.';
         return '<div class="dm-fac-fila">'+
           '<span class="dm-fac-ico"'+(hay?'':' style="opacity:.5"')+'>'+hb.icon+'</span>'+
           '<div style="flex:1;min-width:0">'+
@@ -6941,6 +7020,11 @@ function renderHabitsImpactHtml(entries, audiencia){
       '</div>'+
       '<div style="font-size:12px;color:'+vCol+';margin-bottom:8px">'+_titular+
         '<span style="color:var(--label-3);font-weight:400"> · '+hb.nOn+' vs '+hb.nOff+' noches</span></div>'+
+      // Cuando un factor no compara "con" contra "sin" sino dos variantes
+      // del mismo hábito, hay que decirlo: si no, la fila se lee como si el
+      // grupo de referencia fueran las noches sin ejercicio.
+      (hb.nota ? '<div style="font-size:10.5px;color:var(--label-3);line-height:1.5;'+
+        'background:#f8fafc;border-radius:7px;padding:7px 9px;margin-bottom:8px">'+hb.nota+'</div>' : '')+
       // Encabezado: sin esto los dos numeros de cada fila eran anonimos y no
       // se sabia cual correspondia a las noches CON el factor.
       '<div style="display:grid;grid-template-columns:1fr 62px 62px 92px;gap:4px;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--label-3);border-bottom:1px solid #f0eee9;padding-bottom:3px;margin-bottom:2px">'+
@@ -13335,6 +13419,11 @@ async function editDiaryEntry(id){
       }
       const exT=document.getElementById('d-exercise-time');
       if(exT && e.exercise_time) exT.value=e.exercise_time;
+      const exF=document.getElementById('d-exercise-end');
+      if(exF && e.exercise_end) exF.value=String(e.exercise_end).slice(0,5);
+      const exI=document.getElementById('d-exercise-intensity');
+      if(exI && e.exercise_intensity) exI.value=e.exercise_intensity;
+      try{ dmMostrarFinEjercicio(); }catch(_){}
       if(e.energy_afternoon!=null && typeof selEmojiVal==='function') selEmojiVal('d-energy-pm', e.energy_afternoon);
       else if(e.energy_afternoon!=null){
         const _ep=document.getElementById('d-energy-pm'); if(_ep) _ep.value=String(e.energy_afternoon);
@@ -13483,7 +13572,7 @@ function showDiaryNew(){
 
     <div class="dm-campo">
       <label class="dm-lbl">¿A qué hora te acostaste?</label>
-      <input class="dm-inp" type="time" id="d-bed">
+      <input class="dm-inp" type="time" id="d-bed" onchange="try{dmMargenEjercicio()}catch(_){}">
     </div>
 
 
@@ -13616,8 +13705,34 @@ function showDiaryNew(){
     <div class="dm-campo">
       <label class="dm-lbl">Actividad física</label>
       <div class="dm-ayuda">Cuánto y a qué hora: el horario cambia el efecto sobre el sueño.</div>
-      <select class="dm-inp" id="d-exercise-mins"><option value="0">Sin actividad</option> <option value="15">15–20 min</option> <option value="30">30–40 min</option> <option value="45">45–60 min</option> <option value="75">60–90 min</option> <option value="105">&gt;90 min</option></select>
-      <select class="dm-inp" id="d-exercise-time" style="margin-top:10px"><option value="">—</option> <option value="morning">Mañana · 7 a 13</option> <option value="afternoon">Tarde · 13 a 19</option> <option value="evening">Noche · 19 a 24</option></select>
+      <select class="dm-inp" id="d-exercise-mins" onchange="try{dmMostrarFinEjercicio()}catch(_){}"><option value="0">Sin actividad</option> <option value="15">15–20 min</option> <option value="30">30–40 min</option> <option value="45">45–60 min</option> <option value="75">60–90 min</option> <option value="105">&gt;90 min</option></select>
+      <select class="dm-inp" id="d-exercise-time" style="margin-top:10px" onchange="dmMostrarFinEjercicio()"><option value="">—</option> <option value="morning">Mañana · 7 a 13</option> <option value="afternoon">Tarde · 13 a 19</option> <option value="evening">Noche · 19 a 24</option></select>
+      <!-- La hora de fin se pregunta SOLO si entrenó de noche, que es donde
+           importa. La franja 19–24 mete en la misma bolsa a quien termina a
+           las 19 y se acuesta a las 00 (5 h de margen) y a quien termina
+           22:30 y se acuesta 23:30 (1 h). La evidencia distingue esos dos
+           casos y la franja no. -->
+      <!-- La intensidad pesa tanto como la hora en Facer-Childs 2025: el
+           deterioro se asocia a ejercicio INTENSO cerca de la cama, no a
+           cualquier ejercicio. Sin esto, "entrenó de noche" mezcla una
+           caminata con un entrenamiento de fuerza. Tres opciones alcanzan:
+           más granularidad no se contesta bien de memoria a la mañana. -->
+      <div id="d-ex-int-wrap" style="display:none;margin-top:10px">
+        <label class="dm-lbl" style="font-size:13.5px">¿Qué tan intenso fue?</label>
+        <div class="dm-ayuda">Suave: caminata, elongación. Moderado: podías hablar pero no cantar. Intenso: te faltaba el aire para hablar.</div>
+        <select class="dm-inp" id="d-exercise-intensity">
+          <option value="">—</option>
+          <option value="light">Suave</option>
+          <option value="moderate">Moderado</option>
+          <option value="vigorous">Intenso</option>
+        </select>
+      </div>
+      <div id="d-ex-fin-wrap" style="display:none;margin-top:10px">
+        <label class="dm-lbl" style="font-size:13.5px">¿A qué hora terminaste?</label>
+        <div class="dm-ayuda">Con la hora de acostarte, esto dice cuánto margen hubo. Es lo que se asocia al efecto sobre el sueño, más que la franja.</div>
+        <input class="dm-inp" type="time" id="d-exercise-end" onchange="dmMargenEjercicio()">
+        <div id="d-ex-margen" style="display:none;font-size:12.5px;line-height:1.5;margin-top:7px"></div>
+      </div>
     </div>
 
     <div class="dm-campo">
@@ -13672,6 +13787,56 @@ function showDiaryNew(){
 }
 
 
+
+// Muestra el campo de hora de fin solo para el ejercicio nocturno, y
+// calcula el margen contra la hora de acostarse que ya se cargó.
+function dmMostrarFinEjercicio(){
+  const t = document.getElementById('d-exercise-time');
+  const w = document.getElementById('d-ex-fin-wrap');
+  // La intensidad se pregunta siempre que haya habido ejercicio, no solo de
+  // noche: sirve igual para el resto del análisis. La hora de fin, en cambio,
+  // solo importa cerca de la cama.
+  const mins = document.getElementById('d-exercise-mins');
+  const wi = document.getElementById('d-ex-int-wrap');
+  if(wi){
+    const hubo = mins && Number(mins.value) > 0;
+    wi.style.display = hubo ? '' : 'none';
+    if(!hubo){ const i=document.getElementById('d-exercise-intensity'); if(i) i.value=''; }
+  }
+  if(!t || !w) return;
+  w.style.display = (t.value === 'evening') ? '' : 'none';
+  if(t.value !== 'evening'){ const f=document.getElementById('d-exercise-end'); if(f) f.value=''; }
+  dmMargenEjercicio();
+}
+window.dmMostrarFinEjercicio = dmMostrarFinEjercicio;
+
+function dmMargenEjercicio(){
+  const fin  = document.getElementById('d-exercise-end');
+  const cama = document.getElementById('d-bed');
+  const out  = document.getElementById('d-ex-margen');
+  if(!out) return;
+  if(!fin || !fin.value || !cama || !cama.value){ out.style.display='none'; return; }
+  const aMin = v => { const p=String(v).slice(0,5).split(':'); return (+p[0])*60 + (+p[1]); };
+  let d = aMin(cama.value) - aMin(fin.value);
+  if(d < 0) d += 1440;                       // se acostó pasada la medianoche
+  if(d > 12*60){ out.style.display='none'; return; }   // dato incoherente
+  const hs = Math.floor(d/60), mm = d%60;
+  const txt = hs + ' h ' + String(mm).padStart(2,'0') + ' min';
+  // El umbral de las 4 h sale de Facer-Childs 2025 (Nat Commun, 4,08 M de
+  // noches): terminando 4 h o más antes, no se asoció a cambios en el sueño
+  // cualquiera fuera la intensidad. No es una indicación, es la referencia.
+  if(d >= 240){
+    out.innerHTML = '✓ '+txt+' entre el final del ejercicio y la cama.';
+    out.style.color = 'rgba(244,239,229,.78)';
+  }else{
+    out.innerHTML = txt+' entre el final del ejercicio y la cama. '+
+      'Los trabajos que miraron esto observan menos cambios en el sueño a partir de las 4 h, '+
+      'sobre todo con ejercicio intenso.';
+    out.style.color = '#C8A96E';
+  }
+  out.style.display = 'block';
+}
+window.dmMargenEjercicio = dmMargenEjercicio;
 
 function getMedications(){
   return _medModalMeds.length ? JSON.stringify(_medModalMeds) : '';
@@ -14037,6 +14202,14 @@ async function saveDiary(){
     energy:energy,
     exercise_mins:exerciseMins,
     exercise_time:exerciseTime,
+    exercise_end:(function(){
+      const f=document.getElementById('d-exercise-end');
+      return (exerciseTime==='evening' && f && f.value) ? f.value : null;
+    })(),
+    exercise_intensity:(function(){
+      const i=document.getElementById('d-exercise-intensity');
+      return (exerciseMins>0 && i && i.value) ? i.value : null;
+    })(),
     screen_minutes:screenMins,
     coffee_cups:caffTotal,
     alcohol_drinks:alcTotal,
@@ -18927,11 +19100,17 @@ async function showDrPTab_(tab){
         if(!grouped[pop]) grouped[pop]=[];
         grouped[pop].push(t);
       });
-      let body = '<div class="sec-title" style="margin-top:14px">Material educativo para el paciente</div>'+
+      // Va como bloque de ancho completo dentro de #drp-content —que es una
+      // grilla de dos columnas— y adentro parte las fichas en dos. Si se
+      // dejara como hijo suelto, caería en UNA celda de media pantalla y las
+      // fichas quedarían en una sola columna angosta.
+      let body = '<div class="dm-edu-wrap">'+
+        '<div class="sec-title" style="margin-top:14px">Material educativo para el paciente</div>'+
         '<div style="font-size:13px;color:var(--label-2);margin-bottom:14px;line-height:1.5">Activá los temas que querés acercarle al paciente según su situación. Le van a aparecer en la pantalla principal como "Tu profesional te acerca este material educativo".</div>';
       popOrder.forEach(pop=>{
         if(!grouped[pop]) return;
-        body += '<div style="font-size:13px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin:14px 0 8px">'+pop+'</div>';
+        body += '<div class="dm-edu-pop">'+pop+'</div>';
+        body += '<div class="dm-edu-grid">';
         grouped[pop].forEach(t=>{
           const isAssigned = assignedIds.has(t.id);
           const wasRead = !!readMap[t.id];
@@ -18943,7 +19122,9 @@ async function showDrPTab_(tab){
             '<button onclick="toggleEduAssignment(\''+t.id+'\',\''+encodeURIComponent(email)+'\',this)" style="background:'+(isAssigned?'#dc2626':'#1a4a3a')+';color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">'+(isAssigned?'Quitar':'Asignar')+'</button>'+
             '</div>';
         });
+        body += '</div>';            // cierra .dm-edu-grid
       });
+      body += '</div>';              // cierra .dm-edu-wrap
       cont.innerHTML = body;
       return;
     }else{

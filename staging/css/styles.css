@@ -5304,20 +5304,36 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
   cursor:pointer; font-family:var(--font);
 }
 
-/* ── mod210 · el panel de informe en dos columnas ──────────────────────
-   Antes el informe salía debajo de los tres botones y había que scrollear
-   para leerlo, con media pantalla vacía al costado. */
+/* ── mod212 · informe y material, a lo ancho de la grilla ─────────────
+   #drp-content YA es un grid de 1fr 1fr con max-width 1100px. Un hijo
+   directo cae en UNA celda de ~550px: por eso el panel del informe, al
+   partirse otra vez adentro, se veía como una tercera columna angosta en el
+   medio. Los dos bloques tienen que ocupar la fila entera primero, y recién
+   ahí subdividirse. */
+body.dr-desktop #drp-content > .dm-inf-wrap,
+body.dr-desktop #drp-content > .dm-edu-wrap{ grid-column:1 / -1; }
+
 .dm-inf-wrap{ display:block; }
 @media (min-width:1100px){
   body.dr-desktop .dm-inf-wrap{
-    display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr);
-    gap:22px; align-items:start;
+    display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr);
+    gap:24px; align-items:start;
   }
   body.dr-desktop .dm-inf-salida-col{ position:sticky; top:8px; }
-  /* Sin informe todavía, la columna derecha no ocupa ni deja un hueco. */
   body.dr-desktop .dm-inf-salida-col:empty{ display:none; }
 }
 .dm-inf-col{ min-width:0; }
+
+/* Material educativo: las fichas en dos columnas dentro del bloque ancho. */
+.dm-edu-pop{
+  font-size:13px; font-weight:700; color:var(--label-2); text-transform:uppercase;
+  letter-spacing:0.04em; margin:14px 0 8px;
+}
+.dm-edu-grid{ display:grid; grid-template-columns:1fr; gap:6px; }
+@media (min-width:900px){
+  body.dr-desktop .dm-edu-grid{ grid-template-columns:1fr 1fr; gap:8px 12px; }
+}
+.dm-edu-grid > div{ margin-bottom:0 !important; }
 
 /* ── Botones de período, con el lenguaje del toggle Generalista/Especialista
    Antes eran píldoras claras sobre el verde, el único elemento de la

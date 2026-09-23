@@ -1,0 +1,44 @@
+mod211 · ejercicio: no la franja, el margen hasta dormir
+
+El dato de la franja (exercise_time: morning/afternoon/evening) ya existia
+y lo usaba el actograma; el panel de "Habitos vs calidad reportada" trataba
+al ejercicio como binario.
+
+PERO LA PREMISA HABITUAL NO SE SOSTIENE. La higiene del sueño clasica dice
+"no entrenes de noche" y los dos trabajos grandes dicen otra cosa:
+
+  Stutz, Eiholzer & Spengler (Sports Med 2019), metaanalisis de 23 ECAs:
+  el ejercicio vespertino NO empeora el sueño --aumenta algo el sueño de
+  ondas lentas-- SALVO el vigoroso que termina a menos de 1 h de la cama.
+
+  Facer-Childs et al. (Nat Commun 2025), 14.689 personas y 4.084.354
+  noches: hay dosis-respuesta entre intensidad y proximidad. Terminando
+  4 h o mas antes de dormir, no se asocio a cambios, cualquiera fuera la
+  intensidad.
+
+O sea: la variable es el MARGEN HASTA DORMIR y la INTENSIDAD, no la franja.
+"Noche · 19 a 24" mete en la misma bolsa a quien termina 19:00 y se acuesta
+00:00 (5 h) y a quien termina 22:30 y se acuesta 23:30 (1 h). Los dos
+estudios dicen cosas opuestas sobre esos dos.
+
+LO QUE SE HIZO
+
+- Factor "Ejercicio de noche": compara dias con ejercicio 19-24 contra dias
+  con ejercicio de mañana o tarde. Entre dias CON ejercicio, no contra los
+  dias sin: aisla el horario en vez de volver a medir el ejercicio. Lleva
+  una nota con las dos referencias y con la limitacion de la franja.
+- Campo nuevo "¿a que hora terminaste?", visible SOLO si eligio noche, con
+  el margen calculado en vivo contra la hora de acostarse.
+- Factor "Ejercicio a menos de 4 h de la cama", que es la variable de la
+  evidencia. Aparece cuando haya 5 noches con el dato en cada grupo.
+- El texto del paciente ya no dice "y el resto": para estos factores el
+  grupo de comparacion no son las noches sin ejercicio, y decirlo asi
+  invertia la lectura.
+
+FALTA CORRER: SQL-hora-fin-ejercicio.md (una columna, sin tocar policies).
+
+LO QUE SIGUE FALTANDO Y CONVIENE DECIR: ninguno de los dos factores captura
+la INTENSIDAD, que en Facer-Childs pesa tanto como la hora. El diario
+guarda minutos, no esfuerzo.
+
+Pruebas: 33/33.

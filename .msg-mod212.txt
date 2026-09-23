@@ -1,0 +1,41 @@
+mod212 · intensidad del ejercicio, y el informe deja de ser una columna angosta
+
+EL LAYOUT DEL INFORME ESTABA MAL Y LA CAUSA ERA MIA
+
+#drp-content YA es un grid de 1fr 1fr con max-width 1100px. Mi panel del
+informe era un hijo directo, asi que caia en UNA celda de ~550px, y ahi
+adentro lo volvi a partir en 340 + resto. De ahi la "tercera columna en el
+medio" con el texto cortado letra por letra.
+
+Arreglo: los dos bloques anchos --informe y material-- toman grid-column
+1/-1 primero, como ya hacian los titulos de seccion y los graficos, y
+recien ahi se subdividen. Es la misma regla que ya existia para
+#drp-content > div:has(canvas); faltaba sumarlos.
+
+MATERIAL EDUCATIVO en dos columnas, dentro del bloque ancho.
+
+INTENSIDAD DEL EJERCICIO
+
+Campo nuevo --suave / moderado / intenso, por la prueba del habla-- que
+aparece siempre que haya habido ejercicio. Pesa tanto como la hora: en
+Facer-Childs 2025 el deterioro se asocia a ejercicio INTENSO cerca de la
+cama, no a cualquier ejercicio. Sin esto, "entreno de noche" mezcla una
+caminata con un entrenamiento de fuerza.
+
+Tres niveles y no cinco: a la mañana y de memoria, mas granularidad no se
+contesta bien y agrega ruido en vez de informacion.
+
+Factor nuevo "Ejercicio intenso a menos de 4 h de la cama": es el cruce que
+los trabajos miden. Stutz 2019 encontro impacto SOLO con vigoroso
+terminando a menos de 1 h; Facer-Childs 2025, dosis-respuesta entre
+esfuerzo y proximidad. Ninguna de las dos variables por separado explica el
+efecto. Un paciente puede entrenar todas las noches sin que se note nada
+porque camina; otro puede tener un solo dia malo por semana y ser el dia
+que hace fuerza a las 22. Con un binario de "ejercicio de noche" los dos
+casos se ven iguales.
+
+FALTA CORRER: SQL-hora-fin-ejercicio.md, que ahora agrega DOS columnas
+(exercise_end y exercise_intensity, esta ultima con check). Sin tocar
+policies.
+
+Pruebas: 33/33.
