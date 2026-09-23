@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg209-7b224be8">
+<link rel="stylesheet" href="css/styles.css?v=stg211-812663f7">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -562,6 +562,9 @@
     <!-- Mensaje de aliento. Compara la última semana con la anterior: a los
          14 días la señal llega demasiado tarde para sostener la conducta. -->
     <div id="home-aliento" style="display:none;margin-top:11px"></div>
+
+    <!-- Somnolencia diurna alta. Solo si el Epworth de la persona lo está. -->
+    <div id="home-somnolencia" style="display:none;margin-top:11px"></div>
 
     <!-- Invitación a calificar al profesional. Aparece a las dos semanas
          de vincularse y, si la posterga, vuelve al mes. -->
@@ -1346,10 +1349,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg209-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg209-22b7ad61"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg209-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=stg209-593e5fee"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg211-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg211-22b7ad61"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg211-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=stg211-593e5fee"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1368,13 +1371,12 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg209';
+const APP_VERSION='stg211';
 // ── AVISO DE ENTORNO ──────────────────────────────────────────────────
-// OJO: este staging apunta al MISMO proyecto de Supabase que producción
-// (sojvsbwpqdwjuvezdhby). CLAUDE.md dice que debería usar el proyecto
+// Este staging apunta al MISMO proyecto de Supabase que produccion
+// (sojvsbwpqdwjuvezdhby). CLAUDE.md dice que deberia usar el proyecto
 // `dormetria-staging` con datos ficticios, y no lo hace. Hasta que eso se
-// separe, todo lo que se guarde acá toca datos de pacientes reales.
-// El cartel está para que eso no se descubra escribiendo.
+// separe, todo lo que se guarde aca toca datos de pacientes reales.
 (function(){
   try{
     var d=document.createElement('div');
@@ -1382,8 +1384,8 @@ const APP_VERSION='stg209';
     d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;'+
       'background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;'+
       'text-align:center;padding:6px 10px;letter-spacing:.02em';
-    d.innerHTML='ENTORNO DE PRUEBA · stg209 — <b>comparte la base con produccion</b>: '+
-      'lo que guardes acá toca datos reales';
+    d.innerHTML='ENTORNO DE PRUEBA · stg211 — <b>comparte la base con produccion</b>: '+
+      'lo que guardes aca toca datos reales';
     function poner(){
       if(!document.body) return;
       document.body.appendChild(d);
@@ -1393,6 +1395,7 @@ const APP_VERSION='stg209';
     else document.addEventListener('DOMContentLoaded', poner);
   }catch(_){}
 })();
+
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5040,10 +5043,30 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
       let activePts7 = activeIn(D7);
       let activePts30 = activeIn(D30);
       // Médicos activos: emails de doctores que hicieron sugerencias en 30d
-      const drActiveSet=new Set();
-      (suggRows||[]).forEach(r=>{ if(r.created_at && new Date(r.created_at).getTime()>=D30) drActiveSet.add((r.doctor_email||'').toLowerCase()); });
-      drActiveSet.delete('');
-      const activeDrs30 = drActiveSet.size;
+      // "Profesionales activos" salía de doctor_suggestions: contaba a quien
+      // SUGIRIÓ UNA ESCALA, no a quien usó la app. Es el mismo error que ya
+      // se corrigió en la tabla de la pestaña Profesionales (la columna que
+      // decía "Última actividad" y ahora dice "Última sugerencia"). Ruffa y
+      // Velan entran todos los días y nunca sugirieron una escala: el panel
+      // mostraba 1 activo sobre 11. La fuente correcta es accesos_diarios.
+      let drAccesos = null;
+      try{
+        const _ac = await db.get('accesos_diarios?select=email,dia&dia=gte.'+
+                     new Date(D30).toISOString().slice(0,10)+'&limit=20000');
+        const _s = new Set();
+        (_ac||[]).forEach(function(r){ if(r && r.email) _s.add(String(r.email).toLowerCase()); });
+        const _mails = new Set((allDrs||[]).map(function(d){ return String(d.email||'').toLowerCase(); }));
+        drAccesos = new Set([..._s].filter(function(e){ return _mails.has(e); }));
+      }catch(_){ drAccesos = null; }
+
+      const drSugSet=new Set();
+      (suggRows||[]).forEach(r=>{ if(r.created_at && new Date(r.created_at).getTime()>=D30) drSugSet.add((r.doctor_email||'').toLowerCase()); });
+      drSugSet.delete('');
+      const activeDrs30  = drAccesos ? drAccesos.size : drSugSet.size;
+      const sugirieron30 = drSugSet.size;
+      // Si no hay registro de accesos todavía, se dice: un 0 y un "no hay
+      // datos" se ven igual y no son lo mismo.
+      const drFuente = drAccesos ? 'abrieron la app' : 'sugirieron escalas · falta el registro de accesos';
       // Ingresos por semana (actividad pacientes últimos 7d)
       let ingresos7d = (diaryRows||[]).filter(r=>r.created_at && new Date(r.created_at).getTime()>=D7).length
                        + (evalRows||[]).filter(r=>r.created_at && new Date(r.created_at).getTime()>=D7).length;
@@ -5064,6 +5087,19 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
         ingresos7d   = Number(_glob.ingresos_7d)||0;
         window._admStatsSinPermiso = false;
         window._admDesdeServidorStats = true;
+      }
+      // El total histórico. Se cuenta del lado del servidor (db.contar usa
+      // count=exact y no trae ninguna fila); si eso falla, se cae a lo que
+      // se pudo leer, que va a salir corto y por eso lleva un tilde.
+      let regTotal = null, regTotalParcial = false;
+      try{
+        const _d = await db.contar('sleep_diary');
+        const _e = await db.contar('evaluations');
+        if(_d != null && _e != null) regTotal = _d + _e;
+      }catch(_){}
+      if(regTotal == null){
+        regTotal = (diaryRows||[]).length + (evalRows||[]).length;
+        regTotalParcial = true;
       }
       // Tiempo promedio de permanencia (días desde el registro hasta la última actividad)
       const lastByEmail={};
@@ -5154,13 +5190,20 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
           ]);
 
           const b2 = bloque('Uso', [
-            dato({label:'Ingresos · 7 días', val:n(ingresos7d), sub:'registros + escalas'}),
-            dato({label:'Permanencia', val:n(avgStay), unidad:'d', sub:'del alta a la última señal'}),
+            dato({label:'Registros · total', val:n(regTotal), sub:regTotalParcial ? 'diario + escalas · solo lo que se pudo leer, va corto' : 'diario + escalas, desde el inicio'}),
+            dato({label:'Registros · 7 días', val:n(ingresos7d), sub:'diario + escalas'}),
+            // "Permanencia" se leía como si fuera de todos. No lo es: es el
+            // promedio sobre los pacientes que engancharon —los que nunca
+            // registraron nada quedan afuera, y también los que registraron
+            // el mismo día del alta—. Y para alguien que sigue activo, "la
+            // última señal" es hoy, así que mezcla a quien se fue con quien
+            // sigue. El pie ahora lo dice.
+            dato({label:'Permanencia', val:n(avgStay), unidad:'d', sub:'del alta a la última señal · sobre '+stays.length+' de '+((allPts||[]).length||0)+' pacientes que registraron algo'}),
           ]);
 
           const b3 = bloque('Profesionales', [
             dato({label:'Registrados', val:n(totalDrs), sub:'en total'}),
-            dato({label:'Activos · 30 días', val:n(activeDrs30), sub:'sugirieron escalas',
+            dato({label:'Activos · 30 días', val:n(activeDrs30), sub:drFuente,
                   p:pct(activeDrs30, totalDrs), color:'#15803d'}),
             dato({label:'En directorio', val:n(listedDrs), sub:'visibles al público',
                   p:pct(listedDrs, totalDrs), color:'#1a4a3a'}),
@@ -7150,6 +7193,72 @@ function dmTogglearQueEs(id, ev){
 }
 window.dmQueEs = dmQueEs; window.dmTogglearQueEs = dmTogglearQueEs;
 
+// ── SIESTAS, Y SU EFECTO SOBRE LA NOCHE SIGUIENTE ─────────────────────
+// La siesta no estaba en las métricas clínicas y en un insomnio es de lo
+// primero que se pregunta: gasta presión de sueño y es un objetivo directo
+// del tratamiento conductual.
+//
+// La comparación es DÍA DE SIESTA → NOCHE DE ESE MISMO DÍA. Ojo con leerla
+// al revés: lo habitual es que la siesta sea consecuencia de la mala noche
+// ANTERIOR, no causa de la siguiente. Por eso la fila dice "asociación" y
+// nunca "efecto", y se pide un mínimo de noches en cada grupo.
+function dmFilasSiestas(entries, row, C){
+  const v = (entries||[]).filter(function(e){ return e && e.diary_date; })
+                         .sort(function(a,b){ return a.diary_date > b.diary_date ? 1 : -1; });
+  const conDato = v.filter(function(e){ return e.nap_minutes != null && !isNaN(Number(e.nap_minutes)); });
+  if(conDato.length < 3) return '';
+
+  const conSiesta = conDato.filter(function(e){ return Number(e.nap_minutes) > 0; });
+  const pct  = Math.round(conSiesta.length / conDato.length * 100);
+  if(!conSiesta.length){
+    return row('Siestas', 'Ninguna', null, 'sobre '+conDato.length+' días con el dato cargado');
+  }
+  const mins = conSiesta.map(function(e){ return Number(e.nap_minutes); });
+  const prom = Math.round(mins.reduce(function(a,b){ return a+b; }, 0) / mins.length);
+  // Cantidad por día: el detalle vive en notes como JSON; si no está, se
+  // informa el total y no se inventa un número de siestas.
+  let cant = null;
+  try{
+    const cs = conSiesta.map(function(e){
+      try{ const j = JSON.parse(e.notes||'{}'); const n = j && j.naps && j.naps.length;
+           return n ? n : null; }catch(_){ return null; }
+    }).filter(function(x){ return x!=null; });
+    if(cs.length >= conSiesta.length/2)
+      cant = Math.round(cs.reduce(function(a,b){ return a+b; },0) / cs.length * 10) / 10;
+  }catch(_){}
+
+  const fmt = function(x){ return x>=60 ? (Math.floor(x/60)+'h '+String(x%60).padStart(2,'0')+'m') : (x+' min'); };
+  let h = row('Días con siesta', conSiesta.length+' de '+conDato.length+' · '+pct+'%',
+              pct>=50 ? '#d97706' : null,
+              'La siesta gasta presión de sueño y es un objetivo directo del tratamiento conductual')
+        + row('Duración media de la siesta', fmt(prom), prom>=45 ? '#d97706' : null,
+              prom>=45 ? 'Por encima de 30 min ya interfiere con la noche en la mayoría de los casos'
+                       : 'Hasta 30 min suele no interferir')
+        + (cant!=null ? row('Siestas por día con siesta', String(cant), null, 'promedio') : '');
+
+  // La noche del MISMO día. Hace falta un mínimo por grupo para decir algo.
+  const conN = [], sinN = [];
+  conDato.forEach(function(e){
+    const min = Number(e.sleep_minutes);
+    if(!min || isNaN(min)) return;
+    (Number(e.nap_minutes) > 0 ? conN : sinN).push(min);
+  });
+  if(conN.length >= 4 && sinN.length >= 4){
+    const md = function(a){ return a.reduce(function(x,y){ return x+y; },0)/a.length; };
+    const d  = Math.round(md(conN) - md(sinN));
+    const rel = Math.abs(d) >= 30;
+    h += row('Noche de los días con siesta',
+             fmt(Math.round(md(conN)))+' vs '+fmt(Math.round(md(sinN)))+' sin siesta',
+             rel ? (d < 0 ? '#d97706' : null) : null,
+             (rel
+               ? ('Diferencia de '+(d>0?'+':'')+d+' min. Asociación, no causa: lo habitual es que la siesta '+
+                  'sea consecuencia de la mala noche ANTERIOR, no causa de la siguiente.')
+               : 'Sin diferencia relevante (<30 min)')+
+             ' · '+conN.length+' vs '+sinN.length+' noches');
+  }
+  return h;
+}
+
 function renderClinicalMetricsHtml(entries, audience, ageYears){
   // ── Menores de 3 años ──
   // Varias métricas de este bloque son conceptos de sueño ADULTO y no aplican:
@@ -7263,7 +7372,8 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
       : '')+
     row('Jet lag social', sjlStr, sjlColor,
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
-    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor));
+    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor)+
+    dmFilasSiestas(entries, row, C));
 
   // Bloque adicional para el paciente: versión amigable de la variación
   if(audience === 'patient' && reg.sd_midpoint_min !== null){
@@ -8758,6 +8868,65 @@ async function loadPatientEducation(){
     wrap.style.display='none';
   }
 }
+// ── A quién le sirve cada tema ────────────────────────────────────────
+// Mostrarle menopausia a un varón o "el sueño después de los 65" a alguien
+// de 43 no es solo ruido: hace que la biblioteca entera parezca genérica y
+// que deje de leerla.
+//
+// Pero OCULTAR es peligroso en la otra dirección. Una mujer de 38 con
+// menopausia precoz existe; alguien que acaba de empezar a hacer guardias
+// todavía tiene "oficina" cargado en su perfil. Por eso hay dos niveles:
+//
+//   · ocultar   → solo lo IMPOSIBLE (embarazo en un varón)
+//   · ordenar   → lo probable arriba, lo improbable abajo pero presente
+//
+// Y siempre queda "Ver todos los temas". Un filtro que esconde un tema que
+// la persona necesitaba es peor que una lista larga.
+const DM_RELEVANCIA = {
+  embarazo:  { sexo:'F', edadMin:15, edadMax:55, imposibleSi:function(u){ return u.sexo==='M'; } },
+  menopausia:{ sexo:'F', edadMin:38,             imposibleSi:function(u){ return u.sexo==='M'; } },
+  lactancia: { conHijos:true, edadMin:16 },
+  mayores:   { edadMin:60 },
+  turnos:    { ocupacion:['shift','night'] },
+  guardias:  { ocupacion:['healthcare','night'] }
+};
+// Lee el perfil una sola vez y normaliza. El sexo vive en `sex` en unos
+// lados y en `gender` en otros, con valores en castellano.
+function dmPerfilLector(){
+  const u = (S && S.user) || {};
+  const crudo = String(u.sex || u.gender || '').toLowerCase();
+  let sexo = null;
+  if(/^f|femen/.test(crudo)) sexo='F';
+  else if(/^m|mascul/.test(crudo)) sexo='M';
+  let edad = null;
+  try{ if(u.dob) edad = Math.floor((Date.now()-new Date(u.dob))/31557600000); }catch(_){}
+  let ocup = u.activity_type;
+  if(Array.isArray(ocup)) ocup = ocup[0];
+  let hijos = false;
+  try{ hijos = !!(S && S.children && S.children.length); }catch(_){}
+  return { sexo:sexo, edad:edad, ocupacion:String(ocup||''), conHijos:hijos };
+}
+// Devuelve: -1 no mostrar · 0 mostrar abajo · 1 probablemente le sirva
+function dmRelevanciaTema(id, u){
+  const r = DM_RELEVANCIA[id];
+  if(!r) return 0;                                  // tema general: siempre
+  if(r.imposibleSi && r.imposibleSi(u)) return -1;   // solo lo imposible se esconde
+  let puntos = 0;
+  if(r.sexo && u.sexo === r.sexo) puntos++;
+  if(r.edadMin != null && u.edad != null && u.edad >= r.edadMin) puntos++;
+  if(r.edadMax != null && u.edad != null && u.edad >  r.edadMax) puntos--;
+  if(r.ocupacion && r.ocupacion.indexOf(u.ocupacion) >= 0) puntos += 2;
+  if(r.conHijos && u.conHijos) puntos += 2;
+  // Fuera de la franja de edad por lejos: abajo, no escondido.
+  if(r.edadMin != null && u.edad != null && u.edad < r.edadMin - 8) return 0;
+  return puntos >= 1 ? 1 : 0;
+}
+function dmTemasVerTodos(){
+  window._dmEduVerTodos = true;
+  try{ dmTodoSobreElSueno(); }catch(_){}
+}
+window.dmTemasVerTodos = dmTemasVerTodos;
+
 async function dmTodoSobreElSueno(){
   const body  = document.getElementById('edu-screen-body');
   const title = document.getElementById('edu-screen-title');
@@ -8801,13 +8970,40 @@ async function dmTodoSobreElSueno(){
     });
   }
 
-  // 2) El resto de la biblioteca.
+  // 2) El resto de la biblioteca, ordenado por a quién le sirve.
+  const _u = dmPerfilLector();
+  const _todo = !!window._dmEduVerTodos;
   const otros = temas.filter(function(t){ return idsAsignados.indexOf(t.id)<0; });
-  if(otros.length){
-    html += encabezado(asignados.length ? 'Otros temas' : 'Temas');
-    otros.forEach(function(t){
-      html += fila(t.icon, escHtml(t.title), '', 'openPatientEduTopic(\''+t.id+'\')', false);
+  const conRel = otros.map(function(t){ return { t:t, r:dmRelevanciaTema(t.id, _u) }; });
+  const propios = conRel.filter(function(x){ return x.r === 1; });
+  const resto   = conRel.filter(function(x){ return x.r === 0; });
+  const ocultos = conRel.filter(function(x){ return x.r === -1; });
+
+  if(propios.length){
+    html += encabezado('Para vos');
+    propios.forEach(function(x){
+      html += fila(x.t.icon, escHtml(x.t.title), '', 'openPatientEduTopic(\''+x.t.id+'\')', false);
     });
+  }
+  if(resto.length){
+    html += encabezado(propios.length ? 'Otros temas' : (asignados.length ? 'Otros temas' : 'Temas'));
+    resto.forEach(function(x){
+      html += fila(x.t.icon, escHtml(x.t.title), '', 'openPatientEduTopic(\''+x.t.id+'\')', false);
+    });
+  }
+  // Lo que se escondió, se dice. Nunca un filtro silencioso: si alguien
+  // necesita el tema y no lo ve, no tiene cómo saber que existía.
+  if(ocultos.length){
+    if(_todo){
+      html += encabezado('Todos los demás');
+      ocultos.forEach(function(x){
+        html += fila(x.t.icon, escHtml(x.t.title), '', 'openPatientEduTopic(\''+x.t.id+'\')', false);
+      });
+    }else{
+      html += '<div onclick="dmTemasVerTodos()" style="text-align:center;margin:14px 0 4px;'+
+        'font-size:13px;color:#7EC8A4;cursor:pointer;text-decoration:underline">'+
+        'Ver todos los temas ('+ocultos.length+' más)</div>';
+    }
   }
 
   // 3) Las preguntas frecuentes, que antes vivían en otra puerta.
@@ -9549,6 +9745,68 @@ function dmMensajeAliento(rows, racha){
   }
 }
 
+// ── SOMNOLENCIA DIURNA ALTA ───────────────────────────────────────────
+// Pediste "insinuárselo". No lo insinúo, y vale la pena explicar por qué.
+//
+// 1) Con un Epworth de 15 y alguien que maneja, la insinuación es peor que
+//    la frase clara: es más fácil de ignorar y deja a la persona
+//    adivinando. Si el dato amerita decirlo, se dice.
+//
+// 2) El PVT NO es una prueba de aptitud para conducir, y presentarlo como
+//    respuesta al riesgo de conducción implica que lo es. Alguien que saca
+//    un buen tiempo de reacción a las 10 de la mañana concluye que puede
+//    manejar a las 2 de la madrugada. Eso es exactamente la falsa
+//    sensación de evaluación por la que sacaste el test de un minuto.
+//
+// Entonces: se nombra el hallazgo, se dice qué significa, y la acción que
+// se propone es la que corresponde —hablarlo con un profesional—. El PVT se
+// ofrece aparte y por lo que sí es: una medida de la alerta de AHORA, útil
+// para ver el patrón propio a lo largo del día. Con la aclaración de que no
+// habilita ni deshabilita a nadie para manejar.
+async function dmAvisoSomnolencia(){
+  const el=document.getElementById('home-somnolencia');
+  if(!el || !S.user || !S.user.email) return;
+  el.style.display='none';
+  try{
+    const recs = await db.get('evaluations?patient_email=eq.'+encodeURIComponent(S.user.email)+
+                              '&scale_id=eq.ess&order=created_at.desc&limit=1&select=score,created_at')
+                         .catch(function(){ return []; });
+    if(!recs || !recs.length) return;
+    const p = Number(recs[0].score);
+    if(isNaN(p) || p < 13) return;                 // punto de corte de Johns
+    // Si es de hace más de seis meses, ya no describe a esta persona.
+    const dias = Math.floor((Date.now() - new Date(recs[0].created_at)) / 86400000);
+    if(dias > 183) return;
+    const grave = p >= 16;
+    el.style.display='block';
+    el.innerHTML =
+      '<div class="dm-somno'+(grave?' grave':'')+'">'+
+        '<div class="dm-somno-rot">Somnolencia diurna</div>'+
+        '<div class="dm-somno-txt">'+
+          'Tu Epworth dio <b>'+p+' de 24</b>'+(dias>30?(' hace '+Math.round(dias/30)+' meses'):'')+'. '+
+          'Desde 11 se considera somnolencia diurna excesiva y desde 13, moderada a grave '+
+          '(Johns). Eso quiere decir que te quedarías dormido/a en situaciones donde la '+
+          'mayoría se mantiene despierta.'+
+          '<br><br>'+
+          '<b>Conviene hablarlo con un profesional</b>, sobre todo si manejás, trabajás de '+
+          'noche u operás maquinaria. La somnolencia de este rango tiene causas tratables '+
+          '—apnea, sueño insuficiente, medicación, turnos— y no se resuelve durmiendo el fin '+
+          'de semana.'+
+        '</div>'+
+        '<div class="dm-somno-pvt">'+
+          '<div class="dm-somno-pvt-txt">'+
+            'Si querés ver tu propia curva de alerta a lo largo del día, el '+
+            '<b>test de alerta</b> la mide en pocos minutos. '+
+            '<span class="dm-somno-ojo">No dice si podés manejar: mide cómo estás ahora, '+
+            'en este momento, y nada más.</span>'+
+          '</div>'+
+          '<button onclick="showScreen(\'pvt-intro\')">Hacer el test de alerta</button>'+
+        '</div>'+
+      '</div>';
+  }catch(e){ console.warn('[somnolencia]', e); }
+}
+window.dmAvisoSomnolencia = dmAvisoSomnolencia;
+
 // ── Invitación a calificar al profesional ─────────────────────────────
 // Aparece recién a las dos semanas del vínculo: antes de eso el paciente
 // todavía no tiene con qué opinar. Si dice "más adelante", vuelve al mes.
@@ -9733,8 +9991,45 @@ function dmTarjetaNoche(entry){
       (min>0 ? '<div style="display:flex;gap:5px;height:8px;margin:14px 0 0">'+
         (latN>0?'<div style="flex:'+latN+';background:rgba(126,200,164,.3);border-radius:4px"></div>':'')+
         '<div style="flex:'+min+';background:#7EC8A4;border-radius:4px"></div></div>' : '')+
+      // Una línea sobre ESTA noche. El mensaje de aliento que ya existía
+      // compara semana contra semana, que es otra cosa y llega más tarde.
+      (function(){ const _t=dmResumenDeLaNoche(entry);
+        return _t ? '<div class="dm-noche-txt">'+_t+'</div>' : ''; })()+
     '</div>';
 }
+
+// ── Qué decirle de la noche que acaba de cargar ───────────────────────
+// Se calcula de los datos, no lo escribe un modelo: es una frase sobre el
+// sueño de una persona y tiene que ser exacta, no verosímil.
+//
+// Tres reglas que no se rompen:
+//   · nunca califica la noche como fracaso — el paciente no la eligió
+//   · si no hay nada bueno que señalar, reconoce el registro, que sí eligió
+//   · nunca dice "dormiste poco" sin decir qué hacer con eso
+function dmResumenDeLaNoche(e){
+  if(!e) return '';
+  const min  = Number(e.sleep_minutes)||0;
+  const lat  = (e.sleep_latency_mins!=null && e.sleep_latency_mins!=='')
+             ? parseInt(e.sleep_latency_mins) : null;
+  const desp = (e.awakenings!=null && !isNaN(e.awakenings)) ? Number(e.awakenings) : null;
+  const bien = [];
+
+  if(lat!=null && lat>=0 && lat<=20) bien.push('te dormiste rápido');
+  if(desp===0) bien.push('dormiste de corrido');
+  if(min>=6*60 && min<=9*60) bien.push('dormiste dentro del rango habitual para un adulto');
+
+  if(bien.length>=2) return 'Buena noche: '+bien[0]+' y '+bien[1]+'.';
+  if(bien.length===1) return 'De esta noche: '+bien[0]+'.';
+
+  // Nada que destacar. No se señala lo malo —ya lo vivió— pero tampoco se
+  // finge entusiasmo: se nombra lo único que depende de ella.
+  if(lat!=null && lat>60)
+    return 'Costó arrancar. Que lo hayas registrado es lo que después permite ver el patrón.';
+  if(desp!=null && desp>=3)
+    return 'Noche cortada. Una sola noche no dice nada; la serie sí.';
+  return 'Registrada. La constancia es lo que le da sentido a estos números.';
+}
+window.dmResumenDeLaNoche = dmResumenDeLaNoche;
 
 async function showHome(){
   // Anotar si a esta persona le pueden llegar recordatorios. No bloquea nada:
@@ -9744,6 +10039,7 @@ async function showHome(){
   // A quien nunca lo dio (los dados de alta por el profesional) se le
   // pregunta acá, en su primera entrada.
   try{ dmConsentimientoSincronizar(); }catch(_){}
+  try{ dmAvisoSomnolencia(); }catch(_){}
   // La noche de ayer: se consulta y se pinta apenas entra, sin esperar al
   // resto de la pantalla. Es lo primero que la persona vino a ver.
   (async function(){
@@ -16465,7 +16761,11 @@ function dmPanelInformeHtml(){
     { id:'interconsulta', t:'Interconsulta',      d:'Completa, para un colega que no vio al paciente.' },
     { id:'paciente',      t:'Resumen para el paciente', d:'En lenguaje cotidiano, para que se lo lleve.' }
   ];
-  return '<div style="padding:4px 0 20px">'+
+  // Dos columnas en escritorio: a la izquierda qué pedir, a la derecha lo
+  // que salió. Antes el informe aparecía debajo de los tres botones y había
+  // que scrollear para leerlo, con media pantalla vacía al costado.
+  return '<div class="dm-inf-wrap" style="padding:4px 0 20px">'+
+    '<div class="dm-inf-col">'+
     '<div style="font-size:19px;font-weight:700;color:#F4EFE5;margin-bottom:5px">Generar informe</div>'+
     '<div style="font-size:14px;color:rgba(244,239,229,.82);line-height:1.55;margin-bottom:16px">'+
       'Se redacta con las métricas que ya calculó Dormetria. '+
@@ -16481,11 +16781,14 @@ function dmPanelInformeHtml(){
       '<label style="font-size:13.5px;color:rgba(244,239,229,.82);display:block;margin-bottom:6px">Algo que quieras que tenga en cuenta (opcional)</label>'+
       '<textarea id="dm-inf-notas" rows="2" placeholder="Ej: viene con CPAP hace 3 meses, refiere mejoría subjetiva" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(126,200,164,.2);border-radius:12px;padding:12px;font-size:14px;color:#F4EFE5;font-family:var(--font);resize:vertical"></textarea>'+
     '</div>'+
-    '<div id="dm-inf-salida" style="margin-top:16px"></div>'+
-    '<div id="dm-inf-previos"></div>'+
     '<div style="border-left:3px solid #C8A96E;padding:10px 0 10px 14px;margin-top:20px;font-size:13px;line-height:1.55;color:rgba(244,239,229,.82)">'+
       'El informe lo redacta un modelo de lenguaje a partir de los números del registro. '+
       'Revisalo antes de firmarlo o entregarlo: la responsabilidad clínica es tuya.</div>'+
+    '</div>'+
+    '<div class="dm-inf-col dm-inf-salida-col">'+
+      '<div id="dm-inf-salida"></div>'+
+      '<div id="dm-inf-previos"></div>'+
+    '</div>'+
   '</div>';
 }
 
@@ -17408,11 +17711,11 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-score">
           <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center;position:sticky;top:0;z-index:30;background:#0f2b22;padding:9px 8px;margin-left:-6px;margin-right:-6px;border-radius:10px;box-shadow:0 4px 12px -6px rgba(0,0,0,.35);flex-wrap:wrap">
             <span style="font-size:12px;color:rgba(255,255,255,.9) !important;font-weight:600">Período:</span>
-            <button onclick="switchDrScorePeriod(7)"  id="dr-score-7"  style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',7)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',7)?'#fff':'#1a4a3a'};font-family:var(--font)">7 d</button>
-            <button onclick="switchDrScorePeriod(15)" id="dr-score-15" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',15)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',15)?'#fff':'#1a4a3a'};font-family:var(--font)">15 d</button>
-            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',30)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',30)?'#fff':'#1a4a3a'};font-family:var(--font)">30 d</button>
-            <button onclick="switchDrScorePeriod(60)" id="dr-score-60" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',60)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',60)?'#fff':'#1a4a3a'};font-family:var(--font)">60 d</button>
-            <button onclick="switchDrScorePeriod(0)"  id="dr-score-all" style="padding:4px 12px;border:none;border-radius:16px;font-size:11.5px;font-weight:700;cursor:pointer;background:${dmDrPerActivo('dias',0)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',0)?'#fff':'#1a4a3a'};font-family:var(--font)">Todo</button>
+            <button onclick="switchDrScorePeriod(7)"  id="dr-score-7"  class="dm-per-btn ${dmDrPerActivo('dias',7)?'on':''}">7 d</button>
+            <button onclick="switchDrScorePeriod(15)" id="dr-score-15" class="dm-per-btn ${dmDrPerActivo('dias',15)?'on':''}">15 d</button>
+            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" class="dm-per-btn ${dmDrPerActivo('dias',30)?'on':''}">30 d</button>
+            <button onclick="switchDrScorePeriod(60)" id="dr-score-60" class="dm-per-btn ${dmDrPerActivo('dias',60)?'on':''}">60 d</button>
+            <button onclick="switchDrScorePeriod(0)"  id="dr-score-all" class="dm-per-btn ${dmDrPerActivo('dias',0)?'on':''}">Todo</button>
             ${dmSelectorMesDrHtml(subj)}
           </div>
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})(), 'doctor')}</div>
@@ -17421,8 +17724,13 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-pillars">
           <div class="dm-card-title">🧩 Pilares del sueño</div>
           <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
-          <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
-          <div id="dr-pillar-legend"></div>
+          <!-- El gráfico de líneas de los pilares es de lectura técnica: tres
+               series superpuestas que solo dicen algo si se sabe qué mirar.
+               En generalista quedan las tres cifras, que es la información. -->
+          <div class="dm-solo-esp">
+            <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
+            <div id="dr-pillar-legend"></div>
+          </div>
           <div id="dr-quality-concord" class="dm-solo-esp" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
         </div>
         <!-- Los dos paneles de correlación se llamaban casi igual y se
@@ -17431,12 +17739,9 @@ async function showDrPTab_(tab){
              adentro de Pilares, la cruza con lo MEDIDO (latencia, despertares,
              regularidad). Va acá, debajo de Pilares, que es de donde sale la
              pregunta. -->
-        <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
-          <div class="dm-card-title">🔍 Hábitos y calidad reportada</div>
-          <div id="dr-quality-factores"></div>
-        </div>
+
         <div class="dm-card dm-light dm-solo-esp" id="dr-weekly-prog" style="display:none"></div>
-        <div class="dm-diary-metrics dm-solo-esp" id="dr-clinical-metrics"></div>
+        <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
         </div>
         <div class="dm-diary-right">
         <div class="dm-card dm-light dm-diary-acto">
@@ -17468,6 +17773,12 @@ async function showDrPTab_(tab){
           </div>
         </div>
         <div id="dr-reg-slot" class="dm-solo-esp"></div>
+        <!-- Hábitos vs calidad se mudó acá: es la tarjeta más alta de todas
+             y en la columna izquierda dejaba a la derecha corriendo sola. -->
+        <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
+          <div class="dm-card-title">🔍 Hábitos y calidad reportada</div>
+          <div id="dr-quality-factores"></div>
+        </div>
         </div>
         </div>
         <div id="dr-abajo-slot"></div>

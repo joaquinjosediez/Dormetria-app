@@ -6,9 +6,22 @@ Este archivo se carga automáticamente por Claude Code al trabajar en este repo.
 App clínica de sueño y salud mental (adultos + pediátrico), single HTML file (`index.html`, ~16k+ líneas) con backend Supabase, desplegada como PWA vía Netlify. En uso piloto activo con pacientes reales — cualquier cambio en producción tiene impacto clínico directo, no solo técnico.
 
 ## Infraestructura
-- Producción: `joaquinjosediez.github.io/Dormetria-app` · Supabase project `sojvsbwpqdwjuvezdhby`
-- Landing: dormetria.com (Netlify, dominio DonWeb)
-- Staging: `/staging/`, JS-idéntico a producción · Supabase project separado `dormetria-staging` (datos ficticios) · toggle de entorno en `index.html` · banner rojo visual para distinguir entorno
+- **Producción: https://app.dormetria.com/** — GitHub Pages desde la raíz de
+  este repo (hay un `CNAME` con `app.dormetria.com`; la URL
+  `joaquinjosediez.github.io/Dormetria-app` que figuraba acá estaba
+  desactualizada). Supabase project `sojvsbwpqdwjuvezdhby`.
+- **Staging: https://app.dormetria.com/staging/** — la carpeta `/staging/` del
+  mismo repo, servida por el mismo GitHub Pages. Se publica con el mismo
+  `git push` que producción.
+- **Beta del motor: https://app.dormetria.com/beta/index-beta-motor-orientacion.html**
+- Landing: dormetria.com (Netlify, dominio DonWeb) — host distinto al de la app.
+
+> ⚠️ **Staging NO está aislado.** `staging/index.html` apunta al MISMO proyecto
+> de Supabase que producción (`sojvsbwpqdwjuvezdhby`), no a `dormetria-staging`
+> como decía esta línea antes. Lo que se guarde en staging toca datos de
+> pacientes reales. Hay un banner rojo fijo que lo dice. Para separarlo de
+> verdad hace falta crear el proyecto `dormetria-staging` y un toggle de
+> entorno; hasta entonces, probar en staging solo con cuentas demo.
 - `schema_version:2` distingue semántica nueva (`wake_time`/`get_up_time`) de registros legacy — verificar antes de tocar queries relacionadas a horarios de sueño
 
 ## REGLA CRÍTICA: integridad del bloque `<script>`
@@ -17,8 +30,19 @@ El archivo `index.html` tiene un historial recurrente de corrupción del bloque 
 1. Usar `const SU=` como marcador de inicio del bloque JS
 2. Usar `lastIndexOf('\n</script>')` como marcador de fin
 3. Correr `node --check` sobre el archivo resultante antes de dar el cambio por bueno
-4. Verificar balance de llaves `{}` carácter por carácter
-5. Nunca aplicar un reemplazo de string directo y genérico sobre este bloque sin pasar por los pasos anteriores
+4. Verificar balance de llaves `{}` — **ignorando strings, comentarios y
+   plantillas**: el código tiene literales como `'}'` que ensucian el conteo y
+   hacen que un balance "raro" parezca un error cuando no lo es
+5. **Correr `npm test`.** Los pasos 3 y 4 no alcanzan: `node --check` valida
+   sintaxis, no semántica. En mod209 una inserción partió un `async function`
+   en dos líneas — `async` quedó huérfano arriba, `function` abajo. Eso es
+   sintaxis **válida** (se lee `async;` y después una declaración suelta) y
+   `node --check` lo aprobó, pero la app no arrancaba. Lo agarró la suite,
+   que ejecuta el bloque entero (`appEvaluada` en `pruebas/comun.js`).
+6. Cuidado especial al insertar **antes** de una declaración: buscá siempre la
+   línea completa, no `function nombre(`, porque puede estar precedida por
+   `async `, `window.x = `, `export ` u otro prefijo que quede cortado
+7. Nunca aplicar un reemplazo de string directo y genérico sobre este bloque sin pasar por los pasos anteriores
 
 Si algo de esto falla, reportar la línea exacta del desbalance y detenerse — no intentar un auto-fix silencioso.
 

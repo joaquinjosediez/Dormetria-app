@@ -4672,6 +4672,9 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 /* Sugerir escalas: dos columnas agrupadas por tema. Una lista plana de 25
    escalas obliga a recorrerlas todas para encontrar una. */
 .dm-sug-grid{ columns:2; column-gap:16px; }
+/* Tres columnas cuando hay ancho: las escalas son fichas cortas y con dos
+   columnas quedaba un tercio de la pantalla vacío a la derecha. */
+@media (min-width:1280px){ body.dr-desktop .dm-sug-grid{ columns:3; column-gap:16px; } }
 .dm-sug-grupo{ break-inside:avoid; page-break-inside:avoid; margin-bottom:14px; display:inline-block; width:100%; }
 .dm-sug-tit{
   font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
@@ -5058,3 +5061,272 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
    clase y no re-renderizando: los gráficos ya están montados y volver a
    dibujarlos por un cambio de visibilidad los destruye y recrea sin motivo. */
 .dm-modo-gen .dm-solo-esp{ display:none !important; }
+
+/* ══ ADHERENCIA · lo que se tomó de REST ═══════════════════════════════
+   Cinco cosas, y ninguna es decorativa: el ejemplo trabajado mejora la
+   calidad del dato, la constancia mide lo que el paciente sí controla, los
+   puntos evitan el incentivo a inventar datos que tiene una racha, el
+   desbloqueo progresivo cambia un muro por una meta, y el plan del día 1 es
+   la intervención de adherencia más barata que existe. */
+
+/* ── Ejemplo trabajado en cada pregunta del diario ── */
+.dm-ej{ margin:6px 0 9px; font-family:var(--font); }
+.dm-ej > summary{
+  cursor:pointer; list-style:none; display:flex; align-items:center; gap:7px;
+  font-size:12.5px; font-weight:600; color:#C8A96E;
+  -webkit-tap-highlight-color:transparent; padding:3px 0;
+}
+.dm-ej > summary::-webkit-details-marker{ display:none; }
+.dm-ej > summary::before{
+  content:'💡'; font-size:12px; line-height:1;
+}
+.dm-ej > summary::after{
+  content:'▸'; margin-left:auto; font-size:11px; transition:transform .15s ease;
+}
+.dm-ej[open] > summary::after{ transform:rotate(90deg); }
+.dm-ej-cuerpo{
+  margin-top:7px; padding:11px 13px;
+  background:rgba(200,169,110,.09);
+  border-left:2px solid rgba(200,169,110,.45); border-radius:0 10px 10px 0;
+  font-size:13.5px; line-height:1.65; color:rgba(244,239,229,.92);
+}
+.dm-ej-cuerpo b{ color:#F4EFE5; }
+
+/* ── Los siete puntos de la semana ── */
+.dm-pts{ display:flex; gap:7px; margin-top:11px; }
+.dm-pt{ display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
+.dm-pt > i{
+  width:11px; height:11px; border-radius:50%;
+  border:1.5px solid rgba(126,200,164,.45); background:transparent;
+  transition:background .2s ease;
+}
+.dm-pt-on > i{ background:#7EC8A4; border-color:#7EC8A4; }
+.dm-pt-hoy > i{ box-shadow:0 0 0 3px rgba(126,200,164,.18); }
+.dm-pt > b{
+  font-size:9.5px; font-weight:600; color:rgba(244,239,229,.5); line-height:1;
+}
+.dm-pt-on > b{ color:rgba(244,239,229,.8); }
+
+/* ── Desbloqueo progresivo, en vez de muro ── */
+.dm-bloq{
+  position:relative; text-align:center; padding:22px 18px 20px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(126,200,164,.18);
+  border-radius:16px; font-family:var(--font);
+}
+.dm-bloq-barras{
+  display:flex; align-items:flex-end; justify-content:center; gap:9px;
+  height:56px; margin-bottom:14px; position:relative; filter:blur(3px); opacity:.5;
+}
+.dm-bloq-barras > i{ width:14px; border-radius:3px 3px 0 0; background:#7EC8A4; }
+.dm-bloq-barras > i:nth-child(1){ height:56%; }
+.dm-bloq-barras > i:nth-child(2){ height:78%; }
+.dm-bloq-barras > i:nth-child(3){ height:44%; }
+.dm-bloq-barras > i:nth-child(4){ height:90%; }
+.dm-bloq-barras > i:nth-child(5){ height:66%; }
+.dm-bloq-candado{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:22px; filter:blur(0); opacity:1;
+}
+.dm-bloq-tit{ font-size:15.5px; font-weight:700; color:#F4EFE5; }
+.dm-bloq-sub{
+  font-size:13px; color:rgba(244,239,229,.78); line-height:1.5; margin-top:5px;
+}
+.dm-bloq-sub b{ color:#7EC8A4; }
+.dm-bloq-prog{
+  height:5px; border-radius:3px; background:rgba(255,255,255,.09);
+  overflow:hidden; margin:13px auto 0; max-width:220px;
+}
+.dm-bloq-prog > span{
+  display:block; height:100%; background:#7EC8A4; border-radius:3px;
+  transition:width .3s ease;
+}
+
+/* ── "Revisá tu entrada" ── */
+.dm-rev-tit{ font-size:20px; font-weight:700; color:#F4EFE5; margin-bottom:4px; }
+.dm-rev-sub{
+  font-size:13px; color:rgba(244,239,229,.7); line-height:1.5; margin-bottom:16px;
+}
+.dm-rev-fila{
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
+  border-radius:13px; padding:13px 15px; margin-bottom:8px;
+}
+.dm-rev-fila:hover{ border-color:rgba(126,200,164,.35); }
+.dm-rev-rot{
+  font-size:13px; color:rgba(244,239,229,.72); flex:1; min-width:0; line-height:1.35;
+}
+.dm-rev-val{
+  font-size:15px; font-weight:600; color:#F4EFE5; text-align:right;
+  flex:0 1 auto; min-width:0; overflow-wrap:break-word;
+}
+.dm-rev-vacio{ color:#C8A96E; font-weight:500; font-style:italic; font-size:13.5px; }
+.dm-rev-chev{ color:rgba(244,239,229,.35); font-size:17px; flex:0 0 auto; }
+
+/* ── Plan del día 1 ── */
+.dm-plan1{
+  background:linear-gradient(135deg,#1F4738 0%,#0F2820 100%);
+  border:1px solid rgba(126,200,164,.35); border-radius:18px;
+  padding:17px 18px; margin-bottom:14px; font-family:var(--font);
+}
+.dm-plan1-tit{ font-size:16px; font-weight:700; color:#F4EFE5; }
+.dm-plan1-sub{
+  font-size:12.5px; color:rgba(244,239,229,.78); line-height:1.5;
+  margin:4px 0 13px;
+}
+.dm-plan1-item{
+  display:flex; align-items:flex-start; gap:11px; cursor:pointer;
+  padding:11px 0; border-top:1px solid rgba(255,255,255,.07);
+  font-size:13.5px; line-height:1.5; color:rgba(244,239,229,.92);
+}
+.dm-plan1-chk{
+  flex:0 0 auto; width:21px; height:21px; border-radius:7px;
+  border:1.5px solid rgba(126,200,164,.5); display:flex;
+  align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:#0F2820; margin-top:1px;
+}
+.dm-plan1-item.on > .dm-plan1-chk{ background:#7EC8A4; border-color:#7EC8A4; }
+.dm-plan1-item.on{ color:rgba(244,239,229,.55); }
+.dm-plan1-pie{
+  display:flex; justify-content:space-between; align-items:baseline;
+  margin-top:13px; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:rgba(244,239,229,.6); font-weight:700;
+}
+.dm-plan1-pie b{ font-size:13px; color:#7EC8A4; letter-spacing:0; }
+.dm-plan1-barra{
+  height:4px; border-radius:2px; background:rgba(255,255,255,.09);
+  overflow:hidden; margin-top:6px;
+}
+.dm-plan1-barra > span{
+  display:block; height:100%; background:#7EC8A4; border-radius:2px;
+  transition:width .25s ease;
+}
+
+/* ── Disposición al cambio, antes de la TCC-I ──────────────────────────
+   Dos reglas, no una: importancia y confianza son construcciones distintas
+   y piden intervenciones opuestas (Rollnick). Un solo número las mezcla. */
+.dm-disp{
+  background:rgba(255,255,255,.05); border:1px solid rgba(126,200,164,.28);
+  border-radius:16px; padding:17px 18px; margin-bottom:12px; font-family:var(--font);
+}
+.dm-disp-tit{ font-size:16px; font-weight:700; color:#F4EFE5; }
+.dm-disp-sub{
+  font-size:12.5px; color:rgba(244,239,229,.75); line-height:1.5; margin:4px 0 16px;
+}
+.dm-disp-bloque{ margin-bottom:18px; }
+.dm-disp-preg{
+  font-size:14px; font-weight:600; color:#F4EFE5; line-height:1.45; margin-bottom:9px;
+}
+.dm-disp-ayuda{
+  font-size:11.5px; color:rgba(244,239,229,.6); line-height:1.45; margin:-5px 0 8px;
+}
+.dm-disp-num{ text-align:center; margin-bottom:4px; }
+.dm-disp-num span{ font-size:27px; font-weight:700; color:#7EC8A4; }
+.dm-disp-num i{ font-size:13px; font-style:normal; color:rgba(244,239,229,.5); margin-left:2px; }
+.dm-disp-rango{
+  -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:3px;
+  background:rgba(255,255,255,.12); outline:none; margin:4px 0;
+}
+.dm-disp-rango::-webkit-slider-thumb{
+  -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+  background:#F4EFE5; border:2px solid #7EC8A4; cursor:pointer;
+}
+.dm-disp-rango::-moz-range-thumb{
+  width:26px; height:26px; border-radius:50%;
+  background:#F4EFE5; border:2px solid #7EC8A4; cursor:pointer;
+}
+.dm-disp-extremos{
+  display:flex; justify-content:space-between; font-size:11px;
+  color:rgba(244,239,229,.55); margin-top:5px;
+}
+.dm-disp-txt{
+  width:100%; box-sizing:border-box; background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:11px 13px;
+  color:#F4EFE5; font-size:14px; font-family:var(--font); line-height:1.5; resize:vertical;
+}
+.dm-disp-btn{
+  width:100%; background:#7EC8A4; border:none; color:#0F2820; border-radius:13px;
+  padding:14px; font-size:15.5px; font-weight:700; cursor:pointer; font-family:var(--font);
+}
+.dm-disp-lectura{
+  background:rgba(126,200,164,.1); border-left:3px solid #7EC8A4;
+  border-radius:0 12px 12px 0; padding:13px 15px; margin-bottom:12px;
+  font-family:var(--font);
+}
+.dm-disp-lectura.ambar{ background:rgba(200,169,110,.1); border-left-color:#C8A96E; }
+.dm-disp-lectura-rot{
+  font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; font-weight:700;
+  color:#7EC8A4; margin-bottom:5px;
+}
+.dm-disp-lectura.ambar .dm-disp-lectura-rot{ color:#C8A96E; }
+.dm-disp-lectura-txt{
+  font-size:13.5px; color:rgba(244,239,229,.94); line-height:1.6;
+}
+.dm-disp-lectura-pie{
+  font-size:11px; color:rgba(244,239,229,.55); margin-top:8px;
+}
+.dm-disp-lectura-pie a{ color:#7EC8A4; cursor:pointer; text-decoration:underline; }
+
+/* ── Resumen de la noche recién cargada ── */
+.dm-noche-txt{
+  font-size:13px; color:rgba(244,239,229,.86); line-height:1.5;
+  margin-top:13px; padding-top:12px;
+  border-top:1px solid rgba(126,200,164,.18);
+}
+
+/* ── Somnolencia diurna alta ───────────────────────────────────────────
+   Ámbar, no rojo, y sin icono de alarma: es un hallazgo que amerita una
+   consulta, no una urgencia. El PVT va en un bloque aparte y con su
+   límite escrito: no es una prueba de aptitud para conducir. */
+.dm-somno{
+  background:rgba(200,169,110,.1); border:1px solid rgba(200,169,110,.32);
+  border-radius:16px; padding:15px 17px; font-family:var(--font);
+}
+.dm-somno.grave{ background:rgba(200,169,110,.15); border-color:rgba(200,169,110,.5); }
+.dm-somno-rot{
+  font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  font-weight:700; color:#C8A96E; margin-bottom:7px;
+}
+.dm-somno-txt{
+  font-size:13.5px; color:rgba(244,239,229,.93); line-height:1.62;
+}
+.dm-somno-txt b{ color:#F4EFE5; }
+.dm-somno-pvt{
+  margin-top:14px; padding-top:13px;
+  border-top:1px solid rgba(200,169,110,.25);
+}
+.dm-somno-pvt-txt{
+  font-size:12.5px; color:rgba(244,239,229,.8); line-height:1.55; margin-bottom:11px;
+}
+.dm-somno-ojo{ display:block; margin-top:5px; color:rgba(244,239,229,.62); font-style:italic; }
+.dm-somno-pvt button{
+  width:100%; background:rgba(255,255,255,.08); border:1px solid rgba(200,169,110,.4);
+  color:#F4EFE5; border-radius:12px; padding:12px; font-size:14px; font-weight:600;
+  cursor:pointer; font-family:var(--font);
+}
+
+/* ── mod210 · el panel de informe en dos columnas ──────────────────────
+   Antes el informe salía debajo de los tres botones y había que scrollear
+   para leerlo, con media pantalla vacía al costado. */
+.dm-inf-wrap{ display:block; }
+@media (min-width:1100px){
+  body.dr-desktop .dm-inf-wrap{
+    display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr);
+    gap:22px; align-items:start;
+  }
+  body.dr-desktop .dm-inf-salida-col{ position:sticky; top:8px; }
+  /* Sin informe todavía, la columna derecha no ocupa ni deja un hueco. */
+  body.dr-desktop .dm-inf-salida-col:empty{ display:none; }
+}
+.dm-inf-col{ min-width:0; }
+
+/* ── Botones de período, con el lenguaje del toggle Generalista/Especialista
+   Antes eran píldoras claras sobre el verde, el único elemento de la
+   pantalla con ese tratamiento. */
+.dm-per-btn{
+  appearance:none; border:none; cursor:pointer; font-family:var(--font);
+  border-radius:999px; padding:6px 13px; font-size:12px; font-weight:700;
+  background:transparent; color:rgba(244,239,229,0.6);
+  -webkit-tap-highlight-color:transparent;
+}
+.dm-per-btn.on{ background:rgba(126,200,164,0.22); color:#7EC8A4; }
+.dm-per-btn:hover{ color:rgba(244,239,229,0.85); }

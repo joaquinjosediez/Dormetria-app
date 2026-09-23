@@ -4672,6 +4672,9 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 /* Sugerir escalas: dos columnas agrupadas por tema. Una lista plana de 25
    escalas obliga a recorrerlas todas para encontrar una. */
 .dm-sug-grid{ columns:2; column-gap:16px; }
+/* Tres columnas cuando hay ancho: las escalas son fichas cortas y con dos
+   columnas quedaba un tercio de la pantalla vacío a la derecha. */
+@media (min-width:1280px){ body.dr-desktop .dm-sug-grid{ columns:3; column-gap:16px; } }
 .dm-sug-grupo{ break-inside:avoid; page-break-inside:avoid; margin-bottom:14px; display:inline-block; width:100%; }
 .dm-sug-tit{
   font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
@@ -5262,3 +5265,68 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
   font-size:11px; color:rgba(244,239,229,.55); margin-top:8px;
 }
 .dm-disp-lectura-pie a{ color:#7EC8A4; cursor:pointer; text-decoration:underline; }
+
+/* ── Resumen de la noche recién cargada ── */
+.dm-noche-txt{
+  font-size:13px; color:rgba(244,239,229,.86); line-height:1.5;
+  margin-top:13px; padding-top:12px;
+  border-top:1px solid rgba(126,200,164,.18);
+}
+
+/* ── Somnolencia diurna alta ───────────────────────────────────────────
+   Ámbar, no rojo, y sin icono de alarma: es un hallazgo que amerita una
+   consulta, no una urgencia. El PVT va en un bloque aparte y con su
+   límite escrito: no es una prueba de aptitud para conducir. */
+.dm-somno{
+  background:rgba(200,169,110,.1); border:1px solid rgba(200,169,110,.32);
+  border-radius:16px; padding:15px 17px; font-family:var(--font);
+}
+.dm-somno.grave{ background:rgba(200,169,110,.15); border-color:rgba(200,169,110,.5); }
+.dm-somno-rot{
+  font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  font-weight:700; color:#C8A96E; margin-bottom:7px;
+}
+.dm-somno-txt{
+  font-size:13.5px; color:rgba(244,239,229,.93); line-height:1.62;
+}
+.dm-somno-txt b{ color:#F4EFE5; }
+.dm-somno-pvt{
+  margin-top:14px; padding-top:13px;
+  border-top:1px solid rgba(200,169,110,.25);
+}
+.dm-somno-pvt-txt{
+  font-size:12.5px; color:rgba(244,239,229,.8); line-height:1.55; margin-bottom:11px;
+}
+.dm-somno-ojo{ display:block; margin-top:5px; color:rgba(244,239,229,.62); font-style:italic; }
+.dm-somno-pvt button{
+  width:100%; background:rgba(255,255,255,.08); border:1px solid rgba(200,169,110,.4);
+  color:#F4EFE5; border-radius:12px; padding:12px; font-size:14px; font-weight:600;
+  cursor:pointer; font-family:var(--font);
+}
+
+/* ── mod210 · el panel de informe en dos columnas ──────────────────────
+   Antes el informe salía debajo de los tres botones y había que scrollear
+   para leerlo, con media pantalla vacía al costado. */
+.dm-inf-wrap{ display:block; }
+@media (min-width:1100px){
+  body.dr-desktop .dm-inf-wrap{
+    display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr);
+    gap:22px; align-items:start;
+  }
+  body.dr-desktop .dm-inf-salida-col{ position:sticky; top:8px; }
+  /* Sin informe todavía, la columna derecha no ocupa ni deja un hueco. */
+  body.dr-desktop .dm-inf-salida-col:empty{ display:none; }
+}
+.dm-inf-col{ min-width:0; }
+
+/* ── Botones de período, con el lenguaje del toggle Generalista/Especialista
+   Antes eran píldoras claras sobre el verde, el único elemento de la
+   pantalla con ese tratamiento. */
+.dm-per-btn{
+  appearance:none; border:none; cursor:pointer; font-family:var(--font);
+  border-radius:999px; padding:6px 13px; font-size:12px; font-weight:700;
+  background:transparent; color:rgba(244,239,229,0.6);
+  -webkit-tap-highlight-color:transparent;
+}
+.dm-per-btn.on{ background:rgba(126,200,164,0.22); color:#7EC8A4; }
+.dm-per-btn:hover{ color:rgba(244,239,229,0.85); }

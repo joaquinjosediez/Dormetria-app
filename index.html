@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod208-fb7b34a9">
+<link rel="stylesheet" href="css/styles.css?v=mod210-812663f7">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -554,11 +554,17 @@
     <!-- 3) La noche de ayer. Dos estados: pendiente y cargada. -->
     <div id="home-noche-slot"></div>
 
+    <!-- Plan del día 1. Solo mientras no haya ninguna noche cargada. -->
+    <div id="home-plan1" style="display:none"></div>
+
     <!-- Dos cifras: constancia y regularidad. Nada mas. -->
     <div id="home-cifras" style="display:none;gap:11px"></div>
     <!-- Mensaje de aliento. Compara la última semana con la anterior: a los
          14 días la señal llega demasiado tarde para sostener la conducta. -->
     <div id="home-aliento" style="display:none;margin-top:11px"></div>
+
+    <!-- Somnolencia diurna alta. Solo si el Epworth de la persona lo está. -->
+    <div id="home-somnolencia" style="display:none;margin-top:11px"></div>
 
     <!-- Invitación a calificar al profesional. Aparece a las dos semanas
          de vincularse y, si la posterga, vuelve al mes. -->
@@ -1343,10 +1349,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod208-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod208-22b7ad61"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod208-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=mod208-593e5fee"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod210-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod210-22b7ad61"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod210-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=mod210-593e5fee"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1365,7 +1371,8 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod208';
+const APP_VERSION='mod210';
+
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
 // El sw.js propio maneja la caché offline; OneSignal necesita SU PROPIO
@@ -5013,10 +5020,30 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
       let activePts7 = activeIn(D7);
       let activePts30 = activeIn(D30);
       // Médicos activos: emails de doctores que hicieron sugerencias en 30d
-      const drActiveSet=new Set();
-      (suggRows||[]).forEach(r=>{ if(r.created_at && new Date(r.created_at).getTime()>=D30) drActiveSet.add((r.doctor_email||'').toLowerCase()); });
-      drActiveSet.delete('');
-      const activeDrs30 = drActiveSet.size;
+      // "Profesionales activos" salía de doctor_suggestions: contaba a quien
+      // SUGIRIÓ UNA ESCALA, no a quien usó la app. Es el mismo error que ya
+      // se corrigió en la tabla de la pestaña Profesionales (la columna que
+      // decía "Última actividad" y ahora dice "Última sugerencia"). Ruffa y
+      // Velan entran todos los días y nunca sugirieron una escala: el panel
+      // mostraba 1 activo sobre 11. La fuente correcta es accesos_diarios.
+      let drAccesos = null;
+      try{
+        const _ac = await db.get('accesos_diarios?select=email,dia&dia=gte.'+
+                     new Date(D30).toISOString().slice(0,10)+'&limit=20000');
+        const _s = new Set();
+        (_ac||[]).forEach(function(r){ if(r && r.email) _s.add(String(r.email).toLowerCase()); });
+        const _mails = new Set((allDrs||[]).map(function(d){ return String(d.email||'').toLowerCase(); }));
+        drAccesos = new Set([..._s].filter(function(e){ return _mails.has(e); }));
+      }catch(_){ drAccesos = null; }
+
+      const drSugSet=new Set();
+      (suggRows||[]).forEach(r=>{ if(r.created_at && new Date(r.created_at).getTime()>=D30) drSugSet.add((r.doctor_email||'').toLowerCase()); });
+      drSugSet.delete('');
+      const activeDrs30  = drAccesos ? drAccesos.size : drSugSet.size;
+      const sugirieron30 = drSugSet.size;
+      // Si no hay registro de accesos todavía, se dice: un 0 y un "no hay
+      // datos" se ven igual y no son lo mismo.
+      const drFuente = drAccesos ? 'abrieron la app' : 'sugirieron escalas · falta el registro de accesos';
       // Ingresos por semana (actividad pacientes últimos 7d)
       let ingresos7d = (diaryRows||[]).filter(r=>r.created_at && new Date(r.created_at).getTime()>=D7).length
                        + (evalRows||[]).filter(r=>r.created_at && new Date(r.created_at).getTime()>=D7).length;
@@ -5037,6 +5064,19 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
         ingresos7d   = Number(_glob.ingresos_7d)||0;
         window._admStatsSinPermiso = false;
         window._admDesdeServidorStats = true;
+      }
+      // El total histórico. Se cuenta del lado del servidor (db.contar usa
+      // count=exact y no trae ninguna fila); si eso falla, se cae a lo que
+      // se pudo leer, que va a salir corto y por eso lleva un tilde.
+      let regTotal = null, regTotalParcial = false;
+      try{
+        const _d = await db.contar('sleep_diary');
+        const _e = await db.contar('evaluations');
+        if(_d != null && _e != null) regTotal = _d + _e;
+      }catch(_){}
+      if(regTotal == null){
+        regTotal = (diaryRows||[]).length + (evalRows||[]).length;
+        regTotalParcial = true;
       }
       // Tiempo promedio de permanencia (días desde el registro hasta la última actividad)
       const lastByEmail={};
@@ -5127,13 +5167,20 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
           ]);
 
           const b2 = bloque('Uso', [
-            dato({label:'Ingresos · 7 días', val:n(ingresos7d), sub:'registros + escalas'}),
-            dato({label:'Permanencia', val:n(avgStay), unidad:'d', sub:'del alta a la última señal'}),
+            dato({label:'Registros · total', val:n(regTotal), sub:regTotalParcial ? 'diario + escalas · solo lo que se pudo leer, va corto' : 'diario + escalas, desde el inicio'}),
+            dato({label:'Registros · 7 días', val:n(ingresos7d), sub:'diario + escalas'}),
+            // "Permanencia" se leía como si fuera de todos. No lo es: es el
+            // promedio sobre los pacientes que engancharon —los que nunca
+            // registraron nada quedan afuera, y también los que registraron
+            // el mismo día del alta—. Y para alguien que sigue activo, "la
+            // última señal" es hoy, así que mezcla a quien se fue con quien
+            // sigue. El pie ahora lo dice.
+            dato({label:'Permanencia', val:n(avgStay), unidad:'d', sub:'del alta a la última señal · sobre '+stays.length+' de '+((allPts||[]).length||0)+' pacientes que registraron algo'}),
           ]);
 
           const b3 = bloque('Profesionales', [
             dato({label:'Registrados', val:n(totalDrs), sub:'en total'}),
-            dato({label:'Activos · 30 días', val:n(activeDrs30), sub:'sugirieron escalas',
+            dato({label:'Activos · 30 días', val:n(activeDrs30), sub:drFuente,
                   p:pct(activeDrs30, totalDrs), color:'#15803d'}),
             dato({label:'En directorio', val:n(listedDrs), sub:'visibles al público',
                   p:pct(listedDrs, totalDrs), color:'#1a4a3a'}),
@@ -7123,6 +7170,72 @@ function dmTogglearQueEs(id, ev){
 }
 window.dmQueEs = dmQueEs; window.dmTogglearQueEs = dmTogglearQueEs;
 
+// ── SIESTAS, Y SU EFECTO SOBRE LA NOCHE SIGUIENTE ─────────────────────
+// La siesta no estaba en las métricas clínicas y en un insomnio es de lo
+// primero que se pregunta: gasta presión de sueño y es un objetivo directo
+// del tratamiento conductual.
+//
+// La comparación es DÍA DE SIESTA → NOCHE DE ESE MISMO DÍA. Ojo con leerla
+// al revés: lo habitual es que la siesta sea consecuencia de la mala noche
+// ANTERIOR, no causa de la siguiente. Por eso la fila dice "asociación" y
+// nunca "efecto", y se pide un mínimo de noches en cada grupo.
+function dmFilasSiestas(entries, row, C){
+  const v = (entries||[]).filter(function(e){ return e && e.diary_date; })
+                         .sort(function(a,b){ return a.diary_date > b.diary_date ? 1 : -1; });
+  const conDato = v.filter(function(e){ return e.nap_minutes != null && !isNaN(Number(e.nap_minutes)); });
+  if(conDato.length < 3) return '';
+
+  const conSiesta = conDato.filter(function(e){ return Number(e.nap_minutes) > 0; });
+  const pct  = Math.round(conSiesta.length / conDato.length * 100);
+  if(!conSiesta.length){
+    return row('Siestas', 'Ninguna', null, 'sobre '+conDato.length+' días con el dato cargado');
+  }
+  const mins = conSiesta.map(function(e){ return Number(e.nap_minutes); });
+  const prom = Math.round(mins.reduce(function(a,b){ return a+b; }, 0) / mins.length);
+  // Cantidad por día: el detalle vive en notes como JSON; si no está, se
+  // informa el total y no se inventa un número de siestas.
+  let cant = null;
+  try{
+    const cs = conSiesta.map(function(e){
+      try{ const j = JSON.parse(e.notes||'{}'); const n = j && j.naps && j.naps.length;
+           return n ? n : null; }catch(_){ return null; }
+    }).filter(function(x){ return x!=null; });
+    if(cs.length >= conSiesta.length/2)
+      cant = Math.round(cs.reduce(function(a,b){ return a+b; },0) / cs.length * 10) / 10;
+  }catch(_){}
+
+  const fmt = function(x){ return x>=60 ? (Math.floor(x/60)+'h '+String(x%60).padStart(2,'0')+'m') : (x+' min'); };
+  let h = row('Días con siesta', conSiesta.length+' de '+conDato.length+' · '+pct+'%',
+              pct>=50 ? '#d97706' : null,
+              'La siesta gasta presión de sueño y es un objetivo directo del tratamiento conductual')
+        + row('Duración media de la siesta', fmt(prom), prom>=45 ? '#d97706' : null,
+              prom>=45 ? 'Por encima de 30 min ya interfiere con la noche en la mayoría de los casos'
+                       : 'Hasta 30 min suele no interferir')
+        + (cant!=null ? row('Siestas por día con siesta', String(cant), null, 'promedio') : '');
+
+  // La noche del MISMO día. Hace falta un mínimo por grupo para decir algo.
+  const conN = [], sinN = [];
+  conDato.forEach(function(e){
+    const min = Number(e.sleep_minutes);
+    if(!min || isNaN(min)) return;
+    (Number(e.nap_minutes) > 0 ? conN : sinN).push(min);
+  });
+  if(conN.length >= 4 && sinN.length >= 4){
+    const md = function(a){ return a.reduce(function(x,y){ return x+y; },0)/a.length; };
+    const d  = Math.round(md(conN) - md(sinN));
+    const rel = Math.abs(d) >= 30;
+    h += row('Noche de los días con siesta',
+             fmt(Math.round(md(conN)))+' vs '+fmt(Math.round(md(sinN)))+' sin siesta',
+             rel ? (d < 0 ? '#d97706' : null) : null,
+             (rel
+               ? ('Diferencia de '+(d>0?'+':'')+d+' min. Asociación, no causa: lo habitual es que la siesta '+
+                  'sea consecuencia de la mala noche ANTERIOR, no causa de la siguiente.')
+               : 'Sin diferencia relevante (<30 min)')+
+             ' · '+conN.length+' vs '+sinN.length+' noches');
+  }
+  return h;
+}
+
 function renderClinicalMetricsHtml(entries, audience, ageYears){
   // ── Menores de 3 años ──
   // Varias métricas de este bloque son conceptos de sueño ADULTO y no aplican:
@@ -7236,7 +7349,8 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
       : '')+
     row('Jet lag social', sjlStr, sjlColor,
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
-    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor));
+    row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor)+
+    dmFilasSiestas(entries, row, C));
 
   // Bloque adicional para el paciente: versión amigable de la variación
   if(audience === 'patient' && reg.sd_midpoint_min !== null){
@@ -8731,6 +8845,65 @@ async function loadPatientEducation(){
     wrap.style.display='none';
   }
 }
+// ── A quién le sirve cada tema ────────────────────────────────────────
+// Mostrarle menopausia a un varón o "el sueño después de los 65" a alguien
+// de 43 no es solo ruido: hace que la biblioteca entera parezca genérica y
+// que deje de leerla.
+//
+// Pero OCULTAR es peligroso en la otra dirección. Una mujer de 38 con
+// menopausia precoz existe; alguien que acaba de empezar a hacer guardias
+// todavía tiene "oficina" cargado en su perfil. Por eso hay dos niveles:
+//
+//   · ocultar   → solo lo IMPOSIBLE (embarazo en un varón)
+//   · ordenar   → lo probable arriba, lo improbable abajo pero presente
+//
+// Y siempre queda "Ver todos los temas". Un filtro que esconde un tema que
+// la persona necesitaba es peor que una lista larga.
+const DM_RELEVANCIA = {
+  embarazo:  { sexo:'F', edadMin:15, edadMax:55, imposibleSi:function(u){ return u.sexo==='M'; } },
+  menopausia:{ sexo:'F', edadMin:38,             imposibleSi:function(u){ return u.sexo==='M'; } },
+  lactancia: { conHijos:true, edadMin:16 },
+  mayores:   { edadMin:60 },
+  turnos:    { ocupacion:['shift','night'] },
+  guardias:  { ocupacion:['healthcare','night'] }
+};
+// Lee el perfil una sola vez y normaliza. El sexo vive en `sex` en unos
+// lados y en `gender` en otros, con valores en castellano.
+function dmPerfilLector(){
+  const u = (S && S.user) || {};
+  const crudo = String(u.sex || u.gender || '').toLowerCase();
+  let sexo = null;
+  if(/^f|femen/.test(crudo)) sexo='F';
+  else if(/^m|mascul/.test(crudo)) sexo='M';
+  let edad = null;
+  try{ if(u.dob) edad = Math.floor((Date.now()-new Date(u.dob))/31557600000); }catch(_){}
+  let ocup = u.activity_type;
+  if(Array.isArray(ocup)) ocup = ocup[0];
+  let hijos = false;
+  try{ hijos = !!(S && S.children && S.children.length); }catch(_){}
+  return { sexo:sexo, edad:edad, ocupacion:String(ocup||''), conHijos:hijos };
+}
+// Devuelve: -1 no mostrar · 0 mostrar abajo · 1 probablemente le sirva
+function dmRelevanciaTema(id, u){
+  const r = DM_RELEVANCIA[id];
+  if(!r) return 0;                                  // tema general: siempre
+  if(r.imposibleSi && r.imposibleSi(u)) return -1;   // solo lo imposible se esconde
+  let puntos = 0;
+  if(r.sexo && u.sexo === r.sexo) puntos++;
+  if(r.edadMin != null && u.edad != null && u.edad >= r.edadMin) puntos++;
+  if(r.edadMax != null && u.edad != null && u.edad >  r.edadMax) puntos--;
+  if(r.ocupacion && r.ocupacion.indexOf(u.ocupacion) >= 0) puntos += 2;
+  if(r.conHijos && u.conHijos) puntos += 2;
+  // Fuera de la franja de edad por lejos: abajo, no escondido.
+  if(r.edadMin != null && u.edad != null && u.edad < r.edadMin - 8) return 0;
+  return puntos >= 1 ? 1 : 0;
+}
+function dmTemasVerTodos(){
+  window._dmEduVerTodos = true;
+  try{ dmTodoSobreElSueno(); }catch(_){}
+}
+window.dmTemasVerTodos = dmTemasVerTodos;
+
 async function dmTodoSobreElSueno(){
   const body  = document.getElementById('edu-screen-body');
   const title = document.getElementById('edu-screen-title');
@@ -8774,13 +8947,40 @@ async function dmTodoSobreElSueno(){
     });
   }
 
-  // 2) El resto de la biblioteca.
+  // 2) El resto de la biblioteca, ordenado por a quién le sirve.
+  const _u = dmPerfilLector();
+  const _todo = !!window._dmEduVerTodos;
   const otros = temas.filter(function(t){ return idsAsignados.indexOf(t.id)<0; });
-  if(otros.length){
-    html += encabezado(asignados.length ? 'Otros temas' : 'Temas');
-    otros.forEach(function(t){
-      html += fila(t.icon, escHtml(t.title), '', 'openPatientEduTopic(\''+t.id+'\')', false);
+  const conRel = otros.map(function(t){ return { t:t, r:dmRelevanciaTema(t.id, _u) }; });
+  const propios = conRel.filter(function(x){ return x.r === 1; });
+  const resto   = conRel.filter(function(x){ return x.r === 0; });
+  const ocultos = conRel.filter(function(x){ return x.r === -1; });
+
+  if(propios.length){
+    html += encabezado('Para vos');
+    propios.forEach(function(x){
+      html += fila(x.t.icon, escHtml(x.t.title), '', 'openPatientEduTopic(\''+x.t.id+'\')', false);
     });
+  }
+  if(resto.length){
+    html += encabezado(propios.length ? 'Otros temas' : (asignados.length ? 'Otros temas' : 'Temas'));
+    resto.forEach(function(x){
+      html += fila(x.t.icon, escHtml(x.t.title), '', 'openPatientEduTopic(\''+x.t.id+'\')', false);
+    });
+  }
+  // Lo que se escondió, se dice. Nunca un filtro silencioso: si alguien
+  // necesita el tema y no lo ve, no tiene cómo saber que existía.
+  if(ocultos.length){
+    if(_todo){
+      html += encabezado('Todos los demás');
+      ocultos.forEach(function(x){
+        html += fila(x.t.icon, escHtml(x.t.title), '', 'openPatientEduTopic(\''+x.t.id+'\')', false);
+      });
+    }else{
+      html += '<div onclick="dmTemasVerTodos()" style="text-align:center;margin:14px 0 4px;'+
+        'font-size:13px;color:#7EC8A4;cursor:pointer;text-decoration:underline">'+
+        'Ver todos los temas ('+ocultos.length+' más)</div>';
+    }
   }
 
   // 3) Las preguntas frecuentes, que antes vivían en otra puerta.
@@ -9091,7 +9291,13 @@ const DM_PASOS = [
   { n:2, rot:'Durante la noche',        titulos:['Despertares','Al despertar'] },
   { n:3, rot:'Cómo dormiste',           titulos:['Calidad del sueño','Cómo te sentiste','Siesta'] /* calidad primero: si va despues de la siesta, no se sabe cual se califica */ },
   { n:4, rot:'Tu día de ayer',          titulos:['Actividad física','Cafeína','Tu propia variable','Tus variables'] },
-  { n:5, rot:'Algo más',                titulos:['Notas'] }
+  { n:5, rot:'Algo más',                titulos:['Notas'] },
+  // Revisar antes de guardar cumple dos funciones a la vez: agarra el error
+  // de carga ANTES de que entre a la base —hoy existe todo un bloque de
+  // "noches a revisar" porque el dato malo ya entró— y, el día que se importe
+  // del reloj, es la confirmación explícita que convierte un dato medido por
+  // un dispositivo en un dato aportado por la persona.
+  { n:6, rot:'Revisá tu entrada',       titulos:[] }
 ];
 
 // Deja marcadas las opciones donde "ninguno" es una respuesta legitima, no
@@ -9219,11 +9425,59 @@ function dmPintarPaso(){
       (n>1 ? '<button onclick="dmPasoIr('+(n-1)+')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(126,200,164,.2);color:#F4EFE5;border-radius:14px;padding:16px 20px;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)">←</button>' : '')+
       (n<total
         ? '<button onclick="dmPasoIr('+(n+1)+')" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Siguiente</button>'
-        : '<button onclick="dmPasoGuardar()" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar mi noche</button>');
+        : '<button onclick="dmPasoGuardar()" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">✓ Guardar mi noche</button>');
   }
+  if(n===total){ try{ dmPintarRevision(); }catch(e){ console.warn('[revision]', e); } }
   const sc=document.querySelector('#screen-diary-new .scroll');
   if(sc) sc.scrollTop=0;
 }
+
+// ── "Revisá tu entrada" ───────────────────────────────────────────────
+// Lee los campos del formulario y los lista. Cada fila lleva al paso donde
+// se carga ese dato: corregir no puede costar más que volver atrás cinco
+// veces. Lo que no se completó se muestra como "sin completar" y no como un
+// hueco, porque un campo vacío que se pasa por alto es un dato perdido.
+function dmPintarRevision(){
+  const cont=document.getElementById('dm-revision'); if(!cont) return;
+  const V=function(id){ const e=document.getElementById(id); return e ? (e.value||'') : ''; };
+  const hhmm=function(v){ return v ? String(v).slice(0,5) : ''; };
+  const sel=function(id){
+    const e=document.getElementById(id); if(!e || !e.value) return '';
+    if(e.tagName==='SELECT' && e.selectedIndex>=0) return e.options[e.selectedIndex].text.trim();
+    return e.value;
+  };
+  const desp=function(){
+    const l=document.getElementById('awakening-list');
+    const n=l ? l.querySelectorAll('[data-awk],.dm-awk-item,.awakening-item').length : 0;
+    const no=document.getElementById('awk-no-btn');
+    if(no && no.classList.contains('sel')) return 'Ninguno';
+    return n ? (n+(n===1?' despertar':' despertares')) : '';
+  };
+  const filas=[
+    { p:1, r:'Hora de acostarte',      v:hhmm(V('d-bedtime')) },
+    { p:1, r:'Cuánto tardaste en dormirte', v:sel('d-latency') },
+    { p:2, r:'Despertares en la noche', v:desp() },
+    { p:2, r:'Hora en que te despertaste', v:hhmm(V('d-wake')) },
+    { p:2, r:'Hora en que te levantaste',  v:hhmm(V('d-getup')) },
+    { p:3, r:'Qué tan reparador fue',   v:sel('d-qual') },
+    { p:3, r:'Ánimo al despertar',      v:sel('d-mood') },
+    { p:5, r:'Nota para tu profesional', v:(V('d-notes')||'').slice(0,80) }
+  ];
+  let h='<div class="dm-rev-tit">Revisá tu entrada</div>'+
+        '<div class="dm-rev-sub">Tocá cualquier línea para corregirla antes de guardar.</div>';
+  filas.forEach(function(f){
+    if(f.r==='Nota para tu profesional' && !f.v) return;   // opcional de verdad
+    h+='<div class="dm-rev-fila" onclick="dmPasoIr('+f.p+')">'+
+         '<span class="dm-rev-rot">'+f.r+'</span>'+
+         '<span class="dm-rev-val'+(f.v?'':' dm-rev-vacio')+'">'+
+           (f.v ? escHtml(f.v) : 'sin completar')+'</span>'+
+         '<span class="dm-rev-chev">›</span>'+
+       '</div>';
+  });
+  cont.innerHTML=h;
+}
+window.dmPintarRevision = dmPintarRevision;
+
 function dmPasoIr(n){
   // Aviso suave al salir del paso de las escalas subjetivas. No bloquea: si la
   // persona no se acuerda, prefiero el campo vacio a un dato inventado.
@@ -9289,16 +9543,71 @@ function dmFalloAlGuardar(e){
 }
 window.dmFalloAlGuardar = dmFalloAlGuardar;
 
+// ── EL PLAN DEL DÍA 1 ─────────────────────────────────────────────────
+// La primera pantalla después del alta no pide datos: pide armar el hábito.
+// Es "habit stacking" e intenciones de implementación — atar la conducta
+// nueva a una que ya existe y cambiar el entorno— y es la intervención de
+// adherencia más barata que hay, porque es solo texto.
+//
+// Se guarda en el dispositivo a propósito: es una ayuda personal, no un dato
+// clínico, y no tiene por qué viajar a la base.
+const DM_PLAN1 = [
+  'Elegí algo que hagas todas las mañanas —el café, la ducha— y registrá justo después',
+  'Escribí una nota que diga "Registrar sueño" y pegala donde vayas a verla',
+  'Movete el ícono de Dormetria a la primera pantalla del teléfono'
+];
+function dmPlan1Estado(){
+  try{ return JSON.parse(localStorage.getItem('dm_plan1')||'[]'); }catch(_){ return []; }
+}
+function dmPlan1Marcar(i){
+  const e=dmPlan1Estado();
+  const k=e.indexOf(i);
+  if(k>=0) e.splice(k,1); else e.push(i);
+  try{ localStorage.setItem('dm_plan1', JSON.stringify(e)); }catch(_){}
+  dmPintarPlan1();
+}
+window.dmPlan1Marcar = dmPlan1Marcar;
+function dmPintarPlan1(){
+  const el=document.getElementById('home-plan1'); if(!el) return;
+  const e=dmPlan1Estado();
+  const hechos=DM_PLAN1.filter(function(_,i){ return e.indexOf(i)>=0; }).length;
+  el.style.display='';
+  el.innerHTML='<div class="dm-plan1">'+
+    '<div class="dm-plan1-cab">'+
+      '<div class="dm-plan1-tit">Antes de la primera noche</div>'+
+      '<div class="dm-plan1-sub">El registro de mañana a la mañana es lo único que '+
+        'hace falta para que esto sirva. Estas tres cosas lo hacen mucho más probable.</div>'+
+    '</div>'+
+    DM_PLAN1.map(function(t,i){
+      const on=e.indexOf(i)>=0;
+      return '<div class="dm-plan1-item'+(on?' on':'')+'" onclick="dmPlan1Marcar('+i+')">'+
+        '<span class="dm-plan1-chk">'+(on?'✓':'')+'</span>'+
+        '<span>'+t+'</span></div>';
+    }).join('')+
+    '<div class="dm-plan1-pie"><span>Progreso</span><b>'+hechos+'/'+DM_PLAN1.length+'</b></div>'+
+    '<div class="dm-plan1-barra"><span style="width:'+Math.round(hechos/DM_PLAN1.length*100)+'%"></span></div>'+
+  '</div>';
+}
+
 async function dmCifrasInicio(){
   try{
     const el=document.getElementById('home-cifras');
     if(!el || !S.user || !S.user.email) return;
     const rows=await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(S.user.email)+
                             '&order=diary_date.desc&limit=120&select=diary_date,bedtime,wake_time,sleep_minutes,notes');
-    if(!rows || !rows.length) return;
-    // Racha: días consecutivos. Si todavía no cargó la noche de HOY, la
-    // cuenta arranca en ayer: mostrar un guión hace parecer que empezó de
-    // cero, justo cuando la persona abrió la app para registrar.
+    // Sin ninguna noche todavía: el plan del día 1 en vez de dos cifras vacías.
+    if(!rows || !rows.length){ try{ dmPintarPlan1(); }catch(_){} return; }
+    const _p1=document.getElementById('home-plan1'); if(_p1) _p1.style.display='none';
+    // ── De la racha a la consistencia ───────────────────────────────────
+    // La racha enmarca la pérdida: se corta, vuelve a cero, y el castigo es
+    // desproporcionado respecto a haber faltado una mañana. En un diario
+    // CLÍNICO eso tiene una consecuencia que no tiene en una app de idiomas:
+    // crea un incentivo para completar hacia atrás una noche que no se
+    // recuerda. O sea, para inventar datos.
+    //
+    // La consistencia de los últimos 7 días dice lo mismo sin el marco de
+    // pérdida, y además es lo ÚNICO que la persona controla de verdad: cómo
+    // durmió no lo eligió, si registró sí.
     const set={}; rows.forEach(function(r){ set[r.diary_date]=1; });
     const clave=function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
     const d=new Date();
@@ -9308,6 +9617,18 @@ async function dmCifrasInicio(){
       if(!set[clave(d)]) break;
       racha++; d.setDate(d.getDate()-1);
     }
+    // Últimos 7 días, de hoy hacia atrás. Hoy no cuenta en contra si todavía
+    // no lo cargó: la persona abrió la app justamente para eso.
+    const DIAS=['D','L','M','M','J','V','S'];
+    const hoy=new Date();
+    const semana=[];
+    for(let i=6;i>=0;i--){
+      const x=new Date(hoy); x.setDate(x.getDate()-i);
+      semana.push({ ini:DIAS[x.getDay()], hecho:!!set[clave(x)], esHoy:i===0 });
+    }
+    const cuentan = semana.filter(function(p){ return !(p.esHoy && !p.hecho); });
+    const hechos  = cuentan.filter(function(p){ return p.hecho; }).length;
+    const consist = cuentan.length ? Math.round(hechos/cuentan.length*100) : 0;
     let variacion=null;
     try{
       const reg=computeSleepRegularity(dmNochesValidas(rows));
@@ -9319,9 +9640,22 @@ async function dmCifrasInicio(){
         '<div style="font-size:23px;font-weight:700;color:'+col+'">'+v+'</div>'+
         '<div style="font-size:12.5px;color:rgba(244,239,229,.84);line-height:1.35;margin-top:3px">'+rot+'</div></div>';
     };
+    // Los puntos: un día, un punto. Lleno el que registró. Un hueco es un
+    // hueco y no un fracaso — que es exactamente la diferencia con la racha.
+    const puntos = semana.map(function(p){
+      return '<span class="dm-pt'+(p.hecho?' dm-pt-on':'')+(p.esHoy?' dm-pt-hoy':'')+'">'+
+        '<i></i><b>'+p.ini+'</b></span>';
+    }).join('');
     el.style.display='flex';
-    el.innerHTML = caja(racha, racha===1?'día seguido registrando':'días seguidos registrando', '#7EC8A4')
-      + caja(variacion!=null?('±'+variacion+'<span style="font-size:13px">min</span>'):'—','variación de tu horario','#C8A96E');
+    el.innerHTML =
+      '<div style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.2);'+
+        'border-radius:16px;padding:14px 15px">'+
+        '<div style="font-size:23px;font-weight:700;color:#7EC8A4">'+consist+'<span style="font-size:14px">%</span></div>'+
+        '<div style="font-size:12.5px;color:rgba(244,239,229,.84);line-height:1.35;margin-top:3px">'+
+          'constancia esta semana</div>'+
+        '<div class="dm-pts">'+puntos+'</div>'+
+      '</div>'+
+      caja(variacion!=null?('±'+variacion+'<span style="font-size:13px">min</span>'):'—','variación de tu horario','#C8A96E');
 
     try{ dmMensajeAliento(rows, racha); }catch(e){ console.warn('[aliento]', e); }
   }catch(_){}
@@ -9387,6 +9721,68 @@ function dmMensajeAliento(rows, racha){
     el.style.display='block';
   }
 }
+
+// ── SOMNOLENCIA DIURNA ALTA ───────────────────────────────────────────
+// Pediste "insinuárselo". No lo insinúo, y vale la pena explicar por qué.
+//
+// 1) Con un Epworth de 15 y alguien que maneja, la insinuación es peor que
+//    la frase clara: es más fácil de ignorar y deja a la persona
+//    adivinando. Si el dato amerita decirlo, se dice.
+//
+// 2) El PVT NO es una prueba de aptitud para conducir, y presentarlo como
+//    respuesta al riesgo de conducción implica que lo es. Alguien que saca
+//    un buen tiempo de reacción a las 10 de la mañana concluye que puede
+//    manejar a las 2 de la madrugada. Eso es exactamente la falsa
+//    sensación de evaluación por la que sacaste el test de un minuto.
+//
+// Entonces: se nombra el hallazgo, se dice qué significa, y la acción que
+// se propone es la que corresponde —hablarlo con un profesional—. El PVT se
+// ofrece aparte y por lo que sí es: una medida de la alerta de AHORA, útil
+// para ver el patrón propio a lo largo del día. Con la aclaración de que no
+// habilita ni deshabilita a nadie para manejar.
+async function dmAvisoSomnolencia(){
+  const el=document.getElementById('home-somnolencia');
+  if(!el || !S.user || !S.user.email) return;
+  el.style.display='none';
+  try{
+    const recs = await db.get('evaluations?patient_email=eq.'+encodeURIComponent(S.user.email)+
+                              '&scale_id=eq.ess&order=created_at.desc&limit=1&select=score,created_at')
+                         .catch(function(){ return []; });
+    if(!recs || !recs.length) return;
+    const p = Number(recs[0].score);
+    if(isNaN(p) || p < 13) return;                 // punto de corte de Johns
+    // Si es de hace más de seis meses, ya no describe a esta persona.
+    const dias = Math.floor((Date.now() - new Date(recs[0].created_at)) / 86400000);
+    if(dias > 183) return;
+    const grave = p >= 16;
+    el.style.display='block';
+    el.innerHTML =
+      '<div class="dm-somno'+(grave?' grave':'')+'">'+
+        '<div class="dm-somno-rot">Somnolencia diurna</div>'+
+        '<div class="dm-somno-txt">'+
+          'Tu Epworth dio <b>'+p+' de 24</b>'+(dias>30?(' hace '+Math.round(dias/30)+' meses'):'')+'. '+
+          'Desde 11 se considera somnolencia diurna excesiva y desde 13, moderada a grave '+
+          '(Johns). Eso quiere decir que te quedarías dormido/a en situaciones donde la '+
+          'mayoría se mantiene despierta.'+
+          '<br><br>'+
+          '<b>Conviene hablarlo con un profesional</b>, sobre todo si manejás, trabajás de '+
+          'noche u operás maquinaria. La somnolencia de este rango tiene causas tratables '+
+          '—apnea, sueño insuficiente, medicación, turnos— y no se resuelve durmiendo el fin '+
+          'de semana.'+
+        '</div>'+
+        '<div class="dm-somno-pvt">'+
+          '<div class="dm-somno-pvt-txt">'+
+            'Si querés ver tu propia curva de alerta a lo largo del día, el '+
+            '<b>test de alerta</b> la mide en pocos minutos. '+
+            '<span class="dm-somno-ojo">No dice si podés manejar: mide cómo estás ahora, '+
+            'en este momento, y nada más.</span>'+
+          '</div>'+
+          '<button onclick="showScreen(\'pvt-intro\')">Hacer el test de alerta</button>'+
+        '</div>'+
+      '</div>';
+  }catch(e){ console.warn('[somnolencia]', e); }
+}
+window.dmAvisoSomnolencia = dmAvisoSomnolencia;
 
 // ── Invitación a calificar al profesional ─────────────────────────────
 // Aparece recién a las dos semanas del vínculo: antes de eso el paciente
@@ -9572,8 +9968,45 @@ function dmTarjetaNoche(entry){
       (min>0 ? '<div style="display:flex;gap:5px;height:8px;margin:14px 0 0">'+
         (latN>0?'<div style="flex:'+latN+';background:rgba(126,200,164,.3);border-radius:4px"></div>':'')+
         '<div style="flex:'+min+';background:#7EC8A4;border-radius:4px"></div></div>' : '')+
+      // Una línea sobre ESTA noche. El mensaje de aliento que ya existía
+      // compara semana contra semana, que es otra cosa y llega más tarde.
+      (function(){ const _t=dmResumenDeLaNoche(entry);
+        return _t ? '<div class="dm-noche-txt">'+_t+'</div>' : ''; })()+
     '</div>';
 }
+
+// ── Qué decirle de la noche que acaba de cargar ───────────────────────
+// Se calcula de los datos, no lo escribe un modelo: es una frase sobre el
+// sueño de una persona y tiene que ser exacta, no verosímil.
+//
+// Tres reglas que no se rompen:
+//   · nunca califica la noche como fracaso — el paciente no la eligió
+//   · si no hay nada bueno que señalar, reconoce el registro, que sí eligió
+//   · nunca dice "dormiste poco" sin decir qué hacer con eso
+function dmResumenDeLaNoche(e){
+  if(!e) return '';
+  const min  = Number(e.sleep_minutes)||0;
+  const lat  = (e.sleep_latency_mins!=null && e.sleep_latency_mins!=='')
+             ? parseInt(e.sleep_latency_mins) : null;
+  const desp = (e.awakenings!=null && !isNaN(e.awakenings)) ? Number(e.awakenings) : null;
+  const bien = [];
+
+  if(lat!=null && lat>=0 && lat<=20) bien.push('te dormiste rápido');
+  if(desp===0) bien.push('dormiste de corrido');
+  if(min>=6*60 && min<=9*60) bien.push('dormiste dentro del rango habitual para un adulto');
+
+  if(bien.length>=2) return 'Buena noche: '+bien[0]+' y '+bien[1]+'.';
+  if(bien.length===1) return 'De esta noche: '+bien[0]+'.';
+
+  // Nada que destacar. No se señala lo malo —ya lo vivió— pero tampoco se
+  // finge entusiasmo: se nombra lo único que depende de ella.
+  if(lat!=null && lat>60)
+    return 'Costó arrancar. Que lo hayas registrado es lo que después permite ver el patrón.';
+  if(desp!=null && desp>=3)
+    return 'Noche cortada. Una sola noche no dice nada; la serie sí.';
+  return 'Registrada. La constancia es lo que le da sentido a estos números.';
+}
+window.dmResumenDeLaNoche = dmResumenDeLaNoche;
 
 async function showHome(){
   // Anotar si a esta persona le pueden llegar recordatorios. No bloquea nada:
@@ -9583,6 +10016,7 @@ async function showHome(){
   // A quien nunca lo dio (los dados de alta por el profesional) se le
   // pregunta acá, en su primera entrada.
   try{ dmConsentimientoSincronizar(); }catch(_){}
+  try{ dmAvisoSomnolencia(); }catch(_){}
   // La noche de ayer: se consulta y se pinta apenas entra, sin esperar al
   // resto de la pantalla. Es lo primero que la persona vino a ver.
   (async function(){
@@ -13042,6 +13476,8 @@ function showDiaryNew(){
 
     <div class="dm-campo">
       <label class="dm-lbl">¿Cuánto tardaste en dormirte?</label>
+      <div class="dm-ayuda">Desde que apagaste la luz con intención de dormir.</div>
+      <details class="dm-ej"><summary>¿Necesitás ayuda para completar esto?</summary><div class="dm-ej-cuerpo">Contá desde el momento en que <b>empezaste a intentar dormirte</b>, no desde que te metiste en la cama. Si te acostaste 23:00, leíste hasta 23:30 y te dormiste 23:50, acá van <b>20 minutos</b>.<br><br>No mires el reloj para calcularlo: tu mejor estimación alcanza, y mirar la hora de noche activa y empeora el sueño.</div></details>
       <select class="dm-inp" id="d-latency" onchange="dmTogglearSinDormir()"><option value=""></option> <option value="3">&lt;5 min</option> <option value="10">5–15 min</option> <option value="22">15–30 min</option> <option value="45">30–60 min</option> <option value="90">1–2 hs</option> <option value="150">&gt;2 hs</option> <option value="-1">No me dormí en toda la noche</option></select>
     </div>
     <div class="dm-campo" id="dm-campo-alcohol">
@@ -13064,6 +13500,7 @@ function showDiaryNew(){
     <div class="dm-campo">
       <label class="dm-lbl">¿Te despertaste en el medio de la noche?</label>
       <div class="dm-ayuda">Cortes después de haberte dormido, antes de levantarte.</div>
+      <details class="dm-ej"><summary>¿Necesitás ayuda para completar esto?</summary><div class="dm-ej-cuerpo">Lo que importa es el <b>tiempo total despierto</b> después de haberte dormido por primera vez.<br><br>Por ejemplo: te dormiste 22:00, te despertaste una vez y tardaste 60 minutos en volver a dormirte, y después te despertaste 4:00 y ya no te dormiste más. Acá van <b>60 minutos</b> — lo de las 4:00 no cuenta como despertar del medio, ese es tu despertar final.<br><br>Si te despertaste y volviste a dormirte enseguida, no hace falta anotarlo.</div></details>
       <div class="dm-ops">
         <button id="awk-no-btn" class="dm-op" onclick="setNoAwakenings()">No me desperté</button>
         <button id="awk-yes-btn" class="dm-op" onclick="setYesAwakenings()">Sí</button>
@@ -13074,12 +13511,14 @@ function showDiaryNew(){
     <div class="dm-campo">
       <label class="dm-lbl">¿A qué hora te despertaste hoy?</label>
       <div class="dm-ayuda">El despertar del final, del que ya no te volviste a dormir.</div>
+      <details class="dm-ej"><summary>¿Necesitás ayuda para completar esto?</summary><div class="dm-ej-cuerpo">Es la hora en que te despertaste por última vez, aunque te hayas quedado un rato en la cama después. Si te despertaste 6:30 y te quedaste hasta 7:15, acá va <b>6:30</b>.</div></details>
       <input class="dm-inp" type="time" id="d-wake" onchange="updateAwakeInBed()">
     </div>
 
     <div class="dm-campo">
       <label class="dm-lbl">¿A qué hora te levantaste de la cama?</label>
       <div class="dm-ayuda">Si fue al toque, poné la misma hora.</div>
+      <details class="dm-ej"><summary>¿Necesitás ayuda para completar esto?</summary><div class="dm-ej-cuerpo">Siguiendo el ejemplo de arriba: te despertaste 6:30 y te levantaste 7:15, acá va <b>7:15</b>.<br><br>Las dos horas juntas dicen cuánto tiempo pasaste en la cama despierto/a, que es una de las cosas que más se trabaja en el tratamiento.</div></details>
       <input class="dm-inp" type="time" id="d-getup" onchange="updateAwakeInBed()">
       <div id="awake-in-bed-hint" style="display:none"></div>
     </div>
@@ -13198,6 +13637,10 @@ function showDiaryNew(){
       <div class="dm-ayuda">Lo que escribas acá lo ve tu profesional junto a esa noche. Un síntoma, una preocupación, algo que pasó.</div>
       <textarea class="dm-inp" id="d-notes" rows="5" placeholder="Anoche me desperté transpirada dos veces…"></textarea>
     </div>
+  </div>
+
+  <div class="dm-paso" data-paso="6" style="display:none">
+    <div id="dm-revision"></div>
   </div>
 
   <div id="dm-paso-pie"></div>
@@ -16295,7 +16738,11 @@ function dmPanelInformeHtml(){
     { id:'interconsulta', t:'Interconsulta',      d:'Completa, para un colega que no vio al paciente.' },
     { id:'paciente',      t:'Resumen para el paciente', d:'En lenguaje cotidiano, para que se lo lleve.' }
   ];
-  return '<div style="padding:4px 0 20px">'+
+  // Dos columnas en escritorio: a la izquierda qué pedir, a la derecha lo
+  // que salió. Antes el informe aparecía debajo de los tres botones y había
+  // que scrollear para leerlo, con media pantalla vacía al costado.
+  return '<div class="dm-inf-wrap" style="padding:4px 0 20px">'+
+    '<div class="dm-inf-col">'+
     '<div style="font-size:19px;font-weight:700;color:#F4EFE5;margin-bottom:5px">Generar informe</div>'+
     '<div style="font-size:14px;color:rgba(244,239,229,.82);line-height:1.55;margin-bottom:16px">'+
       'Se redacta con las métricas que ya calculó Dormetria. '+
@@ -16311,11 +16758,14 @@ function dmPanelInformeHtml(){
       '<label style="font-size:13.5px;color:rgba(244,239,229,.82);display:block;margin-bottom:6px">Algo que quieras que tenga en cuenta (opcional)</label>'+
       '<textarea id="dm-inf-notas" rows="2" placeholder="Ej: viene con CPAP hace 3 meses, refiere mejoría subjetiva" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(126,200,164,.2);border-radius:12px;padding:12px;font-size:14px;color:#F4EFE5;font-family:var(--font);resize:vertical"></textarea>'+
     '</div>'+
-    '<div id="dm-inf-salida" style="margin-top:16px"></div>'+
-    '<div id="dm-inf-previos"></div>'+
     '<div style="border-left:3px solid #C8A96E;padding:10px 0 10px 14px;margin-top:20px;font-size:13px;line-height:1.55;color:rgba(244,239,229,.82)">'+
       'El informe lo redacta un modelo de lenguaje a partir de los números del registro. '+
       'Revisalo antes de firmarlo o entregarlo: la responsabilidad clínica es tuya.</div>'+
+    '</div>'+
+    '<div class="dm-inf-col dm-inf-salida-col">'+
+      '<div id="dm-inf-salida"></div>'+
+      '<div id="dm-inf-previos"></div>'+
+    '</div>'+
   '</div>';
 }
 
@@ -17238,11 +17688,11 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-score">
           <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center;position:sticky;top:0;z-index:30;background:#0f2b22;padding:9px 8px;margin-left:-6px;margin-right:-6px;border-radius:10px;box-shadow:0 4px 12px -6px rgba(0,0,0,.35);flex-wrap:wrap">
             <span style="font-size:12px;color:rgba(255,255,255,.9) !important;font-weight:600">Período:</span>
-            <button onclick="switchDrScorePeriod(7)"  id="dr-score-7"  style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',7)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',7)?'#fff':'#1a4a3a'};font-family:var(--font)">7 d</button>
-            <button onclick="switchDrScorePeriod(15)" id="dr-score-15" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',15)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',15)?'#fff':'#1a4a3a'};font-family:var(--font)">15 d</button>
-            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',30)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',30)?'#fff':'#1a4a3a'};font-family:var(--font)">30 d</button>
-            <button onclick="switchDrScorePeriod(60)" id="dr-score-60" style="padding:4px 10px;border:none;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;background:${dmDrPerActivo('dias',60)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',60)?'#fff':'#1a4a3a'};font-family:var(--font)">60 d</button>
-            <button onclick="switchDrScorePeriod(0)"  id="dr-score-all" style="padding:4px 12px;border:none;border-radius:16px;font-size:11.5px;font-weight:700;cursor:pointer;background:${dmDrPerActivo('dias',0)?'#1a4a3a':'#e8f0eb'};color:${dmDrPerActivo('dias',0)?'#fff':'#1a4a3a'};font-family:var(--font)">Todo</button>
+            <button onclick="switchDrScorePeriod(7)"  id="dr-score-7"  class="dm-per-btn ${dmDrPerActivo('dias',7)?'on':''}">7 d</button>
+            <button onclick="switchDrScorePeriod(15)" id="dr-score-15" class="dm-per-btn ${dmDrPerActivo('dias',15)?'on':''}">15 d</button>
+            <button onclick="switchDrScorePeriod(30)" id="dr-score-30" class="dm-per-btn ${dmDrPerActivo('dias',30)?'on':''}">30 d</button>
+            <button onclick="switchDrScorePeriod(60)" id="dr-score-60" class="dm-per-btn ${dmDrPerActivo('dias',60)?'on':''}">60 d</button>
+            <button onclick="switchDrScorePeriod(0)"  id="dr-score-all" class="dm-per-btn ${dmDrPerActivo('dias',0)?'on':''}">Todo</button>
             ${dmSelectorMesDrHtml(subj)}
           </div>
           <div id="dr-score-panel-wrap">${renderSleepScorePanel(drScoreEntries, (function(){try{const _d=S.viewData&&S.viewData.dob?new Date(S.viewData.dob):null;return _d?Math.floor((Date.now()-_d)/31557600000):null;}catch(_){return null;}})(), 'doctor')}</div>
@@ -17251,8 +17701,13 @@ async function showDrPTab_(tab){
         <div class="dm-card dm-light dm-diary-pillars">
           <div class="dm-card-title">🧩 Pilares del sueño</div>
           <div id="dr-pillar-bars" style="margin-bottom:8px"></div>
-          <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
-          <div id="dr-pillar-legend"></div>
+          <!-- El gráfico de líneas de los pilares es de lectura técnica: tres
+               series superpuestas que solo dicen algo si se sabe qué mirar.
+               En generalista quedan las tres cifras, que es la información. -->
+          <div class="dm-solo-esp">
+            <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
+            <div id="dr-pillar-legend"></div>
+          </div>
           <div id="dr-quality-concord" class="dm-solo-esp" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
         </div>
         <!-- Los dos paneles de correlación se llamaban casi igual y se
@@ -17261,12 +17716,9 @@ async function showDrPTab_(tab){
              adentro de Pilares, la cruza con lo MEDIDO (latencia, despertares,
              regularidad). Va acá, debajo de Pilares, que es de donde sale la
              pregunta. -->
-        <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
-          <div class="dm-card-title">🔍 Hábitos y calidad reportada</div>
-          <div id="dr-quality-factores"></div>
-        </div>
+
         <div class="dm-card dm-light dm-solo-esp" id="dr-weekly-prog" style="display:none"></div>
-        <div class="dm-diary-metrics dm-solo-esp" id="dr-clinical-metrics"></div>
+        <div class="dm-diary-metrics" id="dr-clinical-metrics"></div>
         </div>
         <div class="dm-diary-right">
         <div class="dm-card dm-light dm-diary-acto">
@@ -17298,6 +17750,12 @@ async function showDrPTab_(tab){
           </div>
         </div>
         <div id="dr-reg-slot" class="dm-solo-esp"></div>
+        <!-- Hábitos vs calidad se mudó acá: es la tarjeta más alta de todas
+             y en la columna izquierda dejaba a la derecha corriendo sola. -->
+        <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
+          <div class="dm-card-title">🔍 Hábitos y calidad reportada</div>
+          <div id="dr-quality-factores"></div>
+        </div>
         </div>
         </div>
         <div id="dr-abajo-slot"></div>
@@ -20312,7 +20770,23 @@ function renderSleepScorePanel(entries, ageYears, audience){
   // oscuro (paciente) y sobre blanco (profesional).
   const _claro = (audience === 'doctor');
   const sc = calcSleepScore(entries, ageYears);
-  if(!sc) return '<div class="empty-state" style="padding:16px 0">Necesitás al menos 3 registros en el diario para calcular tu score de sueño.</div>';
+  if(!sc){
+    // Mismo requisito de siempre —hacen falta 3 noches para calcular— pero
+    // dicho como meta y no como puerta cerrada. Un muro al día 1 es la peor
+    // primera impresión posible, y el requisito no cambia por decirlo mejor.
+    const _n = (entries||[]).length;
+    const _f = Math.max(0, 3-_n);
+    return '<div class="dm-bloq">'+
+      '<div class="dm-bloq-barras"><i></i><i></i><i></i><i></i><i></i>'+
+        '<span class="dm-bloq-candado">🔒</span></div>'+
+      '<div class="dm-bloq-tit">Tu score de sueño</div>'+
+      '<div class="dm-bloq-sub">'+
+        (_n===0 ? 'Registrá 3 noches para verlo.'
+                : 'Llevás <b>'+_n+'</b> de 3 noches. '+(_f===1?'Falta una.':'Faltan '+_f+'.'))+
+      '</div>'+
+      '<div class="dm-bloq-prog"><span style="width:'+Math.min(100,Math.round(_n/3*100))+'%"></span></div>'+
+    '</div>';
+  }
   
   return `
     <div style="background:${sc.bg};border-radius:16px;padding:20px;margin-bottom:14px;text-align:center">
@@ -26802,6 +27276,71 @@ async function dmTcciGuardarInteres(precio){
   }
 }
 
+// ── DISPOSICIÓN AL CAMBIO, ANTES DE EMPEZAR ───────────────────────────
+// REST pregunta una sola cosa —"¿qué tan dispuesto estás a cambiar tus
+// rutinas?", 1 a 10— y está bien pensado: la TCC-I no falla por el contenido,
+// falla por la adherencia, y saber con qué disposición arranca alguien
+// permite ajustar lo que se le promete.
+//
+// Acá van DOS reglas y no una, porque en entrevista motivacional
+// (Rollnick) son construcciones distintas y piden respuestas opuestas:
+//
+//   · IMPORTANCIA baja  → no sabe para qué lo haría. Hay que trabajar el
+//                          porqué antes que el cómo.
+//   · CONFIANZA baja    → quiere, pero no se cree capaz. Hay que achicar el
+//                          primer paso, no insistir con el motivo.
+//
+// Un solo número mezcla las dos y pierde justamente lo accionable. La
+// pregunta de abajo ("¿por qué ese número y no uno más bajo?") es la que
+// hace hablar a la persona a favor del cambio, no en contra.
+//
+// Se guarda en el dispositivo. Para que el profesional lo vea hace falta una
+// columna en la base: está el SQL en SQL-disposicion-al-cambio.md.
+const DM_TCCI_REGLAS = [
+  { id:'importancia', pregunta:'¿Qué tan importante es para vos dormir mejor?',
+    bajo:'Nada importante', alto:'Lo más importante' },
+  { id:'confianza',   pregunta:'¿Qué tanta confianza tenés en poder sostener cambios en tus rutinas?',
+    bajo:'Ninguna', alto:'Mucha' }
+];
+function dmTcciDisposicion(){
+  try{ return JSON.parse(localStorage.getItem('dm_tcci_disposicion')||'null'); }catch(_){ return null; }
+}
+function dmTcciGuardarDisposicion(){
+  const d = { fecha:new Date().toISOString() };
+  DM_TCCI_REGLAS.forEach(function(r){
+    const e=document.getElementById('dm-disp-'+r.id);
+    d[r.id] = e ? Number(e.value) : null;
+  });
+  const p=document.getElementById('dm-disp-porque');
+  d.porque = p ? (p.value||'').trim() : '';
+  try{ localStorage.setItem('dm_tcci_disposicion', JSON.stringify(d)); }catch(_){}
+  try{ toast('Gracias. Lo tenemos en cuenta.'); }catch(_){}
+  try{ dmTcciRenderPrograma(); }catch(_){}
+}
+window.dmTcciGuardarDisposicion = dmTcciGuardarDisposicion;
+function dmDispMover(id,v){
+  const n=document.getElementById('dm-disp-n-'+id); if(n) n.textContent=v;
+}
+window.dmDispMover = dmDispMover;
+
+// Qué se le dice a alguien según con qué llegó. No es un puntaje ni una
+// categoría: es ajustar lo que el programa promete, que es lo que pediste.
+function dmTcciLecturaDisposicion(d){
+  if(!d) return null;
+  const imp=Number(d.importancia)||0, con=Number(d.confianza)||0;
+  if(imp<=4) return { tono:'ambar', txt:'Dormir mejor no aparece hoy como una prioridad tuya, y eso está bien decirlo. '+
+    'Empezá por la semana 1, que es solo entender cómo funciona tu sueño y registrar. '+
+    'Si más adelante te importa más, el programa sigue acá.' };
+  if(con<=4) return { tono:'ambar', txt:'Querés dormir mejor pero no te ves sosteniendo los cambios. '+
+    'Es la situación más común y no es falta de voluntad. La respuesta es achicar el primer paso: '+
+    'esta semana, una sola cosa — levantarte a la misma hora. Nada más.' };
+  if(imp>=8 && con>=8) return { tono:'verde', txt:'Llegás con ganas y con confianza. '+
+    'Un aviso, justamente por eso: las primeras dos semanas de la TCC-I suelen empeorar el cansancio diurno '+
+    'antes de mejorar el sueño. Es esperable y es parte del mecanismo, no una señal de que no funciona.' };
+  return { tono:'verde', txt:'Buen punto de partida. El programa va semana a semana y cada una se apoya en la anterior; '+
+    'lo que más predice el resultado es completar el diario, no hacerlo perfecto.' };
+}
+
 function dmTcciRenderPrograma(){
   const actual=dmTcciSemanaActual();
   const empezado=(function(){ try{ return !!localStorage.getItem('dm_tcci_inicio'); }catch(_){ return false; } })();
@@ -26811,7 +27350,44 @@ function dmTcciRenderPrograma(){
     '<div style="font-size:12px;color:rgba(255,255,255,.82);line-height:1.55;margin-bottom:12px">'+
       (empezado ? 'Vas por la semana '+actual+'. Cada semana se desbloquea sola a los 7 días.'
                 : 'Terapia cognitivo-conductual para el insomnio, paso a paso. Función premium — tu horario de sueño recomendado de arriba es sin costo.')+'</div>';
+  // Las dos reglas, antes de todo lo demás, y solo si todavía no arrancó.
   if(!empezado){
+    const _d = dmTcciDisposicion();
+    if(!_d){
+      html+='<div class="dm-disp">'+
+        '<div class="dm-disp-tit">Antes de empezar</div>'+
+        '<div class="dm-disp-sub">Dos preguntas. No hay respuesta correcta: sirven para '+
+          'ajustar lo que sigue a cómo estás llegando.</div>'+
+        DM_TCCI_REGLAS.map(function(r){
+          return '<div class="dm-disp-bloque">'+
+            '<div class="dm-disp-preg">'+r.pregunta+'</div>'+
+            '<div class="dm-disp-num"><span id="dm-disp-n-'+r.id+'">5</span><i>/10</i></div>'+
+            '<input type="range" min="1" max="10" value="5" id="dm-disp-'+r.id+'" '+
+              'class="dm-disp-rango" oninput="dmDispMover(\''+r.id+'\', this.value)">'+
+            '<div class="dm-disp-extremos"><span>'+r.bajo+'</span><span>'+r.alto+'</span></div>'+
+          '</div>';
+        }).join('')+
+        '<div class="dm-disp-bloque">'+
+          '<div class="dm-disp-preg">¿Por qué ese número, y no uno más bajo?</div>'+
+          '<div class="dm-disp-ayuda">Opcional. Lo que escribas es para vos y para tu profesional '+
+            'si tenés uno.</div>'+
+          '<textarea id="dm-disp-porque" class="dm-disp-txt" rows="3" '+
+            'placeholder="Porque ya no rindo en el trabajo…"></textarea>'+
+        '</div>'+
+        '<button class="dm-disp-btn" onclick="dmTcciGuardarDisposicion()">Continuar</button>'+
+      '</div>';
+    }else{
+      const _l = dmTcciLecturaDisposicion(_d);
+      if(_l){
+        html+='<div class="dm-disp-lectura '+(_l.tono==='ambar'?'ambar':'')+'">'+
+          '<div class="dm-disp-lectura-rot">Cómo estás llegando</div>'+
+          '<div class="dm-disp-lectura-txt">'+_l.txt+'</div>'+
+          '<div class="dm-disp-lectura-pie">Importancia '+(_d.importancia||'—')+'/10 · '+
+            'Confianza '+(_d.confianza||'—')+'/10 · '+
+            '<a onclick="try{localStorage.removeItem(\'dm_tcci_disposicion\');dmTcciRenderPrograma();}catch(_){}">volver a responder</a></div>'+
+        '</div>';
+      }
+    }
     html+='<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.28);border-radius:12px;padding:13px 15px;margin-bottom:12px">'+
       '<div style="font-size:11px;color:#C8A96E;font-weight:700;letter-spacing:.05em;margin-bottom:5px">CON ACOMPAÑAMIENTO FUNCIONA MEJOR</div>'+
       '<div style="font-size:12.5px;color:rgba(255,255,255,.92);line-height:1.55;margin-bottom:10px">Este programa sigue la misma estructura que los tratamientos digitales aprobados por agencias regulatorias, que se indican <b>como complemento</b> de la atención profesional, no en reemplazo. Un profesional formado en TCC-I ajusta el ritmo a tu caso, resuelve las dudas del camino y acelera bastante los resultados. Si podés, buscá acompañamiento: te va a rendir más.</div>'+
