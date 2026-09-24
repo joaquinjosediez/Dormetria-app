@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg217-7f10344e">
+<link rel="stylesheet" href="css/styles.css?v=stg218-7f10344e">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -768,7 +768,7 @@
         <div style="font-size:15px;font-weight:600;color:var(--label);margin-bottom:10px">Instrucciones</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Un punto rojo aparece en pantalla en momentos aleatorios (de 2 a 10 segundos entre estímulos)</div></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Tocá la pantalla <strong>tan rápido como puedas</strong> cuando aparezca. Usá siempre el <strong>índice de la mano con la que escribís</strong>, y la misma cada vez: cambiar de mano agrega decenas de milisegundos y te hace ver un deterioro que no es tuyo</div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Tocá la pantalla <strong>tan rápido como puedas</strong> cuando aparezca. Usá el <strong>índice de la mano con la que escribís</strong> si podés apoyar el teléfono; si lo sostenés en la mano, el <strong>pulgar de esa misma mano</strong> sirve igual. Lo que no podés hacer es cambiar: el pulgar corre unos 10–30 ms más lento que el índice, así que alternar te muestra un deterioro que no es tuyo</div></div>
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Una respuesta muy lenta es un <strong>lapso de alerta</strong>. El umbral depende de la duración: 500 ms en el de 5 y 10 minutos, 355 ms en el de 3 (Basner y col., 2011).</div></div>
         </div>
       </div>
@@ -1349,10 +1349,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg217-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg217-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg217-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=stg217-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg218-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg218-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg218-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=stg218-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1371,11 +1371,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg217';
+const APP_VERSION='stg218';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg217 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg218 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -11783,8 +11783,12 @@ function _applyConsultBlock(sc,score){
       msg.innerHTML = (isPath
         ? 'Un puntaje así no es un diagnóstico: es un cuestionario que señala que vale la pena una evaluación. El paso siguiente sería <strong>'+who+'</strong>.'
         : 'Este resultado amerita seguimiento. Si los síntomas persisten, el paso siguiente sería <strong>'+who+'</strong>.')+
-        '<br><span style="opacity:0.8">Podés llevarle este resultado a tu médico de cabecera, o ver el directorio de profesionales.</span>';
+        '<br><span style="opacity:0.8">Podés llevarle este resultado a tu médico de cabecera. Si preferís buscar por tu cuenta, en <b>Yo → Mis especialistas</b> hay un directorio de profesionales que usan Dormetria.</span>';
     }
+    // Se mueve dentro del scroll del resultado: como hermano de #r-content
+    // (que es flex:1) quedaba clavado al fondo de la pantalla, separado del
+    // resultado por un hueco y por debajo de los botones de accion.
+    try{ const cont=document.getElementById('r-content'); if(cont&&rb.parentNode!==cont) cont.appendChild(rb); }catch(_){}
     rb.style.display='block';
   }catch(_){}
 }
@@ -12164,7 +12168,7 @@ function renderProfileView(){
         <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
         </div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis especialistas</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px" id="yo-especialistas-sub">Profesionales conectados y mi código</div></div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis especialistas y directorio</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px" id="yo-especialistas-sub">Mi código, perfiles de hijos y el directorio de profesionales</div></div>
         <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
       </div>
 
@@ -14523,7 +14527,7 @@ function dmUmbralLapso(dur){
 }
 window.dmUmbralLapso = dmUmbralLapso;
 
-function getCircBand(h){if((h>=2&&h<=6)||(h>=13&&h<=15))return{name:'Valle circadiano',color:'#9a3412',bg:'#fff7ed'};if((h>=10&&h<=12)||(h>=18&&h<=20))return{name:'Pico circadiano',color:'#14532d',bg:'#f0fdf4'};return{name:'Zona intermedia',color:'#92400e',bg:'#fffbeb'};}
+function getCircBand(h){if((h>=2&&h<=6)||(h>=13&&h<=15))return{name:'Peor horario del día',color:'#9a3412',bg:'#fff7ed'};if((h>=10&&h<=12)||(h>=18&&h<=20))return{name:'Mejor horario del día',color:'#14532d',bg:'#f0fdf4'};return{name:'Horario intermedio',color:'#92400e',bg:'#fffbeb'};}
 function getRTCat(rt,ref){const d=rt-ref;if(d<=20)return{label:'Dentro del rango esperado',color:'#14532d'};if(d<=50)return{label:'Levemente por encima',color:'#92400e'};if(d<=100)return{label:'Moderadamente elevado',color:'#9a3412'};return{label:'Significativamente elevado',color:'#9b1c1c'};}
 function calcSD(arr){if(arr.length<2)return 0;const m=arr.reduce((a,b)=>a+b)/arr.length;return Math.round(Math.sqrt(arr.map(x=>(x-m)**2).reduce((a,b)=>a+b)/arr.length));}
 
@@ -14866,8 +14870,11 @@ function finishCalibration(){
   if(result) result.style.display='block';
   const detail=document.getElementById('calib-result-detail');
   const stats=document.getElementById('calib-result-stats');
-  if(detail) detail.innerHTML=offset<=10?'Tu dispositivo tiene <strong>latencia mínima</strong>.':
-    'Offset táctil de <strong>'+offset+' ms</strong>. Se aplicará automáticamente en tus tests.';
+  if(detail) detail.innerHTML=(offset<=10?'Tu dispositivo tiene <strong>latencia mínima</strong>.':
+    'Offset táctil de <strong>'+offset+' ms</strong>. Se aplicará automáticamente en tus tests.')+
+    '<div style="margin-top:10px;font-size:12px;color:var(--label-2);line-height:1.55;text-align:left">'+
+    '<b>Estos números no se comparan con los del test.</b> Acá el estímulo aparece después de una cuenta 3–2–1: sabés exactamente cuándo, y podés anticiparte. En el test de alerta los intervalos son al azar, justamente para que no puedas. Un estímulo predecible sale entre 80 y 120 ms más rápido que uno impredecible, y además acá se toma tu respuesta más rápida (percentil 10), no el promedio.'+
+    '<br><br>Si la calibración y el test te dieran parecido, la calibración estaría mal hecha.</div>';
   if(stats) stats.innerHTML=
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">'+
     '<div><div style="font-size:11px;color:var(--label-2)">RT mínimo</div><div style="font-size:22px;font-weight:700;color:#1a4a3a">'+p10+'</div><div style="font-size:11px;color:var(--label-3)">ms</div></div>'+
@@ -15067,7 +15074,7 @@ async function pvtFinish(){
   }
   const timeStr=now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});const dateStr=now.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
   const cont=document.getElementById('pvt-result-content');
-  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div><div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (&gt; ${LAPSO_MS} ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div>${dur<=3?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:12px;color:#92400e;line-height:1.55"><b>Ojo con comparar este número.</b> En el test de 3 minutos el umbral de lapso es <b>355 ms</b>, no 500: el test es más corto y más rápido, salen menos respuestas lentas, y con 500 se contarían muchas menos fallas de las que hubo. Con 355 la sensibilidad iguala a la del test de 10 minutos (Basner, Mollicone y Dinges, <i>Acta Astronautica</i> 2011).<br><br>Por eso <b>los lapsos de un test de 3 minutos no se comparan con los de uno de 5 o 10</b>. Si vas a seguir tu evolución en el tiempo, conviene usar siempre <b>el de 5 minutos como base</b> y repetir esa misma duración.</div>`:''}<div class="info-row"><span class="info-label">Respuestas de más de 1 s</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapsosLargos>0?'#9b1c1c':'#14532d'}">${lapsosLargos}</div><div style="font-size:11px;color:var(--ink3)">${lapsosLargos>0?'quedan fuera del promedio':'ninguna'}</div></div></div><div class="info-row"><span class="info-label">Arranques falsos (&lt; 100 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${arranquesFalsos>2?'#9a3412':'#14532d'}">${arranquesFalsos}</div><div style="font-size:11px;color:var(--ink3)">${arranquesFalsos>2?'muchos: se adelantó al estímulo':'no entran en el promedio'}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div>${DEVICE_OFFSET?`<div style="font-size:11px;color:var(--ink3);line-height:1.5;padding:8px 0 0">Se descontaron <b>${Math.abs(DEVICE_OFFSET)} ms</b> de latencia de tu pantalla, medidos en la calibración. El tiempo medio y los lapsos salen los dos de la serie corregida.</div>`:''}<div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button></div></div>`;
+  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref. de laboratorio: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div>${deviation>60&&deviceType==='móvil'?`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin:2px 0 12px;font-size:12px;color:#475569;line-height:1.55"><b>Ese "+${deviation} ms" no significa lo que parece.</b> La referencia sale de PVT hechos con un dispositivo dedicado, botón físico y pantalla de respuesta inmediata. Un test en el navegador de un teléfono agrega latencia de toque, de evento y de dibujado que la calibración descuenta solo en parte. Es normal que acá te cueste bajar de 350–400 ms aunque estés perfectamente alerta.<br><br>Lo interpretable es <b>tu serie contra vos mismo</b>: mismo teléfono, misma duración, mismo dedo, distintos días. La comparación contra la referencia poblacional es orientativa, nada más.</div>`:''}<div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (&gt; ${LAPSO_MS} ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div>${dur<=3?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:12px;color:#92400e;line-height:1.55"><b>Ojo con comparar este número.</b> En el test de 3 minutos el umbral de lapso es <b>355 ms</b>, no 500: el test es más corto y más rápido, salen menos respuestas lentas, y con 500 se contarían muchas menos fallas de las que hubo. Con 355 la sensibilidad iguala a la del test de 10 minutos (Basner, Mollicone y Dinges, <i>Acta Astronautica</i> 2011).<br><br>Por eso <b>los lapsos de un test de 3 minutos no se comparan con los de uno de 5 o 10</b>. Si vas a seguir tu evolución en el tiempo, conviene usar siempre <b>el de 5 minutos como base</b> y repetir esa misma duración.</div>`:''}<div class="info-row"><span class="info-label">Respuestas de más de 1 s</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapsosLargos>0?'#9b1c1c':'#14532d'}">${lapsosLargos}</div><div style="font-size:11px;color:var(--ink3)">${lapsosLargos>0?'quedan fuera del promedio':'ninguna'}</div></div></div><div class="info-row"><span class="info-label">Arranques falsos (&lt; 100 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${arranquesFalsos>2?'#9a3412':'#14532d'}">${arranquesFalsos}</div><div style="font-size:11px;color:var(--ink3)">${arranquesFalsos>2?'muchos: se adelantó al estímulo':'no entran en el promedio'}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div>${DEVICE_OFFSET?`<div style="font-size:11px;color:var(--ink3);line-height:1.5;padding:8px 0 0">Se descontaron <b>${Math.abs(DEVICE_OFFSET)} ms</b> de latencia de tu pantalla, medidos en la calibración. El tiempo medio y los lapsos salen los dos de la serie corregida.</div>`:''}<div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button></div></div>`;
   // Calibration offset note
   if(DEVICE_OFFSET !== 0 && cont){
     const calibDiv = document.createElement('div');

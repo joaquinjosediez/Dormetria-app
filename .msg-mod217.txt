@@ -1,0 +1,29 @@
+mod217 · el cartel mandaba a tocar un botón que no existe
+
+El bloque de consulta decía "Tocá el botón para ver el directorio" y no hay
+botón: se sacó a propósito en una versión anterior —no corresponde mandar a
+alguien a una lista de profesionales que pagaron por estar ahí justo después
+de decirle que su puntaje está alto— pero el texto quedó hablando de él.
+Ahora nombra dónde está el directorio y deja que la persona vaya si quiere.
+
+Además el bloque colgaba fuera del scroll: era hermano de #r-content, que es
+flex:1, así que quedaba clavado al fondo de la pantalla, separado del
+resultado por un hueco y por debajo de los botones de acción. Se mueve
+adentro al mostrarlo.
+
+- "Mis especialistas" pasa a "Mis especialistas y directorio", y el subtítulo
+  nombra las tres cosas que hay en esa pantalla: el código, los perfiles de
+  los hijos (con "Quitar") y el directorio. Estaban todas ahí; el rótulo no
+  las nombraba.
+- Pico / valle circadiano → "mejor horario del día" / "peor horario del día".
+- PVT: la referencia se rotula "Ref. de laboratorio". Si la desviación pasa
+  los 60 ms en móvil, se explica que un test en navegador agrega latencia que
+  la calibración descuenta solo en parte, y que lo interpretable es la propia
+  serie, no el número absoluto.
+- La calibración ahora explica por qué da distinto al test: acá el estímulo
+  viene tras una cuenta 3–2–1 (predecible, se puede anticipar) y se toma el
+  percentil 10; en el test los intervalos son al azar. Un estímulo predecible
+  corre 80–120 ms más rápido. Si los dos números coincidieran, la calibración
+  estaría mal.
+- Dedo: el índice sigue siendo lo recomendado, pero el pulgar de la mano que
+  sostiene el teléfono sirve igual. Lo que rompe la serie es alternar.
