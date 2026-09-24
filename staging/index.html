@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg218-7f10344e">
+<link rel="stylesheet" href="css/styles.css?v=stg219-782b37c2">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -963,12 +963,13 @@
       <div id="child-codes-list"></div>
     </div>
 
-    <!-- Directorio de profesionales -->
+    <!-- El directorio estaba metido acá abajo, después del código y de los
+         perfiles de los hijos: nadie lo encontraba, y además era una segunda
+         implementación peor que la de la pantalla de directorio. Ahora hay
+         una sola, y se llega desde "Yo". -->
     <div style="margin-top:20px;text-align:left;border-top:1px solid rgba(255,255,255,0.1);padding-top:20px">
-      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">📋 Directorio de especialistas</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.76);margin-bottom:10px">Profesionales que usan Dormetria y aceptan nuevos pacientes.</div>
-      <input type="text" id="code-consult-search" placeholder="Buscar por nombre o especialidad…" oninput="filterCodeConsultDirs()" style="width:100%;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:13px;margin-bottom:8px;box-sizing:border-box">
-      <div id="code-consult-list" style="font-size:13px;color:rgba(255,255,255,.82)">Cargá la pantalla para ver el directorio…</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.76);margin-bottom:10px">¿Buscás un profesional nuevo?</div>
+      <button onclick="showConsultDir()" style="width:100%;padding:12px;border-radius:12px;background:rgba(126,200,164,0.14);border:1px solid #7ec8a4;color:#7ec8a4;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">📋 Ver el directorio de especialistas</button>
     </div>
     <div style="margin-top:24px"><button class="btn btn-g" onclick="showScreen('home')">Entendido</button></div>
   </div>
@@ -1060,7 +1061,7 @@
     </button>
     <button class="bnav" id="drnav-alerts" onclick="showDrTab('alerts',this)" style="color:rgba(255,255,255,.72)">
       <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v42.0c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
-      <span class="bnav-lbl" style="color:rgba(255,255,255,.72)">Alertas <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:9px;border-radius:8px;padding:1px 5px;margin-left:2px"></span></span>
+      <span class="bnav-lbl" style="color:rgba(255,255,255,.72)">Avisos <span id="alert-badge" style="display:none;background:#FF3B30;color:white;font-size:9px;border-radius:8px;padding:1px 5px;margin-left:2px"></span></span>
     </button>
     <button class="bnav" id="drnav-metrics" onclick="showDrTab('metrics',this)" style="color:rgba(255,255,255,.72)">
       <div class="bnav-icon"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
@@ -1349,10 +1350,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg218-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg218-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg218-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=stg218-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg219-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg219-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg219-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=stg219-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1371,11 +1372,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg218';
+const APP_VERSION='stg219';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg218 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg219 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -12163,12 +12164,22 @@ function renderProfileView(){
         <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
       </div>
 
+      <!-- Directorio: es otra cosa que "mis especialistas". Uno es con quién
+           ya estoy; el otro, a quién podría consultar. Estaban juntos. -->
+      <div onclick="showConsultDir()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Directorio de especialistas</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px">Profesionales que aceptan pacientes nuevos</div></div>
+        <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
+      </div>
+
       <!-- Mis especialistas -->
       <div onclick="showPatientCode()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
         <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
         </div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis especialistas y directorio</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px" id="yo-especialistas-sub">Mi código, perfiles de hijos y el directorio de profesionales</div></div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Mis especialistas</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px" id="yo-especialistas-sub">Mi código, profesionales vinculados y perfiles de hijos</div></div>
         <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
       </div>
 
@@ -14611,7 +14622,12 @@ async function loadPVTHistoryInline(){
   if(!container||!S.user) return;
   container.innerHTML='<div style="text-align:center;padding:12px;color:var(--label-2);font-size:13px">Cargando...</div>';
   try{
-    const pvts=await db.get('pvt_tests?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=created_at.desc&limit=30&select=id,mean_rt,lapses,alert_level,test_hour,prior_sleep_hours,created_at');
+    // duration_min puede no existir todavia (SQL-pvt-lapsos): si se pide una
+    // columna inexistente PostgREST devuelve 400 y la lista queda VACIA.
+    const _selPvt='id,mean_rt,lapses,alert_level,test_hour,prior_sleep_hours,device_type,created_at';
+    const _q='pvt_tests?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=created_at.desc&limit=30&select=';
+    let pvts=await db.get(_q+_selPvt+',duration_min').catch(()=>null);
+    if(pvts===null) pvts=await db.get(_q+_selPvt).catch(()=>[]);
     if(!pvts||!pvts.length){
       container.innerHTML='<div style="text-align:center;padding:24px;color:var(--label-2);font-size:13px">Sin tests registrados aún.<br>Completá el test para ver tu historial.</div>';
       return;
@@ -14631,7 +14647,10 @@ async function loadPVTHistoryInline(){
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">'+
         '<div>'+
         '<div style="font-size:13px;font-weight:500">'+emoji+' '+d+' '+t+' '+sleep+'</div>'+
-        '<div style="font-size:11px;color:var(--label-2);margin-top:2px">'+p.lapses+' lapsos'+(p.device_type?' ('+p.device_type+')':'')+'</div>'+
+        '<div style="font-size:11px;color:var(--label-2);margin-top:2px">'+
+          (p.duration_min?p.duration_min+' min · ':'')+p.lapses+' lapsos'+
+          (p.duration_min?' (umbral '+(p.duration_min<=3?355:500)+' ms)':'')+
+          (p.device_type?' · '+p.device_type:'')+'</div>'+
         '</div>'+
         '<div style="text-align:right">'+
         '<div style="font-size:16px;font-weight:600;color:'+rtColor+'">'+p.mean_rt+' ms</div>'+
@@ -15037,9 +15056,10 @@ async function pvtFinish(){
   else{level='Alerta reducida';emoji='🔴';color='#9b1c1c';msg='Tu tiempo de reacción está bastante por encima de lo esperado para este horario. Esta prueba mide cómo estás ahora, en este momento: no dice si podés conducir ni habilita a hacerlo. Si venís con somnolencia, es algo para conversar con un profesional.';}
   // Antes alcanzaba con dur>=1: un test de un minuto se guardaba como si
   // midiera lo mismo que uno de diez.
+  const isMob=window.matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;
+  const deviceType=isMob?'móvil':'web';
   if(dur>=3&&S.user){
     console.log('Simple PVT save: rt='+meanRT+' lapses='+lapses+' dur='+S.pvtDuration);
-  const isMob=window.matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;const deviceType=isMob?'móvil':'web';
   // Se guardan la duración y el umbral usado: sin eso, un registro viejo no
   // se puede interpretar (¿esos 2 lapsos son sobre 500 ms o sobre 355?).
   // Base: columnas que existen desde siempre. Extra: las que agrega
@@ -15257,33 +15277,31 @@ function dmBuildDoctorTopbar(){
         '<span id="dr-tb-saludo" style="margin-left:12px;font-size:13.5px;color:rgba(244,239,229,.95);white-space:nowrap"></span></div>'+
       '<div class="dr-tb-tabs">'+
         '<button class="dr-tb-tab active" data-tab="patients" onclick="dmTopbarGo(\'patients\')">'+ic('M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z')+'Pacientes</button>'+
-        '<button class="dr-tb-tab" data-tab="alerts" onclick="dmTopbarGo(\'alerts\')">'+ic('M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9')+'Alertas <span class="dr-tb-badge" id="dr-tb-alert-badge" style="display:none"></span></button>'+
+        '<button class="dr-tb-tab" data-tab="alerts" onclick="dmTopbarGo(\'alerts\')">'+ic('M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9')+'Notificaciones <span class="dr-tb-badge" id="dr-tb-alert-badge" style="display:none"></span></button>'+
         '<button class="dr-tb-tab" data-tab="metrics" onclick="dmTopbarGo(\'metrics\')">'+ic('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z')+'Métricas</button>'+
         '<button class="dr-tb-tab" data-tab="more" onclick="dmTopbarGo(\'more\')"><span style="font-size:15px;line-height:1">🌿</span>TCC-I</button>'+
         '<span style="width:1px;height:20px;background:rgba(244,239,229,.16);margin:0 4px;flex-shrink:0"></span>'+
         '<button class="dr-tb-tab" data-tab="profile" onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
-        '<button class="dr-tb-tab" onclick="showDrRegisterForm()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio</button>'+
-        '<button class="dr-tb-tab" onclick="dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo funciona</button>'+
-        '<button class="dr-tb-tab" onclick="dmMenuPerfiles()">'+ic('M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')+'Mi perfil paciente</button>'+
-        '<button class="dr-tb-tab" onclick="showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'Ayudanos a mejorar</button>'+
-        '<button class="dr-tb-tab" id="dr-tb-admin-tab" style="display:none" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Admin</button>'+
-        '<button class="dr-tb-tab" onclick="doLogout()" style="color:rgba(252,165,165,.9)">'+ic('M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1')+'Salir</button>'+
+        '<button class="dr-tb-tab" onclick="showConsultDir()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio</button>'+
       '</div>'+
       '<div class="dr-tb-actions" style="display:none">'+
         '<button class="dr-tb-icon" title="Cómo se usa" aria-label="Cómo se usa" onclick="dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'</button>'+
         '<button class="dr-tb-icon" title="Ayudanos a mejorar" aria-label="Ayudanos a mejorar" onclick="showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'</button>'+
         '<button class="dr-tb-icon" id="dr-tb-admin-quick" style="display:none" title="Panel Admin" aria-label="Panel Admin" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'</button>'+
       '</div>'+
-      '<div class="dr-tb-me" id="dr-tb-me" style="display:none">'+
-        '<button class="dr-tb-me-btn" style="cursor:default" aria-label="Tu cuenta">'+
+      '<div class="dr-tb-me" id="dr-tb-me">'+
+        '<button class="dr-tb-me-btn" onclick="dmTopbarToggleMenu(event)" aria-label="Tu cuenta" title="Tu cuenta">'+
           '<span class="dr-tb-avatar" id="dr-tb-avatar">··</span>'+
 
         '</button>'+
         '<div class="dr-tb-menu">'+
           '<div class="dr-tb-menu-head"><div class="dr-tb-menu-name" id="dr-tb-menu-name">—</div><div class="dr-tb-menu-sub" id="dr-tb-menu-sub">Panel profesional</div></div>'+
           '<button onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
-          '<button id="dr-tb-dir" onclick="dmTopbarCloseMenu();showDrRegisterForm()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio de profesionales</button>'+
-          ''+
+          '<button id="dr-tb-dir" onclick="dmTopbarCloseMenu();showDrRegisterForm()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Mi ficha en el directorio</button>'+
+          '<button onclick="dmTopbarCloseMenu();showConsultDir()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Ver el directorio</button>'+
+          '<button onclick="dmTopbarCloseMenu();dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo funciona</button>'+
+          '<button onclick="dmTopbarCloseMenu();dmMenuPerfiles()">'+ic('M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')+'Mi perfil paciente</button>'+
+          '<button onclick="dmTopbarCloseMenu();showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'Ayudanos a mejorar</button>'+
           '<button id="dr-tb-admin" style="display:none" onclick="dmTopbarCloseMenu();showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Panel Admin</button>'+
           '<hr>'+
           '<button onclick="dmTopbarCloseMenu();dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo se usa</button>'+
@@ -23253,55 +23271,31 @@ async function showConsultDir(fromResult, childMode){
   const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
   // Set back button target
   const backBtn = document.getElementById('consult-back-btn');
-  if(backBtn) backBtn.onclick = ()=>{const _mn2=document.getElementById('main-nav');if(_mn2)_mn2.style.removeProperty('display');fromResult?showScreen('result'):showHome();};
+  if(backBtn) backBtn.onclick = ()=>{const _mn2=document.getElementById('main-nav');if(_mn2)_mn2.style.removeProperty('display');fromResult?showScreen('result'):(S.role==='doctor'?showScreen('doctor-home'):showHome());};
   showScreen('consult');
   const list = document.getElementById('consult-list');
   if(!list) return;
   list.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
-    // Query doctors - try listed=true first, then fall back to any approved/applied doctor
-    let docs=[];
-    try{
-      // Try DB listed=true (works if column exists)
-      // Try listed=true filter first
-      let dbDocs=await db.get('doctors?listed=eq.true&select=name,lname,email,specialty,gender,mat,city,country,bio,photo_url,training,associations,address,phone,modality,fee&order=name.asc').catch(()=>[]);
-      if(dbDocs&&dbDocs.length){docs=dbDocs;}
-      // Filter by child population if in child mode
-      if(childMode&&docs) docs=docs.filter(d=>d.population&&d.population.includes('child'));
-      else{
-        // Fallback: show all doctors (listed column may not be populated)
-        // filter by localStorage approved list OR show all with specialty
-        const allD=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio,photo_url,training,associations,address,phone,modality,fee&order=name.asc').catch(()=>[]);
-        const _ap=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-        const apEmails=Object.keys(_ap).filter(e=>_ap[e]);
-        // Show: DB-approved OR localStorage-approved OR any doctor with specialty
-        const dbAll = allD || [];
-        if(apEmails.length){
-          docs = dbAll.filter(d => apEmails.includes(d.email) || (d.specialty && d.specialty !== ''));
-        } else {
-          docs = dbAll.filter(d => d.specialty && d.specialty !== '');
-        }
-      }
-    }catch(e){}
-    if(!docs.length){
-      // Column doesn't exist OR no one approved yet: get all doctors with a specialty filled
-      const allDoctors=await db.get('doctors?select=name,lname,email,specialty,gender,mat,city,country,bio,photo_url,training,associations,address,phone,modality,fee&order=name.asc').catch(()=>[]);
-      const _approved=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
-      const _approvedEmails=Object.keys(_approved).filter(e=>_approved[e]);
-      if(_approvedEmails.length){
-        // Admin has approved some doctors via this device
-        docs=(allDoctors||[]).filter(d=>_approvedEmails.includes(d.email));
-      } else {
-        // No approved list available: show doctors who have specialty filled
-        // (they opted in to the directory by filling their profile)
-        docs=(allDoctors||[]).filter(d=>d.specialty&&d.specialty!==''&&d.specialty!=='physician');
-      }
-    }
-    // Merge in extra profile data from localStorage (city, phone, bio, etc.)
-    docs=docs.map(d=>{
-      const cached=JSON.parse(localStorage.getItem('dm_dr_profile_'+d.email)||'null');
-      return cached?{...d,...cached}:d;
-    });
+    // Una sola fuente de verdad: el profesional se publica solo si lo pidio.
+    // `public_profile` es booleano; `listed` es TEXTO legacy ('none' |
+    // 'pending' | 'true'). Se consultan las dos y se deduplica por email.
+    // No hay caida a "todos los doctores": si nadie se listo, el directorio
+    // esta vacio. Esa es la respuesta correcta, no un catalogo de gente que
+    // nunca dio permiso.
+    const _cols='name,lname,email,specialty,gender,sex,mat,city,country,bio,photo_url,training,associations,address,phone,modality,fee,email_public,available_online,available_presencial,cv_url';
+    // booking_url puede no existir todavia: pedir una columna inexistente
+    // hace que PostgREST devuelva 400 y el directorio quede VACIO.
+    const _pedir=async(filtro)=>{
+      let r = await db.get('doctors?'+filtro+'&select='+_cols+',booking_url&order=lname.asc').catch(()=>null);
+      if(r===null) r = await db.get('doctors?'+filtro+'&select='+_cols+'&order=lname.asc').catch(()=>[]);
+      return r||[];
+    };
+    const pub = await _pedir('public_profile=eq.true');
+    const leg = await _pedir('listed=eq.true');
+    const vistos=new Set(); let docs=[];
+    [].concat(pub,leg).forEach(d=>{ if(d&&d.email&&!vistos.has(d.email)){ vistos.add(d.email); docs.push(d); } });
+    if(childMode) docs=docs.filter(d=>d.population&&d.population.includes('child'));
     _consultDoctorsCache = docs||[];
     renderConsultList(_consultDoctorsCache);
   }catch(e){
@@ -23429,7 +23423,6 @@ function renderConsultList(docs){
       (avail.length?'<div style="font-size:12px;color:var(--label-2);margin-top:2px">'+avail.join(' · ')+'</div>':'')+
       (stars?'<div style="margin-top:4px">'+stars+'</div>':'')+
       '</div></div>'+
-      (d.bio?'<div style="font-size:13px;color:var(--label-2);margin-top:8px;line-height:1.5">'+d.bio+'</div>':'')+
       '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">'+
       (phone?'<a href="tel:'+phone+'" style="flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px;border-radius:10px;background:#f0fdf4;color:#1a4a3a;text-decoration:none;font-size:12px;font-weight:600">📞 Llamar</a>':'')+
       (phone?'<a href="https://wa.me/'+phone.replace(/[^0-9]/g,'')+'" target="_blank" style="flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px;border-radius:10px;background:#dcfce7;color:#15803d;text-decoration:none;font-size:12px;font-weight:600">💬 WhatsApp</a>':'')+
@@ -23546,6 +23539,20 @@ async function dmSolicResuelta(id, btn){
   if(btn) btn.disabled = true;
   try{
     await db.patch('consultation_requests?id=eq.'+encodeURIComponent(id), { status:'answered' });
+    // No alcanza con que el PATCH no tire error. Si la politica de RLS no
+    // deja actualizar, PostgREST responde 204 habiendo tocado CERO filas:
+    // el camino feliz se ejecutaba igual, el boton desaparecia y la
+    // solicitud seguia pendiente. Se relee para confirmar.
+    let ok=false;
+    try{
+      const v=await db.get('consultation_requests?id=eq.'+encodeURIComponent(id)+'&select=status');
+      ok = !!(v && v[0] && v[0].status==='answered');
+    }catch(_){ ok=false; }
+    if(!ok){
+      if(btn) btn.disabled = false;
+      toast('No se pudo marcar: la base rechazó el cambio (falta la policy de UPDATE)');
+      return;
+    }
     toast('Marcada como respondida');
     const fila = btn && btn.closest('.dm-solic');
     if(fila){ fila.classList.remove('pend'); btn.remove(); }

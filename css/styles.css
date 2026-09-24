@@ -5421,3 +5421,22 @@ body.dr-desktop #drp-content > .dm-edu-wrap{ grid-column:1 / -1; }
   cursor:pointer; font-family:var(--font);
 }
 .dm-solic-btn.sec{ background:rgba(0,0,0,.06); color:var(--label-2); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod218 · La barra del profesional no entraba en la pantalla
+   Once botones en una fila con overflow-x:auto y scrollbar oculta: los
+   últimos seis quedaban fuera, sin nada que indicara que existían. No es
+   que no se pudieran apretar — no se veían. Ahora la barra tiene cinco
+   pestañas y el resto vive en el menú del avatar, que hasta ahora estaba
+   con display:none y sin onclick, o sea muerto.
+   Se deja una sombra al borde derecho como aviso si aun así desborda.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width:900px){
+  #dr-topbar-desktop .dr-tb-tabs{
+    -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 18px),transparent 100%);
+            mask-image:linear-gradient(to right,#000 calc(100% - 18px),transparent 100%);
+  }
+  /* Con cinco pestañas no debería hacer falta, pero si un idioma o un zoom
+     las estira, el degradado avisa que hay más a la derecha. */
+  #dr-topbar-desktop .dr-tb-tabs:not(:hover){ scroll-behavior:smooth; }
+}

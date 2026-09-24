@@ -1,0 +1,50 @@
+mod218 · el directorio publicaba a profesionales que nunca pidieron figurar
+
+EXPOSICION DE DATOS. showConsultDir preguntaba por listed=eq.true y, si eso
+venia vacio, caia a `doctors?select=name,lname,mat,city,address,phone…` SIN
+NINGUN FILTRO, quedandose con "los que tienen especialidad cargada". El
+comentario original lo decia: "they opted in to the directory by filling
+their profile".
+
+Completar el campo especialidad no es consentimiento para publicar nombre,
+matricula, ciudad, direccion y telefono ante cualquier paciente que abra la
+pantalla. Ley 25.326 art. 5: previo, expreso e informado. Por eso Joaquin se
+encontro a si mismo en el directorio.
+
+Ahora hay una sola fuente de verdad —public_profile=true, o el listed legacy—
+y ninguna caida. Si nadie se listo, el directorio esta vacio. Lo fija
+pruebas/34.
+
+Barra del panel profesional:
+- Tenia ONCE botones en una fila con overflow-x:auto y scrollbar oculta. Los
+  primeros cuatro entraban; TCC-I, Mi perfil, Directorio, Como funciona, Mi
+  perfil paciente, Ayudanos, Admin y Salir quedaban fuera de pantalla sin
+  nada que lo indicara. No es que no se pudieran apretar: no se veian.
+- El menu del avatar, que era donde tenian que estar, estaba MUERTO:
+  display:none fijo y el boton sin onclick. Se enciende y se le cablea el
+  toggle. La barra queda en cinco pestañas.
+- "Directorio" en la barra abre el directorio de verdad. La ficha propia
+  pasa a llamarse "Mi ficha en el directorio", en el menu: son dos cosas
+  distintas y compartian nombre.
+- Alertas → Notificaciones / Avisos.
+
+Directorio:
+- Tarjeta mas simple: foto a la izquierda, especialidad, pais y ciudad,
+  modalidad. La resena larga baja a "Ver perfil completo".
+- Sale de adentro de "Mis especialistas", donde nadie lo encontraba, y gana
+  entrada propia en "Yo". Habia dos implementaciones del directorio; queda
+  una.
+
+PVT:
+- deviceType estaba declarado con const DENTRO de if(dur>=3&&S.user) y lo use
+  en la plantilla del resultado, que esta fuera de ese bloque. ReferenceError
+  en cada test: la plantilla no se dibujaba y caia a la pantalla de
+  emergencia que dice "el registro se guardo". Error mio de mod217.
+- Registros muestra la duracion y el umbral usado. Sin eso, un test de 3 min
+  (umbral 355) se leia como comparable a uno de 5 (umbral 500), y no habia
+  forma de saber si se habia guardado.
+
+Notificaciones:
+- "Marcar como respondida" entraba al camino feliz aunque la RLS rechazara
+  el UPDATE: PostgREST contesta 204 habiendo tocado cero filas. Ahora se
+  relee la fila y, si sigue pendiente, lo dice.
