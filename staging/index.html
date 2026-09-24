@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg216-9bc82901">
+<link rel="stylesheet" href="css/styles.css?v=stg217-7f10344e">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1349,10 +1349,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg216-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg216-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg216-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=stg216-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg217-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg217-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg217-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=stg217-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1371,11 +1371,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg216';
+const APP_VERSION='stg217';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg216 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg217 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -4247,6 +4247,10 @@ function showDrRegisterForm(){
             </select>
             <input id="dreg-phone" class="form-input" type="tel" placeholder="Número sin código" value="${(u.phone||'').replace(/^\+\d+\s/,'')}" style="flex:1;box-sizing:border-box"></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">📧</span><input id="dreg-email-pub" class="form-input" type="email" placeholder="Email de contacto público" value="${u.email_public||u.email||''}" style="flex:1;box-sizing:border-box"></div>
+          <!-- Si tiene sistema de turnos propio, el paciente va ahí directo en
+               vez de dejar una solicitud esperando a que el profesional entre
+               a Dormetria. -->
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">📅</span><input id="dreg-booking" class="form-input" type="url" placeholder="Link a tu sistema de turnos (opcional)" value="${u.booking_url||''}" style="flex:1;box-sizing:border-box"></div>
         </div>
       </div>
     </div>
@@ -4307,7 +4311,7 @@ async function saveDrRegisterForm(){
     if(cvStatus){ cvStatus.textContent='⚠ El CV en PDF es obligatorio para aparecer en el directorio'; cvStatus.style.color='#dc2626'; }
     return;
   }
-  const upd={name:fullName[0]||u.name,lname:fullName.slice(1).join(' ')||u.lname||'',sex:sexVal,specialty:document.getElementById('dreg-spec').value,mat:document.getElementById('dreg-mat').value,institution:document.getElementById('dreg-inst').value,city:document.getElementById('dreg-city').value,bio:document.getElementById('dreg-bio').value,phone_cc:document.getElementById('dreg-phone-cc')?.value||'+54',phone:(document.getElementById('dreg-phone-cc')?.value||'+54')+' '+(document.getElementById('dreg-phone')?.value||''),email_public:document.getElementById('dreg-email-pub')?.value||'',available_online:document.getElementById('dreg-online')?.checked||false,available_presencial:document.getElementById('dreg-presencial')?.checked||false,cv_url:cvUrl,listed:'pending'};
+  const upd={name:fullName[0]||u.name,lname:fullName.slice(1).join(' ')||u.lname||'',sex:sexVal,specialty:document.getElementById('dreg-spec').value,mat:document.getElementById('dreg-mat').value,institution:document.getElementById('dreg-inst').value,city:document.getElementById('dreg-city').value,bio:document.getElementById('dreg-bio').value,phone_cc:document.getElementById('dreg-phone-cc')?.value||'+54',phone:(document.getElementById('dreg-phone-cc')?.value||'+54')+' '+(document.getElementById('dreg-phone')?.value||''),email_public:document.getElementById('dreg-email-pub')?.value||'',booking_url:document.getElementById('dreg-booking')?.value||null,available_online:document.getElementById('dreg-online')?.checked||false,available_presencial:document.getElementById('dreg-presencial')?.checked||false,cv_url:cvUrl,listed:'pending'};
   try{
     // Save to localStorage immediately (works without server)
     const drKey='dm_dr_profile_'+(u.email||'');
@@ -11532,8 +11536,19 @@ async function loadCodeConsultDirectory(){
     // `listed` es una columna de TEXTO ('none' | 'pending' | 'true'), no booleana.
     // La fuente de verdad para el directorio público es `public_profile` (booleano).
     // Consultamos ambas con OR y deduplicamos por email.
-    const _sel='select=email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial&order=lname.asc';
-    let docs = await db.get('doctors?public_profile=eq.true&'+_sel).catch(()=>[]);
+    // photo_url faltaba en el select, así que la foto no llegaba nunca aunque
+    // el profesional la hubiera cargado: no era que no se dibujaba, es que el
+    // dato no venía. Lo mismo mat y booking_url.
+    // OJO: pedir una columna que no existe hace que PostgREST devuelva 400 y
+    // el directorio quede VACÍO, no incompleto. Por eso booking_url va en un
+    // select "optimista" con caída al básico: hasta que corra el SQL, el
+    // directorio sigue funcionando sin el botón de turnos.
+    const _cols='email,name,lname,specialty,gender,sex,city,country,bio,cv_url,phone,email_public,available_online,available_presencial,photo_url,mat';
+    const _selOpt='select='+_cols+',booking_url&order=lname.asc';
+    const _selBas='select='+_cols+'&order=lname.asc';
+    let _sel=_selOpt;
+    let docs = await db.get('doctors?public_profile=eq.true&'+_sel).catch(()=>null);
+    if(docs===null){ _sel=_selBas; docs = await db.get('doctors?public_profile=eq.true&'+_sel).catch(()=>[]); }
     const alt = await db.get('doctors?listed=eq.true&'+_sel).catch(()=>[]);
     if(alt && alt.length){
       const seen=new Set((docs||[]).map(d=>d.email));
@@ -11725,7 +11740,7 @@ function specialistForScale(sc){
   const byId={
     stopbang:'un neumonólogo u otorrinolaringólogo especialista en sueño (para descartar apnea del sueño)',
     sassv:'un neumonólogo u otorrinolaringólogo especialista en sueño (para descartar apnea del sueño)',
-    ess:'un especialista en medicina del sueño (neumonología o neurología); la somnolencia diurna puede deberse a apnea o a otras causas',
+    ess:'un profesional que evalúe sueño: la somnolencia diurna es un síntoma con varias causas posibles —dormir menos de lo necesario, insomnio, medicación sedante, trabajo por turnos, apnea— y recién una evaluación define cuál es la tuya y a qué especialidad derivar',
     irls:'un neurólogo (conviene además dosar ferritina para descartar déficit de hierro)',
     rbdq:'un neurólogo especialista en sueño (los trastornos de conducta del sueño REM requieren evaluación)',
     pdss:'un neurólogo especialista en sueño',
@@ -11737,7 +11752,7 @@ function specialistForScale(sc){
   if(byId[id]) return byId[id];
   const byCat={
     apnea:'un neumonólogo u otorrinolaringólogo especialista en sueño',
-    sleepiness:'un especialista en medicina del sueño (neumonología o neurología)',
+    sleepiness:'un profesional que evalúe sueño, para identificar la causa antes de derivar a una especialidad',
     insomnia:'un especialista en medicina del sueño o psiquiatría (la TCC-I es el tratamiento de primera línea)',
     sleep:'un especialista en medicina del sueño',
     mental:'un psiquiatra',
@@ -11766,9 +11781,9 @@ function _applyConsultBlock(sc,score){
     const msg=document.getElementById('r-consult-msg');
     if(msg){
       msg.innerHTML = (isPath
-        ? 'Este resultado sugiere una alteración que conviene evaluar. Te recomendamos consultar con <strong>'+who+'</strong>.'
-        : 'Este resultado amerita seguimiento. Si los síntomas persisten, consultá con <strong>'+who+'</strong>.')+
-        '<br><span style="opacity:0.8">Tocá el botón para ver el directorio de profesionales.</span>';
+        ? 'Un puntaje así no es un diagnóstico: es un cuestionario que señala que vale la pena una evaluación. El paso siguiente sería <strong>'+who+'</strong>.'
+        : 'Este resultado amerita seguimiento. Si los síntomas persisten, el paso siguiente sería <strong>'+who+'</strong>.')+
+        '<br><span style="opacity:0.8">Podés llevarle este resultado a tu médico de cabecera, o ver el directorio de profesionales.</span>';
     }
     rb.style.display='block';
   }catch(_){}
@@ -15020,13 +15035,26 @@ async function pvtFinish(){
   const isMob=window.matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;const deviceType=isMob?'móvil':'web';
   // Se guardan la duración y el umbral usado: sin eso, un registro viejo no
   // se puede interpretar (¿esos 2 lapsos son sobre 500 ms o sobre 355?).
-  const e={patient_email:S.user.email,mean_rt:meanRT,lapses,alert_score:Math.max(0,Math.round(100-(deviation/3)-(lapses*8))),alert_level:level+' ('+dur+'min)',test_hour:testHour,prior_sleep_hours:priorSleep||null,device_type:deviceType,
-           duration_min:dur, lapse_threshold_ms:LAPSO_MS, long_lapses:lapsosLargos,
+  // Base: columnas que existen desde siempre. Extra: las que agrega
+  // SQL-pvt-lapsos.md. Si la migracion todavia no se corrio, PostgREST
+  // rechaza el INSERT COMPLETO con 400 (PGRST204) — no guarda una version
+  // parcial. Eso hacia que el test se mostrara en pantalla y despues no
+  // apareciera en Registros: se perdia entero. Por eso se intenta con los
+  // campos nuevos y, si la columna no existe, se reintenta sin ellos.
+  const eBase={patient_email:S.user.email,mean_rt:meanRT,lapses,alert_score:Math.max(0,Math.round(100-(deviation/3)-(lapses*8))),alert_level:level+' ('+dur+'min)',test_hour:testHour,prior_sleep_hours:priorSleep||null,device_type:deviceType};
+  const eExtra={duration_min:dur, lapse_threshold_ms:LAPSO_MS, long_lapses:lapsosLargos,
            n_responses:S.pvtRTs.length, false_starts:arranquesFalsos};
     try{
       console.log('Saving PVT: user='+S.user.email+' dur='+dur+' rt='+meanRT);
-      const pvtResp=await fetch(SU+'/rest/v1/pvt_tests',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(e)});
-      if(!pvtResp.ok&&pvtResp.status!==201){const ed=await pvtResp.json().catch(()=>({}));console.error('PVT save FAILED:',pvtResp.status,JSON.stringify(ed));toast('Error guardando test: '+pvtResp.status+(ed.message?' — '+ed.message:''));}
+      const _postPvt=async(body)=>fetch(SU+'/rest/v1/pvt_tests',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(body)});
+      let pvtResp=await _postPvt(Object.assign({},eBase,eExtra));
+      if(pvtResp.status===400||pvtResp.status===404){
+        const ed0=await pvtResp.clone().json().catch(()=>({}));
+        console.warn('PVT: reintento sin columnas nuevas —',ed0.message||pvtResp.status);
+        pvtResp=await _postPvt(eBase);
+        if(pvtResp.ok||pvtResp.status===201) console.warn('PVT guardado SIN duracion ni umbral: falta correr SQL-pvt-lapsos.md');
+      }
+      if(!pvtResp.ok&&pvtResp.status!==201){const ed=await pvtResp.json().catch(()=>({}));console.error('PVT save FAILED:',pvtResp.status,JSON.stringify(ed));toast('El test NO quedó registrado ('+pvtResp.status+')'+(ed.message?' — '+ed.message:''));}
       else{console.log('PVT saved OK');showSuccessBanner('Test guardado ✓ — TR: '+meanRT+'ms');}
     }catch(e1){
       console.error('PVT fetch error:',e1.message);
@@ -15184,7 +15212,7 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
     // administrador, y cuando haga falta se activa desde el código.
     const asb=document.getElementById('admin-setup-btn');if(asb)asb.style.display='none';
   }
-  const _pl=document.getElementById('dr-panel-label'); if(_pl) _pl.textContent=(['psychiatry','neurology','pneumology','ent','pediatrics','cardiology','general'].includes(d.specialty)?'Panel profesional':'Panel profesional');showScreen('doctor-home');showDrTab_('patients');setTimeout(()=>{updateDrAvailBtn();updateDrListedBtn();},200);}
+  const _pl=document.getElementById('dr-panel-label'); if(_pl) _pl.textContent=(['psychiatry','neurology','pneumology','ent','pediatrics','cardiology','general'].includes(d.specialty)?'Panel profesional':'Panel profesional');showScreen('doctor-home');showDrTab_('patients');setTimeout(function(){ try{ dmContarNotificaciones(); }catch(_){} }, 600);setTimeout(()=>{updateDrAvailBtn();updateDrListedBtn();},200);}
 function showDrTab(tab,el){
   // Update bottom nav (uses original tab name for active state)
   ['patients','alerts','link','profile','more'].forEach(t=>{
@@ -15968,7 +15996,49 @@ async function renderPatientList(filter){
     return;
   }
   if(tab==='alerts'){
-    cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando alertas...</div>';
+    cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando notificaciones...</div>';
+    // ── SOLICITUDES DE CONSULTA ────────────────────────────────────────
+    // Esto no tenía dónde verse. loadConsultRequests() existía, pero pintaba
+    // en un elemento 'doctor-list' que NO EXISTE en el DOM: la función hacía
+    // getElementById, le daba null, y volvía en silencio. O sea que la
+    // solicitud del paciente se guardaba en consultation_requests y el
+    // profesional no tenía ninguna pantalla donde enterarse. Iba a un saco
+    // roto, como sospechabas.
+    // Va acá arriba, no en una pestaña nueva: alertas y mensajes son la
+    // misma pregunta —"¿qué me llegó?"— y merecen un solo lugar.
+    let _solicHtml = '';
+    try{
+      const _sol = await db.get('consultation_requests?doctor_email=eq.'+
+        encodeURIComponent(S.user.email)+'&order=created_at.desc&limit=50&select=*') || [];
+      const _pend = _sol.filter(function(r){ return (r.status||'pending')==='pending'; });
+      window._dmSolicPend = _pend.length;
+      if(_sol.length){
+        _solicHtml = '<div class="sec-title" style="margin-top:10px">Solicitudes de consulta'+
+          (_pend.length?' <span style="color:#C8A96E">· '+_pend.length+' sin responder</span>':'')+'</div>'+
+          _sol.slice(0,10).map(function(r){
+            const f=new Date(r.created_at);
+            const cuando=f.toLocaleDateString('es-AR',{day:'2-digit',month:'short'})+' '+
+                         f.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+            const pend=(r.status||'pending')==='pending';
+            const mail=r.patient_email||'';
+            const nom=(r.patient_name||'').trim()||mail;
+            return '<div class="dm-solic'+(pend?' pend':'')+'">'+
+              '<div class="dm-solic-cab">'+
+                '<div><b>'+escHtml(nom)+'</b>'+
+                  '<div class="dm-solic-meta">'+cuando+' · '+escHtml(mail)+'</div></div>'+
+                (pend?'<span class="dm-solic-tag">sin responder</span>':'<span class="dm-solic-tag ok">respondida</span>')+
+              '</div>'+
+              (r.message?'<div class="dm-solic-msg">'+escHtml(r.message)+'</div>':'')+
+              '<div class="dm-solic-acc">'+
+                '<a href="mailto:'+encodeURIComponent(mail).replace(/%40/,'@')+
+                  '?subject='+encodeURIComponent('Tu consulta desde Dormetria')+
+                  '" class="dm-solic-btn">Responder por mail</a>'+
+                (pend?'<button class="dm-solic-btn sec" onclick="dmSolicResuelta('+JSON.stringify(r.id)+',this)">Marcar como respondida</button>':'')+
+              '</div>'+
+            '</div>';
+          }).join('');
+      }
+    }catch(_e){ console.warn('[solicitudes]', _e); }
     try{
       const alerts=await db.get('doctor_alerts?doctor_email=eq.'+encodeURIComponent(S.user.email)+'&order=created_at.desc&select=*');
       // Mark all as seen
@@ -15983,6 +16053,7 @@ async function renderPatientList(filter){
         if(badge) badge.style.display='none';
         try{ dmSyncTopbarBadge(); }catch(_){}
       }
+      window._dmSolicHtml = _solicHtml;
       // Also load pathological scale results from all linked patients
       const cacheKey='dm_dr_pts_'+S.user.email;
       const cachedPts=JSON.parse(localStorage.getItem(cacheKey)||'[]');
@@ -16039,9 +16110,7 @@ async function renderPatientList(filter){
       }
       if((!alerts||!alerts.length)&&!pathResults.length){
         const hadReviewed = reviewedSet.size>0;
-        cont.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div>Sin alertas pendientes.'+
-          (hadReviewed?'<br><span style="font-size:13px;color:var(--label-2)">Tenés '+reviewedSet.size+' alerta(s) marcada(s) como vistas. <a href="javascript:void(0)" onclick="resetReviewedAlerts()" style="color:#1a4a3a;font-weight:600;text-decoration:underline">Mostrar de nuevo</a></span>':'<br><span style="font-size:13px;color:var(--label-2)">Aparecerán aquí cuando un paciente obtenga un resultado clínicamente relevante.</span>')+
-          '</div>';
+        cont.innerHTML=(_solicHtml||'')+'<div class="empty-state"><div class="empty-icon">✅</div>Sin alertas clínicas pendientes.</div>';
         return;
       }
       let alertHtml='<div class="sec-title" style="margin-top:14px">Resultados que requieren atención</div>';
@@ -16088,7 +16157,7 @@ async function renderPatientList(filter){
           '</div>';
         }).join('');
       }
-      cont.innerHTML=alertHtml+'<div id="alerts-card-container"></div>';
+      cont.innerHTML=(_solicHtml||'')+alertHtml+'<div id="alerts-card-container"></div>';
       if(alerts&&alerts.length) buildAlertCards(alerts, document.getElementById('alerts-card-container'));
     }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||'')+'</div>';}
   }
@@ -23244,6 +23313,23 @@ function filterConsultDirs(){
 // Ficha del profesional. Hasta ahora el directorio mostraba una linea por
 // persona y no habia forma de ver nada mas: quien busca profesional necesita
 // saber donde atiende, como contactarlo y cuanto sale antes de decidir.
+// Abre la ficha venga de donde venga. Antes solo funcionaba si la caché la
+// había llenado showConsultDir; desde el otro directorio no hacía nada.
+function dmVerFicha(email){
+  const pools = [_consultDoctorsCache, window._codeConsultDocs, window._dmDirDrs];
+  for(const p of pools){
+    const d=(p||[]).filter(function(x){ return x && x.email===email; })[0];
+    if(d){
+      if(!(_consultDoctorsCache||[]).some(function(x){ return x.email===email; })){
+        try{ _consultDoctorsCache = (_consultDoctorsCache||[]).concat([d]); }catch(_){}
+      }
+      return dmFichaProfesional(email);
+    }
+  }
+  toast('No pude abrir el perfil');
+}
+window.dmVerFicha = dmVerFicha;
+
 function dmFichaProfesional(email){
   const d=(_consultDoctorsCache||[]).filter(function(x){ return x.email===email; })[0];
   if(!d) return;
@@ -23322,9 +23408,15 @@ function renderConsultList(docs){
     }
     const phone=d.phone||'';
     const emailPub=d.email_public||d.email||'';
+    // Iniciales cuando no hay foto: un círculo vacío se lee como "falta algo".
+    const _ini = ((d.name||'?')[0]+(d.lname||'')[0]||'').toUpperCase();
+    const _foto = d.photo_url
+      ? '<img src="'+d.photo_url+'" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e8f0eb">'
+      : '<div style="width:56px;height:56px;border-radius:50%;flex-shrink:0;background:#e8f0eb;color:#1a4a3a;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">'+_ini+'</div>';
     return '<div style="background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-      '<div><div style="font-size:16px;font-weight:700">'+title+' '+d.name+' '+(d.lname||'')+'</div>'+
+      '<div style="display:flex;gap:13px;align-items:flex-start">'+
+      _foto+
+      '<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:700">'+title+' '+d.name+' '+(d.lname||'')+'</div>'+
       '<div style="font-size:13px;color:#1a4a3a;font-weight:600;margin-top:2px">'+specLabel+'</div>'+
       (location?'<div style="font-size:12px;color:var(--label-2);margin-top:2px">📍 '+location+'</div>':'')+
       (avail.length?'<div style="font-size:12px;color:var(--label-2);margin-top:2px">'+avail.join(' · ')+'</div>':'')+
@@ -23335,11 +23427,19 @@ function renderConsultList(docs){
       (phone?'<a href="tel:'+phone+'" style="flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px;border-radius:10px;background:#f0fdf4;color:#1a4a3a;text-decoration:none;font-size:12px;font-weight:600">📞 Llamar</a>':'')+
       (phone?'<a href="https://wa.me/'+phone.replace(/[^0-9]/g,'')+'" target="_blank" style="flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px;border-radius:10px;background:#dcfce7;color:#15803d;text-decoration:none;font-size:12px;font-weight:600">💬 WhatsApp</a>':'')+
       (emailPub?'<a href="mailto:'+emailPub+'" style="flex:1;min-width:70px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px;border-radius:10px;background:#eff6ff;color:#1d4ed8;text-decoration:none;font-size:12px;font-weight:600">📧 Email</a>':'')+
-      '<button data-email="'+d.email+'" data-name="'+d.name+' '+(d.lname||'')+'" class="consult-req-btn" style="flex:2;min-width:120px;padding:9px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:12px;font-weight:600;cursor:pointer">🩺 Solicitar consulta</button>'+
+      // Si cargó su sistema de turnos, ahí va directo: es su canal y evita
+      // que la solicitud quede esperando a que entre a Dormetria.
+      (d.booking_url
+        ? '<a href="'+d.booking_url+'" target="_blank" rel="noopener" style="flex:2;min-width:120px;display:flex;align-items:center;justify-content:center;padding:10px;border-radius:10px;background:#1a4a3a;color:#fff;font-size:12.5px;font-weight:700;text-decoration:none;font-family:var(--font)">Pedir turno online</a>'
+        : '<button data-email="'+d.email+'" data-name="'+d.name+' '+(d.lname||'')+'" class="consult-req-btn" style="flex:2;min-width:120px;padding:10px;border:none;border-radius:10px;background:#1a4a3a;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Solicitar consulta</button>')+
       '</div>'+
       // Ver la ficha completa antes de decidir: reseña, formación, dónde
       // atiende, contacto y valor si lo cargó.
-      '<div onclick="dmFichaProfesional('+JSON.stringify(d.email)+')" style="text-align:center;padding:10px 0 2px;font-size:13.5px;color:#7EC8A4;font-weight:600;cursor:pointer">Ver perfil completo →</div>'+
+      // Esto no navegaba: dmFichaProfesional busca en _consultDoctorsCache y
+      // esa caché la llena OTRA pantalla (showConsultDir). Entrando por el
+      // directorio de "Mi especialista" está vacía, la función hacía
+      // `if(!d) return;` y el toque no hacía nada, en silencio.
+      '<div onclick="dmVerFicha('+JSON.stringify(d.email)+')" style="text-align:center;padding:11px 0 2px;font-size:13.5px;color:#1a4a3a;font-weight:700;cursor:pointer">Ver perfil completo →</div>'+
       '</div>';
   }).join('');
   // Attach consult request listeners
@@ -23433,6 +23533,48 @@ async function sendConsultRequest(doctorEmail, doctorName){
     }
   }catch(e){ toast('Error: '+e.message); }
 }
+
+// Marcar una solicitud como respondida. No borra nada: cambia el estado.
+async function dmSolicResuelta(id, btn){
+  if(btn) btn.disabled = true;
+  try{
+    await db.patch('consultation_requests?id=eq.'+encodeURIComponent(id), { status:'answered' });
+    toast('Marcada como respondida');
+    const fila = btn && btn.closest('.dm-solic');
+    if(fila){ fila.classList.remove('pend'); btn.remove(); }
+    try{ dmContarNotificaciones(); }catch(_){}
+  }catch(e){
+    if(btn) btn.disabled = false;
+    toast('No se pudo marcar: '+((e&&e.message)||''));
+  }
+}
+window.dmSolicResuelta = dmSolicResuelta;
+
+// El badge de la pestaña suma alertas + solicitudes sin responder: un solo
+// número para una sola pregunta.
+async function dmContarNotificaciones(){
+  try{
+    if(!S.user || !S.user.email || S.role!=='doctor') return;
+    let n = 0;
+    try{
+      const a = await db.get('doctor_alerts?doctor_email=eq.'+encodeURIComponent(S.user.email)+
+        '&seen=eq.false&select=id') || [];
+      n += a.length;
+    }catch(_){}
+    try{
+      const c = await db.get('consultation_requests?doctor_email=eq.'+encodeURIComponent(S.user.email)+
+        '&status=eq.pending&select=id') || [];
+      n += c.length;
+    }catch(_){}
+    const badge=document.getElementById('alert-badge');
+    if(badge){
+      badge.textContent = n>99 ? '99+' : String(n);
+      badge.style.display = n ? '' : 'none';
+    }
+    try{ dmSyncTopbarBadge(); }catch(_){}
+  }catch(_){}
+}
+window.dmContarNotificaciones = dmContarNotificaciones;
 
 async function loadConsultRequests(){
   const list = document.getElementById('doctor-list');

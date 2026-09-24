@@ -1,0 +1,40 @@
+mod216 · Notificaciones del profesional, y la solicitud de consulta deja de perderse
+
+La solicitud de consulta no llegaba a ningún lado. loadConsultRequests()
+pintaba en document.getElementById('doctor-list'), y ese id no existe en el
+DOM: la función salía por el `if(!list) return`. El paciente veía "solicitud
+enviada" y del otro lado nunca aparecía nada.
+
+- La pestaña "Alertas" pasa a ser "Notificaciones" y ahí arriba van las
+  solicitudes pendientes, con el botón para marcarlas respondidas.
+- dmContarNotificaciones() suma alertas no vistas + solicitudes pendientes
+  en el badge, así se ve sin entrar.
+- doctors.booking_url: si el profesional cargó su sistema de turnos, el
+  paciente va ahí directo en vez de dejar una solicitud esperando. Campo
+  nuevo en el formulario de perfil.
+
+Directorio de profesionales:
+- La foto nunca apareció porque photo_url no estaba en el select. El dato no
+  llegaba; no era el render.
+- "Ver perfil completo" no hacía nada: dmFichaProfesional leía solo
+  _consultDoctorsCache, que lo llena otra pantalla. Ahora busca en los tres
+  caches antes de rendir.
+- El select pide booking_url de forma optimista y cae al select básico si la
+  columna no existe. Sin eso el 400 de PostgREST vacía el directorio entero,
+  no lo deja incompleto.
+
+Escalas:
+- Un ESS elevado ya no deriva a "neumonología o neurología". La somnolencia
+  diurna es un síntoma con varias causas —sueño insuficiente, insomnio,
+  medicación sedante, trabajo por turnos, apnea— y la especialidad se decide
+  después de evaluarla, no antes.
+- El bloque de consulta dice que un puntaje no es un diagnóstico, y ofrece
+  el médico de cabecera antes que el directorio.
+
+PVT:
+- El test se mostraba en pantalla y después no aparecía en Registros. El
+  INSERT incluía las columnas de SQL-pvt-lapsos.md, que todavía no se corrió;
+  PostgREST rechaza el insert COMPLETO con 400, no guarda una versión parcial.
+  Ahora reintenta sin esos campos y avisa en consola qué falta correr.
+
+SQL pendiente: SQL-turnos-y-notificaciones.md

@@ -5389,3 +5389,35 @@ body.dr-desktop #drp-content > .dm-edu-wrap{ grid-column:1 / -1; }
 .dm-pvt-lap b{ color:#9a3412; font-size:13px; }
 .dm-pvt-lap span{ color:var(--label-3); font-size:10.5px; }
 .dm-pvt-lap em{ display:block; font-style:normal; color:#9b1c1c; font-size:10.5px; }
+
+/* ── mod216 · solicitudes de consulta en Notificaciones ────────────────
+   Esto no tenía dónde verse: loadConsultRequests() pintaba en un elemento
+   'doctor-list' que no existe en el DOM, así que volvía en silencio y la
+   solicitud del paciente no llegaba a ninguna pantalla. */
+.dm-solic{
+  background:var(--bg-secondary); border:1px solid var(--sep-opaque);
+  border-left:3px solid transparent; border-radius:12px;
+  padding:13px 15px; margin-bottom:8px;
+}
+.dm-solic.pend{ border-left-color:#C8A96E; background:#fffbeb; }
+.dm-solic-cab{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.dm-solic-cab b{ font-size:14px; color:var(--label); }
+.dm-solic-meta{ font-size:11.5px; color:var(--label-3); margin-top:2px; }
+.dm-solic-tag{
+  flex:0 0 auto; font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.04em; padding:3px 8px; border-radius:99px;
+  background:rgba(200,169,110,.18); color:#92400e;
+}
+.dm-solic-tag.ok{ background:rgba(22,163,74,.14); color:#15803d; }
+.dm-solic-msg{
+  font-size:12.5px; color:var(--label-2); line-height:1.55; margin-top:8px;
+  font-style:italic; background:rgba(0,0,0,.03); border-radius:8px; padding:9px 11px;
+}
+.dm-solic-acc{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.dm-solic-btn{
+  flex:1; min-width:130px; text-align:center; text-decoration:none;
+  padding:8px 12px; border:none; border-radius:9px;
+  background:#1a4a3a; color:#fff; font-size:12px; font-weight:700;
+  cursor:pointer; font-family:var(--font);
+}
+.dm-solic-btn.sec{ background:rgba(0,0,0,.06); color:var(--label-2); }
