@@ -282,9 +282,13 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
             '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">' +
               '<span style="width:7px;height:7px;border-radius:50%;background:' + colorVer + ';flex:0 0 auto"></span>' +
               '<span style="font-size:12px;font-weight:600;color:' + colorVer + ';white-space:nowrap">' + escHtml(veredicto) + '</span>' +
+              '<span style="font-size:10.5px;color:rgba(244,239,229,.55);white-space:nowrap">· 14 vs 14 noches</span>' +
             '</div>' +
           '</div>' +
-          '<div class="dm-evo-cifras" style="flex:1 1 320px;min-width:0">' +
+          // flex-basis 320px obligaba a la grilla a arrancar ancha y la
+          // última celda se caía a un segundo renglón. Con 0 la grilla usa
+          // el espacio que hay y entra todo en una fila.
+          '<div class="dm-evo-cifras" style="flex:1 1 0;min-width:0">' +
             celda('Tiempo de sueño', (met.tst == null || isNaN(met.tst)) ? '—' :
                   (Math.floor(met.tst/60) + 'h ' + String(Math.round(met.tst%60)).padStart(2,'0') + 'm'),
                   (met.tst24 != null && met.tst != null && met.tst24 > met.tst)

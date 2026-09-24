@@ -1,0 +1,62 @@
+mod213 · el test de alerta contaba mal los lapsos
+
+ERROR DE VALIDEZ, NO DE PRESENTACION
+
+El umbral de lapso estaba fijo en 500 ms para las tres duraciones:
+
+    const lapses = S.pvtRTs.filter(r => r > 500).length;
+
+Basner, Mollicone y Dinges (Acta Astronaut 2011) bajaron el corte a 355 ms
+para el PVT-B de 3 minutos, justamente porque el test es mas corto y mas
+rapido: con 500 se subcuentan las fallas atencionales. Con 355 la
+sensibilidad al deficit de sueño iguala a la del PVT de 10 min.
+
+O sea que el test de 3 minutos venia informando MENOS lapsos de los que
+hubo, y con eso el alert_score, que resta 8 puntos por lapso.
+
+Ahora el umbral sale de la duracion. Y se guardan duration_min,
+lapse_threshold_ms, long_lapses y n_responses: sin eso un registro viejo
+no se puede leer (¿dos lapsos sobre 500 o sobre 355?).
+
+RESPUESTAS DE MAS DE UN SEGUNDO. Se estaban descartando en silencio: el
+promedio filtra r<=1000 y nadie las contaba. Ahora se cuentan y se
+muestran. La literatura no tiene un nombre unico para ellas --algunos
+autores hablan de "long lapses"-- asi que se llaman por lo que son.
+
+PANEL DEL PROFESIONAL
+- Hora pico / Hora valle -> Mejor horario / Peor horario.
+- Los tres recuadros: primero Tests, despues TR promedio, al final Lapsos
+  promedio (con los de mas de 1 s debajo si los hay).
+- Aviso cuando hay duraciones mezcladas: el promedio de lapsos junta
+  escalas distintas y no se puede leer.
+- Todas las sesiones, no solo las "con alerta reducida", con dia, hora,
+  DURACION, TR y lapsos con su umbral al lado.
+
+SOMNOLENCIA. El aviso del inicio baja a ESS >= 10 y sugiere una SERIE
+--tres o cuatro veces al dia, varios dias-- en vez de un test suelto. Un
+test aislado no dice nada sobre una curva de alerta.
+
+LO QUE NO SE AGREGO, A PROPOSITO. Busque umbrales de PVT para aptitud de
+conduccion: no existe uno validado. Los que hay son operacionales, de
+cada organizacion para su contexto, y no se trasladan. Tampoco es cierto
+que un solo lapso desaconseje conducir: los lapsos ocasionales aparecen
+en gente descansada. El mensaje de "Alerta reducida" decia "se recomienda
+descanso antes de conducir u operar maquinaria" --una indicacion de
+conducta de corto plazo-- y se reescribio.
+
+DISCREPANCIA MEJORANDO / EMPEORANDO (Camila De Stefano)
+Resumen decia "Va bien - mejorando" y Diario "Empeorando" sobre la misma
+paciente. No era un bug: son metricas y ventanas distintas --EFICIENCIA
+en 14 vs 14 noches contra SCORE COMPUESTO en 7 vs 7-- y en su caso dan
+sentidos opuestos de forma legitima: la eficiencia sube (+17 pts) porque
+pasa menos tiempo en cama, mientras la cantidad cae. Pero al profesional
+le llegaban dos palabras contradictorias sin ninguna pista de que
+hablaban de cosas distintas. El veredicto ahora dice sobre que es
+("Eficiencia mejorando") y muestra la ventana.
+
+Y la fila de cifras entra en un solo renglon: el minimo de 104px empujaba
+Adherencia abajo.
+
+FALTA CORRER: SQL-pvt-lapsos.md.
+
+Pruebas: 33/33.

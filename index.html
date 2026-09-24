@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod212-10c4d103">
+<link rel="stylesheet" href="css/styles.css?v=mod215-9bc82901">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -768,8 +768,8 @@
         <div style="font-size:15px;font-weight:600;color:var(--label);margin-bottom:10px">Instrucciones</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Un punto rojo aparece en pantalla en momentos aleatorios (de 2 a 10 segundos entre estímulos)</div></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Tocá la pantalla <strong>tan rápido como puedas</strong> cuando aparezca</div></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Si tardás más de 500ms es un <strong>lapso de alerta</strong>. Se mide tu tiempo de reacción promedio.</div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Tocá la pantalla <strong>tan rápido como puedas</strong> cuando aparezca. Usá siempre el <strong>índice de la mano con la que escribís</strong>, y la misma cada vez: cambiar de mano agrega decenas de milisegundos y te hace ver un deterioro que no es tuyo</div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#1a4a3a;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div style="font-size:14px;color:var(--label-2);line-height:1.5">Una respuesta muy lenta es un <strong>lapso de alerta</strong>. El umbral depende de la duración: 500 ms en el de 5 y 10 minutos, 355 ms en el de 3 (Basner y col., 2011).</div></div>
         </div>
       </div>
     </div>
@@ -809,7 +809,7 @@
          forma de resultado y sin nada atras. -->
     <div style="display:flex;gap:8px;margin-bottom:18px" id="dur-opts">
       <button class="dur-opt" data-d="3" onclick="setPVTDur(3,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">3 min</button>
-      <button class="dur-opt active-dur" data-d="5" onclick="setPVTDur(5,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:#eef8f5;border:1.5px solid #1a4a3a;font-family:var(--font);cursor:pointer;font-size:14px;font-weight:500;color:#1a4a3a">5 min</button>
+      <button class="dur-opt active-dur" data-d="5" onclick="setPVTDur(5,this)" title="Recomendado como base: permite comparar en el tiempo" style="flex:1;padding:12px 6px;border-radius:10px;background:#eef8f5;border:1.5px solid #1a4a3a;font-family:var(--font);cursor:pointer;font-size:14px;font-weight:500;color:#1a4a3a">5 min</button>
       <button class="dur-opt" data-d="10" onclick="setPVTDur(10,this)" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--bg-secondary);border:1.5px solid transparent;font-family:var(--font);cursor:pointer;font-size:14px">10 min</button>
     </div>
 
@@ -1349,10 +1349,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod212-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod212-22b7ad61"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod212-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=mod212-593e5fee"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod215-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod215-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod215-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=mod215-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1371,7 +1371,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod212';
+const APP_VERSION='mod215';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -5942,15 +5942,87 @@ function updatePillarBars(entries){
     '<div style="font-size:11px;color:rgba(244,239,229,.72);margin-top:6px;line-height:1.35">'+sub+'</div></div>'; };
   let cardsOwn;
   if(_pedOwn){
-    const _sjlOwn=socialJetLagMin(sorted);
-    const _st=_sjlOwn==null?{t:'Sin datos',c:'#888'}:_sjlOwn<30?{t:'Muy buena',c:'#14532d'}:_sjlOwn<60?{t:'Buena',c:'#2d9e6b'}:_sjlOwn<90?{t:'Mejorable',c:'#d97706'}:{t:'Requiere atención',c:'#dc2626'};
-    const _awkOwn=(function(){const a=sorted.filter(e=>e.sleep_minutes);if(!a.length)return 0;return a.reduce((x,e)=>x+(e.awakenings||0),0)/a.length;})();
-    const cQ=pillarColor(avgQtyP);
-    const stQ=avgQtyP>=90?'Muy bien':avgQtyP>=80?'Bien':avgQtyP>=70?'Mejorable':avgQtyP>=60?'Regular':'Requiere atención';
+    // ── Pilares de un perfil infantil ──────────────────────────────────
+    // Lo que importa en un chico NO es lo mismo que en un adulto:
+    //
+    //   · La CANTIDAD es casi todo, y lo que tranquiliza o preocupa es si
+    //     cae dentro del rango de la NSF para la edad. Un porcentaje suelto
+    //     no dice nada; las horas contra el rango, sí. Y en menores de 6
+    //     tiene que incluir las siestas, porque el sueño se mide en 24 h.
+    //   · La FRAGMENTACIÓN adulta no aplica: los despertares nocturnos son
+    //     esperables a ciertas edades y los padres los sobreestiman. Se
+    //     informaba con nota de color como si fuera un defecto.
+    //   · La REGULARIDAD por jet lag social pide días con rutina contra días
+    //     libres. En un chico sin escolaridad eso no existe.
+    //
+    // Entonces: horas contra rango NSF, siestas, y variabilidad del horario
+    // —que sí aplica siempre— en lugar de jet lag.
+    const _escol = (typeof dmTieneEscolaridad==='function') ? dmTieneEscolaridad(S.user) : true;
+    const _mesesOwn = (function(){ try{
+      if(typeof edadEnMeses==='function' && S.user && S.user.dob) return edadEnMeses(S.user.dob);
+    }catch(_){} return _ageOwn!=null ? _ageOwn*12 : null; })();
+    const _rangoOwn = (typeof rangoSuenoPorMeses==='function' && _mesesOwn!=null)
+      ? rangoSuenoPorMeses(_mesesOwn) : null;
+    const _inclSiesta = (_ageOwn!=null && _ageOwn<6);
+
+    // Horas por día, con siestas si corresponde. Es la cifra que el padre
+    // quiere ver, no un puntaje.
+    const _minsPorNoche = sorted.filter(e=>e.sleep_minutes).map(function(e){
+      let mm = Number(e.sleep_minutes)||0;
+      if(_inclSiesta){
+        try{
+          const naps = (typeof parseChildNaps==='function') ? parseChildNaps(e) : [];
+          if(naps.length) mm += naps.reduce((a,n)=>a+(typeof _napDurationMin==='function'?_napDurationMin(n):0),0);
+          else if(e.nap_minutes>0) mm += Number(e.nap_minutes);
+        }catch(_){}
+      }
+      return mm;
+    });
+    const _hsMedia = _minsPorNoche.length
+      ? (_minsPorNoche.reduce((a,b)=>a+b,0)/_minsPorNoche.length/60) : null;
+    const _enRango = (_rangoOwn && _hsMedia!=null)
+      ? (_hsMedia >= _rangoOwn.lo && _hsMedia <= _rangoOwn.hi) : null;
+    const _fmtHs = function(h){
+      if(h==null) return '—';
+      const H=Math.floor(h), M=Math.round((h-H)*60);
+      return H+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">h</span> '+
+             (M<10?'0':'')+M+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">m</span>';
+    };
+    const _cQ = _enRango===null ? '#44403c' : (_enRango ? '#14532d' : '#d97706');
+    const _stQ = _enRango===null ? 'Faltan noches'
+               : (_enRango ? 'Dentro de lo esperable' : (_hsMedia < _rangoOwn.lo ? 'Por debajo del rango' : 'Por encima del rango'));
+    const _subQ = _rangoOwn
+      ? ('Rango esperable '+_rangoOwn.lo+'–'+_rangoOwn.hi+' h'+(_inclSiesta?' en 24 h, siestas incluidas':'')+
+         ' · '+(_rangoOwn.fuente||'NSF 2015')+(_rangoOwn.etiqueta?' · '+_rangoOwn.etiqueta:''))
+      : 'Sin rango de referencia para esta edad';
+
+    // Siestas: cuántos días y cuánto, sin puntaje.
+    const _conDato = sorted.filter(e=>e.nap_minutes!=null && !isNaN(Number(e.nap_minutes)));
+    const _conSie  = _conDato.filter(e=>Number(e.nap_minutes)>0);
+    const _promSie = _conSie.length ? Math.round(_conSie.reduce((a,e)=>a+Number(e.nap_minutes),0)/_conSie.length) : null;
+    const _valSie = !_conDato.length ? '—'
+      : (!_conSie.length ? 'No'
+         : _conSie.length+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.72)"> de '+_conDato.length+' días</span>');
+    const _subSie = !_conDato.length ? 'Todavía no se registró el dato'
+      : (!_conSie.length ? 'Ningún día con siesta registrada'
+         : 'Duración media '+(_promSie>=60?(Math.floor(_promSie/60)+' h '+String(_promSie%60).padStart(2,'0')+' min'):(_promSie+' min'))+
+           (_inclSiesta?' · ya sumadas arriba':''));
+
+    // Variabilidad del horario: aplica con o sin escuela.
+    const _sdOwn = (_localRegResult && _localRegResult.sd_midpoint_min!=null)
+      ? Math.round(_localRegResult.sd_midpoint_min) : null;
+    const _stV = _sdOwn==null?{t:'Faltan noches',c:'#44403c'}
+      :_sdOwn<30?{t:'Muy regular',c:'#14532d'}
+      :_sdOwn<60?{t:'Regular',c:'#2d9e6b'}
+      :_sdOwn<90?{t:'Variable',c:'#d97706'}:{t:'Muy variable',c:'#dc2626'};
+
     cardsOwn=
-      cardHtml('Cantidad',avgQtyP+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">%</span>',cQ,stQ,_optOwn.lo+'–'+_optOwn.hi+'h para tu edad',' #2d9e6b'.trim())+
-      cardHtml('Fragmentación',(_awkOwn>0?_awkOwn.toFixed(1):'0')+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.72)"> desp/noche</span>','#44403c','Informativo','En chicos los despertares se sobreestiman; se muestra como dato, no como nota.','#0e7490')+
-      cardHtml('Regularidad',(_sjlOwn==null?'—':_sjlOwn+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.72)"> min</span>'),_st.c,_st.t,'Diferencia de horario entre semana y fin de semana.','#e67e22');
+      cardHtml('Cantidad', _fmtHs(_hsMedia), _cQ, _stQ, _subQ, '#2d9e6b')+
+      cardHtml('Siestas', _valSie, '#44403c', (_conSie.length?'Registradas':'Informativo'), _subSie, '#0e7490')+
+      cardHtml('Horario', (_sdOwn==null?'—':'±'+_sdOwn+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.72)"> min</span>'),
+               _stV.c, _stV.t,
+               'Cuánto varía el centro del sueño de una noche a otra'+(_escol?'':'. Sin rutina escolar no se calcula jet lag social.'),
+               '#e67e22');
   } else {
     cardsOwn=[{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:_optOwn.lo+'–'+_optOwn.hi+'h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
@@ -7328,6 +7400,22 @@ function dmFilasSiestas(entries, row, C){
   return h;
 }
 
+// ¿Este perfil tiene rutina escolar? De eso depende que "día laborable" y
+// "día libre" signifiquen algo. En un chico que no va al jardín, todos los
+// días son iguales: la deuda de sueño y el jet lag social se calculan igual y
+// devuelven ruido con cara de hallazgo.
+function dmTieneEscolaridad(u){
+  u = u || (typeof S!=='undefined' && S.user) || {};
+  if(u.schooled === true)  return true;
+  if(u.schooled === false) return false;
+  // Sin el dato: se asume que sí a partir de los 5, que es cuando la sala
+  // de 5 es obligatoria en Argentina. Antes de esa edad, no.
+  let edad = null;
+  try{ if(u.dob) edad = Math.floor((Date.now()-new Date(u.dob))/31557600000); }catch(_){}
+  return (edad == null) ? true : (edad >= 5);
+}
+window.dmTieneEscolaridad = dmTieneEscolaridad;
+
 function renderClinicalMetricsHtml(entries, audience, ageYears){
   // ── Menores de 3 años ──
   // Varias métricas de este bloque son conceptos de sueño ADULTO y no aplican:
@@ -7350,7 +7438,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     const sjlStr = (m.socialJetLag != null && _sjlMuestra)
       ? (m.socialJetLag<30?'Mínimo':m.socialJetLag<60?'Leve':m.socialJetLag<90?'Moderado':'Alto')+' ('+m.socialJetLag+' min)'
       : (m.socialJetLag != null
-          ? 'Muestra insuficiente ('+m.nWd+' laborables, '+m.nWe+' libres)'
+          ? 'Muestra insuficiente'
           : 'Sin datos');
   const sjlColor = (!_sjlMuestra || m.socialJetLag==null)?'var(--label-2)':m.socialJetLag<30?'#14532d':m.socialJetLag<60?'#d97706':'#dc2626';
   const insufColor = m.under7Pct>30?'#dc2626':m.under7Pct>15?'#d97706':'#14532d';
@@ -7424,7 +7512,19 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     }
   }
 
-  html += (_bebe ? '' :
+  // Sin rutina escolar, "laborable" y "libre" no distinguen nada: la deuda de
+  // sueño y el jet lag social comparan dos grupos que son el mismo. Se sacan,
+  // en vez de mostrar un número que parece un hallazgo.
+  const _sinRutina = (ageYears!=null && ageYears<18 && !dmTieneEscolaridad(
+    (typeof S!=='undefined' && S.viewData) || (typeof S!=='undefined' && S.user) || {}));
+  if(_sinRutina){
+    html += '<div style="font-size:11.5px;color:'+C.sub+';line-height:1.5;padding:9px 11px;background:'+
+      (audience==='doctor'?'#f8fafc':'rgba(255,255,255,.05)')+';border-radius:9px;margin:4px 0 8px">'+
+      'Este perfil está marcado <b>sin rutina escolar</b>, así que no se muestran '+
+      '<b>deuda de sueño</b> ni <b>jet lag social</b>: las dos comparan días con rutina '+
+      'contra días libres, y acá todos los días son iguales.</div>';
+  }
+  html += (_bebe || _sinRutina ? '' :
     row('Promedio días laborables', m.fmtDur(m.avgWd), null, m.nWd+' noches')+
     row('Promedio días no laborables', m.fmtDur(m.avgWe), null, m.nWe+' noches')+
     row('Deuda de sueño', debtStr, debtColor,
@@ -7439,7 +7539,13 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
                    : 'Todavía no hay ninguna noche marcada como <b>laboral</b>.')+
         '</div>'
       : '')+
+    // El valor iba en la columna derecha, que es angosta: "Muestra
+    // insuficiente (2 laborables, 3 libres)" no entraba y partía el rótulo
+    // "Jet lag social" en tres renglones. El detalle va al pie, que es ancho.
     row('Jet lag social', sjlStr, sjlColor,
+        (!_sjlMuestra && m.socialJetLag!=null
+          ? ('Hacen falta al menos 4 noches de rutina y 3 libres; hay '+m.nWd+' y '+m.nWe+'. ')
+          : '')+
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor)+
     dmFilasSiestas(entries, row, C));
@@ -9238,7 +9344,7 @@ async function loadLinkedChildProfiles(){
   const lookupEmail = (S.childMode && S._parentEmail) ? S._parentEmail
                       : (S.user.parent_email || S.user.email);
   try{
-    const children = await db.get('patients?parent_email=ilike.'+encodeURIComponent(lookupEmail)+'&select=name,lname,dob,email');
+    const children = await db.get('patients?parent_email=ilike.'+encodeURIComponent(lookupEmail)+'&hidden_at=is.null&select=name,lname,dob,email');
     S._linkedChildren = children || [];
     const container = document.getElementById('home-children');
     if(container) container.style.display='none';
@@ -9499,8 +9605,13 @@ function dmDiarioEnPasos(){
 }
 
 function dmPintarPaso(){
-  const n=window._dmPaso||1, total=DM_PASOS.length;
-  const p=DM_PASOS[n-1];
+  // Los pasos ya no son solo los del adulto: el diario infantil usa la misma
+  // maquinaria con su propia lista. Antes esto leía DM_PASOS directo y el
+  // formulario del niño quedaba como un scroll largo de ocho secciones,
+  // que es justo lo que los pasos vinieron a resolver.
+  const PASOS = window._dmPasosActivos || DM_PASOS;
+  const n=window._dmPaso||1, total=PASOS.length;
+  const p=PASOS[n-1];
   document.querySelectorAll('#screen-diary-new .dm-paso').forEach(function(d){
     d.style.display = (parseInt(d.getAttribute('data-paso'))===n) ? '' : 'none';
   });
@@ -9516,10 +9627,15 @@ function dmPintarPaso(){
     pie.innerHTML =
       (n>1 ? '<button onclick="dmPasoIr('+(n-1)+')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(126,200,164,.2);color:#F4EFE5;border-radius:14px;padding:16px 20px;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)">←</button>' : '')+
       (n<total
-        ? '<button onclick="dmPasoIr('+(n+1)+')" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Siguiente</button>'
-        : '<button onclick="dmPasoGuardar()" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">✓ Guardar mi noche</button>');
+        ? (window._dmVolverARevision
+            ? '<button onclick="window._dmVolverARevision=false;dmPasoIr('+total+')" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">✓ Listo, volver a revisar</button>'
+            : '<button onclick="dmPasoIr('+(n+1)+')" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">Siguiente</button>')
+        : '<button onclick="dmPasoGuardar()" style="flex:1;background:#7EC8A4;border:none;color:#0F2820;border-radius:14px;padding:16px;font-size:16.5px;font-weight:700;cursor:pointer;font-family:var(--font)">✓ '+(window._dmTextoGuardar||'Guardar mi noche')+'</button>');
   }
-  if(n===total){ try{ dmPintarRevision(); }catch(e){ console.warn('[revision]', e); } }
+  if(n===total){
+    window._dmVolverARevision=false;
+    try{ (window._dmRevisionFn||dmPintarRevision)(); }catch(e){ console.warn('[revision]', e); }
+  }
   const sc=document.querySelector('#screen-diary-new .scroll');
   if(sc) sc.scrollTop=0;
 }
@@ -9529,6 +9645,15 @@ function dmPintarPaso(){
 // se carga ese dato: corregir no puede costar más que volver atrás cinco
 // veces. Lo que no se completó se muestra como "sin completar" y no como un
 // hueco, porque un campo vacío que se pasa por alto es un dato perdido.
+// Ir a corregir un campo y volver derecho a la revisión. Antes se caía al
+// paso y había que apretar "Siguiente" cuatro veces para volver al botón de
+// guardar: el que solo quería arreglar una hora tenía que recorrer todo.
+function dmCorregirDesdeRevision(n){
+  window._dmVolverARevision = true;
+  dmPasoIr(n);
+}
+window.dmCorregirDesdeRevision = dmCorregirDesdeRevision;
+
 function dmPintarRevision(){
   const cont=document.getElementById('dm-revision'); if(!cont) return;
   const V=function(id){ const e=document.getElementById(id); return e ? (e.value||'') : ''; };
@@ -9546,7 +9671,7 @@ function dmPintarRevision(){
     return n ? (n+(n===1?' despertar':' despertares')) : '';
   };
   const filas=[
-    { p:1, r:'Hora de acostarte',      v:hhmm(V('d-bedtime')) },
+    { p:1, r:'Hora de acostarte',      v:hhmm(V('d-bed')) },
     { p:1, r:'Cuánto tardaste en dormirte', v:sel('d-latency') },
     { p:2, r:'Despertares en la noche', v:desp() },
     { p:2, r:'Hora en que te despertaste', v:hhmm(V('d-wake')) },
@@ -9559,7 +9684,7 @@ function dmPintarRevision(){
         '<div class="dm-rev-sub">Tocá cualquier línea para corregirla antes de guardar.</div>';
   filas.forEach(function(f){
     if(f.r==='Nota para tu profesional' && !f.v) return;   // opcional de verdad
-    h+='<div class="dm-rev-fila" onclick="dmPasoIr('+f.p+')">'+
+    h+='<div class="dm-rev-fila" onclick="dmCorregirDesdeRevision('+f.p+')">'+
          '<span class="dm-rev-rot">'+f.r+'</span>'+
          '<span class="dm-rev-val'+(f.v?'':' dm-rev-vacio')+'">'+
            (f.v ? escHtml(f.v) : 'sin completar')+'</span>'+
@@ -9569,6 +9694,16 @@ function dmPintarRevision(){
   cont.innerHTML=h;
 }
 window.dmPintarRevision = dmPintarRevision;
+
+// El adulto reclama la maquinaria: si se venía del diario infantil, los
+// pasos activos serían los del niño.
+function dmUsarPasosAdulto(){
+  window._dmPasosActivos = DM_PASOS;
+  window._dmBtnGuardar   = 'save-diary-btn';
+  window._dmTextoGuardar = 'Guardar mi noche';
+  window._dmRevisionFn   = dmPintarRevision;
+}
+window.dmUsarPasosAdulto = dmUsarPasosAdulto;
 
 function dmPasoIr(n){
   // Aviso suave al salir del paso de las escalas subjetivas. No bloquea: si la
@@ -9607,6 +9742,11 @@ function dmPlegar(btn){
 window.dmPlegar = dmPlegar;
 
 function dmPasoGuardar(){
+  // Cada diario tiene su propio botón oculto de guardado.
+  if(window._dmBtnGuardar && window._dmBtnGuardar!=='save-diary-btn'){
+    const b=document.getElementById(window._dmBtnGuardar);
+    if(b){ b.disabled=false; b.click(); return; }
+  }
   // El boton original sigue en el DOM, oculto: se lo dispara para que toda la
   // logica de guardado corra exactamente igual que antes.
   //
@@ -9842,11 +9982,12 @@ async function dmAvisoSomnolencia(){
                          .catch(function(){ return []; });
     if(!recs || !recs.length) return;
     const p = Number(recs[0].score);
-    if(isNaN(p) || p < 13) return;                 // punto de corte de Johns
+    if(isNaN(p) || p < 10) return;                 // ≥10 ya es somnolencia diurna (Johns)
     // Si es de hace más de seis meses, ya no describe a esta persona.
     const dias = Math.floor((Date.now() - new Date(recs[0].created_at)) / 86400000);
     if(dias > 183) return;
     const grave = p >= 16;
+    const moderado = p >= 13;
     el.style.display='block';
     el.innerHTML =
       '<div class="dm-somno'+(grave?' grave':'')+'">'+
@@ -9864,12 +10005,19 @@ async function dmAvisoSomnolencia(){
         '</div>'+
         '<div class="dm-somno-pvt">'+
           '<div class="dm-somno-pvt-txt">'+
-            'Si querés ver tu propia curva de alerta a lo largo del día, el '+
-            '<b>test de alerta</b> la mide en pocos minutos. '+
-            '<span class="dm-somno-ojo">No dice si podés manejar: mide cómo estás ahora, '+
-            'en este momento, y nada más.</span>'+
+            'Un test suelto dice poco. Lo que sirve con somnolencia es hacer una '+
+            '<b>serie</b>: el <b>test de alerta</b> tres o cuatro veces al día —mañana, '+
+            'después de almorzar, media tarde y final del día— durante unos días. '+
+            'Ahí se ve si tu tiempo de reacción se cae en algún momento y en cuál, que es '+
+            'justo lo que no se nota desde adentro.'+
+            '<br><br>Es especialmente útil si manejás: la somnolencia al volante no avisa, '+
+            'y ver tu propia curva es más convincente que cualquier consejo.'+
+            '<span class="dm-somno-ojo">Importante: esta prueba mide cómo estás en el '+
+            'momento en que la hacés. <b>No es un examen de aptitud para conducir</b> y no '+
+            'existe un puntaje que habilite o inhabilite a nadie. Lo que sale de acá se '+
+            'conversa con un profesional.</span>'+
           '</div>'+
-          '<button onclick="showScreen(\'pvt-intro\')">Hacer el test de alerta</button>'+
+          '<button onclick="showScreen(\'pvt-intro\')">Empezar una serie</button>'+
         '</div>'+
       '</div>';
   }catch(e){ console.warn('[somnolencia]', e); }
@@ -11292,7 +11440,7 @@ async function showPatientCode(){
     }
   }
   try{
-    const children=await db.get('patients?parent_email=ilike.'+encodeURIComponent(S.user.email)+'&select=name,lname,dob,code,email,sex');
+    const children=await db.get('patients?parent_email=ilike.'+encodeURIComponent(S.user.email)+'&hidden_at=is.null&select=name,lname,dob,code,email,sex,schooled');
     const addChildBtn='<button onclick="registerChildProfile()" style="width:100%;margin-top:6px;padding:13px;background:rgba(126,200,164,0.12);border:1.5px dashed #7ec8a4;border-radius:12px;color:#7ec8a4;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">+ Agregar perfil de un hijo/a</button>';
     if(!children||!children.length){
       childList.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.72);margin-bottom:10px">Todavía no agregaste perfiles de niños.</div>'+addChildBtn;
@@ -11312,7 +11460,7 @@ async function showPatientCode(){
         '<div class="child-copy-lbl" style="font-size:10px;color:rgba(126,200,164,0.8)">Tocá para copiar</div></div></div>'+
         '<div style="display:flex;gap:8px;margin-top:10px">'+
         '<button onclick="editChildProfile(\''+chJson+'\')" style="flex:1;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar</button>'+
-        '<button onclick="deleteChildProfile(\''+encodeURIComponent(ch.email)+'\',\''+nmEnc+'\')" style="padding:8px 12px;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🗑 Eliminar</button>'+
+        '<button onclick="deleteChildProfile(\''+encodeURIComponent(ch.email)+'\',\''+nmEnc+'\')" style="padding:8px 12px;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Quitar</button>'+
         '</div>'+
         '</div>';
     }).join('') + addChildBtn;
@@ -11324,27 +11472,46 @@ async function showPatientCode(){
 }
 
 // Eliminar perfil de un hijo (con confirmación y borrado de sus datos)
+// ── Quitar un perfil infantil ─────────────────────────────────────────
+// Esto ANTES borraba de verdad: db.del sobre sleep_diary, evaluations,
+// cbti_progress y patients. O sea que un padre podía destruir, desde su
+// teléfono y con un confirm, la historia clínica completa de su hijo —
+// incluida la que estaba usando un profesional para seguirlo, y sin que ese
+// profesional se enterara. La Ley 26.529 obliga a conservar la historia
+// clínica; un botón así no puede existir del lado del paciente.
+//
+// Ahora se OCULTA. El perfil desaparece de la app del adulto, que es lo que
+// él quiere; los datos siguen en la base y el profesional vinculado los
+// sigue viendo. Borrar de verdad es una operación de base, a pedido y con
+// registro, no un botón.
 async function deleteChildProfile(encEmail, encName){
   const email = decodeURIComponent(encEmail);
   const name = decodeURIComponent(encName||'este perfil');
-  const ok = confirm('¿Eliminar el perfil de '+name+'?\n\nSe borrarán también todos sus registros de sueño y evaluaciones. Esta acción no se puede deshacer.');
-  if(!ok) return;
+  let sigue = [];
   try{
-    // Soltar referencias primero (evita errores de foreign key)
-    const enc = encodeURIComponent(email);
-    await db.del('doctor_patients?patient_email=eq.'+enc).catch(()=>{});
-    await db.del('doctor_suggestions?patient_email=eq.'+enc).catch(()=>{});
-    await db.del('sleep_diary?patient_email=eq.'+enc).catch(()=>{});
-    await db.del('evaluations?patient_email=eq.'+enc).catch(()=>{});
-    await db.del('cbti_patients?patient_email=eq.'+enc).catch(()=>{});
-    await db.del('cbti_progress?patient_email=eq.'+enc).catch(()=>{});
-    await db.del('patients?email=eq.'+enc);
-    toast('Perfil de '+name+' eliminado');
-    // Refrescar la lista y el cache de hijos
+    sigue = await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(email)+'&select=doctor_email') || [];
+  }catch(_){}
+  const aviso = '¿Quitar el perfil de '+name+' de tu app?\n\n' +
+    'El perfil deja de aparecerte y no vas a poder cargarle registros.\n\n' +
+    'Los datos NO se borran: quedan guardados' +
+    (sigue.length ? ' y el profesional que lo sigue los mantiene a la vista.' : '.') +
+    '\n\nSi querés que se borren de verdad, pedilo por el canal de contacto: ' +
+    'se hace a mano y queda registrado.';
+  if(!confirm(aviso)) return;
+  try{
+    await db.patch('patients?email=eq.'+encodeURIComponent(email), { hidden_at: new Date().toISOString() });
+    toast('Perfil de '+name+' quitado de tu app');
     if(S._linkedChildren) S._linkedChildren = S._linkedChildren.filter(c=>c.email!==email);
+    // Si estaba parado adentro de ese perfil, se vuelve al del adulto.
+    try{
+      if(S.childMode && S.user && S.user.email===email && typeof switchToParentProfile==='function') switchToParentProfile();
+    }catch(_){}
     if(typeof showPatientCode==='function') showPatientCode();
   }catch(e){
-    toast('No se pudo eliminar: '+(e.message||''));
+    // Si falta la columna, se dice en vez de fallar en silencio.
+    toast(/hidden_at/.test(String(e&&e.message)) 
+      ? 'Falta correr SQL-perfiles-infantiles.md en la base'
+      : ('No se pudo quitar: '+((e&&e.message)||'')));
   }
 }
 
@@ -12922,8 +13089,16 @@ async function showDiaryTab_(tab){
                   const barH=Math.abs(yS.getPixelForValue(1)-yS.getPixelForValue(0));
                   // ── Shade free/weekend rows ──
                   // ── Average vertical lines ──
+                  // El offset NO es la hora del reloj: es la hora contada desde el
+                  // MEDIODÍA, porque el actograma pone la medianoche al centro
+                  // (timeToOffset hace h>=12 ? h-12 : h+12). Esta función lo trataba
+                  // como hora directa, así que las dos etiquetas salían corridas
+                  // exactamente 12 h: un chico que se acuesta 21:07 aparecía como
+                  // "Prom. acostarse 09:07" y uno que se levanta 07:32 como "19:32".
+                  // Las LÍNEAS estaban bien dibujadas —usan el offset crudo sobre el
+                  // eje—; lo que mentía era el texto.
                   function toHHMM(offset){
-                    const h=Math.floor(((offset%24)+24)%24);
+                    const h=Math.floor((((offset+12)%24)+24)%24);
                     const m=Math.round(((offset%1)+1)%1*60);
                     return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
                   }
@@ -13471,6 +13646,9 @@ async function editDiaryEntry(id){
 }
 
 function showDiaryNew(){
+  // Reclamar la maquinaria: si se venia del diario infantil, los pasos
+  // activos serian los del nino y el boton de guardar, el equivocado.
+  try{ dmUsarPasosAdulto(); }catch(_){}
   // Armar los pasos despues de que el formulario este en el DOM.
   setTimeout(function(){ try{ dmDiarioEnPasos(); }catch(_){} }, 120);
   setTimeout(dmPintarVarsSlot, 60);
@@ -14315,6 +14493,14 @@ async function saveDiary(){
 
 function getCircRef(h,sleep){return Math.round((CIRC_RT[h]||270)+Math.max(0,7-(sleep||7))*15);}
 function getLapRef(h,sleep,dur){return Math.round(((CIRC_LAP[h]||1)*dur/5)+Math.max(0,7-(sleep||7))*0.5);}
+// Umbral de lapso por duración del test. 355 ms para el PVT-B de 3 min
+// (Basner, Mollicone & Dinges 2011); 500 ms para el PVT clásico de 10 min y
+// para el de 5, que está más cerca de ese régimen.
+function dmUmbralLapso(dur){
+  return (Number(dur) <= 3) ? 355 : 500;
+}
+window.dmUmbralLapso = dmUmbralLapso;
+
 function getCircBand(h){if((h>=2&&h<=6)||(h>=13&&h<=15))return{name:'Valle circadiano',color:'#9a3412',bg:'#fff7ed'};if((h>=10&&h<=12)||(h>=18&&h<=20))return{name:'Pico circadiano',color:'#14532d',bg:'#f0fdf4'};return{name:'Zona intermedia',color:'#92400e',bg:'#fffbeb'};}
 function getRTCat(rt,ref){const d=rt-ref;if(d<=20)return{label:'Dentro del rango esperado',color:'#14532d'};if(d<=50)return{label:'Levemente por encima',color:'#92400e'};if(d<=100)return{label:'Moderadamente elevado',color:'#9a3412'};return{label:'Significativamente elevado',color:'#9b1c1c'};}
 function calcSD(arr){if(arr.length<2)return 0;const m=arr.reduce((a,b)=>a+b)/arr.length;return Math.round(Math.sqrt(arr.map(x=>(x-m)**2).reduce((a,b)=>a+b)/arr.length));}
@@ -14776,26 +14962,60 @@ async function pvtFinish(){
   if(!S.pvtRTs.length){S.pvtFinishing=false;pvtSetMsg('Sin reacciones','');return;}
   try{
   const now=new Date();const testHour=now.getHours();const dur=S.pvtDuration||5;const priorSleep=S.pvtPriorSleep||null;
-  const valid=S.pvtRTs.filter(r=>r<=1000);const lapses=S.pvtRTs.filter(r=>r>500).length;
+  // El umbral de lapso NO es 500 ms para cualquier duración. Basner, Mollicone
+  // & Dinges (Acta Astronaut 2011) bajaron el corte a 355 ms para el PVT-B de
+  // 3 min: el test es más corto y más rápido, salen menos respuestas lentas, y
+  // con 500 ms se subcuentan dramáticamente las fallas atencionales. Con 355
+  // la sensibilidad al déficit de sueño iguala a la del PVT de 10 min.
+  //
+  // Hasta acá Dormetria usaba 500 fijo, así que el test de 3 minutos venía
+  // informando menos lapsos de los que realmente hubo. No era un problema de
+  // presentación: el número estaba mal.
+  const LAPSO_MS = dmUmbralLapso(dur);
+  // Respuestas de más de un segundo. La literatura no tiene un nombre único
+  // —algunos autores hablan de "long lapses"— pero sí las separa: hoy quedaban
+  // fuera del promedio (el filtro r<=1000 de arriba) y no se contaban en
+  // ningún lado, o sea que desaparecían sin dejar rastro.
+  const lapsosLargos=serie.filter(r=>r>1000).length;
   // ── Device calibration ──
   // Use calibrated offset from device calibration test, or heuristic fallback
   const DEVICE_OFFSET = getDeviceOffset(); // from calibration or heuristic
   const isTouchPrimary = (navigator.maxTouchPoints > 1) && !window.matchMedia('(pointer:fine)').matches;
+  // ── UNA SOLA SERIE, YA CORREGIDA ───────────────────────────────────
+  // Acá había una incoherencia que hacía el resultado ininterpretable: el
+  // TIEMPO MEDIO se calculaba sobre los tiempos CORREGIDOS por la latencia
+  // del dispositivo (rawMean + DEVICE_OFFSET, que es negativo) y los LAPSOS
+  // se contaban sobre los tiempos CRUDOS. Por eso podía salir "303 ms de
+  // media · 31 lapsos": con una media de 303 es imposible que la mitad de
+  // las respuestas pasen los 500, salvo que se estén midiendo dos cosas
+  // distintas. Ahora se corrige cada respuesta UNA vez y todo sale de ahí.
+  const rtCorr = S.pvtRTs.map(r => Math.max(0, r + DEVICE_OFFSET));
+  // Anticipaciones: por debajo de 100 ms la persona no reaccionó al
+  // estímulo, se adelantó. En la literatura del PVT se cuentan aparte como
+  // arranques falsos y no entran en el tiempo medio (Basner y Dinges).
+  const arranquesFalsos = rtCorr.filter(r => r < 100).length;
+  const serie = rtCorr.filter(r => r >= 100);
+  const valid = serie.filter(r => r <= 1000);
+  const lapses = serie.filter(r => r > LAPSO_MS).length;
   const rawMeanRT = valid.length?Math.round(valid.reduce((a,b)=>a+b)/valid.length):999;
-  const meanRT = Math.max(150, rawMeanRT + DEVICE_OFFSET); // DEVICE_OFFSET is negative when subtracting
+  const meanRT = Math.max(150, rawMeanRT);
   const sd=calcSD(valid);
   const circRef=getCircRef(testHour,priorSleep||7);const lapseRef=getLapRef(testHour,priorSleep||7,dur);
   const circBand=getCircBand(testHour);const rtCat=getRTCat(meanRT,circRef);const deviation=meanRT-circRef;
   let level,emoji,color,msg;
   if(deviation<=20&&lapses<=Math.max(0,lapseRef)){level='Alerta normal';emoji='🟢';color='#14532d';msg='Tu tiempo de reacción está dentro del rango esperado para este horario.';}
   else if(deviation<=60&&lapses<=lapseRef+2){level='Alerta levemente reducida';emoji='🟡';color='#92400e';msg='Tu tiempo de reacción está algo por encima de lo esperado. Procedé con atención.';}
-  else{level='Alerta reducida';emoji='🔴';color='#9b1c1c';msg='Tiempo de reacción significativamente elevado. Se recomienda descanso antes de conducir u operar maquinaria.';}
+  else{level='Alerta reducida';emoji='🔴';color='#9b1c1c';msg='Tu tiempo de reacción está bastante por encima de lo esperado para este horario. Esta prueba mide cómo estás ahora, en este momento: no dice si podés conducir ni habilita a hacerlo. Si venís con somnolencia, es algo para conversar con un profesional.';}
   // Antes alcanzaba con dur>=1: un test de un minuto se guardaba como si
   // midiera lo mismo que uno de diez.
   if(dur>=3&&S.user){
     console.log('Simple PVT save: rt='+meanRT+' lapses='+lapses+' dur='+S.pvtDuration);
   const isMob=window.matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0;const deviceType=isMob?'móvil':'web';
-  const e={patient_email:S.user.email,mean_rt:meanRT,lapses,alert_score:Math.max(0,Math.round(100-(deviation/3)-(lapses*8))),alert_level:level+' ('+dur+'min)',test_hour:testHour,prior_sleep_hours:priorSleep||null,device_type:deviceType};
+  // Se guardan la duración y el umbral usado: sin eso, un registro viejo no
+  // se puede interpretar (¿esos 2 lapsos son sobre 500 ms o sobre 355?).
+  const e={patient_email:S.user.email,mean_rt:meanRT,lapses,alert_score:Math.max(0,Math.round(100-(deviation/3)-(lapses*8))),alert_level:level+' ('+dur+'min)',test_hour:testHour,prior_sleep_hours:priorSleep||null,device_type:deviceType,
+           duration_min:dur, lapse_threshold_ms:LAPSO_MS, long_lapses:lapsosLargos,
+           n_responses:S.pvtRTs.length, false_starts:arranquesFalsos};
     try{
       console.log('Saving PVT: user='+S.user.email+' dur='+dur+' rt='+meanRT);
       const pvtResp=await fetch(SU+'/rest/v1/pvt_tests',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(e)});
@@ -14812,7 +15032,7 @@ async function pvtFinish(){
   }
   const timeStr=now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});const dateStr=now.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
   const cont=document.getElementById('pvt-result-content');
-  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div><div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (≥ 500 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div><div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button></div></div>`;
+  if(cont)cont.innerHTML=`<div style="background:var(--g800);padding:28px 20px;text-align:center"><div style="font-size:44px;margin-bottom:8px">${emoji}</div><div style="font-size:20px;font-weight:500;color:#f0faf7">${level}</div><div style="font-size:12px;color:var(--g200);margin-top:6px">${dateStr} · ${timeStr} · ${dur}min${priorSleep?' · 🛏 '+priorSleep+'h':''}</div></div><div style="padding:20px"><div style="background:${color}18;border:1px solid ${color}44;border-radius:var(--r);padding:12px 14px;font-size:13px;color:${color};margin-bottom:16px">${msg}</div><div class="sec-title">Contexto circadiano</div><div style="background:${circBand.bg};border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:${circBand.color}"><strong>${circBand.name}</strong> · ${timeStr}<br><span style="font-size:12px">Referencia poblacional: ${circRef} ms</span></div><div class="sec-title">Tus métricas</div><div class="info-row"><span class="info-label">Tiempo de reacción promedio</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${rtCat.color}">${meanRT} ms</div><div style="font-size:11px;color:var(--ink3)">Ref: ${circRef} ms · ${deviation>=0?'+':''}${deviation} ms</div></div></div><div class="info-row"><span class="info-label">Variabilidad (DS)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${sd>80?'#9a3412':sd>50?'#92400e':'#14532d'}">${sd} ms</div><div style="font-size:11px;color:var(--ink3)">${sd>80?'Alta — posible fatiga':sd>50?'Moderada':'Baja — consistente'}</div></div></div><div class="info-row"><span class="info-label">Lapsos (&gt; ${LAPSO_MS} ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapses>lapseRef+1?'#9b1c1c':lapses>0?'#92400e':'#14532d'}">${lapses}</div><div style="font-size:11px;color:var(--ink3)">Esperado: ≤${lapseRef}</div></div></div>${dur<=3?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:12px;color:#92400e;line-height:1.55"><b>Ojo con comparar este número.</b> En el test de 3 minutos el umbral de lapso es <b>355 ms</b>, no 500: el test es más corto y más rápido, salen menos respuestas lentas, y con 500 se contarían muchas menos fallas de las que hubo. Con 355 la sensibilidad iguala a la del test de 10 minutos (Basner, Mollicone y Dinges, <i>Acta Astronautica</i> 2011).<br><br>Por eso <b>los lapsos de un test de 3 minutos no se comparan con los de uno de 5 o 10</b>. Si vas a seguir tu evolución en el tiempo, conviene usar siempre <b>el de 5 minutos como base</b> y repetir esa misma duración.</div>`:''}<div class="info-row"><span class="info-label">Respuestas de más de 1 s</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${lapsosLargos>0?'#9b1c1c':'#14532d'}">${lapsosLargos}</div><div style="font-size:11px;color:var(--ink3)">${lapsosLargos>0?'quedan fuera del promedio':'ninguna'}</div></div></div><div class="info-row"><span class="info-label">Arranques falsos (&lt; 100 ms)</span><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:${arranquesFalsos>2?'#9a3412':'#14532d'}">${arranquesFalsos}</div><div style="font-size:11px;color:var(--ink3)">${arranquesFalsos>2?'muchos: se adelantó al estímulo':'no entran en el promedio'}</div></div></div><div class="info-row"><span class="info-label">Reacciones</span><span class="info-val">${S.pvtRTs.length}</span></div>${DEVICE_OFFSET?`<div style="font-size:11px;color:var(--ink3);line-height:1.5;padding:8px 0 0">Se descontaron <b>${Math.abs(DEVICE_OFFSET)} ms</b> de latencia de tu pantalla, medidos en la calibración. El tiempo medio y los lapsos salen los dos de la serie corregida.</div>`:''}<div class="divider"></div><div class="sec-title">Distribución (ms)</div><div style="height:140px;position:relative;margin-bottom:6px"><canvas id="pvt-hist"></canvas></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-s" onclick="showPVT()" style="flex:1">Repetir</button><button class="btn btn-g" onclick="goHomeCtx()" style="flex:1">Inicio</button></div></div>`;
   // Calibration offset note
   if(DEVICE_OFFSET !== 0 && cont){
     const calibDiv = document.createElement('div');
@@ -18744,50 +18964,86 @@ async function showDrPTab_(tab){
       const avgRT=allRTs.length?Math.round(allRTs.reduce((a,b)=>a+b,0)/allRTs.length):0;
       const allLapses=pvts.map(p=>p.lapses||0);
       const avgLapses=allLapses.length?Math.round(allLapses.reduce((a,b)=>a+b,0)/allLapses.length*10)/10:0;
+      const _largos=pvts.map(p=>p.long_lapses||0);
+      const avgLargos=_largos.length?Math.round(_largos.reduce((a,b)=>a+b,0)/_largos.length*10)/10:0;
+      // Duración de cada test: de la columna nueva o, para los viejos, del
+      // texto de alert_level, que la venía guardando entre paréntesis.
+      const _durDe=function(p){
+        if(p.duration_min) return Number(p.duration_min);
+        const m=/\((\d+)\s*min\)/.exec(String(p.alert_level||''));
+        return m?Number(m[1]):null;
+      };
+      const _durs=new Set(pvts.map(_durDe).filter(function(d){ return d!=null; }));
+      const umbralesMezclados = [..._durs].some(d=>d<=3) && [..._durs].some(d=>d>3);
       const CIRC_REF=[258,263,268,275,280,278,270,265,260,258,260,265,270,278,280,282,285,288,290,288,282,275,268,262];
       const worstHour=hoursWithData.length?hoursWithData.reduce((a,b)=>hourAvgs[a]>hourAvgs[b]?a:b,hoursWithData[0]):null;
       const bestHour=hoursWithData.length?hoursWithData.reduce((a,b)=>hourAvgs[a]<hourAvgs[b]?a:b,hoursWithData[0]):null;
       
-      // Alerts: sessions with mean_rt > 350ms or lapses > 3
-      const alertSessions=pvts.filter(p=>p.mean_rt>350||p.lapses>3);
-      
       let html='<div class="sec-title" style="margin-top:10px">Patrón circadiano de alerta</div>'+
         '<div class="chart-wrap" style="height:180px;background:var(--bg-secondary);border-radius:12px;padding:10px;margin-bottom:12px"><canvas id="dr-pvt-chart"></canvas></div>'+
+        // Orden: primero cuántos tests hay —sin eso los otros dos números no
+        // se pueden pesar—, después el TR y al final los lapsos.
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'+
         '<div style="background:var(--bg-secondary);border-radius:10px;padding:10px;text-align:center">'+
-        '<div style="font-size:11px;color:var(--label-2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">TR Promedio</div>'+
+        '<div style="font-size:11px;color:var(--label-2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">Tests</div>'+
+        '<div style="font-size:20px;font-weight:700;color:var(--label)">'+pvts.length+'</div></div>'+
+        '<div style="background:var(--bg-secondary);border-radius:10px;padding:10px;text-align:center">'+
+        '<div style="font-size:11px;color:var(--label-2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">TR promedio</div>'+
         '<div style="font-size:20px;font-weight:700;color:'+(avgRT>350?'#FF3B30':avgRT>300?'#FF9500':'#1a4a3a')+'">'+avgRT+'<span style="font-size:11px;font-weight:400">ms</span></div></div>'+
         '<div style="background:var(--bg-secondary);border-radius:10px;padding:10px;text-align:center">'+
-        '<div style="font-size:11px;color:var(--label-2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">Lapsos prom</div>'+
-        '<div style="font-size:20px;font-weight:700;color:'+(avgLapses>2?'#FF3B30':avgLapses>0.5?'#FF9500':'#34C759')+'">'+avgLapses+'</div></div>'+
-        '<div style="background:var(--bg-secondary);border-radius:10px;padding:10px;text-align:center">'+
-        '<div style="font-size:11px;color:var(--label-2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">Tests totales</div>'+
-        '<div style="font-size:20px;font-weight:700;color:var(--label)">'+pvts.length+'</div></div></div>';
+        '<div style="font-size:11px;color:var(--label-2);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">Lapsos promedio</div>'+
+        '<div style="font-size:20px;font-weight:700;color:'+(avgLapses>2?'#FF3B30':avgLapses>0.5?'#FF9500':'#34C759')+'">'+avgLapses+'</div>'+
+        (avgLargos>0?'<div style="font-size:10.5px;color:#9b1c1c;margin-top:2px">'+avgLargos+' de más de 1 s</div>':'')+
+        '</div></div>'+
+        // El umbral no es el mismo para todas las duraciones. Si el paciente
+        // mezcló tests de 3 y de 10 minutos, el promedio de lapsos suma peras
+        // con manzanas y hay que decirlo.
+        (umbralesMezclados
+          ? '<div style="font-size:11px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:8px 11px;margin-bottom:12px;line-height:1.5">'+
+            '<b>Hay tests de distinta duración mezclados.</b> El umbral de lapso es 355 ms en el PVT-B de 3 min y 500 ms en los de 5 y 10 (Basner 2011), así que el promedio de lapsos junta escalas distintas. Para comparar, mirá las sesiones de una misma duración.</div>'
+          : '');
       
       // Best/worst hours
       if(bestHour!=null&&worstHour!=null){
         html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
           '<div style="background:#f0fdf4;border-radius:10px;padding:10px;text-align:center">'+
-          '<div style="font-size:11px;color:#14532d;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">🟢 Hora pico</div>'+
+          '<div style="font-size:11px;color:#14532d;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">🟢 Mejor horario</div>'+
           '<div style="font-size:20px;font-weight:700;color:#1a4a3a">'+pad(bestHour)+':00</div>'+
           '<div style="font-size:11px;color:#2d6b56">'+hourAvgs[bestHour]+' ms</div></div>'+
           '<div style="background:#fef2f2;border-radius:10px;padding:10px;text-align:center">'+
-          '<div style="font-size:11px;color:#9b1c1c;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">🔴 Hora valle</div>'+
+          '<div style="font-size:11px;color:#9b1c1c;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px">🔴 Peor horario</div>'+
           '<div style="font-size:20px;font-weight:700;color:#dc2626">'+pad(worstHour)+':00</div>'+
           '<div style="font-size:11px;color:#9b1c1c">'+hourAvgs[worstHour]+' ms</div></div></div>';
       }
       
-      // Alert sessions
-      if(alertSessions.length){
-        html+='<div class="sec-title" style="margin-top:4px;color:#FF3B30">⚠️ Sesiones con alerta reducida</div>';
-        alertSessions.slice(-5).forEach(p=>{
-          const d=new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
-          const t=new Date(p.created_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-          html+='<div style="background:#fef2f2;border-radius:10px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'+
-            '<div style="font-size:13px"><strong>'+d+' '+t+'</strong><br><span style="color:var(--label-2)">'+p.lapses+' lapsos · nivel: '+p.alert_level+'</span></div>'+
-            '<div style="font-size:16px;font-weight:700;color:#FF3B30">'+p.mean_rt+'ms</div></div>';
-        });
-      }
+      // ── Cada sesión, con lo que hace falta para leerla ──────────────
+      // Antes solo se listaban las sesiones "con alerta reducida" y sin la
+      // duración, que es justamente lo que define el umbral de lapso.
+      html+='<div class="sec-title" style="margin-top:4px">Sesiones</div>';
+      const _ses=[...pvts].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      html+='<div class="dm-pvt-ses">';
+      _ses.slice(0,20).forEach(p=>{
+        const f=new Date(p.created_at);
+        const d=f.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
+        const t=f.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+        const dur=_durDe(p);
+        const umbral=(dur!=null && dur<=3)?355:500;
+        const alta=(p.mean_rt>350)||(p.lapses>3);
+        const largos=p.long_lapses||0;
+        html+='<div class="dm-pvt-fila'+(alta?' alta':'')+'">'+
+          '<div class="dm-pvt-cuando"><b>'+d+'</b> '+t+
+            (dur!=null?'<span class="dm-pvt-dur">'+dur+' min</span>':'')+'</div>'+
+          '<div class="dm-pvt-rt">'+(p.mean_rt||'—')+'<i>ms</i></div>'+
+          '<div class="dm-pvt-lap">'+
+            (p.lapses>0
+              ? '<b>'+p.lapses+'</b> lapso'+(p.lapses===1?'':'s')+' <span>&gt;'+umbral+' ms</span>'
+              : '<span>sin lapsos</span>')+
+            (largos>0?'<em>'+largos+' de más de 1 s</em>':'')+
+          '</div>'+
+        '</div>';
+      });
+      html+='</div>';
+      if(_ses.length>20) html+='<div style="font-size:11.5px;color:var(--label-3);margin-top:6px">Se muestran las 20 más recientes de '+_ses.length+'.</div>';
       
       cont.innerHTML=html;
       
@@ -19204,12 +19460,12 @@ async function renderCircadianPattern(container){
     statsDiv.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px">Tu perfil circadiano</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
       '<div style="background:#f0fdf4;border-radius:10px;padding:12px;text-align:center">'+
-      '<div style="font-size:11px;color:#14532d;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">🟢 Hora pico</div>'+
+      '<div style="font-size:11px;color:#14532d;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">🟢 Mejor horario</div>'+
       '<div style="font-size:24px;font-weight:700;color:#1a4a3a">'+pad(bestHour)+':00</div>'+
       '<div style="font-size:12px;color:#2d6b56;margin-top:2px">'+hourAvgs[bestHour]+' ms promedio</div>'+
       '</div>'+
       '<div style="background:#fef2f2;border-radius:10px;padding:12px;text-align:center">'+
-      '<div style="font-size:11px;color:#9b1c1c;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">🔴 Hora valle</div>'+
+      '<div style="font-size:11px;color:#9b1c1c;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">🔴 Peor horario</div>'+
       '<div style="font-size:24px;font-weight:700;color:#dc2626">'+pad(worstHour)+':00</div>'+
       '<div style="font-size:12px;color:#9b1c1c;margin-top:2px">'+hourAvgs[worstHour]+' ms promedio</div>'+
       '</div></div>';
@@ -20426,6 +20682,19 @@ async function registerChildProfile(){
         <option value="otro">Otro</option>
       </select>
     </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">¿Tiene una rutina escolar?</label>
+      <select class="form-input" id="child-reg-schooled">
+        <option value="">Seleccioná…</option>
+        <option value="si">Sí — jardín, escuela o guardería con horario fijo</option>
+        <option value="no">No — todavía no, o sin horario fijo</option>
+      </select>
+      <div style="font-size:11.5px;color:var(--ink3);margin-top:5px;line-height:1.45">
+        Define si tiene sentido comparar días con rutina contra días libres.
+        Sin rutina, la <b>deuda de sueño</b> y el <b>jet lag social</b> no se calculan:
+        compararían dos grupos que son el mismo.
+      </div>
+    </div>
     <div id="child-reg-error" class="form-error"></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-s" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancelar</button>
@@ -20554,8 +20823,22 @@ async function saveChildProfile(){
       parent_email: S.user.email,
       caregiver_relation: rel,
       code: genCode(),
-      auth_id: parentAuthId
+      auth_id: parentAuthId,
+      schooled: (function(){
+        const v=document.getElementById('child-reg-schooled');
+        return (v && v.value) ? (v.value==='si') : null;
+      })()
     };
+    // Sin auth_id, la fila nace huérfana: la RLS de sleep_diary compara
+    // patient_email contra los emails de patients donde auth_id = auth.uid(),
+    // así que NADIE va a poder leerla ni escribirla, ni siquiera quien la
+    // creó. Un insert que "funciona" y produce un registro inaccesible es
+    // peor que un error. Le pasó a Jerónimo (0 noches, auth_id NULL).
+    if(!parentAuthId){
+      if(err){ err.textContent='No se pudo confirmar tu sesión. Cerrá sesión, volvé a entrar y probá de nuevo: si el perfil se crea así, después no vas a poder cargarle nada.'; err.classList.add('show'); }
+      if(btn) btn.disabled=false;
+      return;
+    }
     const d = await db.post('patients', body);
     if(d){
       if(_activeReminderModal){ _activeReminderModal.remove(); _activeReminderModal=null; }
@@ -22283,10 +22566,70 @@ function timeToMinRaw(t){
 }
 
 
+// Pasos del diario infantil. Mismo patrón que el del adulto: una pregunta
+// por pantalla, barra de progreso arriba y revisión antes de guardar.
+const DM_PASOS_NINO = [
+  { n:1, rot:'Al acostarse',        titulos:['Sueño nocturno','Contexto al dormirse'] },
+  { n:2, rot:'Durante la noche',    titulos:['Despertares'] },
+  { n:3, rot:'Siestas',             titulos:['Siestas del día'] },
+  { n:4, rot:'El día',              titulos:['Jardín o escuela','Pantallas','Ánimo'] },
+  { n:5, rot:'Algo más',            titulos:['Notas'] },
+  { n:6, rot:'Revisá el registro',  titulos:[] }
+];
+
+// La revisión del diario infantil: mismos campos que carga, con su rótulo.
+function dmPintarRevisionNino(){
+  const cont=document.getElementById('dm-revision-nino'); if(!cont) return;
+  const V=function(id){ const e=document.getElementById(id); return e ? (e.value||'') : ''; };
+  const hhmm=function(v){ return v ? String(v).slice(0,5) : ''; };
+  const sel=function(id){
+    const e=document.getElementById(id); if(!e || !e.value) return '';
+    if(e.tagName==='SELECT' && e.selectedIndex>=0) return e.options[e.selectedIndex].text.trim();
+    return e.value;
+  };
+  const filas=[
+    { p:1, r:'Fecha',                 v:V('d-date') },
+    { p:1, r:'Hora en que se acostó', v:hhmm(V('d-bed')) },
+    { p:1, r:'Hora en que se despertó', v:hhmm(V('d-wake')) },
+    { p:1, r:'Cuánto tardó en dormirse', v:sel('d-latency') },
+    { p:2, r:'Despertares en la noche', v:(function(){
+        const n=(typeof _childAwakenings!=='undefined' && _childAwakenings)?_childAwakenings.length:0;
+        return n ? (n+(n===1?' despertar':' despertares')) : 'Ninguno';
+      })() },
+    { p:3, r:'Siestas del día',       v:(function(){
+        const l=document.getElementById('nap-list');
+        const n=l?l.children.length:0;
+        return n ? (n+(n===1?' siesta':' siestas')) : 'Ninguna';
+      })() },
+    { p:4, r:'Pantallas antes de dormir', v:(V('d-screen')? V('d-screen')+' min':'') },
+    { p:5, r:'Notas',                 v:(V('d-notes')||'').slice(0,80) }
+  ];
+  let h='<div class="dm-rev-tit">Revisá el registro</div>'+
+        '<div class="dm-rev-sub">Tocá cualquier línea para corregirla antes de guardar.</div>';
+  filas.forEach(function(f){
+    if(f.r==='Notas' && !f.v) return;
+    h+='<div class="dm-rev-fila" onclick="dmCorregirDesdeRevision('+f.p+')">'+
+         '<span class="dm-rev-rot">'+f.r+'</span>'+
+         '<span class="dm-rev-val'+(f.v?'':' dm-rev-vacio')+'">'+
+           (f.v ? escHtml(f.v) : 'sin completar')+'</span>'+
+         '<span class="dm-rev-chev">›</span>'+
+       '</div>';
+  });
+  cont.innerHTML=h;
+}
+window.dmPintarRevisionNino = dmPintarRevisionNino;
+
 function showChildDiaryNew(){
   S._fromChild = true;
   _childAwakenings = [];
   showScreen('diary-new');
+  // Esta pantalla la comparten el diario adulto y el infantil: hay que decir
+  // cuál está activo antes de dibujar, o dmPintarPaso usa los pasos del otro.
+  window._dmPasosActivos = DM_PASOS_NINO;
+  window._dmBtnGuardar   = 'save-child-diary-btn';
+  window._dmTextoGuardar = 'Guardar el registro';
+  window._dmRevisionFn   = dmPintarRevisionNino;
+  window._dmPaso = 1;
   const n = new Date();
   const today = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
   
@@ -22309,6 +22652,10 @@ function showChildDiaryNew(){
     </div>`;
 
   document.getElementById('diary-form-content').innerHTML = `
+    <div id="dm-paso-cab"></div>
+
+    <div class="dm-paso" data-paso="1">
+
     <div class="sobre-claro" style="background:var(--g50);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--g800)">Campos con <span style="color:#dc2626;font-weight:600">*</span> son obligatorios</div>
     
     <div class="form-group">
@@ -22389,18 +22736,30 @@ function showChildDiaryNew(){
       </select>
     </div>
 
-    <div class="sec-title" style="margin-top:8px">Despertares nocturnos</div>
+    
+    </div>
+
+    <div class="dm-paso" data-paso="2" style="display:none">
+<div class="sec-title" style="margin-top:8px">Despertares nocturnos</div>
     <div id="ch-awakening-list" style="margin-bottom:8px"></div>
     <button type="button" onclick="addChildAwakeningRow()" style="background:none;border:1.5px dashed var(--border);border-radius:10px;padding:10px 14px;color:var(--label-2);font-size:13px;cursor:pointer;font-family:var(--font);width:100%;margin-bottom:14px">+ Agregar despertar</button>
 
     ${moodRow('d-mood-night', 'Estado al despertar (mañana) 🌅')}
 
-    <div class="sec-title" style="margin-top:8px">Siestas del día</div>
+    
+    </div>
+
+    <div class="dm-paso" data-paso="3" style="display:none">
+<div class="sec-title" style="margin-top:8px">Siestas del día</div>
     <div id="siesta-list" style="margin-bottom:8px"></div>
     <button type="button" onclick="addSiestaRow()" style="background:none;border:1.5px dashed #1a4a3a;border-radius:10px;padding:10px 14px;color:#1a4a3a;font-size:14px;cursor:pointer;font-family:var(--font);width:100%;text-align:left;margin-bottom:16px">+ Agregar siesta</button>
     <input type="hidden" id="d-nap-data" value="[]">
 
-    <div class="sec-title">Jardín / Escuela</div>
+    
+    </div>
+
+    <div class="dm-paso" data-paso="4" style="display:none">
+<div class="sec-title">Jardín / Escuela</div>
     <div class="form-row" style="margin-bottom:14px">
       <div class="form-group">
         <label class="form-label">¿Fue al jardín/escuela?</label>
@@ -22427,10 +22786,25 @@ function showChildDiaryNew(){
       <span style="font-size:13px;color:var(--label-2)">minutos</span>
     </div>
 
-    <div class="sec-title">Notas (opcional)</div>
+    
+    </div>
+
+    <div class="dm-paso" data-paso="5" style="display:none">
+<div class="sec-title">Notas (opcional)</div>
     <textarea class="form-input" id="d-notes" rows="2" placeholder="Algo que quieras agregar..." style="margin-bottom:14px"></textarea>
-    <button class="btn btn-g" onclick="saveChildDiary()" id="save-child-diary-btn" style="margin-bottom:28px">Guardar registro</button>
+    
+    </div>
+
+    <div class="dm-paso" data-paso="6" style="display:none">
+      <div id="dm-revision-nino"></div>
+    </div>
+
+    <div id="dm-paso-pie"></div>
+    <button id="save-child-diary-btn" onclick="saveChildDiary()" style="display:none"></button>
   `;
+  // El formulario recien existe en el DOM en esta linea: antes de esto no
+  // hay pasos que pintar.
+  try{ dmPintarPaso(); }catch(e){ console.warn('[diario nino] pasos:', e); }
 }
 
 function selectMood(inputId, val, btn){
@@ -22962,6 +23336,9 @@ function renderConsultList(docs){
       '</div>';
   }).join('');
   // Attach consult request listeners
+  // La lista queda a mano: el modal de confirmación necesita el teléfono
+  // y el mail del profesional para ofrecer la vía directa.
+  try{ window._dmDirDrs = drs; }catch(_){}
   list.querySelectorAll('.consult-req-btn').forEach(b=>b.addEventListener('click',()=>sendConsultRequest(b.dataset.email,b.dataset.name)));
 }
 
@@ -22979,9 +23356,25 @@ async function sendConsultRequest(doctorEmail, doctorName){
     return sc?.name+': '+r.score+' ('+( i?.l||'')+')';
   }).join('; ') || '';
 
-  const msg = recentAlerts
-    ? `Hola ${doctorName}, me comunico desde Dormetria. Completé algunos cuestionarios y los resultados indican que podría necesitar atención profesional. Mis resultados: ${recentAlerts}. ¿Podría coordinar una consulta?`
-    : `Hola ${doctorName}, me comunico desde Dormetria. Completé los cuestionarios de sueño y me gustaría coordinar una consulta con usted.`;
+  // Los puntajes son del paciente, no de la app. Antes se los metia en el
+  // mensaje sin preguntarle y sin dejarle verlos antes de mandarlos a
+  // alguien con quien todavia no tiene ningun vinculo. Ahora decide el.
+  const _nom = ((S.user.name||'')+' '+(S.user.lname||'')).trim();
+  let _edad = null;
+  try{ if(S.user.dob) _edad = Math.floor((Date.now()-new Date(S.user.dob))/31557600000); }catch(_){}
+  const _pres = 'Hola '+doctorName+', me comunico desde Dormetria. Soy '+
+    (_nom||'un paciente')+(_edad!=null?', '+_edad+' anios':'')+'.';
+  let incluir = false;
+  if(recentAlerts){
+    incluir = confirm('Queres incluir tus resultados en el mensaje?\n\n'+recentAlerts+
+      '\n\nSon datos de salud tuyos y todavia no tenes vinculo con este profesional. '+
+      'Aceptar los incluye; cancelar manda solo el pedido de turno.');
+  }
+  const base = _pres + (incluir
+    ? ' Complete algunos cuestionarios de sueno y me gustaria que los vea: '+recentAlerts+'. Podria coordinar una consulta?'
+    : ' Vengo registrando mi sueno y me gustaria coordinar una consulta.');
+  const msg = prompt('Podes editar el mensaje antes de enviarlo:', base);
+  if(msg === null) return;   // cancelo
 
   try{
     // Save consultation request
@@ -23006,12 +23399,24 @@ async function sendConsultRequest(doctorEmail, doctorName){
       modal.innerHTML=`<div style="background:var(--bg);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px">
         <div style="text-align:center;margin-bottom:16px">
           <div style="font-size:40px">✅</div>
-          <div style="font-size:18px;font-weight:700;margin-top:8px">Solicitud enviada</div>
-          <div style="font-size:14px;color:var(--label-2);margin-top:6px">El/la Dr/a. ${doctorName} recibirá tu solicitud</div>
+          <div style="font-size:18px;font-weight:700;margin-top:8px">Solicitud guardada</div>
+          <div style="font-size:14px;color:var(--label-2);margin-top:6px;line-height:1.5">
+            Queda en el panel de ${doctorName}, que la va a ver la próxima vez que entre.
+            <b>No le llega una notificación.</b> Si querés que lo vea hoy, escribile directo.
+          </div>
         </div>
         <div style="background:var(--fill-3);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--label-2);line-height:1.6;font-style:italic">
           "${msg}"
         </div>
+        ${(function(){
+          const d=(window._dmDirDrs||[]).find(x=>x.email===doctorEmail) || {};
+          const tel=String(d.phone||'').replace(/[^0-9]/g,'');
+          const mail=d.email_public||d.email||doctorEmail;
+          const asunto='Consulta desde Dormetria — '+((S.user.name||'')+' '+(S.user.lname||'')).trim();
+          const wa = tel ? '<a href="https://wa.me/'+tel+'?text='+encodeURIComponent(msg)+'" target="_blank" class="btn" style="display:block;text-align:center;text-decoration:none;background:#25D366;color:#0b3d22;margin-bottom:8px">Mandarlo por WhatsApp ahora</a>' : '';
+          const em = '<a href="mailto:'+mail+'?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(msg)+'" class="btn" style="display:block;text-align:center;text-decoration:none;background:rgba(255,255,255,.08);color:var(--label);margin-bottom:8px">Mandarlo por mail</a>';
+          return wa+em;
+        })()}
         <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-g">Entendido</button>
       </div>`;
       document.body.appendChild(modal);
@@ -28637,11 +29042,15 @@ function dmReplayTour(tourId){
     <div style="width:70px"></div>
   </div>
   <div class="scroll" id="r-content"></div>
+  <!-- El botón "Ver directorio de especialistas" vivía acá, pegado al
+       resultado de una escala patológica. Eso es lo que no puede ser: la app
+       le dice a una persona que su puntaje es alto y, en el mismo movimiento,
+       la manda a una lista de profesionales que PAGARON por estar ahí. La
+       alarma queda convertida en demanda para quien paga.
+       La alerta dice qué encontró y qué significa; el directorio es una
+       pestaña aparte, a la que la persona llega por su cuenta. -->
   <div id="r-consult-btn" style="display:none;padding:12px 16px">
-    <div id="r-consult-msg" style="font-size:13px;line-height:1.5;color:var(--label);background:var(--bg-secondary);border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:3px solid #C8A96E"></div>
-    <button class="btn" onclick="showConsultDir()" style="background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;font-size:15px">
-      🩺 Ver directorio de especialistas
-    </button>
+    <div id="r-consult-msg" style="font-size:13px;line-height:1.5;color:var(--label);background:var(--bg-secondary);border-radius:12px;padding:12px 14px;border-left:3px solid #C8A96E"></div>
   </div>
 </div>
 </div>

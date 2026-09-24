@@ -1,3 +1,36 @@
+# ⛔ NO CORRER — documento anulado (23-sep-2026)
+
+> **Este documento estaba mal fundado y las policies que propone no hacen
+> falta. No las corras.**
+>
+> Lo escribí asumiendo que la RLS de `sleep_diary` comparaba
+> `patient_email` contra `auth.jwt() ->> 'email'`. **No es así.** Las
+> policies reales son:
+>
+> ```
+> sleep_diary_self    ALL   patient_email IN (SELECT email FROM patients WHERE auth_id = auth.uid())
+> sleep_diary_doctor  ALL   patient_email IN (SELECT patient_email FROM doctor_patients ...)
+> admin_lee_diario    SELECT  es_admin()
+> ```
+>
+> Comparan contra **`patients.auth_id`**, no contra el correo del token. Y
+> el alta de un hijo ya guarda el `auth_id` DEL ADULTO en la fila del niño
+> —está explícito en el código, con ese comentario— justamente para que esta
+> policy lo cubra. **El diseño es correcto y no necesita excepciones.**
+>
+> Si el padre no ve el diario del hijo, el problema es del **dato**, no de
+> la policy: la fila del hijo tiene `auth_id` NULL o distinto del actual.
+> Agregar las policies de abajo taparía el síntoma y abriría permisos que
+> no hacen falta.
+>
+> El diagnóstico correcto y el arreglo están en
+> `SQL-hijos-auth-id.md`.
+
+---
+
+<details>
+<summary>Texto original, conservado solo como registro del error</summary>
+
 # El diario de un hijo no se puede guardar — RLS
 
 **Síntoma:** al guardar el diario de Jerónimo aparece
@@ -133,3 +166,6 @@ order by tablename, cmd;
 ```
 
 Pegame la salida y te digo cuáles faltan.
+
+
+</details>

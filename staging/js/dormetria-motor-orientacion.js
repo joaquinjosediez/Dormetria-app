@@ -517,11 +517,19 @@ function dmCalcularEvolucion(diaryEntries) {
   const m1 = dmMetricasDiario(last14);
   const m2 = prev14.length >= 3 ? dmMetricasDiario(prev14) : dmMetricasDiario(last14);
 
+  // El veredicto tiene que decir SOBRE QUÉ. Esta función mide EFICIENCIA en
+  // 14 noches contra 14; la tarjeta del Diario mide el SCORE COMPUESTO en 7
+  // contra 7. Son métricas y ventanas distintas y pueden dar sentidos
+  // opuestos de forma legítima —eficiencia que sube porque la persona pasa
+  // menos tiempo en cama, con cantidad que baja— pero al profesional le
+  // llegaban dos palabras contradictorias sobre el mismo paciente, sin
+  // ninguna pista de que hablaban de cosas distintas. Caso Camila
+  // De Stefano, 23-09-2026: "mejorando" en Resumen, "empeorando" en Diario.
   const delta = m2 ? Math.round(m1.eficiencia - m2.eficiencia) : 0;
-  let veredicto = 'Estable';
+  let veredicto = 'Eficiencia estable';
   if (Math.abs(delta) >= 10) {
-    if (delta >= 10) veredicto = 'Va bien — mejorando';
-    else veredicto = 'Empeorando — revisar plan';
+    if (delta >= 10) veredicto = 'Eficiencia mejorando';
+    else veredicto = 'Eficiencia empeorando';
   }
 
   return {

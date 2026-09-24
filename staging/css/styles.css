@@ -4699,8 +4699,17 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
    cuando la fila envuelve. */
 .dm-evo-cifras{
   display:grid !important;
-  grid-template-columns:repeat(auto-fit,minmax(104px,1fr));
+  /* 104px de mínimo empujaba la sexta celda (Adherencia) a un segundo
+     renglón en cuanto la tarjeta se angostaba, y quedaba un hueco grande
+     a la derecha. Con 84 entran las seis y el contenido no se corta:
+     lo más largo es "TIEMPO DE SUEÑO", que envuelve en dos líneas. */
+  grid-template-columns:repeat(auto-fit,minmax(84px,1fr));
   gap:12px 0;
+}
+@media (min-width:900px){
+  body.dr-desktop .dm-evo-celda{ padding:0 5px; }
+  body.dr-desktop .dm-evo-celda > div:first-child{ font-size:9.5px !important; }
+  body.dr-desktop .dm-evo-celda > div:nth-child(2){ font-size:16px !important; }
 }
 .dm-evo-celda{
   min-width:0; padding:0 8px;
@@ -5346,3 +5355,37 @@ body.dr-desktop #drp-content > .dm-edu-wrap{ grid-column:1 / -1; }
 }
 .dm-per-btn.on{ background:rgba(126,200,164,0.22); color:#7EC8A4; }
 .dm-per-btn:hover{ color:rgba(244,239,229,0.85); }
+
+/* ── mod213 · sesiones del test de alerta ──────────────────────────────
+   Antes solo se listaban las "sesiones con alerta reducida" y sin la
+   duración, que es justamente lo que define el umbral de lapso: 355 ms en
+   el PVT-B de 3 min, 500 ms en los de 5 y 10 (Basner 2011). Dos lapsos de
+   un test de 3 y de uno de 10 no son lo mismo. */
+.dm-pvt-ses{ display:grid; grid-template-columns:1fr; gap:6px; }
+@media (min-width:900px){
+  body.dr-desktop .dm-pvt-ses{ grid-template-columns:1fr 1fr; gap:6px 10px; }
+}
+.dm-pvt-fila{
+  display:flex; align-items:center; gap:12px;
+  background:var(--bg-secondary); border-radius:10px; padding:10px 13px;
+  border-left:3px solid transparent;
+}
+.dm-pvt-fila.alta{ background:#fef2f2; border-left-color:#dc2626; }
+.dm-pvt-cuando{
+  flex:1; min-width:0; font-size:12.5px; color:var(--label-2); line-height:1.4;
+}
+.dm-pvt-cuando b{ color:var(--label); font-weight:600; }
+.dm-pvt-dur{
+  display:inline-block; margin-left:7px; font-size:10.5px;
+  background:rgba(0,0,0,.05); border-radius:99px; padding:1px 7px; color:var(--label-2);
+}
+.dm-pvt-rt{
+  flex:0 0 auto; font-size:17px; font-weight:700; color:var(--label); line-height:1;
+}
+.dm-pvt-rt > i{ font-size:10.5px; font-style:normal; font-weight:400; color:var(--label-3); margin-left:1px; }
+.dm-pvt-lap{
+  flex:0 0 auto; text-align:right; font-size:11.5px; color:var(--label-2); line-height:1.4;
+}
+.dm-pvt-lap b{ color:#9a3412; font-size:13px; }
+.dm-pvt-lap span{ color:var(--label-3); font-size:10.5px; }
+.dm-pvt-lap em{ display:block; font-style:normal; color:#9b1c1c; font-size:10.5px; }

@@ -78,8 +78,14 @@ r.seccion('La evolución del resumen se acomoda sola:');
 r.ok(/\.dm-evo-cifras\{/.test(css.replace(/\s+/g,'')) ||
      /\.dm-evo-cifras\s*\{/.test(css),
      'existe la grilla de cifras');
-r.ok(/auto-fit,minmax\(104px,1fr\)/.test(css.replace(/\s+/g,'')),
+// El mínimo bajó de 104 a 84 en mod213: con 104 la sexta celda
+// (Adherencia) se caía a un segundo renglón en cuanto la tarjeta se
+// angostaba. Lo que la prueba fija es que sea auto-fit, no el número.
+r.ok(/auto-fit,minmax\(\d+px,1fr\)/.test(css.replace(/\s+/g,'')),
      'con columnas que se acomodan al ancho');
+const _min = /auto-fit,minmax\((\d+)px,1fr\)/.exec(css.replace(/\s+/g,''));
+r.ok(_min && Number(_min[1]) <= 96,
+     'y con un mínimo que deja entrar las seis cifras en una fila');
 
 r.seccion('"Mis pacientes" no se repite arriba de la pantalla que ya lo dice:');
 
