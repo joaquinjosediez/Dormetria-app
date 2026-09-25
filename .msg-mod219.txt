@@ -1,0 +1,33 @@
+mod219 · una paciente perdio la noche entera por un 0,8
+
+Error al guardar: invalid input syntax for type integer: "0.8". Habia
+cargado una bebida de 0,8 unidades de alcohol. alcohol_drinks es integer,
+PostgREST rechazo el INSERT COMPLETO y se perdio TODO el registro: horarios,
+calidad, animo, despertares. No solo el alcohol.
+
+La cafeina tiene el mismo problema: suma miligramos y puede dar 62.5.
+
+Arreglo de fondo: SQL-diario-decimales (numeric). Mientras tanto el bucle de
+guardado detecta el error, busca en el payload el campo que tiene ese valor,
+lo redondea y escribe el valor real en notes. Perder la precision de una copa
+es preferible a perder la noche. Lo fija pruebas/35.
+
+Dos botones muertos por la misma causa:
+
+  '<div onclick="dmVerFicha('+JSON.stringify(d.email)+')" ...'
+
+JSON.stringify devuelve el texto CON comillas dobles, y el atributo HTML
+tambien usa comillas dobles. El navegador corta el atributo en la primera:
+el onclick real queda en `dmVerFicha(` y el toque no hace nada, sin error.
+Pasaba en "Ver perfil completo" y en "Marcar como respondida" (el id de
+consultation_requests es texto). O sea que lo de marcar como respondida NO
+era la RLS, como dije en mod218. Ahora van percent-encoded.
+
+Directorio:
+- La tarjeta era un rectangulo blanco sobre fondo verde. Pasa a la estetica
+  de la app y "Ver perfil completo" es un boton verde, no un link.
+
+Orden:
+- "Sueño de tus hijos" baja debajo de "Mis estudios".
+- El directorio sale de "Yo" y va a "Mas", debajo del test de alerta: no es
+  algo mio como el historial, es a quien podria consultar.

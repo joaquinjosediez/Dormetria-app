@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg219-782b37c2">
+<link rel="stylesheet" href="css/styles.css?v=stg220-782b37c2">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1279,6 +1279,16 @@
       <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
     </div>
 
+    <!-- El directorio no es algo "mío" como el historial o los estudios: es
+         a quién podría consultar. Por eso vive acá y no en "Yo". -->
+    <div onclick="showConsultDir()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Directorio de especialistas</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px">Profesionales que aceptan pacientes nuevos</div></div>
+      <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
+    </div>
+
     <!-- Cambiar de perfil / crear el profesional. Se muestra siempre:
          quien no tiene el otro perfil ve la opción de crearlo. -->
     <div onclick="dmMenuPerfiles()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -1350,10 +1360,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg219-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg219-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg219-2d003f8b"></script>
-<script src="js/dormetria-render-resumen.js?v=stg219-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg220-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg220-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg220-2d003f8b"></script>
+<script src="js/dormetria-render-resumen.js?v=stg220-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1372,11 +1382,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg219';
+const APP_VERSION='stg220';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg219 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg220 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -11784,7 +11794,7 @@ function _applyConsultBlock(sc,score){
       msg.innerHTML = (isPath
         ? 'Un puntaje así no es un diagnóstico: es un cuestionario que señala que vale la pena una evaluación. El paso siguiente sería <strong>'+who+'</strong>.'
         : 'Este resultado amerita seguimiento. Si los síntomas persisten, el paso siguiente sería <strong>'+who+'</strong>.')+
-        '<br><span style="opacity:0.8">Podés llevarle este resultado a tu médico de cabecera. Si preferís buscar por tu cuenta, en <b>Yo → Mis especialistas</b> hay un directorio de profesionales que usan Dormetria.</span>';
+        '<br><span style="opacity:0.8">Podés llevarle este resultado a tu médico de cabecera. Si preferís buscar por tu cuenta, en <b>Más → Directorio de especialistas</b> hay una lista de profesionales que usan Dormetria.</span>';
     }
     // Se mueve dentro del scroll del resultado: como hermano de #r-content
     // (que es flex:1) quedaba clavado al fondo de la pantalla, separado del
@@ -12150,11 +12160,6 @@ function renderProfileView(){
         <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
       </div>
 
-      <!-- Perfiles de hijos. Estaba arriba de todo y empujaba el diario, las
-           escalas y el historial fuera de la primera pantalla: "Yo" es
-           primero lo propio del adulto. -->
-      <div id="profile-children"></div>
-
       <!-- Mis estudios -->
       <div onclick="showDocsScreen()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
         <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -12164,15 +12169,10 @@ function renderProfileView(){
         <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
       </div>
 
-      <!-- Directorio: es otra cosa que "mis especialistas". Uno es con quién
-           ya estoy; el otro, a quién podría consultar. Estaban juntos. -->
-      <div onclick="showConsultDir()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-        <div style="width:40px;height:40px;border-radius:10px;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-        </div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#fff">Directorio de especialistas</div><div style="font-size:12px;color:rgba(255,255,255,.72);margin-top:2px">Profesionales que aceptan pacientes nuevos</div></div>
-        <div style="color:rgba(255,255,255,.72);font-size:18px">›</div>
-      </div>
+      <!-- Perfiles de hijos: después de todo lo del adulto. Antes estaba
+           arriba de todo y empujaba el diario, las escalas y el historial
+           fuera de la primera pantalla. -->
+      <div id="profile-children"></div>
 
       <!-- Mis especialistas -->
       <div onclick="showPatientCode()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -14500,6 +14500,33 @@ async function saveDiary(){
           attempt++;
           continue;
         }
+        // ── Valor decimal contra una columna entera ──────────────────
+        // Caso real: una paciente cargo una bebida de 0,8 unidades de
+        // alcohol. alcohol_drinks es integer, PostgREST devolvio
+        //   invalid input syntax for type integer: "0.8"
+        // y se perdio LA NOCHE ENTERA — no el dato del alcohol, todo el
+        // registro. Lo mismo puede pasar con la cafeina, que suma mg y
+        // puede dar 62.5.
+        // La solucion de fondo es que esas columnas sean numeric
+        // (SQL-diario-decimales). Hasta entonces se redondea el valor
+        // culpable y se deja constancia en notes: perder la precision de
+        // una copa es mucho menos grave que perder la noche.
+        const _dec = m.match(/invalid input syntax for type integer:\s*"([-0-9.]+)"/i);
+        if(_dec && attempt<maxRetries){
+          const _val = parseFloat(_dec[1]);
+          const _clave = Object.keys(workPayload).find(function(k){
+            return typeof workPayload[k]==='number' && Math.abs(workPayload[k]-_val)<1e-9;
+          });
+          if(_clave){
+            const _redondo = Math.round(_val);
+            console.warn('[saveDiary] '+_clave+' es entero en la base: '+_val+' → '+_redondo);
+            workPayload[_clave] = _redondo;
+            const _nota = _clave+' real: '+_val;
+            workPayload.notes = workPayload.notes ? (workPayload.notes+' | '+_nota) : _nota;
+            attempt++;
+            continue;
+          }
+        }
         throw err;
       }
     }
@@ -16058,7 +16085,7 @@ async function renderPatientList(filter){
                 '<a href="mailto:'+encodeURIComponent(mail).replace(/%40/,'@')+
                   '?subject='+encodeURIComponent('Tu consulta desde Dormetria')+
                   '" class="dm-solic-btn">Responder por mail</a>'+
-                (pend?'<button class="dm-solic-btn sec" onclick="dmSolicResuelta('+JSON.stringify(r.id)+',this)">Marcar como respondida</button>':'')+
+                (pend?'<button class="dm-solic-btn sec" onclick="dmSolicResuelta(&quot;'+encodeURIComponent(r.id)+'&quot;,this)">Marcar como respondida</button>':'')+
               '</div>'+
             '</div>';
           }).join('');
@@ -23317,6 +23344,9 @@ function filterConsultDirs(){
 // Abre la ficha venga de donde venga. Antes solo funcionaba si la caché la
 // había llenado showConsultDir; desde el otro directorio no hacía nada.
 function dmVerFicha(email){
+  // Llega percent-encoded desde el atributo onclick (ver el comentario del
+  // render): un email sin codificar rompe el HTML del atributo.
+  try{ email = decodeURIComponent(email); }catch(_){}
   const pools = [_consultDoctorsCache, window._codeConsultDocs, window._dmDirDrs];
   for(const p of pools){
     const d=(p||[]).filter(function(x){ return x && x.email===email; })[0];
@@ -23414,7 +23444,7 @@ function renderConsultList(docs){
     const _foto = d.photo_url
       ? '<img src="'+d.photo_url+'" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e8f0eb">'
       : '<div style="width:56px;height:56px;border-radius:50%;flex-shrink:0;background:#e8f0eb;color:#1a4a3a;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">'+_ini+'</div>';
-    return '<div style="background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">'+
+    return '<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;margin-bottom:12px">'+
       '<div style="display:flex;gap:13px;align-items:flex-start">'+
       _foto+
       '<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:700">'+title+' '+d.name+' '+(d.lname||'')+'</div>'+
@@ -23439,7 +23469,7 @@ function renderConsultList(docs){
       // esa caché la llena OTRA pantalla (showConsultDir). Entrando por el
       // directorio de "Mi especialista" está vacía, la función hacía
       // `if(!d) return;` y el toque no hacía nada, en silencio.
-      '<div onclick="dmVerFicha('+JSON.stringify(d.email)+')" style="text-align:center;padding:11px 0 2px;font-size:13.5px;color:#1a4a3a;font-weight:700;cursor:pointer">Ver perfil completo →</div>'+
+      '<div onclick="dmVerFicha(&quot;'+encodeURIComponent(d.email)+'&quot;)" style="text-align:center;margin-top:8px;padding:11px;border-radius:10px;background:#1a4a3a;color:#F4EFE5;font-size:13.5px;font-weight:700;cursor:pointer">Ver perfil completo →</div>'+
       '</div>';
   }).join('');
   // Attach consult request listeners
@@ -23536,6 +23566,7 @@ async function sendConsultRequest(doctorEmail, doctorName){
 
 // Marcar una solicitud como respondida. No borra nada: cambia el estado.
 async function dmSolicResuelta(id, btn){
+  try{ id = decodeURIComponent(id); }catch(_){}
   if(btn) btn.disabled = true;
   try{
     await db.patch('consultation_requests?id=eq.'+encodeURIComponent(id), { status:'answered' });
