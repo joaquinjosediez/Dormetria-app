@@ -50,6 +50,16 @@ async function dmShowSummaryNuevo(email, cont) {
     dmCurrentMotorResult = dmMotorOrientacion(recs, diaryEntries, S.viewData);
     dmCurrentMotorResult.nochesTotalesDiario = S._dmNochesTotales;
     dmCurrentEmail = email;
+    // El patrón de insomnio que sale del DIARIO queda publicado para que
+    // las etiquetas clínicas lo puedan usar. Hasta ahora el resumen decía
+    // "compatible con patrón de insomnio de mantenimiento" y la etiqueta
+    // Insomnio seguía apagada, porque computeAutoTags solo miraba el ISI:
+    // el diario no llegaba nunca a la etiqueta.
+    try{
+      window._dmPatronDiario = window._dmPatronDiario || {};
+      window._dmPatronDiario[email] = String(
+        (dmCurrentMotorResult.orientacion && dmCurrentMotorResult.orientacion.texto) || '');
+    }catch(_){}
 
     // Obtener el modo del profesional (Gen/Esp)
     // La preferencia se guardaba POR PACIENTE ('dm-mode-'+email), así que con

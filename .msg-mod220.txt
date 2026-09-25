@@ -1,0 +1,49 @@
+mod220 · el bucle de registro, y lo que la revision leia del DOM en vez del estado
+
+BUCLE DE REGISTRO. Alejandro instalo la app en la pantalla de inicio. El link
+de confirmacion abre en el navegador del sistema, no dentro de la PWA, y en
+iOS cada una tiene su propio almacenamiento: la sesion queda del lado del
+navegador y la app sigue sin sesion. Volvia, veia el formulario de alta, se
+registraba de nuevo — y supa.auth.signUp NO falla con un mail ya usado: por
+privacidad devuelve identities vacio y reenvia la confirmacion.
+Ahora se mira identities, y en los dos casos (alta nueva sin confirmar, o
+cuenta ya existente) queda en el INGRESO con el mail puesto, no en el alta.
+Se recuerda en dm_alta_pendiente entre arranques. Lo fija pruebas/36.
+
+"Despertares en la noche: sin completar" con despertares cargados. Mismo
+error que d-bedtime/d-bed: la revision contaba elementos del DOM con
+[data-awk], .dm-awk-item o .awakening-item, y renderAwakenings no genera
+ninguna de las tres. El estado real esta en hasAwakenings y awakeningList.
+
+Notificaciones:
+- Marcar como respondida dejaba la tarjeta puesta y diciendo "sin responder"
+  hasta salir y volver. Ahora el bloque se redibuja.
+- Dos columnas: sin responder a la izquierda, respondidas plegadas a la
+  derecha. Antes las respondidas hacian bulto sobre lo unico que importa.
+
+Etiquetas clinicas: el resumen decia "compatible con patron de insomnio de
+mantenimiento" y la pastilla Insomnio seguia apagada, porque computeAutoTags
+solo miraba el ISI. El patron que sale del diario ahora tambien la enciende.
+
+Cafe / te / alcohol:
+- El total se pintaba con var(--g800) —verde noche— sobre el fondo verde
+  oscuro: ilegible. Lo mismo --ink3 y --ink4, que son grises de tema claro.
+- La etiqueta repetia los miligramos: "Te negro (50mg) (50mg)".
+- Despues de agregar, el selector volvia a "Ninguno" sin decir nada, asi que
+  parecia que no se podia sumar una segunda bebida. Ahora lo dice.
+- El campo oculto del alcohol ya no redondea: 0,8 es 0,8.
+
+Directorio:
+- Texto oscuro sobre fondo oscuro en nombre y especialidad (quedaron los
+  colores del tema claro al cambiar el fondo de la tarjeta).
+- Puntuacion real de los pacientes, de opiniones_publicas. Antes leia
+  dm_dr_rating_<email> de localStorage: una nota de ESTE dispositivo.
+- En escritorio se despliega en grilla a lo ancho, no en columna de telefono.
+
+Barra del profesional: vuelven "Mi perfil paciente" y "Admin" (oculto salvo
+para admin). Se sacan los duplicados del menu: "Como funciona" convivia con
+"Como se usa" y "Ayudanos a mejorar" estaba dos veces.
+
+Inicio del paciente: mientras falta registrar la noche, esa tarjeta es lo
+unico iluminado y el resto queda atenuado (idea de REST). No se bloquea nada:
+bloquear la app hasta que registre convierte un habito en un peaje.

@@ -5440,3 +5440,85 @@ body.dr-desktop #drp-content > .dm-edu-wrap{ grid-column:1 / -1; }
      las estira, el degradado avisa que hay más a la derecha. */
   #dr-topbar-desktop .dr-tb-tabs:not(:hover){ scroll-behavior:smooth; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod220 · Solicitudes: lo pendiente a la izquierda, lo hecho a la derecha
+   Iban todas en una sola lista y las ya respondidas hacían bulto sobre lo
+   único que hay que mirar, que es lo que falta contestar.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-solic-cols{ display:grid; grid-template-columns:1fr; gap:14px; }
+@media (min-width:820px){
+  .dm-solic-cols{ grid-template-columns:1fr 1fr; align-items:start; }
+}
+.dm-solic-col{ min-width:0; }
+.dm-solic-vacio{
+  font-size:13px; color:var(--label-3); padding:14px 2px;
+}
+.dm-solic.hecha{ opacity:.72; }
+.dm-solic-hechas{
+  border:1px solid var(--sep-opaque); border-radius:12px; padding:4px 10px 2px;
+}
+.dm-solic-hechas > summary{
+  cursor:pointer; list-style:none; padding:9px 2px;
+  font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--label-2);
+}
+.dm-solic-hechas > summary::-webkit-details-marker{ display:none; }
+.dm-solic-hechas > summary::before{ content:'▸ '; }
+.dm-solic-hechas[open] > summary::before{ content:'▾ '; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod220 · El directorio en escritorio usaba el ancho de un teléfono
+   La pantalla 'consult' hereda el contenedor angosto del móvil; en el
+   panel profesional queda una columna de 600px con todo el resto vacío.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width:900px){
+  body.dr-desktop #screen-consult{ max-width:none; }
+  body.dr-desktop #consult-list{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
+    gap:14px; align-items:start; padding:0 18px 24px;
+  }
+  body.dr-desktop #consult-list > div{ margin-bottom:0 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod220 · Foco en el registro del día (idea de REST)
+   Mientras falta cargar la noche, la tarjeta de registro es lo único
+   iluminado y el resto del inicio queda atenuado. No se bloquea nada:
+   quien quiera mirar sus gráficos antes puede. Bloquear la app hasta que
+   registre convierte un hábito en un peaje.
+   ══════════════════════════════════════════════════════════════════════ */
+body.dm-foco-diario #screen-home #home-plan1,
+body.dm-foco-diario #screen-home #home-cifras,
+body.dm-foco-diario #screen-home #home-aliento,
+body.dm-foco-diario #screen-home #home-quick,
+body.dm-foco-diario #screen-home #scales-list,
+body.dm-foco-diario #screen-home #home-section-title,
+body.dm-foco-diario #screen-home #home-howto-card,
+body.dm-foco-diario #screen-home #home-novedad{
+  opacity:.42;
+  filter:saturate(.55);
+  transition:opacity .45s ease, filter .45s ease;
+}
+/* Al tocar cualquiera de esos bloques vuelven a la normalidad: se atenúan
+   para ordenar la atención, no para esconder nada. */
+body.dm-foco-diario #screen-home #home-plan1:hover,
+body.dm-foco-diario #screen-home #home-cifras:hover,
+body.dm-foco-diario #screen-home #home-aliento:hover,
+body.dm-foco-diario #screen-home #home-quick:hover,
+body.dm-foco-diario #screen-home #scales-list:hover,
+body.dm-foco-diario #screen-home #home-howto-card:hover{
+  opacity:1; filter:none;
+}
+.dm-foco-card{ position:relative; }
+body.dm-foco-diario .dm-foco-card{
+  box-shadow:0 0 0 1px rgba(126,200,164,.34), 0 10px 34px -12px rgba(126,200,164,.5);
+  animation:dmFocoLatido 3.4s ease-in-out infinite;
+}
+@keyframes dmFocoLatido{
+  0%,100%{ box-shadow:0 0 0 1px rgba(126,200,164,.30), 0 10px 30px -14px rgba(126,200,164,.42); }
+  50%    { box-shadow:0 0 0 1px rgba(126,200,164,.52), 0 14px 42px -10px rgba(126,200,164,.66); }
+}
+@media (prefers-reduced-motion:reduce){
+  body.dm-foco-diario .dm-foco-card{ animation:none; }
+}
