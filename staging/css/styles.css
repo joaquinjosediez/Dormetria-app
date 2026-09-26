@@ -5467,19 +5467,6 @@ body.dr-desktop #drp-content > .dm-edu-wrap{ grid-column:1 / -1; }
 .dm-solic-hechas > summary::before{ content:'▸ '; }
 .dm-solic-hechas[open] > summary::before{ content:'▾ '; }
 
-/* ══════════════════════════════════════════════════════════════════════
-   mod220 · El directorio en escritorio usaba el ancho de un teléfono
-   La pantalla 'consult' hereda el contenedor angosto del móvil; en el
-   panel profesional queda una columna de 600px con todo el resto vacío.
-   ══════════════════════════════════════════════════════════════════════ */
-@media (min-width:900px){
-  body.dr-desktop #screen-consult{ max-width:none; }
-  body.dr-desktop #consult-list{
-    display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
-    gap:14px; align-items:start; padding:0 18px 24px;
-  }
-  body.dr-desktop #consult-list > div{ margin-bottom:0 !important; }
-}
 
 /* ══════════════════════════════════════════════════════════════════════
    mod220 · Foco en el registro del día (idea de REST)
@@ -5522,3 +5509,104 @@ body.dm-foco-diario .dm-foco-card{
 @media (prefers-reduced-motion:reduce){
   body.dm-foco-diario .dm-foco-card{ animation:none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod221 · Las etiquetas clínicas, escritas, en el listado lateral
+   Estaban solo como rayitas de color al costado del nombre. Para saber
+   que la roja era "Insomnio" había que entrar al paciente — justo lo que
+   el listado tendría que ahorrar.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-patlist-chips{
+  display:flex; flex-wrap:wrap; gap:4px; margin-top:5px;
+}
+.dm-patlist-chip{
+  font-size:10px; font-weight:700; letter-spacing:.02em;
+  border:1px solid currentColor; border-radius:999px;
+  padding:1px 7px; white-space:nowrap; line-height:1.5;
+  background:rgba(255,255,255,.04);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod221 · El directorio, a todo el ancho y agrupado por especialidad
+   Abierto desde el panel profesional caía dentro de la grilla de
+   escritorio (300px + 1fr) y se dibujaba con el ancho de un teléfono.
+   El intento anterior apuntaba a #screen-consult sin sacarlo de esa
+   grilla, así que no cambiaba nada.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-dir-grupo{ margin:0 0 22px; }
+.dm-dir-tit{
+  font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:rgba(244,239,229,.7); margin:0 0 10px; padding:0 2px;
+  display:flex; align-items:center; gap:8px;
+}
+.dm-dir-tit::after{
+  content:''; flex:1; height:1px; background:rgba(255,255,255,.1);
+}
+.dm-dir-tit > span{
+  order:3; font-size:11px; font-weight:600; color:rgba(244,239,229,.55);
+  background:rgba(255,255,255,.07); border-radius:999px; padding:1px 8px;
+}
+.dm-dir-cards{ display:grid; grid-template-columns:1fr; gap:12px; align-items:start; }
+.dm-dir-cards > div{ margin-bottom:0 !important; }
+
+@media (min-width:760px){
+  .dm-dir-cards{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (min-width:1180px){
+  .dm-dir-cards{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
+/* Sacarlo de la grilla del panel profesional mientras está abierto. */
+body.dm-dir-abierto #app{ max-width:none; width:100%; display:flex; }
+body.dm-dir-abierto.dr-desktop #dr-topbar-desktop{ display:none !important; }
+body.dm-dir-abierto #screen-consult .scroll,
+body.dm-dir-abierto #screen-consult .hero{
+  max-width:1280px; margin-left:auto; margin-right:auto; width:100%;
+}
+body.dm-dir-abierto #consult-list{ padding:4px 18px 28px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod221 · Bandeja de notificaciones con forma de correo
+   Antes eran tres listas apiladas con tres formatos distintos para la
+   misma pregunta: "¿qué me llegó?". Ahora: remitente, asunto, dos
+   renglones de vista previa. Sin responder a la izquierda, resuelto a la
+   derecha y plegado.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-bandeja-cols{ display:grid; grid-template-columns:1fr; gap:16px; align-items:start; }
+@media (min-width:900px){
+  .dm-bandeja-cols{ grid-template-columns:1fr 1fr; }
+}
+.dm-bandeja-col{ min-width:0; }
+
+.dm-msg{
+  border:1px solid var(--sep-opaque); border-left:3px solid var(--acento,#7EC8A4);
+  border-radius:10px; margin-bottom:8px; background:var(--bg-secondary);
+  overflow:hidden;
+}
+.dm-msg.leido{ opacity:.66; border-left-color:rgba(127,127,127,.45); }
+.dm-msg > summary{
+  list-style:none; cursor:pointer; display:flex; gap:10px;
+  padding:11px 13px; align-items:flex-start;
+}
+.dm-msg > summary::-webkit-details-marker{ display:none; }
+.dm-msg > summary:hover{ background:rgba(127,127,127,.06); }
+.dm-msg-ic{ font-size:15px; line-height:1.4; flex-shrink:0; }
+.dm-msg-txt{ flex:1; min-width:0; display:block; }
+.dm-msg-l1{
+  display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+  font-size:13.5px; color:var(--label);
+}
+.dm-msg.leido .dm-msg-l1 b{ font-weight:500; }
+.dm-msg-fecha{ font-size:11px; color:var(--label-3); flex-shrink:0; }
+.dm-msg-asunto{
+  display:block; font-size:12.5px; font-weight:600; color:var(--label-2);
+  margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+/* Dos renglones de vista previa y se corta, como en un cliente de correo. */
+.dm-msg-prev{
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden; font-size:12px; color:var(--label-3);
+  line-height:1.45; margin-top:3px;
+}
+.dm-msg-detalle{ padding:0 13px 13px; }
+.dm-msg[open] > summary{ border-bottom:1px solid var(--sep-opaque); margin-bottom:11px; }

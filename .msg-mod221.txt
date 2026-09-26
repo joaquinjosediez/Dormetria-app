@@ -1,0 +1,25 @@
+mod221 · una bandeja sola, y dejar de ofrecerle menopausia a un hombre de 40
+
+Material de lectura: dmLeerHoy rotaba por dia sobre la lista COMPLETA de
+articulos, sin mirar a quien se los mostraba. No era un criterio malo: no
+habia criterio. Ahora cada tema declara su publico (sexo, rango de edad,
+ocupacional) y el filtro es por defecto inclusivo: sin el dato, se muestra.
+Filtrar de mas dejaria a alguien sin material que le sirve solo porque no
+cargo el sexo al registrarse. Lo que el profesional asigno a mano nunca se
+filtra. Lo fija pruebas/37.
+
+Notificaciones: eran TRES listas apiladas —solicitudes, avisos, resultados—
+con tres formatos distintos para la misma pregunta, "¿que me llego?". Ahora
+es una sola bandeja con forma de correo: remitente, asunto, dos renglones de
+vista previa, y el detalle se abre al tocar. Sin responder a la izquierda,
+resuelto a la derecha y plegado.
+
+Listado lateral de pacientes: las etiquetas clinicas estaban SOLO como
+rayitas de color al costado del nombre. Para saber que la roja era "Insomnio"
+habia que entrar al paciente, que es justo lo que el listado deberia ahorrar.
+Ahora van escritas debajo del mail.
+
+Directorio: el intento de mod220 apuntaba a #screen-consult sin sacarlo de la
+grilla de escritorio (300px + 1fr), asi que no cambiaba nada y seguia con el
+ancho de un telefono. Ahora se marca el body mientras esta abierto. Y se
+agrupa por especialidad, en dos o tres columnas segun el ancho.

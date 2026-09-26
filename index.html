@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod220-401d94e6">
+<link rel="stylesheet" href="css/styles.css?v=mod221-81607cad">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1360,10 +1360,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod220-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod220-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod220-dec679c9"></script>
-<script src="js/dormetria-render-resumen.js?v=mod220-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod221-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod221-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod221-dec679c9"></script>
+<script src="js/dormetria-render-resumen.js?v=mod221-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1382,7 +1382,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod220';
+const APP_VERSION='mod221';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -8037,7 +8037,7 @@ const PATIENT_EDU_TOPICS=[
       <strong style="color:#C8A96E">Ojo con esto:</strong> dormir mucho más de lo habitual de forma sostenida tampoco es buena señal. Si te pasa, conviene consultarlo.
     </div>
   `},
-  {id:'embarazo',icon:'🤰',title:'Dormir durante el embarazo',body:`
+  {id:'embarazo',publico:{sexo:'F', edad:[15,50]},icon:'🤰',title:'Dormir durante el embarazo',body:`
     <p>Dormir mal en el embarazo es la regla, no la excepción: alrededor de <strong>tres de cada cuatro</strong> embarazadas duermen peor que antes. Saberlo cambia algo, porque buena parte del malestar viene de creer que a una le está pasando algo raro.</p>
     <p><strong>Primer trimestre.</strong> Da mucho sueño de día —la progesterona alta empuja a eso— y la noche se corta por las ganas de orinar. Es el trimestre donde más se duerme en total y peor se duerme de corrido.</p>
     <p><strong>Segundo trimestre.</strong> Suele ser el más llevadero. Si en esta etapa el sueño está muy roto, conviene contarlo en la consulta: no es lo esperable.</p>
@@ -8047,7 +8047,7 @@ const PATIENT_EDU_TOPICS=[
     <p><strong>De qué lado dormir.</strong> Se recomienda de costado, preferentemente izquierdo, desde la segunda mitad del embarazo. Una almohada entre las rodillas y otra sosteniendo la panza ayuda más que cualquier consejo. Si te despertás boca arriba, date vuelta y seguí: no pasó nada.</p>
     <p class="dm-nota"><strong>Ojo con la medicación.</strong> Ni los remedios de venta libre para dormir ni la melatonina están recomendados en el embarazo. Cualquier cosa para dormir se consulta antes.</p>
   `},
-  {id:'lactancia',icon:'🍼',title:'Dormir con un bebé recién nacido',body:`
+  {id:'lactancia',publico:{edad:[16,55]},icon:'🍼',title:'Dormir con un bebé recién nacido',body:`
     <p>Los primeros meses el sueño se rompe, y no hay técnica que lo evite del todo. Lo que sí se puede es <strong>perder menos horas de las necesarias</strong>.</p>
     <p><strong>Dormí cuando duerme.</strong> Suena a consejo de manual y se ignora siempre, porque cuando el bebé duerme aparece todo lo que quedó pendiente. Pero en las primeras semanas el orden importa menos que las horas. Una siesta de 40 minutos a media tarde rinde más que cualquier cosa que resuelvas en ese rato.</p>
     <p><strong>Repartir la noche por bloques.</strong> Si hay otra persona en casa, funciona mejor dividir la noche en dos turnos largos que despertarse los dos cada vez. Cuatro horas seguidas de sueño valen mucho más que ocho horas cortadas en pedacitos de una.</p>
@@ -8056,7 +8056,7 @@ const PATIENT_EDU_TOPICS=[
     <p><strong>Cuándo dejar de atribuirlo al bebé.</strong> Alrededor de los 3 o 4 meses el sueño del bebé se organiza bastante. Si a esa altura seguís sin poder dormir <em>aunque el bebé duerma</em>, eso ya no es la crianza: puede ser un insomnio instalado o una depresión posparto, y las dos tienen tratamiento. No es para aguantar.</p>
     <p class="dm-nota">Si aparecen tristeza persistente, angustia que no cede o pensamientos que te asustan, hablalo cuanto antes con un profesional. Es frecuente y se trata bien.</p>
   `},
-  {id:'mayores',icon:'🧓',title:'El sueño después de los 65',body:`
+  {id:'mayores',publico:{edad:[60,120]},icon:'🧓',title:'El sueño después de los 65',body:`
     <p>Hay una creencia muy instalada: que de grande se necesita dormir menos. <strong>No es así.</strong> La necesidad sigue siendo de 7 a 8 horas. Lo que cambia es la <em>forma</em> del sueño, no la cantidad que hace falta.</p>
     <p><strong>Qué cambia de verdad.</strong> El sueño se vuelve más liviano y se despierta más veces —eso es normal—. Y el reloj se adelanta: da sueño más temprano y se despierta más temprano. Acostarse a las 22 y despertarse a las 5 no es insomnio: son siete horas.</p>
     <p><strong>El error más común.</strong> Como cuesta más dormir, se pasa más tiempo en la cama esperando. Diez horas acostado para dormir seis hace que el sueño se diluya y se fragmente todavía más. Achicar el tiempo en cama funciona mejor que estirarlo.</p>
@@ -8078,7 +8078,7 @@ const PATIENT_EDU_TOPICS=[
     <p><strong>Los días libres.</strong> Acá hay que elegir. Volver del todo al horario diurno se siente mejor socialmente pero deja el próximo turno peor. Un punto intermedio —moverse dos o tres horas, no ocho— suele ser lo más sostenible.</p>
     <p><strong>Cuándo consultar.</strong> Si la somnolencia te pone en riesgo manejando o trabajando, si el insomnio sigue en tus días libres, o si esto se sostiene por años, conviene una evaluación. El trastorno del sueño por trabajo en turnos existe, tiene nombre y tiene manejo.</p>
   `},
-  {id:'guardias',icon:'🩺',title:'Guardias: sobrevivir sin romperse',body:`
+  {id:'guardias',publico:{solo:'ocupacional'},icon:'🩺',title:'Guardias: sobrevivir sin romperse',body:`
     <p>Escrito para quienes trabajan en salud, que suelen cuidar el sueño de todo el mundo menos el propio.</p>
     <p><strong>La noche previa.</strong> No acumules deuda a propósito pensando que vas a dormir mejor después. Llegar descansado a la guardia es lo único que realmente protege.</p>
     <p><strong>Dormir en la guardia, aunque sean 20 minutos.</strong> Hay evidencia consistente de que las siestas cortas durante el turno mejoran el tiempo de reacción y bajan los errores. No es un lujo ni una falta de compromiso: es seguridad del paciente.</p>
@@ -8087,7 +8087,7 @@ const PATIENT_EDU_TOPICS=[
     <p><strong>El día después.</strong> Dormir 3 o 4 horas al llegar y después hacer vida normal funciona mejor que dormir de corrido hasta la tarde: te deja poder dormir esa noche y volver al carril.</p>
     <p><strong>Lo que conviene mirar de frente.</strong> El insomnio crónico, el consumo de alcohol para desconectar y el uso de hipnóticos son bastante más frecuentes entre quienes hacen guardias, y se hablan poco. Si algo de eso está pasando, buscar ayuda no es debilidad profesional.</p>
   `},
-  {id:'menopausia',icon:'🌡',title:'Menopausia y sueño',body:`
+  {id:'menopausia',publico:{sexo:'F', edad:[40,70]},icon:'🌡',title:'Menopausia y sueño',body:`
     <p>Entre el 40 y el 60% de las mujeres duerme peor en la transición menopáusica. No es una impresión: es uno de los síntomas más constantes de esta etapa.</p>
     <p><strong>Por qué pasa.</strong> Se juntan tres cosas distintas, y conviene separarlas porque no se tratan igual.</p>
     <p><strong>1. Los sofocos nocturnos.</strong> Despiertan de golpe, con calor y transpiración. Es la causa más específica de esta etapa. Habitación fresca, ropa de cama liviana y en capas, y algo de agua a mano. Cuando son muy frecuentes hay tratamientos eficaces: conviene evaluarlos, no aguantarlos.</p>
@@ -9178,9 +9178,17 @@ async function dmTodoSobreElSueno(){
   if(!body) return;
   if(title) title.textContent = 'Todo sobre el sueño';
 
-  const temas = (typeof PATIENT_EDU_TOPICS!=='undefined' ? PATIENT_EDU_TOPICS : []);
+  const _todos = (typeof PATIENT_EDU_TOPICS!=='undefined' ? PATIENT_EDU_TOPICS : []);
   const asignados = S._patientEduAssigned || [];
   const idsAsignados = asignados.map(function(a){ return a.topic_id; });
+  // La biblioteca también se filtra por edad y sexo — pero nunca se esconde
+  // algo que el profesional asignó a mano: si él lo mandó, él sabrá por qué.
+  const _perfilEdu = (typeof dmEduPerfil==='function') ? dmEduPerfil() : null;
+  const temas = _perfilEdu
+    ? _todos.filter(function(t){
+        return idsAsignados.indexOf(t.id)>=0 || dmEduAplica(t,_perfilEdu);
+      })
+    : _todos;
 
   // Una sola forma de fila para todo lo de esta pantalla.
   const fila = function(icono, titulo, pie, accion, destacada){
@@ -10195,15 +10203,65 @@ function dmIlustracion(id){
     '<rect width="100" height="88" fill="'+c[0]+'"/>'+fig+'</svg>';
 }
 
+// ── ¿A quién le corresponde este artículo? ───────────────────────────
+// Un hombre de 40 recibía "Menopausia y sueño" y "Dormir durante el
+// embarazo" porque dmLeerHoy rotaba por día sobre la lista entera, sin
+// mirar a quién se lo mostraba. Un artículo que no aplica no es solo
+// ruido: hace dudar de todo lo demás que dice la app.
+//
+// El criterio es por DEFECTO INCLUSIVO: si el tema no declara público, o
+// si no sabemos el dato de la persona, se muestra. Solo se descarta
+// cuando hay una contradicción explícita.
+function dmEduAplica(t, perfil){
+  const p = t && t.publico;
+  if(!p) return true;
+  if(p.sexo){
+    const sx = String((perfil&&perfil.sexo)||'').trim().toUpperCase();
+    // Solo se descarta si SABEMOS que es del otro sexo. Sin dato, se muestra.
+    if(sx && sx[0]!==p.sexo) return false;
+  }
+  if(p.edad && perfil && perfil.edad!=null){
+    if(perfil.edad < p.edad[0] || perfil.edad > p.edad[1]) return false;
+  }
+  if(p.solo==='ocupacional'){
+    // Guardias y turnos: solo si la persona dijo que trabaja así.
+    if(!(perfil && perfil.ocupacional)) return false;
+  }
+  return true;
+}
+function dmEduPerfil(){
+  const u = S.user || {};
+  let edad = null;
+  try{
+    if(u.dob){
+      const d=new Date(u.dob);
+      if(!isNaN(d)) edad = Math.floor((Date.now()-d.getTime())/31557600000);
+    }
+  }catch(_){}
+  let ocupacional=false;
+  try{
+    const ob=JSON.parse(localStorage.getItem('dm_onboarding')||'{}');
+    const metas=(ob.goals&&ob.goals.length)?ob.goals:(ob.goal?[ob.goal]:[]);
+    const cons=ob.concerns||[];
+    ocupacional = metas.indexOf('shift')>=0 || cons.indexOf('circadian')>=0 ||
+                  /turno|guardia|nocturn/i.test(String(ob.trabajo||u.occupation||''));
+  }catch(_){}
+  return { sexo: u.sex || u.gender || '', edad: edad, ocupacional: ocupacional };
+}
+window.dmEduAplica = dmEduAplica;
+
 function dmLeerHoy(){
   try{
     const el=document.getElementById('home-leer');
     if(!el || typeof PATIENT_EDU_TOPICS==='undefined' || !PATIENT_EDU_TOPICS.length) return;
-    const total=PATIENT_EDU_TOPICS.length;
+    const _perfil=dmEduPerfil();
+    const TEMAS=PATIENT_EDU_TOPICS.filter(function(t){ return dmEduAplica(t,_perfil); });
+    if(!TEMAS.length) return;
+    const total=TEMAS.length;
     // Rota por dia del anio: no se repite dos dias seguidos y no necesita estado.
     const dia=Math.floor(Date.now()/86400000);
-    const a=PATIENT_EDU_TOPICS[dia%total];
-    const b=PATIENT_EDU_TOPICS[(dia+1+Math.floor(total/2))%total];
+    const a=TEMAS[dia%total];
+    const b=TEMAS[(dia+1+Math.floor(total/2))%total];
     const lista=(a===b)?[a]:[a,b];
     el.style.display='';
     el.innerHTML =
@@ -15861,7 +15919,7 @@ async function renderPatientList(filter){
             return escHtml(ln ? (ln + ', ' + fn) : (fn || u.email));
           })();
           const isArch = archived.has(u.email.toLowerCase());
-          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}${dmEsDemo(u)?' <span style="background:rgba(200,169,110,.20);border:1px solid rgba(200,169,110,.45);color:#C8A96E;font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:1px 6px;border-radius:999px;vertical-align:middle">EJEMPLO</span>':''}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div></div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,.72);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
+          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}${dmEsDemo(u)?' <span style="background:rgba(200,169,110,.20);border:1px solid rgba(200,169,110,.45);color:#C8A96E;font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:1px 6px;border-radius:999px;vertical-align:middle">EJEMPLO</span>':''}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div>${dmChipsFila(u)}</div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,.72);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
         const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
@@ -16250,16 +16308,11 @@ async function renderPatientList(filter){
           });
         }
       }
-      if((!alerts||!alerts.length)&&!pathResults.length){
-        const hadReviewed = reviewedSet.size>0;
-        cont.innerHTML=(_solicHtml||'')+'<div class="empty-state"><div class="empty-icon">✅</div>Sin alertas clínicas pendientes.</div>';
-        try{ dmRenderSolicitudes(); }catch(_){}
-        return;
-      }
-      let alertHtml='<div class="sec-title" style="margin-top:14px">Resultados que requieren atención</div>';
-      if(reviewedSet.size>0){
-        alertHtml+='<div style="font-size:12px;color:var(--label-2);margin-bottom:10px">'+reviewedSet.size+' alerta(s) marcada(s) como vistas — <a href="javascript:void(0)" onclick="resetReviewedAlerts()" style="color:#1a4a3a;font-weight:600;text-decoration:underline">mostrar todas</a></div>';
-      }
+      // Todo va a una sola bandeja: solicitudes, avisos y resultados.
+      // Separarlos en tres listas obligaba a mirar en tres lugares la misma
+      // pregunta, que es "¿qué me llegó?".
+      window._dmItemsResultado = [];
+      window._dmVistasCuenta = reviewedSet.size;
       if(pathResults.length){
         // UNA tarjeta por paciente: si tiene varias escalas patológicas se
         // listan juntas y la acción (WhatsApp/Email/Visto) es una sola —
@@ -16267,7 +16320,7 @@ async function renderPatientList(filter){
         // paciente y el panel se volvía repetitivo.
         const _byPt={};
         pathResults.forEach(r=>{ (_byPt[r._patientEmail]=_byPt[r._patientEmail]||[]).push(r); });
-        alertHtml+=Object.values(_byPt).map(list=>{
+        window._dmItemsResultado = Object.values(_byPt).map(list=>{
           list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
           const r0=list[0];
           const firstName = (r0._patientName||'').split(' ')[0] || 'estimado/a';
@@ -16289,7 +16342,7 @@ async function renderPatientList(filter){
               '<div style="font-size:18px;font-weight:700;color:'+r._interp.c+';line-height:1;flex-shrink:0">'+r.score+'</div>'+
             '</div>';
           }).join('');
-          return '<div style="background:'+(r0._interp.bg||'#fee2e2')+';border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:4px solid '+darkBorder+'">'+
+          const _html = '<div style="background:'+(r0._interp.bg||'#fee2e2')+';border-radius:12px;padding:12px 14px;border-left:4px solid '+darkBorder+'">'+
             '<div style="font-size:14px;font-weight:700;color:#0F2820;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">'+((r0._patientName||'').trim()||r0._patientEmail.split('@')[0])+(list.length>1?' <span style="font-weight:600;font-size:11px;background:rgba(15,40,32,0.12);border-radius:9px;padding:2px 8px;vertical-align:middle">'+list.length+' escalas</span>':'')+'</div>'+
             rows+
             '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
@@ -16298,11 +16351,22 @@ async function renderPatientList(filter){
               '<button onclick="event.stopPropagation();markAlertReviewed(\''+idsCsv+'\')" style="flex:1;min-width:90px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.85);color:#0F2820;border:1px solid '+darkBorder+';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">✓ Visto</button>'+
             '</div>'+
           '</div>';
-        }).join('');
+          return {
+            tipo:'resultado',
+            clave:'res:'+idsCsv,
+            quien:((r0._patientName||'').trim()||r0._patientEmail.split('@')[0]),
+            asunto:(list.length>1 ? list.length+' escalas fuera de rango' : r0._scName+' · '+r0._interp.l),
+            resumen:list.map(function(r){ return r._scName+' '+r.score; }).join(' · '),
+            fecha:r0.created_at,
+            leido:false,
+            color:darkBorder,
+            cuerpo:_html
+          };
+        });
       }
-      cont.innerHTML=(_solicHtml||'')+alertHtml+'<div id="alerts-card-container"></div>';
-      try{ dmRenderSolicitudes(); }catch(_){}
-      if(alerts&&alerts.length) buildAlertCards(alerts, document.getElementById('alerts-card-container'));
+      cont.innerHTML='<div id="dm-bandeja"></div>';
+      window._dmAlertasCache = alerts||[];
+      try{ dmRenderBandeja(alerts||[]); }catch(e){ console.warn('[bandeja]', e); }
     }catch(e){cont.innerHTML='<div class="empty-state">Error: '+(e&&e.message||'')+'</div>';}
   }
   if(tab==='metrics'){
@@ -17108,6 +17172,19 @@ async function toggleDrTag(id){
 // Lista de pacientes: a los que el médico nunca abrió les falta tags.resolved.
 // Los calculamos de a poco en segundo plano (no bloquea el render inicial) y
 // parcheamos solo esa fila del DOM — así se ven sin tener que entrar a cada uno.
+// Las etiquetas, escritas, en la fila del listado. Hasta ahora solo había
+// una rayita de color al costado: para saber que el rojo era "Insomnio"
+// había que entrar al paciente, que es justo lo que el listado evita.
+function dmChipsFila(u){
+  const ids=(u&&u.tags&&u.tags.resolved)||[];
+  if(!ids.length) return '';
+  return '<div class="dm-patlist-chips">'+ids.slice(0,4).map(function(t){
+    const m=PATHOLOGY_TAGS[t]||{label:t,color:'#888'};
+    return '<span class="dm-patlist-chip" style="color:'+m.color+';border-color:'+m.color+'66">'+m.label+'</span>';
+  }).join('')+(ids.length>4?'<span class="dm-patlist-chip" style="opacity:.7">+'+(ids.length-4)+'</span>':'')+'</div>';
+}
+window.dmChipsFila = dmChipsFila;
+
 async function backgroundFillMissingTags(patients){
   const pending=(patients||[]).filter(u=>u&&u.email&&!(u.tags&&Array.isArray(u.tags.resolved)));
   for(const u of pending){
@@ -17121,6 +17198,10 @@ async function backgroundFillMissingTags(patients){
       if(row && !row.querySelector('.dm-patlist-stripe')){
         const stripeHtml='<div class="dm-patlist-stripe">'+st.resolved.map(t=>{const m=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+m.color+'"></span>';}).join('')+'</div>';
         row.insertAdjacentHTML('afterbegin', stripeHtml);
+      }
+      if(row && !row.querySelector('.dm-patlist-chips')){
+        const celda=row.querySelector('div[style*="flex:1"]');
+        if(celda) celda.insertAdjacentHTML('beforeend', dmChipsFila(u));
       }
     }catch(_bgTagErr){ /* seguimos con el resto aunque uno falle */ }
     await new Promise(r=>setTimeout(r,120)); // throttle: no saturar la API con 24+ requests simultáneos
@@ -20431,6 +20512,134 @@ async function deletePVT(id,btn){
 // ── PATHOLOGICAL ALERTS ──
 
 
+// ══════════════════════════════════════════════════════════════════════
+// Bandeja de notificaciones
+// ----------------------------------------------------------------------
+// Antes había tres listas apiladas: solicitudes de consulta, avisos y
+// resultados fuera de rango. Tres formatos distintos para la misma
+// pregunta —"¿qué me llegó?"— y lo ya resuelto haciendo bulto sobre lo
+// que faltaba mirar.
+//
+// Ahora es una sola bandeja con forma de correo: remitente, asunto, dos
+// renglones de vista previa. Sin responder a la izquierda, resuelto a la
+// derecha y plegado. El detalle completo se abre al tocar la fila.
+// ══════════════════════════════════════════════════════════════════════
+function dmFechaCorta(v){
+  const f=new Date(v);
+  if(isNaN(f)) return '';
+  const hoy=new Date();
+  const mismoDia = f.toDateString()===hoy.toDateString();
+  return mismoDia
+    ? f.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})
+    : f.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
+}
+function dmRecorte(t, n){
+  t=String(t||'').replace(/\s+/g,' ').trim();
+  return t.length>n ? t.slice(0,n-1)+'…' : t;
+}
+
+async function dmRenderBandeja(alertas){
+  const cont=document.getElementById('dm-bandeja');
+  if(!cont || !S.user) return;
+  const items=[];
+
+  // 1 · Solicitudes de consulta de pacientes.
+  let sol=[];
+  try{
+    sol = await db.get('consultation_requests?doctor_email=eq.'+
+      encodeURIComponent(S.user.email)+'&order=created_at.desc&limit=50&select=*') || [];
+  }catch(e){ console.warn('[bandeja] solicitudes', e); }
+  sol.forEach(function(r){
+    const pend=(r.status||'pending')==='pending';
+    const mail=r.patient_email||'';
+    const nom=(r.patient_name||'').trim()||mail.split('@')[0];
+    items.push({
+      tipo:'solicitud',
+      quien:nom,
+      asunto:'Quiere coordinar una consulta',
+      resumen:r.message||'',
+      pie:mail,
+      fecha:r.created_at,
+      leido:!pend,
+      color:'#C8A96E',
+      acciones:
+        '<a href="mailto:'+encodeURIComponent(mail).replace(/%40/,'@')+
+          '?subject='+encodeURIComponent('Tu consulta desde Dormetria')+
+          '" class="dm-solic-btn">Responder por mail</a>'+
+        (pend?'<button class="dm-solic-btn sec" onclick="event.stopPropagation();dmSolicResuelta(&quot;'+
+          encodeURIComponent(r.id)+'&quot;,this)">Marcar como respondida</button>':'')
+    });
+  });
+
+  // 2 · Avisos automáticos (doctor_alerts).
+  (alertas||[]).forEach(function(a){
+    items.push({
+      tipo:'aviso',
+      quien:a.patient_name||'Paciente',
+      asunto:a.label||'Resultado fuera de rango',
+      resumen:'Puntaje '+a.score+'. '+(a.label||''),
+      pie:a.patient_email||'',
+      fecha:a.created_at,
+      leido:!!a.seen,
+      color:'#FF3B30',
+      acciones:'<button class="dm-solic-btn" onclick="event.stopPropagation();viewAlertPatient(\''+
+        (a.patient_email||'')+'\')">Ver la ficha</button>'
+    });
+  });
+
+  // 3 · Resultados de escalas que requieren atención.
+  (window._dmItemsResultado||[]).forEach(function(it){ items.push(it); });
+
+  items.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
+  const pend  = items.filter(function(i){ return !i.leido; });
+  const hecho = items.filter(function(i){ return  i.leido; });
+  window._dmSolicPend = pend.length;
+
+  const fila=function(it){
+    const ic = it.tipo==='solicitud' ? '✉️' : it.tipo==='aviso' ? '🔔' : '📊';
+    const detalle = it.cuerpo || '';
+    return '<details class="dm-msg'+(it.leido?' leido':'')+'" style="--acento:'+(it.color||'#7EC8A4')+'">'+
+      '<summary>'+
+        '<span class="dm-msg-ic">'+ic+'</span>'+
+        '<span class="dm-msg-txt">'+
+          '<span class="dm-msg-l1"><b>'+escHtml(it.quien)+'</b>'+
+            '<span class="dm-msg-fecha">'+dmFechaCorta(it.fecha)+'</span></span>'+
+          '<span class="dm-msg-asunto">'+escHtml(it.asunto)+'</span>'+
+          (it.resumen?'<span class="dm-msg-prev">'+escHtml(dmRecorte(it.resumen,140))+'</span>':'')+
+        '</span>'+
+      '</summary>'+
+      '<div class="dm-msg-detalle">'+
+        detalle+
+        (it.resumen && !detalle ? '<div class="dm-solic-msg">'+escHtml(it.resumen)+'</div>' : '')+
+        (it.pie?'<div class="dm-solic-meta" style="margin-top:8px">'+escHtml(it.pie)+'</div>':'')+
+        (it.acciones?'<div class="dm-solic-acc">'+it.acciones+'</div>':'')+
+      '</div>'+
+    '</details>';
+  };
+
+  const vistas = window._dmVistasCuenta||0;
+  cont.innerHTML =
+    '<div class="dm-bandeja-cols">'+
+      '<div class="dm-bandeja-col">'+
+        '<div class="sec-title">Sin responder'+(pend.length?' · '+pend.length:'')+'</div>'+
+        (pend.length ? pend.map(fila).join('')
+                     : '<div class="dm-solic-vacio">Nada pendiente. Todo al día.</div>')+
+      '</div>'+
+      '<div class="dm-bandeja-col">'+
+        (hecho.length
+          ? '<details class="dm-solic-hechas"'+(pend.length?'':' open')+'>'+
+              '<summary>Resueltas · '+hecho.length+'</summary>'+
+              hecho.slice(0,40).map(fila).join('')+
+            '</details>'
+          : '<div class="dm-solic-vacio">Todavía no resolviste ninguna.</div>')+
+        (vistas ? '<div style="font-size:12px;color:var(--label-2);margin-top:12px">'+vistas+
+          ' marcada(s) como vista(s) — <a href="javascript:void(0)" onclick="resetReviewedAlerts()" '+
+          'style="color:#7EC8A4;font-weight:600;text-decoration:underline">mostrar todas</a></div>' : '')+
+      '</div>'+
+    '</div>';
+}
+window.dmRenderBandeja = dmRenderBandeja;
+
 function buildAlertCards(alerts, cont){
   if(!cont) cont = document.getElementById('dr-content');
   if(!cont) return;
@@ -23409,7 +23618,8 @@ async function showConsultDir(fromResult, childMode){
   const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
   // Set back button target
   const backBtn = document.getElementById('consult-back-btn');
-  if(backBtn) backBtn.onclick = ()=>{const _mn2=document.getElementById('main-nav');if(_mn2)_mn2.style.removeProperty('display');fromResult?showScreen('result'):(S.role==='doctor'?showScreen('doctor-home'):showHome());};
+  if(backBtn) backBtn.onclick = ()=>{const _mn2=document.getElementById('main-nav');if(_mn2)_mn2.style.removeProperty('display');try{document.body.classList.remove('dm-dir-abierto');}catch(_){}fromResult?showScreen('result'):(S.role==='doctor'?showScreen('doctor-home'):showHome());};
+  try{ document.body.classList.add('dm-dir-abierto'); }catch(_){}
   showScreen('consult');
   const list = document.getElementById('consult-list');
   if(!list) return;
@@ -23552,7 +23762,7 @@ function renderConsultList(docs){
     list.innerHTML='<div style="padding:24px;text-align:center;color:var(--label-2);font-size:14px">Aún no hay profesionales en el directorio.<br><span style="font-size:12px;margin-top:8px;display:block">Los profesionales se registran desde su panel.</span></div>';
     return;
   }
-  list.innerHTML=docs.map(d=>{
+  const tarjetaDe=function(d){
     const specLabel=SPEC[d.specialty]||d.specialty||'Especialista';
     const title=d.gender==='Masculino'?'Dr.':d.gender==='Femenino'?'Dra.':'Dr/a.';
     const city=d.city||'';
@@ -23605,6 +23815,22 @@ function renderConsultList(docs){
       // `if(!d) return;` y el toque no hacía nada, en silencio.
       '<div onclick="dmVerFicha(&quot;'+encodeURIComponent(d.email)+'&quot;)" style="text-align:center;margin-top:8px;padding:11px;border-radius:10px;background:#1a4a3a;color:#F4EFE5;font-size:13.5px;font-weight:700;cursor:pointer">Ver perfil completo →</div>'+
       '</div>';
+  };
+  // Agrupado por especialidad, en el orden en que aparecen. Un grupo con
+  // un solo profesional igual lleva su título: saber que hay UNO solo de
+  // esa especialidad también es información.
+  const grupos={}; const orden=[];
+  docs.forEach(function(d){
+    const k=SPEC[d.specialty]||d.specialty||'Otras especialidades';
+    if(!grupos[k]){ grupos[k]=[]; orden.push(k); }
+    grupos[k].push(d);
+  });
+  orden.sort(function(a,b){ return grupos[b].length-grupos[a].length || a.localeCompare(b,'es'); });
+  list.innerHTML = orden.map(function(k){
+    return '<section class="dm-dir-grupo">'+
+      '<h3 class="dm-dir-tit">'+k+' <span>'+grupos[k].length+'</span></h3>'+
+      '<div class="dm-dir-cards">'+grupos[k].map(tarjetaDe).join('')+'</div>'+
+    '</section>';
   }).join('');
   // Attach consult request listeners
   // La lista queda a mano: el modal de confirmación necesita el teléfono
@@ -23783,7 +24009,12 @@ async function dmSolicResuelta(id, btn){
     toast('Marcada como respondida');
     // Redibujar en vez de parchear la tarjeta: así pasa de columna y deja
     // de decir "sin responder" sin tener que salir y volver a entrar.
-    try{ await dmRenderSolicitudes(); }catch(_){}
+    // Si está abierta la bandeja unificada se redibuja esa; si no, el
+    // bloque suelto de solicitudes (que sigue existiendo en móvil).
+    try{
+      if(document.getElementById('dm-bandeja')) await dmRenderBandeja(window._dmAlertasCache||[]);
+      else await dmRenderSolicitudes();
+    }catch(_){}
     try{ dmContarNotificaciones(); }catch(_){}
   }catch(e){
     if(btn) btn.disabled = false;
