@@ -482,22 +482,53 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   // Eran tres botones de ancho completo apilados: mucha superficie para tres
   // etiquetas cortas. Como chips que envuelven ocupan una fila o dos y se
   // leen igual.
-  const btnMat = function (icono, texto) {
-    return '<button type="button" style="text-align:left;padding:7px 11px;border:1px solid rgba(126,200,164,0.28);' +
-      'border-radius:999px;background:rgba(126,200,164,0.07);color:#F4EFE5;font-size:12.5px;font-weight:600;' +
-      'cursor:pointer;font-family:inherit;white-space:nowrap">' + icono + ' ' + texto + '</button>';
+  // Estos chips eran <button type="button"> SIN onclick: decoración pura.
+  // Y encima con etiquetas escritas a mano ("Sueño y ansiedad") que no se
+  // corresponden con ningún tema real de la biblioteca. Se veían como
+  // botones, no eran botones.
+  //
+  // Ahora salen de PATIENT_EDU_TOPICS y asignan de verdad. El estado
+  // (asignado / leído) se pinta después, con una pasada asíncrona: el
+  // resumen se arma sincrónico y no puede esperar a la base.
+  const btnMat = function (t) {
+    return '<button type="button" class="dm-mat-chip" data-topic="' + t.id + '" ' +
+      'onclick="dmMatToggle(\'' + t.id + '\',this)" title="' + String(t.title).replace(/"/g,'&quot;') + '">' +
+      '<span class="dm-mat-ic">' + (t.icon || '📖') + '</span>' +
+      '<span class="dm-mat-tx">' + t.title + '</span>' +
+      '<span class="dm-mat-st"></span></button>';
   };
 
-  // Material general de psicoeducación. "Restricción de tiempo en cama" salió
-  // de acá: es una técnica del módulo TCC-I, no algo para entregar suelto en
-  // la consulta. En su lugar entran temas que aplican a cualquier paciente.
-  const chipsMaterial =
-    btnMat('📋', 'Higiene del sueño') +
-    btnMat('📚', 'Entender el insomnio') +
-    btnMat('📱', 'Impacto de las pantallas') +
-    btnMat('☕', 'Cafeína y alcohol') +
-    btnMat('🌡️', 'Sueño y menopausia') +
-    btnMat('🧠', 'Sueño y ansiedad');
+  // Solo los que le corresponden a ESTE paciente. El listado completo está
+  // en la pestaña Material, que es donde se decide con calma; acá la barra
+  // es para acercarle algo sin salir del resumen.
+  const _temasMat = (function () {
+    try {
+      if (typeof PATIENT_EDU_TOPICS === 'undefined') return [];
+      const perf = {
+        sexo: paciente.sex || paciente.gender || '',
+        edad: (function () {
+          try { const d = paciente.dob ? new Date(paciente.dob) : null;
+                return d && !isNaN(d) ? Math.floor((Date.now() - d.getTime()) / 31557600000) : null;
+          } catch (_) { return null; }
+        })(),
+        ocupacional: true
+      };
+      return PATIENT_EDU_TOPICS.filter(function (t) {
+        try { return typeof dmEduAplica === 'function' ? dmEduAplica(t, perf) : true; }
+        catch (_) { return true; }
+      });
+    } catch (_) { return []; }
+  })();
+
+  const chipsMaterial = _temasMat.length
+    ? _temasMat.map(btnMat).join('')
+    : '<span style="font-size:12.5px;color:rgba(244,239,229,.6)">No hay temas cargados.</span>';
+
+  // Se pinta el estado cuando el HTML ya está en pantalla. setTimeout(0)
+  // alcanza: el que llama inserta el string inmediatamente después.
+  if (_temasMat.length) {
+    try { setTimeout(function () { dmMatPintarEstado(email); }, 0); } catch (_) {}
+  }
 
   // En especialista va como tarjeta en la columna derecha.
   const tarjetaMaterial = dmCardResumen('📎', 'Material para el paciente',

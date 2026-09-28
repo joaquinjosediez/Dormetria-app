@@ -1,0 +1,31 @@
+mod228 · los chips de material del Resumen eran decoracion
+
+La barra "Material para el paciente" del Resumen tenia seis
+<button type="button"> SIN onclick. Se veian como botones, con cursor de
+mano, y no hacian nada. Y las etiquetas estaban escritas a mano —"Sueño y
+ansiedad", "Entender el insomnio"— sin corresponder a ningun tema real de la
+biblioteca: aunque alguien les hubiera puesto un onclick, no habrian tenido
+que abrir.
+
+Ahora salen de PATIENT_EDU_TOPICS, filtrados por el `publico` de cada tema
+contra la edad y el sexo de ESE paciente, y asignan de verdad por la misma
+ruta que la pestaña Material.
+
+El estado (sin asignar / asignado / leido) se pinta en una pasada aparte: el
+resumen se arma sincronico y no puede esperar a la base. Si esa lectura
+falla, el chip queda NEUTRO y lo dice al pasar el mouse — decir "sin
+asignar" cuando en realidad no se pudo leer es peor que no decir nada.
+
+Asignar desde el Resumen ya no salta a la pestaña Material: toggleEduAssignment
+solo refresca esa pestaña si es la que esta abierta. Antes le sacaba al
+profesional la pantalla que estaba mirando.
+
+PESTAÑAS DE LA FICHA EN EL CELULAR. Son DIEZ en una barra display:flex con
+overflow-x:auto. En el telefono entran cuatro y las otras seis quedan fuera
+de pantalla, sin barra de scroll visible y sin nada que indique que hay mas.
+Mismo problema que la barra superior del panel en mod218: no es que no se
+puedan apretar, es que no se ven. Ahora se envuelven en dos o tres renglones
+y se ven todas. La activa se marca con fondo, porque el subrayado se pierde
+entre renglones.
+
+Lo fija pruebas/43.

@@ -5739,3 +5739,58 @@ body.dm-dir-abierto #consult-list{ padding:4px 18px 28px; }
   text-align:center; margin-top:12px; font-size:12.5px;
   color:rgba(255,255,255,.6); cursor:pointer; padding:6px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod228 · Los chips de material del Resumen, que ahora son botones
+   Antes eran <button> sin onclick y con etiquetas escritas a mano que no
+   correspondían a ningún tema real. Se veían como botones y no lo eran.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-mat-chip{
+  display:inline-flex; align-items:center; gap:7px;
+  padding:7px 12px; border-radius:999px; cursor:pointer;
+  border:1px solid rgba(126,200,164,.28);
+  background:rgba(126,200,164,.07); color:#F4EFE5;
+  font-size:12.5px; font-weight:600; font-family:inherit;
+  white-space:nowrap; transition:background .15s, border-color .15s;
+}
+.dm-mat-chip:hover{ background:rgba(126,200,164,.16); }
+.dm-mat-chip:disabled{ opacity:.6; cursor:default; }
+.dm-mat-ic{ font-size:14px; line-height:1; }
+.dm-mat-st{
+  font-size:12px; font-weight:700; color:rgba(244,239,229,.45);
+  min-width:9px; text-align:center;
+}
+/* Asignado */
+.dm-mat-chip.on{ background:rgba(126,200,164,.2); border-color:#7EC8A4; }
+.dm-mat-chip.on .dm-mat-st{ color:#7EC8A4; }
+/* Asignado y ya leído por el paciente */
+.dm-mat-chip.leido{ background:rgba(126,200,164,.28); }
+.dm-mat-chip.leido .dm-mat-st{ color:#7EC8A4; }
+/* No se pudo leer el estado: neutro, no se inventa */
+.dm-mat-chip.err{ border-style:dashed; opacity:.75; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod228 · Las pestañas de la ficha del paciente, en el celular
+   Son DIEZ y la barra es display:flex con overflow-x:auto. En el teléfono
+   entran cuatro y las otras seis quedan fuera de pantalla, sin barra de
+   scroll visible y sin nada que indique que hay más. Mismo problema que
+   tenía la barra superior del panel en mod218: no es que no se puedan
+   apretar, es que no se ven.
+   Acá se envuelven: diez etiquetas cortas en dos o tres renglones se ven
+   todas de una, que es lo que hace falta en un panel que se usa a
+   propósito, no de paso.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width:899px){
+  #screen-doctor-patient .tab-bar{
+    flex-wrap:wrap; overflow-x:visible; row-gap:0;
+    padding:2px 6px 0;
+  }
+  #screen-doctor-patient .tab-bar .tab{
+    flex:0 0 auto; padding:9px 11px; font-size:13px;
+  }
+  /* El subrayado de la activa se pierde entre renglones: se refuerza con
+     fondo, que se lee igual esté en la fila que esté. */
+  #screen-doctor-patient .tab-bar .tab.active{
+    background:rgba(26,74,58,.1); border-radius:8px 8px 0 0;
+  }
+}
