@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod223-b5474bb2">
+<link rel="stylesheet" href="css/styles.css?v=mod224-b5474bb2">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1360,10 +1360,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod223-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod223-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod223-dec679c9"></script>
-<script src="js/dormetria-render-resumen.js?v=mod223-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod224-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod224-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod224-dec679c9"></script>
+<script src="js/dormetria-render-resumen.js?v=mod224-d72c69df"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1382,7 +1382,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod223';
+const APP_VERSION='mod224';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -28261,14 +28261,67 @@ function dmTcciReiniciar(){
    'dm_tcci_disposicion','dm_tcci_interes','dm_tcci_mig7'].forEach(function(k){
     try{ localStorage.removeItem(k); }catch(_){}
   });
+  try{
+    const _e = S && S.user && S.user.email;
+    if(_e) db.patch('patients?email=eq.'+encodeURIComponent(_e), { tcci_estado: null }).catch(function(){});
+  }catch(_){}
   try{ toast('Programa reiniciado. Arranca de cero.'); }catch(_){}
   try{ openPatientCbtiView(); }catch(_){}
 }
 window.dmTcciReiniciar = dmTcciReiniciar;
 
+// ══════════════════════════════════════════════════════════════════════
+// Que el profesional pueda ver el avance del programa
+// ----------------------------------------------------------------------
+// El progreso del autogestionado vive en el localStorage del PACIENTE: el
+// profesional no tenía forma de saber si su paciente empezó la TCC-I ni
+// por dónde va. Preguntárselo en consulta funciona, pero llega tarde y
+// depende de la memoria del otro.
+//
+// Se sube un resumen —no el detalle— a patients.tcci_estado. Va en una
+// columna jsonb de una tabla que ya existe y cuya RLS ya está escrita y
+// probada (es la misma por la que el profesional lee `tags`). Una tabla
+// nueva significaría policies nuevas, y las policies nuevas son donde se
+// filtran los datos.
+//
+// Lo que se sube: cuándo empezó, qué semanas cerró, cuántas tareas lleva.
+// Lo que NO se sube: las respuestas de las encuestas ni los comentarios.
+// Eso es del paciente y de la investigación, no del seguimiento clínico.
+async function dmTcciSincronizarEstado(){
+  try{
+    const email = S && S.user && S.user.email;
+    if(!email || S.role!=='patient') return;
+    let inicio=null;
+    try{ inicio = localStorage.getItem('dm_tcci_inicio'); }catch(_){}
+    if(!inicio) return;
+    const cerradas = DM_TCCI_PROGRAMA
+      .filter(function(s){ return dmTcciCerrada(s.n); })
+      .map(function(s){ return s.n; });
+    const p = dmTcciProgresoTotal();
+    const estado = {
+      inicio: inicio,
+      semanas_cerradas: cerradas,
+      ultima_cerrada: cerradas.length ? Math.max.apply(null, cerradas) : 0,
+      total_semanas: DM_TCCI_PROGRAMA.length,
+      tareas_hechas: p.hechas,
+      tareas_total: p.total,
+      pct: p.pct,
+      modo: dmTcciModo(),
+      actualizado: new Date().toISOString()
+    };
+    await db.patch('patients?email=eq.'+encodeURIComponent(email), { tcci_estado: estado });
+  }catch(e){
+    // Si la columna todavía no existe, esto falla y no pasa nada más: el
+    // programa del paciente no puede depender de que el profesional lo vea.
+    console.warn('[TCCI-ESTADO] no se pudo sincronizar:', (e&&e.message)||e);
+  }
+}
+window.dmTcciSincronizarEstado = dmTcciSincronizarEstado;
+
 function dmTcciEmpezar(){
   try{ if(!localStorage.getItem('dm_tcci_inicio')) localStorage.setItem('dm_tcci_inicio', new Date().toISOString()); }catch(_){}
   toast('Programa iniciado ✓');
+  try{ dmTcciSincronizarEstado(); }catch(_){}
   openPatientCbtiView();
 }
 // ══ TCC-I · seguimiento de tareas ═══════════════════════════════════════
@@ -28320,6 +28373,12 @@ function dmTcciMarcar(semana, idx){
   const m = dmTcciHechos();
   if(m[k]) delete m[k]; else m[k]=true;
   try{ localStorage.setItem('dm_tcci_hechos', JSON.stringify(m)); }catch(_){}
+  // Con retardo: marcar cuatro tareas seguidas no tiene por qué ser cuatro
+  // escrituras. La última gana.
+  try{
+    clearTimeout(window._dmTcciSyncT);
+    window._dmTcciSyncT = setTimeout(function(){ dmTcciSincronizarEstado(); }, 1500);
+  }catch(_){}
   const cont=document.getElementById('dm-tcci-tareas-'+semana);
   const s=DM_TCCI_PROGRAMA.find(x=>x.n===semana);
   if(cont && s) cont.innerHTML=dmTcciTareasHtml(s);
@@ -28608,6 +28667,7 @@ function dmTcciCerrarSemanaYa(n){
   try{ m=JSON.parse(localStorage.getItem('dm_tcci_cerradas')||'{}'); }catch(_){}
   m[n]=true;
   try{ localStorage.setItem('dm_tcci_cerradas', JSON.stringify(m)); }catch(_){}
+  try{ dmTcciSincronizarEstado(); }catch(_){}
   const s=DM_TCCI_PROGRAMA.find(function(x){ return x.n===n; });
   const cont=document.getElementById('dm-tcci-cierre-'+n);
   if(cont && s) cont.innerHTML=dmTcciCierreHtml(s);

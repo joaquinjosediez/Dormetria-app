@@ -1,0 +1,34 @@
+mod224 · el profesional ve si su paciente arranco la TCC-I
+
+El progreso del programa autogestionado vive en el localStorage del PACIENTE.
+O sea que el profesional no tenia ninguna forma de saber si su paciente
+empezo ni por donde iba: habia que preguntarselo en consulta, lo que llega
+tarde y depende de la memoria del otro.
+
+El paciente sincroniza un RESUMEN a patients.tcci_estado (columna jsonb en
+una tabla que ya existe y cuya RLS ya esta escrita y probada — es la misma
+por la que el profesional lee tags). Una tabla nueva significaria policies
+nuevas, y las policies nuevas son donde se filtran los datos.
+
+Lo que sube: inicio, semanas cerradas, tareas marcadas, modo, ultima senal.
+Lo que NO sube: las respuestas de las encuestas ni los comentarios. Eso es
+del paciente y de la investigacion, no del seguimiento clinico.
+
+En el Resumen aparece la tarjeta "Programa TCC-I": arranco / termino, la
+barra de siete semanas, por cual va y hace cuantos dias empezo.
+
+Dos decisiones:
+- Sin dato NO se dibuja la tarjeta. Un "0%" que en realidad significa "no
+  sabemos" es peor que no mostrar nada.
+- Si hace 14 dias o mas que no hay senal, se dice. Un programa que no se
+  toca hace tres semanas no esta "en la semana 3": esta abandonado, y eso
+  es mas util que el porcentaje. El aviso apunta a la semana de restriccion
+  del tiempo en cama, que es donde cae la adherencia.
+
+Se sincroniza al empezar, al cerrar una semana, y al marcar tareas con
+retardo de 1,5 s (marcar cuatro seguidas no tiene por que ser cuatro
+escrituras). Reiniciar el programa tambien limpia tcci_estado: si no, el
+profesional seguiria viendo un avance que ya no existe.
+
+SQL: SQL-estado-tcci.md — una columna, sin tocar RLS.
+Lo fija pruebas/40.

@@ -113,6 +113,69 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
       '</div>'
     : '';
 
+  // ── TCC-I en curso ─────────────────────────────────────────────────
+  // El progreso del programa autogestionado vive en el dispositivo del
+  // paciente. Lo que llega acá es el resumen que él sincroniza en
+  // patients.tcci_estado. Si la columna no existe todavía, o si el
+  // paciente no abrió la app desde que se publicó, no hay tarjeta: es
+  // preferible no mostrar nada a mostrar un "0%" que no es cierto.
+  let tarjetaTcci = '';
+  (function(){
+    const t = paciente.tcci_estado;
+    if (!t || !t.inicio) return;
+    const total   = t.total_semanas || 7;
+    const cerrada = t.ultima_cerrada || 0;
+    const enCurso = Math.min(total, cerrada + 1);
+    const pctSem  = Math.round(cerrada / total * 100);
+    const dias    = Math.max(0, Math.floor((Date.now() - new Date(t.inicio).getTime()) / 86400000));
+    const guiado  = t.modo === 'guiado';
+    // Días desde la última señal. Un programa que no se toca hace tres
+    // semanas no está "en la semana 3": está abandonado, y decirlo es más
+    // útil que el porcentaje.
+    const quieto  = t.actualizado
+      ? Math.floor((Date.now() - new Date(t.actualizado).getTime()) / 86400000)
+      : null;
+    const frenado = quieto != null && quieto >= 14 && cerrada < total;
+    const color   = cerrada >= total ? '#7EC8A4' : frenado ? '#C8A96E' : '#7EC8A4';
+
+    const titulo = cerrada >= total
+      ? 'Terminó el programa de TCC-I'
+      : 'Arrancó la TCC-I' + (guiado ? ' (con acompañamiento)' : ' por su cuenta');
+
+    const barras = [];
+    for (let i = 1; i <= total; i++) {
+      const hecha = i <= cerrada;
+      const actual = i === enCurso && cerrada < total;
+      barras.push('<div title="Semana ' + i + '" style="flex:1;height:7px;border-radius:3px;background:' +
+        (hecha ? color : actual ? 'rgba(200,169,110,.45)' : 'rgba(244,239,229,.12)') + '"></div>');
+    }
+
+    tarjetaTcci = dmCardResumen('🌿', 'Programa TCC-I',
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px">' +
+        '<div style="font-size:15px;font-weight:600;color:#F4EFE5;line-height:1.3">' + titulo + '</div>' +
+        '<div style="font-size:20px;font-weight:700;color:' + color + ';flex-shrink:0">' + pctSem + '%</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:4px;margin-bottom:8px">' + barras.join('') + '</div>' +
+      '<div style="font-size:12.5px;color:rgba(244,239,229,.86);line-height:1.55">' +
+        (cerrada >= total
+          ? 'Completó las ' + total + ' semanas. Empezó hace ' + dias + ' días.'
+          : 'Va por la <b>semana ' + enCurso + ' de ' + total + '</b>. ' +
+            'Cerró ' + cerrada + (cerrada === 1 ? ' semana' : ' semanas') + ' desde que empezó, hace ' + dias + ' días.') +
+      '</div>' +
+      (t.tareas_total
+        ? '<div style="font-size:12px;color:rgba(244,239,229,.7);margin-top:5px">' +
+            t.tareas_hechas + ' de ' + t.tareas_total + ' tareas marcadas</div>'
+        : '') +
+      (frenado
+        ? '<div style="background:rgba(200,169,110,.12);border-left:3px solid #C8A96E;border-radius:0 8px 8px 0;' +
+          'padding:9px 11px;margin-top:10px;font-size:12.5px;color:rgba(244,239,229,.95);line-height:1.5">' +
+          'Sin movimiento hace ' + quieto + ' días. La adherencia a la TCC-I cae sobre todo en la semana de ' +
+          'restricción del tiempo en cama: si se frenó ahí, conviene preguntarlo antes de dar el programa por perdido.</div>'
+        : '') +
+      '<div style="font-size:11px;color:rgba(244,239,229,.6);margin-top:9px;line-height:1.45">' +
+        'Lo marca el paciente en su app. Se actualiza cuando abre el programa.</div>');
+  })();
+
   const tarjetaOrientacion = dmCardResumen('🧭', 'Orientación clínica',
     '<div style="font-size:19px;font-weight:600;line-height:1.3;color:#F4EFE5;margin-bottom:8px">' +
       escHtml(o.texto || 'Evaluación pendiente') + '</div>' +
@@ -467,7 +530,7 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
     return toggle + cabecera +
       '<div class="dm-resumen-cols" style="display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start">' +
         '<div>' + tarjetaOrientacion + '</div>' +
-        '<div>' + tarjetaConducta + '</div>' +
+        '<div>' + tarjetaTcci + tarjetaConducta + '</div>' +
       '</div>' +
       barraMaterial;
   }
@@ -475,7 +538,7 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   // cuatro cifras en fila y dentro de una columna quedaban apretadas.
   return toggle + cabecera + tarjetaEvolucion +
     '<div class="dm-resumen-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">' +
-      '<div>' + tarjetaOrientacion + tarjetaConducta + '</div>' +
+      '<div>' + tarjetaOrientacion + tarjetaTcci + tarjetaConducta + '</div>' +
       '<div>' + tarjetaBanderas + tarjetaEscalas + '</div>' +
     '</div>' +
     // Material y Criterios van a lo ancho, abajo de todo: los dos son material
