@@ -11,7 +11,7 @@
 const C = require('./comun');
 const r = C.crearReporte('TCC-I · el mismo material en los dos perfiles');
 
-const html = C.leerHtml();
+const html = C.leerApp();
 const css = C.leerCss();
 
 r.seccion('Los dos objetos están alineados:');

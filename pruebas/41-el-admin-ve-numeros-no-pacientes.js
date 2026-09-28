@@ -10,7 +10,7 @@
 const C = require('./comun');
 const r = C.crearReporte('El admin ve números, no pacientes');
 
-const html = C.leerHtml();
+const html = C.leerApp();
 const i = html.indexOf('async function dmAdminTcci(');
 r.ok(i > 0, 'encuentro la pestaña');
 const panel = html.slice(i, html.indexOf('window.dmAdminTcci'));

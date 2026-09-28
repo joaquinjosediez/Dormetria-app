@@ -19,7 +19,7 @@
 const C = require('./comun');
 const r = C.crearReporte('La encuesta no puede ser un peaje');
 
-const html = C.leerHtml();
+const html = C.leerApp();
 
 r.seccion('Las dos preguntas que definen si el programa sirve:');
 

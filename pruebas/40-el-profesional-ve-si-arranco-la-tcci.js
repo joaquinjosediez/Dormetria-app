@@ -9,7 +9,7 @@
 const C = require('./comun');
 const r = C.crearReporte('El profesional ve si el paciente arrancó la TCC-I');
 
-const html = C.leerHtml();
+const html = C.leerApp();
 const fs = require('fs');
 const path = require('path');
 const render = fs.readFileSync(

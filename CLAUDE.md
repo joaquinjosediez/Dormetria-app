@@ -46,6 +46,33 @@ El archivo `index.html` tiene un historial recurrente de corrupción del bloque 
 
 Si algo de esto falla, reportar la línea exacta del desbalance y detenerse — no intentar un auto-fix silencioso.
 
+## Arquitectura: qué va en `index.html` y qué no
+`index.html` cambió en **30 de las últimas 30 versiones**. Cada publicación
+hace que cada paciente vuelva a bajar ~634 KB comprimidos, aunque lo que
+cambió no tenga nada que ver con lo que usa. Por eso:
+
+- **Todo subsistema nuevo nace en su propio archivo** en `js/`, aunque sea
+  chico. No se agrega a `index.html` "por ahora".
+- Módulos actuales: `sleep-metrics`, `motor-orientacion`, `summary-nuevo`,
+  `render-resumen`, `tcci`. Se cargan con `<script src>` y hash de
+  contenido, **antes** del bloque inline.
+- Un módulo puede usar globales del inline (`S`, `db`, `toast`, `escHtml`,
+  `showScreen`…) porque los usa en tiempo de ejecución, no al cargar. Lo que
+  NO puede hacer es leerlos en el nivel superior del archivo.
+- Lo que usan varios subsistemas se queda en `index.html` (por ejemplo las
+  funciones de ventana de sueño, que comparten diario, panel profesional y
+  TCC-I). Mudar eso sería mudar media app.
+- Las pruebas que miran estructura usan `C.leerApp()`, no `C.leerHtml()`:
+  una prueba que falla porque una función se mudó de archivo, sin que nada
+  haya cambiado de comportamiento, enseña a ignorar las pruebas.
+- `C.bloques()` y `appEvaluada()` cargan **todos** los módulos que el HTML
+  declara. Si se agrega uno, queda cubierto solo.
+
+Orden pendiente de extracción, de menor a mayor riesgo: constantes de datos
+(`SCALES`, `DM_NACIONALIDADES`, `EEDSI`, `DM_CODIGOS_DEMO` ≈ 5.200 líneas,
+riesgo nulo) → PVT → directorio → panel admin → diario de sueño (último: es
+lo que el paciente usa todos los días).
+
 ## No tocar sin confirmación explícita
 - **Logo SVG**: wordmark "dormetria" con la "o" reemplazada por una máscara de luna creciente (Playfair Display 500, punto blanco en la "i"). La forma de la luna no se altera nunca entre variantes — solo rotación, color, y color del punto.
 - **"IPAMES"**: ya no existe. No debe aparecer en ningún material vinculado a Dormetria ni al perfil profesional de Joaquín.

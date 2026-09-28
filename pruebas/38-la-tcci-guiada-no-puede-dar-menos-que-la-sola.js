@@ -15,7 +15,7 @@
 const C = require('./comun');
 const r = C.crearReporte('La TCC-I guiada no puede dar menos que la sola');
 
-const html = C.leerHtml();
+const html = C.leerApp();
 
 r.seccion('Las dos vistas dibujan el mismo programa:');
 

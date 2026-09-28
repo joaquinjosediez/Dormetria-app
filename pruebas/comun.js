@@ -25,6 +25,27 @@ const RUTAS = {
 const leerHtml = () => fs.readFileSync(RUTAS.html, 'utf8');
 const leerCss  = () => fs.readFileSync(RUTAS.css, 'utf8');
 
+// ── Los módulos que index.html carga con <script src> ──────────────────
+// En el orden en que los carga el navegador, que es el que importa.
+function rutasModulos() {
+  const html = leerHtml();
+  return [...html.matchAll(/<script[^>]*\bsrc=["']([^"'?]+\.js)[^"']*["']/gi)]
+    .map(m => m[1])
+    .filter(p => !/^https?:/i.test(p))
+    .map(p => path.join(RAIZ, p))
+    .filter(p => fs.existsSync(p));
+}
+
+// El código de la app ENTERA: el index más todos sus módulos.
+//
+// Las pruebas que miran estructura tienen que usar esto y no leerHtml(),
+// porque si no se rompen cada vez que una función se muda de archivo — y
+// una prueba que falla por una mudanza, sin que nada haya cambiado de
+// comportamiento, enseña a ignorar las pruebas.
+function leerApp() {
+  return leerHtml() + '\n' + rutasModulos().map(p => fs.readFileSync(p, 'utf8')).join('\n');
+}
+
 // La versión que declara el archivo. Sirve para que los mensajes digan
 // sobre QUÉ se corrió la prueba.
 function version(html) {
@@ -39,9 +60,12 @@ function version(html) {
 function bloques() {
   const html = leerHtml();
   const b = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
-  try { b.unshift(fs.readFileSync(RUTAS.metricas, 'utf8')); }
-  catch (e) { console.log('(aviso: no encontré ' + RUTAS.metricas + ')'); }
-  return b;
+  // Antes se agregaba UN módulo a mano. Ahora van todos los que el HTML
+  // carga de verdad: si no, appEvaluada() deja de ser una prueba de
+  // arranque en cuanto se saca código a un archivo nuevo, y un módulo
+  // roto pasaría sin que nadie se entere.
+  const mods = rutasModulos().map(p => fs.readFileSync(p, 'utf8'));
+  return mods.concat(b);
 }
 
 // ── Un navegador de mentira ────────────────────────────────────────────
@@ -241,7 +265,7 @@ function crearReporte(titulo) {
 }
 
 module.exports = {
-  RAIZ, RUTAS, leerHtml, leerCss, version, bloques,
+  RAIZ, RUTAS, leerHtml, leerCss, leerApp, rutasModulos, version, bloques,
   navegadorFalso, appEvaluada, conDom, domConCss, reglasDe,
   aRgb, sobre, luminancia, contraste, MINIMO_LEGIBLE,
   crearReporte

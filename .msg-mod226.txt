@@ -1,0 +1,44 @@
+mod226 · la TCC-I sale a su propio archivo
+
+Primero lo que corresponde decir: NO venia modularizando por goteo. Desde
+mod189, index.html crecio +3.851 lineas y los modulos +358. El 91% del
+codigo nuevo fue al monolito. "Por goteo" describia una intencion, no una
+practica.
+
+Lo que decidio empezar por aca fue un argumento de Joaquin que pesa mas que
+el acoplamiento: la TCC-I todavia no esta lanzada y casi nadie la usa. Si
+algo sale mal, no deja a un paciente sin poder cargar su noche. Riesgo es
+probabilidad por impacto, y yo solo habia medido probabilidad.
+
+Los numeros que lo justifican:
+- index.html cambio en 30 de las ultimas 30 versiones. Cada publicacion hace
+  que cada paciente vuelva a bajar 634 KB comprimidos, aunque lo que cambio
+  no tenga nada que ver con lo que usa.
+- Cada edicion dentro del <script> inline es cirugia de strings sobre 1,8 MB
+  en un solo bloque. En mod209 eso partio un `async function` en dos.
+
+Movido: 2.079 lineas en cinco bloques (programa del paciente, protocolo del
+profesional, ventana de sueno, contenido por item, estadisticas del admin).
+index.html: 30.419 → 28.341 lineas.
+
+Se QUEDAN en index.html las funciones de ventana de sueno (computeSleepWindow
+y las cuatro dm*Window*): las usan tambien el diario y el panel profesional.
+Mudarlas hubiera sido mudar media app.
+
+Superficie real: solo 10 funciones de la TCC-I se llaman desde afuera, y la
+TCC-I llama a 13 de afuera (casi todas utilidades: toast, escHtml,
+showScreen). Por eso salio limpio.
+
+Ademas, dos arreglos de la propia suite que hacian falta:
+- C.bloques() y appEvaluada() cargaban UN modulo a mano. Ahora cargan todos
+  los que el HTML declara: si no, appEvaluada dejaba de ser una prueba de
+  arranque en cuanto se saca codigo a un archivo nuevo, y un modulo roto
+  pasaba sin que nadie se entere.
+- C.leerApp() nuevo: las pruebas que miran estructura leen la app entera. Una
+  prueba que falla porque una funcion se mudo de archivo, sin que nada haya
+  cambiado de comportamiento, enseña a ignorar las pruebas.
+
+CLAUDE.md: seccion de arquitectura con la regla de que todo subsistema nuevo
+nace en su archivo, y el orden pendiente de extraccion.
+
+Lo fija pruebas/42.

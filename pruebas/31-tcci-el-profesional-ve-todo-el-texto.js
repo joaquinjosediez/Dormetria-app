@@ -15,7 +15,7 @@
 const C = require('./comun');
 const r = C.crearReporte('TCC-I · el profesional ve todo el texto del paciente');
 
-const html = C.leerHtml();
+const html = C.leerApp();
 const css = C.leerCss();
 
 r.seccion('Existen los dos cuerpos de texto:');
