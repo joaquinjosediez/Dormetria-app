@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg225-b5474bb2">
+<link rel="stylesheet" href="css/styles.css?v=stg226-b5474bb2">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1352,6 +1352,7 @@
     <button class="tab" id="admin-tab-pending" onclick="loadAdminTab('pending')" style="color:#1a4a3a">Pendientes</button>
     <button class="tab" id="admin-tab-escuchar" onclick="loadAdminTab('escuchar')" style="color:#1a4a3a">Lo que dicen</button>
     <button class="tab" id="admin-tab-stats" onclick="loadAdminTab('stats')" style="color:#1a4a3a">Estadísticas</button>
+    <button class="tab" id="admin-tab-tcci" onclick="loadAdminTab('tcci')" style="color:#1a4a3a">TCC-I</button>
     <button class="tab" id="admin-tab-preview" onclick="loadAdminTab('preview')" style="color:#1a4a3a">Vista previa</button>
     <span style="margin-left:auto;align-self:center;font-size:11px;color:#8a8a8a;padding-right:12px" id="admin-version"></span>
   </div>
@@ -1360,10 +1361,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg225-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg225-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg225-dec679c9"></script>
-<script src="js/dormetria-render-resumen.js?v=stg225-d72c69df"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg226-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg226-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg226-dec679c9"></script>
+<script src="js/dormetria-render-resumen.js?v=stg226-d72c69df"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1382,11 +1383,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg225';
+const APP_VERSION='stg226';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg225 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg226 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -4466,6 +4467,194 @@ async function showAdminPanel(){
   // quién está usando la app, no la cola de aprobación del directorio.
   loadAdminTab('patients');
 }
+// ══════════════════════════════════════════════════════════════════════
+// Panel de administrador · el programa TCC-I
+// ----------------------------------------------------------------------
+// Mismo criterio que el resto del panel: las cuentas se hacen ADENTRO de
+// la base y salen números. Ninguna de estas cuatro funciones devuelve un
+// email, una noche, una respuesta escrita ni un comentario. El admin
+// necesita saber si el programa funciona, no quién lo está haciendo.
+// ══════════════════════════════════════════════════════════════════════
+const DM_TCCI_SEM_NOMBRE = {
+  0:'No cerró ninguna', 1:'Cómo funciona tu sueño', 2:'Restricción del tiempo en cama',
+  3:'Control de estímulos', 4:'Ajuste del horario', 5:'Reestructuración cognitiva',
+  6:'Técnicas de desactivación', 7:'Prevención de recaídas'
+};
+const DM_TCCI_PRECIO_TXT = {
+  a:'Menos de $30.000', b:'$30.000 a $60.000', c:'$60.000 a $100.000',
+  d:'$100.000 a $180.000', e:'Más de $180.000', no:'No pagaría por esto',
+  sin_respuesta:'Prefirió no contestar'
+};
+
+async function dmAdminTcci(){
+  const cont=document.getElementById('admin-content');
+  if(!cont) return;
+  const rpc=async function(fn){
+    try{
+      const { data, error } = await supa.rpc(fn);
+      if(error) return { err:error };
+      return { data:data };
+    }catch(e){ return { err:e }; }
+  };
+  const [g, ab, enc, pr] = await Promise.all([
+    rpc('admin_stats_tcci'), rpc('admin_stats_tcci_abandono'),
+    rpc('admin_stats_tcci_encuestas'), rpc('admin_stats_tcci_precio')
+  ]);
+
+  // Si las funciones no existen todavía se dice cuál falta, en vez de
+  // mostrar ceros que se leen como "nadie lo está usando".
+  const faltan=[];
+  [['admin_stats_tcci',g],['admin_stats_tcci_abandono',ab],
+   ['admin_stats_tcci_encuestas',enc],['admin_stats_tcci_precio',pr]]
+    .forEach(function(p){ if(p[1].err) faltan.push(p[0]); });
+  if(faltan.length===4){
+    cont.innerHTML='<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:16px;font-size:13.5px;color:#92400e;line-height:1.6">'+
+      '<b>Falta correr el SQL.</b> Ninguna de las funciones de estadística del programa existe todavía en la base.<br><br>'+
+      'Está en <code>SQL-estadisticas-tcci.md</code>. Necesita antes <code>es_admin()</code> y la columna <code>patients.tcci_estado</code>.<br><br>'+
+      '<span style="opacity:.8">'+String((g.err&&g.err.message)||'')+'</span></div>';
+    return;
+  }
+
+  const G = (g.data && (Array.isArray(g.data)?g.data[0]:g.data)) || {};
+  const n = Number(G.arrancaron)||0;
+  const pct=function(v){ return n ? Math.round(v/n*100) : 0; };
+  const caja=function(v,rot,col,pie){
+    return '<div style="flex:1;min-width:130px;background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;padding:14px 15px">'+
+      '<div style="font-size:26px;font-weight:700;color:'+(col||'#1a4a3a')+';line-height:1">'+v+'</div>'+
+      '<div style="font-size:12.5px;color:#5C6B61;margin-top:4px;line-height:1.35">'+rot+'</div>'+
+      (pie?'<div style="font-size:11px;color:#8A968E;margin-top:3px">'+pie+'</div>':'')+
+    '</div>';
+  };
+
+  let h='';
+
+  // ── El embudo ──
+  h+='<div class="sec-title" style="margin:2px 0 10px">El programa, en números</div>';
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">'+
+    caja(n,'arrancaron el programa')+
+    caja((Number(G.solos)||0),'por su cuenta', '#1a4a3a', pct(Number(G.solos)||0)+'%')+
+    caja((Number(G.acompanados)||0),'con profesional', '#2D6B55', pct(Number(G.acompanados)||0)+'%')+
+  '</div>';
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'+
+    caja((Number(G.terminaron)||0),'lo terminaron','#15803d', pct(Number(G.terminaron)||0)+'%')+
+    caja((Number(G.en_curso)||0),'en curso','#C8A96E')+
+    caja((Number(G.abandonados)||0),'frenados','#9b1c1c','sin señal hace 14 días o más')+
+  '</div>';
+
+  if(G.dias_med_completo!=null || G.dias_prom_completo!=null){
+    h+='<div style="background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;padding:14px 16px;margin-bottom:18px">'+
+      '<div style="font-size:12px;font-weight:700;color:#5C6B61;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">De principio a fin</div>'+
+      '<div style="display:flex;gap:22px;flex-wrap:wrap">'+
+        '<div><div style="font-size:24px;font-weight:700;color:#1a4a3a">'+(G.dias_med_completo!=null?G.dias_med_completo:'—')+'<span style="font-size:13px"> días</span></div>'+
+          '<div style="font-size:12px;color:#5C6B61">mediana</div></div>'+
+        '<div><div style="font-size:24px;font-weight:700;color:#1a4a3a">'+(G.dias_prom_completo!=null?G.dias_prom_completo:'—')+'<span style="font-size:13px"> días</span></div>'+
+          '<div style="font-size:12px;color:#5C6B61">promedio</div></div>'+
+      '</div>'+
+      '<div style="font-size:11.5px;color:#8A968E;line-height:1.5;margin-top:9px">'+
+        'Solo de quienes lo completaron. El programa está pensado en 7 semanas (49 días): '+
+        'bastante más que eso significa que lo están haciendo a su ritmo, no que fallaron.<br>'+
+        '<b>Ojo con este número:</b> mide inicio → última señal, no inicio → fin real. '+
+        'Si alguien terminó y siguió abriendo la app, se estira.</div>'+
+    '</div>';
+  }
+
+  // ── Dónde se quedaron ──
+  const filasAb = (ab.data||[]);
+  if(filasAb.length){
+    const maxP = Math.max.apply(null, filasAb.map(function(r){ return Number(r.personas)||0; }));
+    h+='<div class="sec-title" style="margin:2px 0 4px">Dónde se quedaron</div>';
+    h+='<div style="font-size:12.5px;color:#5C6B61;line-height:1.55;margin-bottom:10px">'+
+      'Cada fila es la última semana que cerraron. La que acumula más gente parada es '+
+      'donde el programa expulsa — y la primera candidata a reescribirse.</div>';
+    h+='<div style="background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;padding:6px 15px 12px;margin-bottom:18px">';
+    filasAb.forEach(function(r){
+      const k=Number(r.ultima_cerrada)||0;
+      const p=Number(r.personas)||0;
+      const f=Number(r.frenados)||0;
+      const w=maxP?Math.round(p/maxP*100):0;
+      h+='<div style="padding:9px 0;border-bottom:1px solid var(--sep-opaque)">'+
+        '<div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline">'+
+          '<div style="font-size:13px;color:#0F2820"><b>'+(k===0?'—':k)+'</b> · '+(DM_TCCI_SEM_NOMBRE[k]||('Semana '+k))+'</div>'+
+          '<div style="font-size:13px;font-weight:700;color:#1a4a3a;flex-shrink:0">'+p+
+            (f?' <span style="font-size:11px;color:#9b1c1c;font-weight:600">('+f+' frenados)</span>':'')+'</div>'+
+        '</div>'+
+        '<div style="height:6px;background:#EEF2EF;border-radius:3px;overflow:hidden;margin-top:6px">'+
+          '<div style="height:100%;width:'+w+'%;background:'+(f>p/2?'#C8A96E':'#1a4a3a')+'"></div></div>'+
+      '</div>';
+    });
+    h+='</div>';
+  }
+
+  // ── Utilidad contra costo ──
+  const filasE = (enc.data||[]);
+  if(filasE.length){
+    h+='<div class="sec-title" style="margin:2px 0 4px">Utilidad contra costo, semana por semana</div>';
+    h+='<div style="font-size:12.5px;color:#5C6B61;line-height:1.55;margin-bottom:10px">'+
+      'El saldo es utilidad menos costo. <b>Saldo negativo = la semana pide más de lo que devuelve</b>, '+
+      'y esa es la que hace abandonar en la siguiente. Con la utilidad sola no se ve.</div>';
+    h+='<div style="background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;overflow:hidden;margin-bottom:18px">'+
+      '<div style="display:grid;grid-template-columns:2.2fr repeat(4,1fr);gap:8px;padding:10px 15px;background:#F6F8F6;font-size:11px;font-weight:700;color:#5C6B61;text-transform:uppercase;letter-spacing:.04em">'+
+        '<div>Semana</div><div style="text-align:right">n</div><div style="text-align:right">Sirvió</div>'+
+        '<div style="text-align:right">Costó</div><div style="text-align:right">Saldo</div></div>';
+    filasE.forEach(function(r){
+      const sd = r.saldo==null ? null : Number(r.saldo);
+      const col = sd==null ? '#8A968E' : sd<0 ? '#9b1c1c' : sd<1.5 ? '#92400e' : '#15803d';
+      h+='<div style="display:grid;grid-template-columns:2.2fr repeat(4,1fr);gap:8px;padding:11px 15px;border-top:1px solid var(--sep-opaque);font-size:13px;align-items:baseline">'+
+        '<div style="color:#0F2820"><b>'+r.semana+'</b> · <span style="color:#5C6B61">'+(DM_TCCI_SEM_NOMBRE[r.semana]||'')+'</span>'+
+          (r.compromiso!=null?'<div style="font-size:11px;color:#8A968E;margin-top:2px">compromiso previo '+r.compromiso+'/10</div>':'')+'</div>'+
+        '<div style="text-align:right;color:#5C6B61">'+(r.respuestas||0)+'</div>'+
+        '<div style="text-align:right">'+(r.utilidad!=null?r.utilidad:'—')+'</div>'+
+        '<div style="text-align:right">'+(r.costo!=null?r.costo:'—')+'</div>'+
+        '<div style="text-align:right;font-weight:700;color:'+col+'">'+(sd!=null?(sd>0?'+':'')+sd:'—')+'</div>'+
+      '</div>';
+    });
+    h+='</div>';
+  }
+
+  // ── Precio ──
+  const filasP = (pr.data||[]);
+  if(filasP.length){
+    const tot = filasP.reduce(function(a,r){ return a+(Number(r.personas)||0); },0);
+    h+='<div class="sec-title" style="margin:2px 0 4px">Cuánto pagarían</div>';
+    h+='<div style="font-size:12.5px;color:#5C6B61;line-height:1.55;margin-bottom:10px">'+
+      'Son personas que lo están usando <b>gratis</b> y que ya invirtieron una semana de tarea: '+
+      'las dos cosas empujan la respuesta para arriba. El número duro acá es cuántos eligen '+
+      '"no pagaría".</div>';
+    h+='<div style="background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;padding:6px 15px 12px;margin-bottom:18px">';
+    filasP.forEach(function(r){
+      const p=Number(r.personas)||0;
+      const w=tot?Math.round(p/tot*100):0;
+      const noPaga = r.tramo==='no';
+      h+='<div style="padding:9px 0;border-bottom:1px solid var(--sep-opaque)">'+
+        '<div style="display:flex;justify-content:space-between;gap:12px">'+
+          '<div style="font-size:13px;color:'+(noPaga?'#9b1c1c':'#0F2820')+'">'+(DM_TCCI_PRECIO_TXT[r.tramo]||r.tramo)+'</div>'+
+          '<div style="font-size:13px;font-weight:700;color:#1a4a3a;flex-shrink:0">'+p+' <span style="font-weight:500;color:#8A968E">('+w+'%)</span></div>'+
+        '</div>'+
+        '<div style="height:6px;background:#EEF2EF;border-radius:3px;overflow:hidden;margin-top:6px">'+
+          '<div style="height:100%;width:'+w+'%;background:'+(noPaga?'#9b1c1c':'#C8A96E')+'"></div></div>'+
+      '</div>';
+    });
+    h+='</div>';
+  }
+
+  if(faltan.length){
+    h+='<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#92400e;line-height:1.55">'+
+      'Faltan estas funciones en la base: <b>'+faltan.join(', ')+'</b>. Están en <code>SQL-estadisticas-tcci.md</code>.</div>';
+  }
+  if(!n && !filasE.length && !filasP.length){
+    h+='<div style="background:#fff;border:1px solid var(--sep-opaque);border-radius:14px;padding:20px;text-align:center;font-size:13.5px;color:#5C6B61;line-height:1.6">'+
+      'Todavía no arrancó nadie el programa, o ningún paciente abrió la app desde que se publicó '+
+      'la sincronización del avance.</div>';
+  }
+
+  h+='<div style="font-size:11.5px;color:#8A968E;line-height:1.55;margin-top:6px">'+
+    'Todo lo de esta pantalla se calcula adentro de la base y sale como números. '+
+    'No se lee ni un email, ni una noche, ni un comentario de ningún paciente.</div>';
+
+  cont.innerHTML=h;
+}
+window.dmAdminTcci = dmAdminTcci;
+
 // ── Lo que dicen los usuarios ─────────────────────────────────────────
 // Las sugerencias y el interés en el TCC-I se estaban guardando (mal) y
 // nadie los leía nunca. Acá se leen.
@@ -4575,6 +4764,7 @@ async function loadAdminTab(tab){
   cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
   try{
     if(tab==='escuchar'){ await dmAdminEscuchar(); return; }
+    if(tab==='tcci'){ await dmAdminTcci(); return; }
     if(tab==='pending'){
       // Solo los que solicitaron entrar al directorio (listed='pending') o tienen CV subido
       const pending=await db.get("doctors?select=name,lname,email,specialty,mat,city,country,bio,cv_url,listed,phone,email_public,created_at&order=created_at.desc");

@@ -1,0 +1,32 @@
+mod225 · pestaña TCC-I en el panel de administrador
+
+Cuatro bloques, todos calculados ADENTRO de la base:
+
+  1. El embudo — arrancaron, solos vs acompañados, terminaron, en curso,
+     frenados (sin señal hace 14 dias o mas). Y el tiempo de principio a
+     fin, mediana y promedio, solo de quienes completaron.
+  2. Donde se quedaron — una fila por ultima semana cerrada, con barra. La
+     semana que acumula mas gente parada es donde el programa expulsa.
+  3. Utilidad contra costo, semana por semana, con la columna SALDO. Saldo
+     negativo = la semana pide mas de lo que devuelve, y esa es la que hace
+     abandonar en la siguiente. Con la utilidad sola no se ve.
+  4. Cuanto pagarian, con el aviso de que son personas usandolo gratis que
+     ya invirtieron una semana de tarea: las dos cosas empujan la respuesta
+     para arriba. El numero duro es cuantos eligen "no pagaria".
+
+El criterio del panel no se toca: las cuatro son funciones security definer
+con guarda es_admin() adentro y revoke del acceso publico. La pantalla no
+consulta patients, sleep_diary, evaluations ni tcci_encuestas directo. Para
+saber si el programa funciona no hace falta leer la ficha de nadie, y
+pruebas/41 falla si alguien abre esa puerta.
+
+Dos decisiones:
+- Si las funciones no existen todavia se dice cual falta. Un 0 que en
+  realidad significa "la funcion no existe" se lee como "nadie lo usa", y
+  esa confusion lleva a decisiones de producto equivocadas.
+- dias_prom_completo mide inicio → ultima señal, no inicio → fin real: si
+  alguien termino y siguio abriendo la app, se estira. Queda escrito en la
+  propia pantalla, no solo en el codigo.
+
+SQL: SQL-estadisticas-tcci.md. Necesita antes es_admin() y la columna
+patients.tcci_estado.
