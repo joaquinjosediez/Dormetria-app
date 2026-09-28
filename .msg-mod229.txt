@@ -1,0 +1,33 @@
+mod229 · el contenedor del material del paciente no existia
+
+loadPatientEducation() pinta en #home-edu-card. Ese id NO ESTABA en el HTML.
+La funcion salia por `if(!wrap) return;` sin dejar rastro: el profesional
+asignaba, la fila se guardaba bien en patient_education, y del lado del
+paciente no aparecia nada. Tampoco nada en consola.
+
+Tercera vez que aparece el mismo bicho:
+  · mod216 — loadConsultRequests() pintaba en 'doctor-list', que no existe.
+  · mod228 — los chips del Resumen eran <button> sin onclick.
+  · mod229 — este.
+
+Se agrega el contenedor ARRIBA de "Leer hoy": lo que le indico su
+profesional pesa mas que la rotacion diaria de la biblioteca. Y el fallo
+deja de ser mudo: si el id vuelve a desaparecer, lo dice en consola.
+
+EL HALLAZGO GRANDE. Barriendo el codigo: 62 ids que se piden con
+getElementById y que NO SE CREAN en ningun lado —ni en el HTML estatico, ni
+dentro de un string que vaya a innerHTML, ni con .id=. Varios son funciones
+vivas que no hacen nada:
+
+  · home-quick        → renderHomeQuickActions() no pinta nunca
+  · pvt-sleep-display → el campo de horas dormidas del test de alerta
+  · code-consult-*    → quedo huerfano al sacar el directorio de
+                        "Mis especialistas" en mod219
+  · doctor-list       → el de mod216, sigue ahi
+  · pf-* (18 ids)     → un formulario de perfil entero
+
+No se arreglan todos acá: eso es un trabajo aparte y hay que mirar uno por
+uno si la funcion todavia tiene sentido. Lo que SI se hace es congelarlos:
+quedan anotados en pruebas/ids-huerfanos-conocidos.json y pruebas/44 falla
+si aparece uno nuevo. Tambien avisa cuando uno se arregla, para que la lista
+no se afloje sola.
