@@ -1,0 +1,27 @@
+mod227 · los botones de material no hacian nada porque la tabla nunca se creo
+
+patient_education NO EXISTE. El panel Material del profesional esta escrito
+desde hace tiempo y nunca pudo funcionar: el comentario del codigo remite a
+un "doc de traspaso" que no esta en el repo y no habia ningun SQL que la
+creara. Ahora esta en SQL-material-educativo.md, con sus cinco policies.
+
+Por que se veia bien y no andaba, que es lo que hay que arreglar igual:
+
+1. La lectura usaba .catch(()=>[]) a secas. Sin tabla, el panel se dibujaba
+   completo con todos los temas en "Asignar": se veia perfecto y no podia
+   funcionar. Ahora se distingue "no hay nada asignado" de "no se pudo leer"
+   y se dice arriba, con el texto exacto que devolvio la base.
+2. btn.disabled = true al empezar y en el camino feliz NUNCA se volvia a
+   habilitar: dependia de que el re-render lo reemplazara. Un solo clic
+   fallido dejaba el boton muerto — de ahi "parecen botones que no hacen
+   nada". Ahora revive pase lo que pase.
+3. El agrupado por `pop` era codigo muerto: NINGUNO de los 12 temas tiene
+   ese campo, asi que se armaban cinco grupos y cuatro quedaban siempre
+   vacios. Se agrupa por el `publico` que cada tema declara (mod221): los
+   que le corresponden al paciente arriba, el resto abajo y marcado. No se
+   ocultan: el profesional decide, y una mujer de 38 con menopausia precoz
+   existe.
+
+El lado del paciente ya estaba entero y no se toco: loadPatientEducation()
+pinta "Tu profesional te acerca" en el inicio con el conteo de sin leer, y
+dmMarcarLeido devuelve la fecha de lectura al panel del profesional.

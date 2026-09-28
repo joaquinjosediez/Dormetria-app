@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg227-b5474bb2">
+<link rel="stylesheet" href="css/styles.css?v=stg228-b5474bb2">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1361,11 +1361,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg227-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg227-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg227-dec679c9"></script>
-<script src="js/dormetria-render-resumen.js?v=stg227-d72c69df"></script>
-<script src="js/dormetria-tcci.js?v=stg227-35b9e6c0"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg228-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg228-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg228-dec679c9"></script>
+<script src="js/dormetria-render-resumen.js?v=stg228-d72c69df"></script>
+<script src="js/dormetria-tcci.js?v=stg228-35b9e6c0"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1384,11 +1384,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg227';
+const APP_VERSION='stg228';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg227 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg228 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -8178,7 +8178,12 @@ async function toggleEduAssignment(topicId, encEmail, btn){
   const email = decodeURIComponent(encEmail);
   const topic = PATIENT_EDU_TOPICS.find(t=>t.id===topicId);
   if(!topic){ toast('Tema no encontrado'); return; }
-  if(btn) btn.disabled = true;
+  const _txt = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = '…'; }
+  // Pase lo que pase, el botón vuelve a estar vivo. Antes solo se
+  // re-habilitaba en el catch: si el re-render no llegaba a pasar, un
+  // clic lo dejaba muerto y parecía que el botón no hacía nada.
+  const _revivir = function(){ if(btn){ btn.disabled=false; btn.textContent=_txt; } };
   try{
     // ¿Ya está asignado?
     const existing = await db.get('patient_education?patient_email=eq.'+encodeURIComponent(email)+'&topic_id=eq.'+encodeURIComponent(topicId)+'&select=id').catch(()=>[]);
@@ -8196,18 +8201,48 @@ async function toggleEduAssignment(topicId, encEmail, btn){
       });
       toast('✓ "'+topic.title+'" asignado');
     }
+    _revivir();
     // Refrescar
     if(typeof showDrPTab_==='function') showDrPTab_('edumat');
     else if(typeof showDrPTab==='function') showDrPTab('edumat', null);
   }catch(e){
-    if(btn) btn.disabled = false;
-    if(String(e&&e.message||'').includes('patient_education')){
-      toast('Tabla patient_education no creada en Supabase. Ver SQL de traspaso.');
+    _revivir();
+    const msg = String((e&&e.message)||e||'');
+    if(/patient_education|PGRST205|schema cache/i.test(msg)){
+      dmEduAvisoTablaFalta(msg);
+    }else if(/row-level security|permission denied|42501/i.test(msg)){
+      dmEduAvisoTablaFalta(msg, true);
     }else{
-      toast('Error: '+(e&&e.message||e));
+      toast('No se pudo guardar: '+msg.slice(0,90));
     }
   }
 }
+
+// Un toast se pierde. Esto es un problema de instalación —falta una tabla
+// o falta una policy— y hasta que alguien corra el SQL el panel entero no
+// puede funcionar. Se dice arriba de la lista, con el texto exacto que
+// devolvió la base, que es lo que hace falta para arreglarlo.
+function dmEduAvisoTablaFalta(msg, esPolicy){
+  const cont=document.getElementById('drp-content'); if(!cont) return;
+  if(document.getElementById('dm-edu-aviso')) return;
+  const d=document.createElement('div');
+  d.id='dm-edu-aviso';
+  d.style.cssText='background:#fef3c7;border:1px solid #fde68a;border-radius:12px;'+
+    'padding:14px 16px;margin:0 0 14px;font-size:13.5px;color:#92400e;line-height:1.6';
+  d.innerHTML = esPolicy
+    ? '<b>La tabla existe pero la base rechaza la escritura.</b> Falta la policy de '+
+      'INSERT para el profesional en <code>patient_education</code>.<br>'+
+      'Está en <code>SQL-material-educativo.md</code>.'+
+      '<div style="font-size:11.5px;opacity:.85;margin-top:7px">'+escHtml(msg)+'</div>'
+    : '<b>Falta crear la tabla <code>patient_education</code>.</b> Por eso los botones '+
+      'no guardan nada: la lectura falla en silencio y el panel se dibuja igual, con '+
+      'todo en "Asignar".<br>El SQL está en <code>SQL-material-educativo.md</code>, en '+
+      'la raíz del repo.'+
+      '<div style="font-size:11.5px;opacity:.85;margin-top:7px">'+escHtml(msg)+'</div>';
+  const wrap=cont.querySelector('.dm-edu-wrap');
+  if(wrap) wrap.insertBefore(d, wrap.firstChild); else cont.insertBefore(d, cont.firstChild);
+}
+window.dmEduAvisoTablaFalta = dmEduAvisoTablaFalta;
 function previewEduTopic(id){
   // Preview rápido sin salir del tab — abre un overlay simple
   const t = PATIENT_EDU_TOPICS.find(x=>x.id===id);
@@ -19647,20 +19682,42 @@ async function showDrPTab_(tab){
     }else if(tab==='edumat'){
       // Material educativo asignable al paciente
       cont.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando…</div>';
-      let assigned=[];
+      // Antes esto era .catch(()=>[]) a secas: si la tabla no existía, el
+      // panel se dibujaba igual y con todo en "Asignar". Se veía perfecto
+      // y no podía funcionar. Ahora se distingue "no hay nada asignado"
+      // de "no se pudo leer".
+      let assigned=[], _errLectura=null;
       try{
-        assigned = await db.get('patient_education?patient_email=eq.'+encodeURIComponent(email)+'&select=topic_id,assigned_at,read_at').catch(()=>[]);
-      }catch(_){ assigned=[]; }
+        assigned = await db.get('patient_education?patient_email=eq.'+encodeURIComponent(email)+'&select=topic_id,assigned_at,read_at');
+      }catch(e){ _errLectura = (e&&e.message)||String(e); assigned=[]; }
       const assignedIds = new Set((assigned||[]).map(a=>a.topic_id));
       const readMap = {};
       (assigned||[]).forEach(a=>{ readMap[a.topic_id]=a.read_at; });
-      // Agrupar por población
-      const popOrder = ['General','Embarazo','Adultos mayores','Trabajo por turnos','Guardias médicas'];
-      const grouped = {};
+      // Agrupar. El campo `pop` que se usaba acá NO EXISTE en ninguno de
+      // los temas, así que los cinco grupos se armaban y cuatro quedaban
+      // siempre vacíos. Se agrupa por lo que sí existe: el `publico` que
+      // cada tema declara (mod221).
+      //
+      // Los que no le corresponden a este paciente por edad o sexo NO se
+      // ocultan —el profesional decide, y una mujer de 38 con menopausia
+      // precoz existe— pero van abajo y marcados.
+      const _perfilPac = {
+        sexo: (S.viewData && (S.viewData.sex || S.viewData.gender)) || '',
+        edad: (function(){
+          try{ const d=S.viewData && S.viewData.dob ? new Date(S.viewData.dob) : null;
+               return d && !isNaN(d) ? Math.floor((Date.now()-d.getTime())/31557600000) : null;
+          }catch(_){ return null; }
+        })(),
+        ocupacional: true   // el profesional sabe si trabaja en turnos; no se filtra por eso
+      };
+      const _aplica = function(t){
+        try{ return typeof dmEduAplica==='function' ? dmEduAplica(t,_perfilPac) : true; }
+        catch(_){ return true; }
+      };
+      const popOrder = ['Para este paciente','Los demás temas'];
+      const grouped = {'Para este paciente':[], 'Los demás temas':[]};
       PATIENT_EDU_TOPICS.forEach(t=>{
-        const pop = t.pop || 'General';
-        if(!grouped[pop]) grouped[pop]=[];
-        grouped[pop].push(t);
+        grouped[_aplica(t) ? 'Para este paciente' : 'Los demás temas'].push(t);
       });
       // Va como bloque de ancho completo dentro de #drp-content —que es una
       // grilla de dos columnas— y adentro parte las fichas en dos. Si se
@@ -19668,10 +19725,19 @@ async function showDrPTab_(tab){
       // fichas quedarían en una sola columna angosta.
       let body = '<div class="dm-edu-wrap">'+
         '<div class="sec-title" style="margin-top:14px">Material educativo para el paciente</div>'+
-        '<div style="font-size:13px;color:var(--label-2);margin-bottom:14px;line-height:1.5">Activá los temas que querés acercarle al paciente según su situación. Le van a aparecer en la pantalla principal como "Tu profesional te acerca este material educativo".</div>';
+        '<div style="font-size:13px;color:var(--label-2);margin-bottom:14px;line-height:1.5">Activá los temas que querés acercarle al paciente según su situación. Le van a aparecer en su pantalla de inicio bajo <b>"Tu profesional te acerca"</b>, y acá vas a ver cuándo los leyó.</div>'+
+        (_errLectura
+          ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13.5px;color:#92400e;line-height:1.6">'+
+            (/patient_education|PGRST205|schema cache/i.test(_errLectura)
+              ? '<b>Falta crear la tabla <code>patient_education</code>.</b> Los botones de abajo no van a guardar nada hasta que corras el SQL de <code>SQL-material-educativo.md</code>.'
+              : '<b>No se pudo leer lo ya asignado.</b> Lo que aparezca abajo como "Asignar" puede estar asignado igual.')+
+            '<div style="font-size:11.5px;opacity:.85;margin-top:7px">'+escHtml(_errLectura)+'</div></div>'
+          : '');
       popOrder.forEach(pop=>{
         if(!grouped[pop]) return;
-        body += '<div class="dm-edu-pop">'+pop+'</div>';
+        if(!grouped[pop].length) return;
+        body += '<div class="dm-edu-pop"'+(pop==='Los demás temas'?' style="opacity:.72"':'')+'>'+pop+
+          (pop==='Los demás temas'?' <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11.5px;opacity:.85">— no le corresponden por edad o sexo, pero podés asignarlos igual</span>':'')+'</div>';
         body += '<div class="dm-edu-grid">';
         grouped[pop].forEach(t=>{
           const isAssigned = assignedIds.has(t.id);
