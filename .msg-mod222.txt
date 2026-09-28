@@ -1,0 +1,42 @@
+mod222 · una sola TCC-I: acompañarla no puede dar menos material que ir solo
+
+Habia DOS programas corriendo en paralelo sobre el mismo paciente:
+
+  · AUTOGUIADO — DM_TCCI_PROGRAMA: siete semanas, lenguaje de paciente,
+    texto completo, tareas marcables, cierre de semana con su mensaje.
+  · GUIADO — los 27 items de CBTI_PROTOCOL: casi todos bajo candado, con
+    CBTI_PATIENT_CONTENT como parrafos sueltos, sin tareas, sin material de
+    lectura y sin progreso propio.
+
+O sea que conseguir un profesional te daba MENOS contenido y peor
+organizado que no tenerlo. Eso esta al reves.
+
+Ahora el contenido es UNO: las mismas siete semanas, el mismo lenguaje, las
+mismas tareas. Lo unico que cambia es quien abre la semana siguiente:
+
+  · autogestionado → se abre al cerrar la anterior;
+  · guiado         → la habilita el profesional cuando la trabajan.
+
+El calendario dejo de decidir. Antes una semana podia decir "en 14 dias"
+aunque la persona ya hubiera terminado la anterior, y al reves.
+
+Lado profesional: caja de "Semanas habilitadas" arriba del protocolo. Se
+guarda en cbti_progress con item_id 'semana-N' — se reusa la tabla que ya
+existe y ya tiene su RLS, porque una tabla nueva significa politicas nuevas
+y las politicas nuevas son donde se filtran los datos. Si el guardado falla
+se revierte el tilde: dejarlo puesto le haria creer al profesional que el
+paciente puede ver material que no puede.
+
+El protocolo de 27 items sigue igual, pero como lo que siempre fue: la
+checklist clinica del profesional, de su lado.
+
+Ademas:
+- Una ilustracion SVG por semana (siete pantallas de texto corrido son siete
+  paredes) y el material de lectura de la biblioteca ofrecido en la etapa en
+  que tiene sentido leerlo, respetando el mismo filtro de edad y sexo.
+- El cobro no corre para quien viene acompañado: ahi el programa es parte
+  del tratamiento, no un producto aparte.
+- El bloque "con acompañamiento funciona mejor" no se le muestra a quien ya
+  tiene profesional.
+
+Lo fija pruebas/38.

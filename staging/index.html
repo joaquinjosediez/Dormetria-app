@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg222-81607cad">
+<link rel="stylesheet" href="css/styles.css?v=stg223-ee95c69b">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1360,10 +1360,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg222-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg222-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg222-dec679c9"></script>
-<script src="js/dormetria-render-resumen.js?v=stg222-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg223-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg223-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg223-dec679c9"></script>
+<script src="js/dormetria-render-resumen.js?v=stg223-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1382,11 +1382,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg222';
+const APP_VERSION='stg223';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg222 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg223 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -27149,6 +27149,7 @@ async function openCbtiProtocol(patientEmail, patientName){
     (rows||[]).forEach(r=>{ CBTI_STATE.progress[r.item_id]={completed:!!r.completed,completed_at:r.completed_at,notes:r.notes||''}; });
     renderCbtiProtocol();
     try{ renderCbtiWindowPanel(patientEmail); }catch(e){ console.warn('[TCCI] panel ventana:', e); }
+    try{ dmCbtiRenderSemanas(); }catch(e){ console.warn('[TCCI] semanas:', e); }
   }catch(err){
     console.error('[CBT-I protocol] load error:', err);
     cont.innerHTML = '<div style="padding:20px;color:#fca5a5">Error al cargar el protocolo. Asegurate de haber creado la tabla cbti_progress.</div>';
@@ -27173,6 +27174,11 @@ function renderCbtiProtocol(){
     '</div>'+
     '<div class="cbti-portada-chev">›</div>'+
   '</div>';
+  // ── Semanas habilitadas ──────────────────────────────────────────
+  // Esto es lo ÚNICO que cambia lo que el paciente ve. El protocolo de
+  // 27 ítems de más abajo es la checklist clínica del profesional: sirve
+  // para registrar qué se trabajó, no para dosificar el material.
+  html += '<div id="cbti-semanas-box"></div>';
   // Barra de progreso global
   html += '<div style="background:rgba(126,200,164,0.08);border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:16px;margin-bottom:18px">';
   html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font-size:12px;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Progreso del protocolo</div><div id="cbti-global-pct" style="font-size:22px;font-weight:700;color:#C8A96E">'+pct+'%</div></div>';
@@ -27353,6 +27359,69 @@ function dmCbtiVerPrograma(){
 
   cont.innerHTML = h;
 }
+
+// ══════════════════════════════════════════════════════════════════════
+// Habilitar semanas del programa (lado profesional)
+// ----------------------------------------------------------------------
+// Se guardan en cbti_progress con item_id 'semana-N'. Se reusa la tabla
+// que ya existe y ya tiene su RLS: una tabla nueva significaría escribir
+// políticas nuevas, y las políticas nuevas son donde se filtran los datos.
+// ══════════════════════════════════════════════════════════════════════
+function dmCbtiSemanasHtml(){
+  const prog = CBTI_STATE.progress || {};
+  const abierta = function(n){ return !!(prog['semana-'+n] && prog['semana-'+n].completed); };
+  const filas = DM_TCCI_PROGRAMA.map(function(s){
+    // La primera va siempre: si activaste el programa, algo tiene que
+    // poder leer mientras espera la consulta.
+    const siempre = s.n===1;
+    const on = siempre || abierta(s.n);
+    return '<label class="dm-sem-fila'+(on?' on':'')+'">'+
+      '<input type="checkbox" '+(on?'checked ':'')+(siempre?'disabled ':'')+
+        'onchange="dmCbtiToggleSemana('+s.n+',this.checked)">'+
+      '<span class="dm-sem-n">'+s.n+'</span>'+
+      '<span class="dm-sem-txt"><b>'+s.titulo+'</b>'+
+        '<span>'+(s.subtitulo||'')+'</span></span>'+
+      (siempre?'<span class="dm-sem-tag">siempre visible</span>':'')+
+    '</label>';
+  }).join('');
+  const n = DM_TCCI_PROGRAMA.filter(function(s){ return s.n===1 || abierta(s.n); }).length;
+  return '<div class="dm-sem-box">'+
+    '<div class="dm-sem-cab">'+
+      '<div><div class="dm-sem-tit">Semanas habilitadas</div>'+
+      '<div class="dm-sem-sub">Es lo único que define qué ve el paciente. '+
+        'El contenido es el mismo del programa autogestionado; acá elegís el ritmo.</div></div>'+
+      '<div class="dm-sem-cont">'+n+'<i>/'+DM_TCCI_PROGRAMA.length+'</i></div>'+
+    '</div>'+ filas +
+  '</div>';
+}
+function dmCbtiRenderSemanas(){
+  const box=document.getElementById('cbti-semanas-box');
+  if(box) box.innerHTML=dmCbtiSemanasHtml();
+}
+window.dmCbtiRenderSemanas = dmCbtiRenderSemanas;
+
+async function dmCbtiToggleSemana(n, on){
+  const drEmail = S.user && S.user.email;
+  const patEmail = CBTI_STATE.patientEmail;
+  if(!drEmail || !patEmail) return;
+  const itemId='semana-'+n;
+  const payload={ doctor_email:drEmail, patient_email:patEmail, module_id:'programa',
+                  item_id:itemId, completed:!!on, completed_at:on?new Date().toISOString():null };
+  CBTI_STATE.progress[itemId]={...(CBTI_STATE.progress[itemId]||{}), completed:!!on, completed_at:payload.completed_at};
+  dmCbtiRenderSemanas();
+  try{
+    await fetch(SU+'/rest/v1/cbti_progress',{method:'POST',headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
+    toast(on?('Semana '+n+' habilitada'):('Semana '+n+' cerrada'));
+  }catch(e){
+    console.error('dmCbtiToggleSemana:', e);
+    // Se revierte: dejar el tilde puesto haría creer al profesional que el
+    // paciente ya tiene acceso a material que en realidad no puede ver.
+    CBTI_STATE.progress[itemId]={...(CBTI_STATE.progress[itemId]||{}), completed:!on};
+    dmCbtiRenderSemanas();
+    toast('No se pudo guardar. Probá de nuevo.');
+  }
+}
+window.dmCbtiToggleSemana = dmCbtiToggleSemana;
 
 async function toggleCbtiItem(itemId, checked){
   const drEmail = S.user?.email; const patEmail = CBTI_STATE.patientEmail;
@@ -28115,49 +28184,49 @@ async function saveCbtiWindow(){
 // se cambia ahí y en ningún otro lado.
 const DM_TCCI_PROGRAMA = [
   {
-    n:1, titulo:'Cómo funciona tu sueño', subtitulo:'Lo que conviene entender antes de cambiar nada',
+    n:1, figura:'amanecer', lecturas:['higiene','horas','tcci'], titulo:'Cómo funciona tu sueño', subtitulo:'Lo que conviene entender antes de cambiar nada',
     objetivo:'Entender por qué se sostiene el insomnio y preparar el terreno. Esta semana no se cambia el horario: se observa y se aprende.',
     contenido:'Antes de tocar nada, conviene entender <b>qué mantiene</b> el insomnio. Porque lo que lo empieza y lo que lo sostiene casi nunca son la misma cosa.\n\nCasi siempre arranca por algo puntual: una mudanza, un duelo, un trabajo nuevo, una enfermedad. Eso pasa. Pero el insomnio se queda, y se queda por lo que uno hace para defenderse de él.\n\n<b>Dos fuerzas gobiernan el sueño.</b>\n\nLa primera es la <b>presión de sueño</b>. Desde que te despertás se va acumulando una sustancia (adenosina) que empuja a dormir. Cuanto más tiempo despierto, más empuje. Una siesta larga, o quedarse en la cama a la mañana, gasta esa presión antes de tiempo.\n\nLa segunda es el <b>reloj biológico</b>. Marca cuándo tu cuerpo espera dormir, y se ajusta sobre todo con la luz de la mañana y con la hora a la que te levantás. No con la hora a la que te acostás.\n\nCuando las dos coinciden, uno se duerme sin pensarlo. El insomnio crónico casi siempre es que se desalinearon.\n\n<b>Por qué se sostiene.</b> Después de varias noches malas empieza lo lógico: acostarse antes por las dudas, quedarse un rato más a la mañana, dormir una siesta, cancelar cosas por el cansancio. Cada una de esas medidas tiene sentido en el momento y todas empeoran el cuadro: diluyen la presión de sueño y corren el reloj.\n\nY se suma algo más: la cama deja de ser el lugar donde uno se duerme y pasa a ser el lugar donde uno lucha por dormirse. El cuerpo aprende eso, y se activa al acostarse.\n\n<b>Qué vas a hacer estas siete semanas.</b> Nada de esto es fuerza de voluntad. Vas a corregir esas dos fuerzas con cambios concretos, y a desarmar la asociación entre la cama y el estar despierto. Se hace en un orden probado y cada semana se apoya en la anterior.\n\n<b>La higiene del sueño, en su lugar justo.</b> Lo que sigue ayuda, pero conviene ser honesto: <b>si ya tenés un insomnio instalado, esto solo no alcanza</b>. Es el piso, no el tratamiento. La parte que de verdad mueve la aguja empieza la semana que viene.\n\n· <b>Levantarte siempre a la misma hora.</b> Es la más importante y la que menos se cumple. Incluye fines de semana.\n· <b>Luz de la mañana.</b> Diez o quince minutos de luz natural en la primera hora ordenan el reloj más que cualquier otra cosa.\n· <b>Cafeína hasta el mediodía.</b> Tarda entre 5 y 7 horas en bajar a la mitad. La de las 17 sigue actuando a medianoche.\n· <b>Alcohol, no.</b> Ayuda a dormirse y rompe la segunda mitad de la noche. Es de las cosas que más ensucian el sueño.\n· <b>El dormitorio: fresco, oscuro y silencioso.</b> Entre 18 y 20 grados.\n· <b>Nada de mirar el reloj de noche.</b> Calcular cuánto falta activa, y la activación es lo contrario del sueño.\n\n<b>Esta semana solo registrás.</b> No cambies el horario todavía. Completá el diario cada mañana: lo que anotes ahora es lo que va a definir tu ventana de sueño la semana que viene. Sin ese registro, el resto del programa no tiene con qué calcular.',
     tareas:['Completar el diario cada mañana, apenas te levantás','Levantarte todos los días a la misma hora, incluso el fin de semana','Tomar luz natural en la primera hora del día','Cortar la cafeína al mediodía','Sacar el reloj de la vista durante la noche'],
     libre:true
   },
   {
-    n:2, titulo:'Restricción del tiempo en cama', subtitulo:'Pasar en la cama el tiempo que realmente dormís',
+    n:2, figura:'cama', lecturas:['horas','cafe-alcohol'], titulo:'Restricción del tiempo en cama', subtitulo:'Pasar en la cama el tiempo que realmente dormís',
     objetivo:'Fijar tu horario de sueño y entender por qué achicar el tiempo en cama, aunque suene al revés, es lo que mejor funciona.',
     contenido:'A esto se lo llama <b>restricción del tiempo en cama</b>, y conviene leer bien el nombre: lo que se achica es el tiempo ACOSTADO, no el tiempo dormido. Vas a dormir lo mismo o más; lo que baja es el rato que pasás despierto en la cama.\n\nCuando dormís mal, lo natural es compensar: acostarse antes, levantarse más tarde, quedarse un rato más "por las dudas". Es lo que haría cualquiera. Y es justo lo que mantiene el problema.\n\nPensalo así: el sueño funciona como el hambre. Si picoteás todo el día, no llegás con hambre a la cena. Si pasás diez horas en la cama para dormir seis, esas cuatro horas de más son picoteo: gastás las ganas de dormir dando vueltas, y el sueño que queda se reparte fino y se despierta fácil.\n\nLo que vamos a hacer es lo contrario. Vas a pasar en la cama aproximadamente el tiempo que realmente dormís, ni más. No vas a dormir menos que ahora: vas a estar menos tiempo despierto en la cama. Ese sueño más concentrado es más profundo y se corta menos.\n\nTe lo decimos de frente: la primera semana suele ser la más dura. Es normal sentirse más cansado los primeros días. Ese cansancio no es un problema, es la señal de que se está acumulando el sueño que después vas a aprovechar mejor.',
     tareas:['Levantarte siempre a la misma hora, también sábados y domingos','No acostarte antes de la hora indicada, aunque tengas sueño en el sillón','Completar el diario cada mañana, apenas te levantás','No dormir siestas durante esta etapa'],
     libre:false
   },
   {
-    n:3, titulo:'Control de estímulos', subtitulo:'Que la cama vuelva a significar dormir',
+    n:3, figura:'puerta', lecturas:['pantallas','despertares'], titulo:'Control de estímulos', subtitulo:'Que la cama vuelva a significar dormir',
     objetivo:'Cortar la asociación entre la cama y estar despierto dando vueltas.',
     contenido:'El <b>control de estímulos</b> trabaja sobre una sola idea: <b>tu cama es una señal</b>, y esa señal se aprende.\n\nPensá en algo cotidiano: si todos los días tomás café al sentarte en el mismo sillón, con el tiempo sentarte ahí ya te da ganas de café. No lo decidís. El cuerpo aprendió que ese lugar significa eso.\n\nLa cama funciona igual, y ahí está el problema. Si pasaste meses acostado dando vueltas, revisando el teléfono, mirando series, contestando mensajes, trabajando con la notebook apoyada en las piernas, preocupándote por lo del día siguiente — tu cerebro aprendió que la cama es el lugar donde se está DESPIERTO. Y no lo aprendió como una idea: lo aprendió como un reflejo. Por eso mucha gente cabecea en el sillón y se despabila al acostarse. No es mala suerte ni nervios: es el reflejo funcionando.\n\n<b>Entonces hay dos trabajos, no uno.</b>\n\n<b>El primero es sacar de la cama todo lo que no sea dormir.</b> Es el que menos se habla y el que más rinde a largo plazo. La cama no es para mirar el teléfono, ni para trabajar, ni para comer, ni para ver una serie, ni para hacer llamadas, ni para dar vueltas pensando. Solo dormir y tener relaciones sexuales — esa es la única excepción, y es la clásica.\n\nSi leer en la cama te ayuda a dormirte, se puede: en papel, con luz tenue y hasta que aparezca el sueño. Si leer te despierta, no.\n\nEsto suena menor y no lo es. Cada rato que pasás despierto en la cama refuerza la asociación que estás tratando de romper. Si trabajás en la cama todas las tardes, la regla de levantarte a la noche no va a alcanzar.\n\n<b>El segundo es no quedarte despierto ahí.</b> Y se apoya en el primero: si la cama ya no es el lugar donde se hacen cosas, quedarse despierto se vuelve la excepción y no la costumbre.\n\nSi pasaste meses acostado sin poder dormir, tu cerebro aprendió algo: que la cama es el lugar donde uno se queda despierto pensando. No es una idea que tengas conscientemente; es un reflejo, como cuando se te hace agua la boca al ver comida.\n\nLa buena noticia es que ese aprendizaje se puede revertir, y se revierte con una regla simple de decir y difícil de sostener: si no te dormís en unos veinte minutos, levantate.\n\nNo mires el reloj para contarlos —eso te activa más—; usá tu propia sensación. Si sentís que estás dando vueltas, salí de la cama. Andá a otro ambiente, con la luz lo más baja posible, y hacé algo tranquilo y más bien aburrido: leer algo liviano, doblar ropa, escuchar algo suave. Nada de pantallas brillantes, trabajo ni noticias. Volvés a la cama recién cuando sentís sueño de verdad, no cuando te aburriste.\n\nPuede que la primera noche tengas que levantarte tres o cuatro veces. Es esperable y baja rápido: para la mayoría, en menos de una semana ya son una o ninguna.',
     tareas:['Usar la cama solamente para dormir y para tener relaciones','Sacar de la cama el teléfono, la notebook y la tele','No comer ni trabajar en la cama, tampoco de día','Levantarte de la cama cuando sientas que estás dando vueltas','Mantener el mismo horario de la semana pasada'],
     libre:false
   },
   {
-    n:4, titulo:'Ajuste del horario', subtitulo:'Ajustamos tu horario con tus propios datos',
+    n:4, figura:'regla', lecturas:['horas'], titulo:'Ajuste del horario', subtitulo:'Ajustamos tu horario con tus propios datos',
     objetivo:'Ampliar o mantener tu tiempo en cama según cómo dormiste estas dos semanas.',
     contenido:'La <b>titulación</b> es simplemente ir ajustando la dosis de a poco hasta encontrar la justa. Acá la dosis es tu tiempo en cama.\n\nYa tenés dos semanas de registro, así que podemos ajustar con tus datos y no a ojo.\n\nLo que miramos se llama eficiencia de sueño, y es una cuenta simple: del tiempo que pasaste en la cama, qué porcentaje dormiste realmente. Si estuviste siete horas acostado y dormiste seis, tu eficiencia es del 86%. La app ya te la calcula.\n\nLa regla del ajuste:\n\n· Si tu eficiencia superó el 90%, estás durmiendo casi todo el tiempo que estás acostado. Podés adelantar quince minutos la hora de acostarte.\n· Si quedó entre 85 y 90, vas bien pero todavía no. Sostené el mismo horario una semana más.\n· Si quedó por debajo de 85, conviene recortar quince minutos más para volver a concentrar el sueño.\n\nUna sola cosa no se toca: la hora de levantarte. Es el ancla de todo el sistema. Si la movés, el reloj interno se desordena y perdés lo ganado. Los ajustes se hacen siempre corriendo la hora de acostarse.',
     tareas:['Mirar tu eficiencia de sueño en la app','Aplicar el ajuste que te corresponda','Seguir levantándote de la cama si estás dando vueltas','Mantener la hora de levantarte sin moverla'],
     libre:false
   },
   {
-    n:5, titulo:'Reestructuración cognitiva', subtitulo:'Los pensamientos que no te dejan dormir',
+    n:5, figura:'nube', lecturas:['despertares'], titulo:'Reestructuración cognitiva', subtitulo:'Los pensamientos que no te dejan dormir',
     objetivo:'Reconocer las ideas que te activan al acostarte y ponerlas a prueba con tus propios datos.',
     contenido:'La <b>reestructuración cognitiva</b> suena complicado y es esto: revisar si lo que pensás sobre tu sueño es verdad.\n\n"Si no duermo ocho horas, mañana no funciono." "Ya perdí la capacidad de dormir." "Si no me duermo ahora, mañana es un desastre."\n\nEstos pensamientos parecen inofensivos, pero hacen algo muy concreto: te ponen en alerta justo cuando necesitás lo contrario. Convierten la cama en un examen que tenés que aprobar, y nadie se duerme rindiendo un examen.\n\nEl trabajo no es repetirse cosas positivas —eso no funciona y además no te lo creés—. Es contrastar la idea con lo que realmente pasó. Y para eso tenés algo que casi nadie tiene: semanas de registro.\n\nBuscá en tu diario una noche que dormiste mal. Ahora acordate de ese día siguiente. ¿Fue el desastre que anticipabas? Casi siempre la respuesta es que fue un día regular, cansador, pero que funcionaste. La catástrofe que temés a las tres de la mañana rara vez ocurre, y tus propios datos lo demuestran.\n\nOtra cosa que ayuda: si te acostás con la cabeza llena de pendientes, reservá quince minutos a la tarde para anotarlos en papel. No para resolverlos, solo para sacarlos de la cabeza. Suena menor y cambia bastante.',
     tareas:['Anotar qué pensamiento aparece cuando no podés dormir','Buscar en tu diario un día que lo contradiga','Reservar quince minutos a la tarde para anotar lo pendiente'],
     libre:false
   },
   {
-    n:6, titulo:'Técnicas de desactivación', subtitulo:'Bajar las revoluciones antes de acostarte',
+    n:6, figura:'respirar', lecturas:['pantallas'], titulo:'Técnicas de desactivación', subtitulo:'Bajar las revoluciones antes de acostarte',
     objetivo:'Llegar a la cama menos activado, en cuerpo y en cabeza.',
     contenido:'Las <b>técnicas de desactivación</b> no sirven para dormirte: sirven para llegar a la cama con el cuerpo y la cabeza menos acelerados.\n\nHay una paradoja en el centro del insomnio: cuanto más te esforzás por dormir, menos dormís. El sueño no es algo que se hace, es algo que pasa cuando dejás de interferir. Es como intentar tragar a propósito o quedarse dormido a las órdenes: el esfuerzo mismo lo impide.\n\nAsí que no vamos a entrenarte para dormir. Vamos a bajar el nivel de activación con el que llegás a la cama, que es otra cosa.\n\nLo que sirve, en orden de facilidad:\n\n· Respiración lenta. Inhalá contando cuatro y exhalá contando seis u ocho. La exhalación larga es la que baja el pulso. Cinco minutos alcanzan.\n· Relajación muscular progresiva. Tensás un grupo de músculos cinco segundos y soltás, subiendo desde los pies. Le da a la cabeza algo concreto en qué ocuparse.\n· Media hora de descenso antes de acostarte, con luz baja, sin pantallas brillantes y sin conversaciones ni contenidos que te activen.\n\nY una recomendación que parece menor: sacá el reloj de la vista. Mirar la hora de noche no aporta nada y te hace calcular cuánto te queda, que es exactamente la clase de cuenta que te desvela.',
     tareas:['Practicar respiración lenta cinco minutos antes de acostarte','Armar una rutina de descenso de treinta minutos con luz baja','Sacar el reloj y el teléfono de donde puedas ver la hora'],
     libre:false
   },
   {
-    n:7, titulo:'Prevención de recaídas', subtitulo:'Que lo logrado dure en el tiempo',
+    n:7, figura:'brujula', lecturas:['higiene','tcci'], titulo:'Prevención de recaídas', subtitulo:'Que lo logrado dure en el tiempo',
     objetivo:'Consolidar lo que te funcionó y tener listo un plan para cuando vuelvan las malas noches.',
     contenido:'La <b>prevención de recaídas</b> es la parte que casi nadie hace y la que decide si esto dura seis meses o seis años.\n\nVas a volver a dormir mal alguna noche. No es una recaída: es cómo duerme todo el mundo. Un viaje, un problema, una gripe, y aparecen dos o tres noches malas. Eso le pasa también a quien nunca tuvo insomnio.\n\nLa recaída de verdad es otra cosa, y empieza siempre igual: ante unas noches malas, se vuelve a los viejos hábitos. Quedarse más tiempo en la cama para recuperar, dormir una siesta, adelantar la hora de acostarse. En una semana el problema está instalado otra vez.\n\nPor eso conviene tener el plan escrito de antemano, cuando estás bien y podés pensar con claridad:\n\n· Tus tres reglas innegociables. Casi siempre son: hora fija de levantarse, no quedarse en la cama sin dormir, y no compensar con siestas.\n· Tu señal de alarma. Por ejemplo, tres malas noches seguidas.\n· Tu plan de rescate. Volver al horario de la semana 1 durante siete días. En la mayoría de los casos, alcanza.\n\nSeguí registrando aunque sea unos días por mes. Es la forma de darte cuenta temprano, cuando todavía es fácil de corregir.',
     tareas:['Escribir tus tres reglas innegociables','Definir tu señal de alarma y tu plan de rescate','Seguir registrando al menos unos días por mes'],
@@ -28384,9 +28453,176 @@ function dmTcciProgresoHtml(){
   '</div>';
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// Ilustración de cada semana
+// ----------------------------------------------------------------------
+// Siete pantallas de texto corrido son siete paredes. Una imagen arriba
+// no decora: parte el bloque, da un punto de descanso y hace que el
+// contenido se lea. Son SVG inline —sin archivos, sin pedidos de red—
+// con la paleta de marca.
+// ══════════════════════════════════════════════════════════════════════
+function dmTcciBanner(s){
+  const V='#1A4A3A', M='#2D6B55', T='#7EC8A4', O='#C8A96E', N='#0F2820';
+  const escena={
+    // Semana 1 · las dos fuerzas: el sol que sube y la noche que baja
+    amanecer:
+      '<circle cx="118" cy="78" r="26" fill="'+O+'" opacity=".9"/>'+
+      '<path d="M0 96 Q60 62 118 78 Q182 96 240 66" stroke="'+T+'" stroke-width="3" fill="none" opacity=".75"/>'+
+      '<path d="M0 66 Q60 100 118 78 Q182 58 240 92" stroke="'+M+'" stroke-width="3" fill="none" opacity=".8"/>'+
+      '<g fill="'+T+'" opacity=".5"><circle cx="34" cy="34" r="2.4"/><circle cx="206" cy="42" r="2"/><circle cx="168" cy="26" r="1.6"/></g>'+
+      '<rect x="0" y="108" width="240" height="14" fill="'+V+'"/>',
+    // Semana 2 · la cama, y el tiempo de más que sobra a los costados
+    cama:
+      '<rect x="56" y="62" width="128" height="34" rx="7" fill="'+M+'"/>'+
+      '<rect x="56" y="54" width="42" height="18" rx="6" fill="'+T+'" opacity=".85"/>'+
+      '<rect x="24" y="62" width="24" height="34" rx="6" fill="'+O+'" opacity=".26"/>'+
+      '<rect x="192" y="62" width="24" height="34" rx="6" fill="'+O+'" opacity=".26"/>'+
+      '<path d="M40 44 h-12 M40 44 l6 -5 M40 44 l6 5" stroke="'+O+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>'+
+      '<path d="M200 44 h12 M200 44 l-6 -5 M200 44 l-6 5" stroke="'+O+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>'+
+      '<rect x="0" y="108" width="240" height="14" fill="'+V+'"/>',
+    // Semana 3 · una puerta: la cama de un lado, todo lo demás del otro
+    puerta:
+      '<rect x="88" y="34" width="64" height="74" rx="6" fill="'+M+'"/>'+
+      '<circle cx="140" cy="72" r="3.4" fill="'+O+'"/>'+
+      '<rect x="14" y="76" width="56" height="26" rx="6" fill="'+T+'" opacity=".55"/>'+
+      '<rect x="172" y="60" width="26" height="18" rx="3" fill="'+O+'" opacity=".5"/>'+
+      '<rect x="204" y="84" width="20" height="18" rx="3" fill="'+O+'" opacity=".35"/>'+
+      '<path d="M168 96 l54 -44" stroke="'+O+'" stroke-width="2.4" opacity=".55"/>'+
+      '<rect x="0" y="108" width="240" height="14" fill="'+V+'"/>',
+    // Semana 4 · la regla: ajustar de a poco
+    regla:
+      '<rect x="24" y="66" width="192" height="24" rx="5" fill="'+M+'"/>'+
+      '<g stroke="'+N+'" stroke-width="2" opacity=".55">'+
+        '<path d="M48 66 v10"/><path d="M72 66 v14"/><path d="M96 66 v10"/><path d="M120 66 v14"/>'+
+        '<path d="M144 66 v10"/><path d="M168 66 v14"/><path d="M192 66 v10"/></g>'+
+      '<circle cx="144" cy="78" r="11" fill="'+O+'"/>'+
+      '<path d="M144 44 v12 M138 50 l6 6 l6 -6" stroke="'+T+'" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'+
+      '<rect x="0" y="108" width="240" height="14" fill="'+V+'"/>',
+    // Semana 5 · la cabeza y el pensamiento que da vueltas
+    nube:
+      '<circle cx="106" cy="74" r="26" fill="'+M+'"/>'+
+      '<path d="M82 66 q24 -24 48 0 q-7 -21 -24 -21 q-17 0 -24 21z" fill="'+V+'"/>'+
+      '<ellipse cx="170" cy="52" rx="34" ry="20" fill="'+T+'" opacity=".22"/>'+
+      '<path d="M152 52 q18 -12 36 0 q-18 12 -36 0z" fill="none" stroke="'+O+'" stroke-width="2" opacity=".8"/>'+
+      '<circle cx="138" cy="66" r="4" fill="'+T+'" opacity=".5"/>'+
+      '<circle cx="128" cy="76" r="2.6" fill="'+T+'" opacity=".35"/>'+
+      '<rect x="0" y="108" width="240" height="14" fill="'+V+'"/>',
+    // Semana 6 · la respiración: entra corto, sale largo
+    respirar:
+      '<circle cx="120" cy="72" r="30" fill="none" stroke="'+M+'" stroke-width="3"/>'+
+      '<circle cx="120" cy="72" r="20" fill="none" stroke="'+T+'" stroke-width="2.4" opacity=".8"/>'+
+      '<circle cx="120" cy="72" r="9" fill="'+T+'" opacity=".45"/>'+
+      '<path d="M48 72 h34" stroke="'+O+'" stroke-width="3" stroke-linecap="round"/>'+
+      '<path d="M158 72 h56" stroke="'+O+'" stroke-width="3" stroke-linecap="round" opacity=".85"/>'+
+      '<path d="M214 72 l-7 -5 M214 72 l-7 5" stroke="'+O+'" stroke-width="2.6" fill="none" stroke-linecap="round"/>'+
+      '<rect x="0" y="108" width="240" height="14" fill="'+V+'"/>',
+    // Semana 7 · la brújula: saber volver si el camino se pierde
+    brujula:
+      '<circle cx="120" cy="72" r="32" fill="'+M+'"/>'+
+      '<circle cx="120" cy="72" r="32" fill="none" stroke="'+T+'" stroke-width="2.4" opacity=".7"/>'+
+      '<path d="M120 48 l9 22 l-9 24 l-9 -24z" fill="'+O+'"/>'+
+      '<circle cx="120" cy="72" r="3.4" fill="'+N+'"/>'+
+      '<path d="M24 100 q34 -18 62 -4 q30 15 62 -8 q28 -20 68 -4" stroke="'+T+'" stroke-width="2.4" fill="none" opacity=".45" stroke-dasharray="5 6"/>'+
+      '<rect x="0" y="108" width="240" height="14" fill="'+V+'"/>'
+  }[(s&&s.figura)||'cama'] || '';
+  return '<div class="dm-tcci-banner" aria-hidden="true">'+
+    '<svg viewBox="0 0 240 122" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">'+
+      '<rect width="240" height="122" fill="'+N+'"/>'+escena+
+    '</svg></div>';
+}
+
+// ── Material de lectura de la semana ─────────────────────────────────
+// Cada etapa apunta a los artículos de la biblioteca que la acompañan.
+// Es el mismo material que ya existe: acá se ofrece en el momento en que
+// tiene sentido leerlo, no en una lista suelta.
+function dmTcciLecturasHtml(s){
+  const ids=(s&&s.lecturas)||[];
+  if(!ids.length || typeof PATIENT_EDU_TOPICS==='undefined') return '';
+  const _perfil=(typeof dmEduPerfil==='function') ? dmEduPerfil() : null;
+  const temas=ids.map(function(id){
+    return PATIENT_EDU_TOPICS.find(function(t){ return t.id===id; });
+  }).filter(function(t){
+    // Se respeta el mismo criterio de edad y sexo que el resto del
+    // material: no tendría sentido filtrarlo en el inicio y colarlo acá.
+    return t && (!_perfil || typeof dmEduAplica!=='function' || dmEduAplica(t,_perfil));
+  });
+  if(!temas.length) return '';
+  return '<div class="dm-tcci-lecturas">'+
+    '<div class="dm-tcci-lecturas-tit">Para leer esta semana</div>'+
+    temas.map(function(t){
+      return '<div class="dm-tcci-lectura" onclick="dmAbrirBiblioteca(\''+t.id+'\')">'+
+        '<span class="dm-tcci-lectura-ic">'+(t.icon||'📖')+'</span>'+
+        '<span class="dm-tcci-lectura-tit">'+t.title+'</span>'+
+        '<span class="dm-tcci-lectura-ch">›</span></div>';
+    }).join('')+
+  '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// Un solo programa, dos formas de avanzar
+// ----------------------------------------------------------------------
+// Antes había dos TCC-I distintas conviviendo:
+//
+//   · la AUTOGUIADA: DM_TCCI_PROGRAMA, siete semanas, lenguaje de
+//     paciente, texto largo, tareas marcables;
+//   · la GUIADA: CBTI_PROTOCOL, veintisiete ítems que el profesional
+//     tildaba, con CBTI_PATIENT_CONTENT como textos sueltos.
+//
+// O sea que quien tenía profesional recibía MENOS contenido y peor
+// organizado que quien iba solo. Eso está al revés: el acompañamiento
+// tiene que agregar, nunca restar.
+//
+// Ahora el contenido es el mismo —las siete semanas, con su material de
+// lectura y su ilustración— y lo único que cambia es quién habilita la
+// semana siguiente:
+//
+//   · autogestionado → se habilita al cerrar la semana anterior;
+//   · guiado         → la habilita el profesional cuando la trabajan.
+//
+// El protocolo de 27 ítems sigue existiendo, pero como lo que siempre
+// fue: la checklist clínica del profesional, de su lado.
+// ══════════════════════════════════════════════════════════════════════
+
+// Modo actual del paciente. Se resuelve una vez y queda cacheado en S.
+function dmTcciModo(){
+  return (S && S._tcciGuiadoPor) ? 'guiado' : 'auto';
+}
+// Semanas que el profesional habilitó. Se guardan en cbti_progress con
+// item_id 'semana-N', así que no hace falta tabla nueva ni tocar la RLS.
+function dmTcciHabilitadasPorPro(){
+  try{ return (S && S._tcciSemanasPro) || {}; }catch(_){ return {}; }
+}
+function dmTcciCerrada(n){
+  try{ return JSON.parse(localStorage.getItem('dm_tcci_cerradas')||'{}')[n]===true; }catch(_){ return false; }
+}
+// ¿Puede entrar a esta semana?
+function dmTcciSemanaAbierta(n){
+  if(dmTcciModo()==='guiado'){
+    // La primera va sola: si el profesional activó el programa, algo tiene
+    // que poder leer mientras espera la consulta.
+    return n===1 || dmTcciHabilitadasPorPro()[n]===true;
+  }
+  if(n===1) return true;
+  // Autogestionado: se abre al cerrar la anterior. Con acceso libre se
+  // puede recorrer entero, que es para lo que sirve el acceso libre.
+  if(dmTcciTieneAcceso() && dmTcciCerrada(n-1)) return true;
+  return dmTcciCerrada(n-1);
+}
+// Por qué está cerrada, en palabras de la persona.
+function dmTcciMotivoCierre(n){
+  return dmTcciModo()==='guiado'
+    ? 'La habilita tu profesional cuando lo trabajen'
+    : 'Se abre al terminar la semana '+(n-1);
+}
+
 function dmTcciAbrirSemana(n){
   const s=DM_TCCI_PROGRAMA.find(x=>x.n===n); if(!s) return;
-  if(!s.libre && !dmTcciTieneAcceso()){ window._dmTcciSemanaIntento=n; dmTcciMostrarSuscripcion(); return; }
+  if(!dmTcciSemanaAbierta(n)){ toast(dmTcciMotivoCierre(n)); return; }
+  // El cobro no corre para quien viene acompañado por un profesional: ahí
+  // el programa es parte del tratamiento, no un producto aparte.
+  if(dmTcciModo()!=='guiado' && !s.libre && !dmTcciTieneAcceso()){
+    window._dmTcciSemanaIntento=n; dmTcciMostrarSuscripcion(); return;
+  }
   const old=document.getElementById('dm-tcci-sem'); if(old) old.remove();
   const w=document.createElement('div');
   w.id='dm-tcci-sem';
@@ -28399,6 +28635,7 @@ function dmTcciAbrirSemana(n){
         '<div style="font-size:19px;font-weight:700;color:#fff">'+s.titulo+'</div>'+
         (s.subtitulo?'<div style="font-size:12.5px;color:rgba(255,255,255,.82);margin-top:2px">'+s.subtitulo+'</div>':'')+'</div>'+
       '</div>'+
+      dmTcciBanner(s)+
       '<div style="background:rgba(126,200,164,.1);border-left:3px solid #7EC8A4;border-radius:8px;padding:12px 14px;margin-bottom:16px">'+
         '<div style="font-size:10px;letter-spacing:.07em;color:#7EC8A4;font-weight:700;margin-bottom:4px">OBJETIVO</div>'+
         '<div style="font-size:13.5px;color:rgba(255,255,255,.97);line-height:1.55">'+s.objetivo+'</div></div>'+
@@ -28406,6 +28643,7 @@ function dmTcciAbrirSemana(n){
       '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-radius:16px;padding:16px 17px">'+
         '<div id="dm-tcci-tareas-'+s.n+'">'+dmTcciTareasHtml(s)+'</div>'+
       '</div>'+
+      dmTcciLecturasHtml(s)+
       '<div id="dm-tcci-cierre-'+s.n+'" style="margin-top:14px">'+dmTcciCierreHtml(s)+'</div>'+
       
       '<div style="font-size:11px;color:rgba(255,255,255,.72);text-align:center;margin-top:14px;line-height:1.5">No reemplaza la consulta médica. Si tenés apnea del sueño, trabajás en turnos rotativos o tenés somnolencia peligrosa al volante, consultá antes de restringir el sueño.</div>'+
@@ -28571,8 +28809,11 @@ function dmTcciRenderPrograma(){
   let html='<div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:16px;margin-top:14px">'+
     '<div class="sec-title" style="margin:0 0 4px;color:rgba(244,239,229,.92)">Programa de '+DM_TCCI_PROGRAMA.length+' semanas</div>'+
     '<div style="font-size:12px;color:rgba(255,255,255,.82);line-height:1.55;margin-bottom:12px">'+
-      (empezado ? 'Vas por la semana '+actual+'. Cada semana se desbloquea sola a los 7 días.'
-                : 'Terapia cognitivo-conductual para el insomnio, paso a paso. Función premium — tu horario de sueño recomendado de arriba es sin costo.')+'</div>';
+      (dmTcciModo()==='guiado'
+        ? 'Cada semana se habilita cuando la trabajás con tu profesional. El contenido es el mismo del programa completo.'
+        : empezado
+          ? 'Cada semana se abre cuando terminás la anterior. Sin apuro y sin calendario: el ritmo lo ponés vos.'
+          : 'Terapia cognitivo-conductual para el insomnio, paso a paso. Función premium — tu horario de sueño recomendado de arriba es sin costo.')+'</div>';
   // Las dos reglas, antes de todo lo demás, y solo si todavía no arrancó.
   if(!empezado){
     const _d = dmTcciDisposicion();
@@ -28611,7 +28852,7 @@ function dmTcciRenderPrograma(){
         '</div>';
       }
     }
-    html+='<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.28);border-radius:12px;padding:13px 15px;margin-bottom:12px">'+
+    if(dmTcciModo()!=='guiado') html+='<div style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.28);border-radius:12px;padding:13px 15px;margin-bottom:12px">'+
       '<div style="font-size:11px;color:#C8A96E;font-weight:700;letter-spacing:.05em;margin-bottom:5px">CON ACOMPAÑAMIENTO FUNCIONA MEJOR</div>'+
       '<div style="font-size:12.5px;color:rgba(255,255,255,.92);line-height:1.55;margin-bottom:10px">Este programa sigue la misma estructura que los tratamientos digitales aprobados por agencias regulatorias, que se indican <b>como complemento</b> de la atención profesional, no en reemplazo. Un profesional formado en TCC-I ajusta el ritmo a tu caso, resuelve las dudas del camino y acelera bastante los resultados. Si podés, buscá acompañamiento: te va a rendir más.</div>'+
       '<button onclick="showPatientCode()" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:11px;padding:11px;color:#F4EFE5;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Vincular un profesional</button>'+
@@ -28621,29 +28862,29 @@ function dmTcciRenderPrograma(){
   // Progreso general, arriba de todo: es lo primero que uno quiere ver al
   // volver a un programa de seis semanas.
   if(dmTcciProgresoTotal().total) html+=dmTcciProgresoHtml();
+  const _guiado = dmTcciModo()==='guiado';
   DM_TCCI_PROGRAMA.forEach(function(s){
     const _q0 = dmTcciProgresoSemana(s);
-    const _cerrada = (function(){ try{ return JSON.parse(localStorage.getItem('dm_tcci_cerradas')||'{}')[s.n]===true; }catch(_){ return false; } })();
-    // Una semana en la que ya trabajaste está disponible aunque el calendario
-    // todavía no haya llegado: si la barra dice 4 de 4, no puede verse gris.
-    const disponible = empezado && (s.n<=actual || acceso || _q0.hechas>0 || _cerrada);
-    const bloqueadaPorPago = !s.libre && !acceso;
-    // Con acceso libre no corre el bloqueo por semana: el programa se puede
-    // recorrer entero de una, que es de lo que se trata explorarlo.
-    const bloqueadaPorTiempo = empezado && s.n>actual && !dmTcciTieneAcceso();
-    const activa = disponible && !bloqueadaPorPago;
+    const _cerrada = dmTcciCerrada(s.n);
+    // Una sola regla de apertura para los dos modos: el calendario dejó de
+    // mandar. Antes una semana podía estar "en 14 días" aunque la persona
+    // ya hubiera terminado la anterior, y al revés.
+    const abierta = dmTcciSemanaAbierta(s.n);
+    // El cobro no corre para quien viene acompañado por un profesional.
+    const bloqueadaPorPago = !_guiado && !s.libre && !acceso && !empezado;
+    const activa = abierta && !bloqueadaPorPago;
     const borde = activa ? 'rgba(126,200,164,.35)' : 'rgba(255,255,255,.1)';
     let estado='';
-    if(bloqueadaPorPago) estado='<span style="font-size:10px;background:rgba(200,169,110,.2);color:#C8A96E;border-radius:99px;padding:2px 8px;font-weight:700">Programa completo</span>';
-    else if(bloqueadaPorTiempo) estado='<span style="font-size:10.5px;color:rgba(255,255,255,.72)">en '+((s.n-actual)*7)+' días</span>';
-    else if(!empezado) estado='<span style="font-size:10px;background:rgba(200,169,110,.2);color:#C8A96E;border-radius:99px;padding:2px 8px;font-weight:700">Premium</span>';
+    if(bloqueadaPorPago) estado='<span style="font-size:10px;background:rgba(200,169,110,.2);color:#C8A96E;border-radius:99px;padding:2px 8px;font-weight:700">Premium</span>';
     else if(_cerrada) estado='<span style="font-size:10px;background:rgba(126,200,164,.2);color:#7EC8A4;border-radius:99px;padding:3px 9px;font-weight:700">✓ Hecha</span>';
-    else if(activa) estado='<span style="color:#7EC8A4;font-size:16px">›</span>';
-    html+='<div onclick="'+(bloqueadaPorTiempo?'':'dmTcciAbrirSemana('+s.n+')')+'" style="background:rgba(255,255,255,.04);border:1px solid '+borde+';border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+(bloqueadaPorTiempo?'opacity:.45':'cursor:pointer')+'">'+
+    else if(!abierta) estado='<span style="font-size:14px;opacity:.7">🔒</span>';
+    else estado='<span style="color:#7EC8A4;font-size:16px">›</span>';
+    html+='<div onclick="dmTcciAbrirSemana('+s.n+')" style="background:rgba(255,255,255,.04);border:1px solid '+borde+';border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+(activa?'cursor:pointer':'opacity:.5;cursor:pointer')+'">'+
       '<div style="width:26px;height:26px;border-radius:50%;background:'+(activa?'#1a4a3a':'rgba(255,255,255,.08)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(activa?'#fff':'rgba(255,255,255,.45)')+';flex-shrink:0">'+s.n+'</div>'+
       '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:'+(activa?'#fff':'rgba(255,255,255,.6)')+'">'+s.titulo+'</div>'+
-      '<div style="font-size:11px;color:rgba(255,255,255,.72);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(s.subtitulo||s.objetivo)+'</div>'+
-      (function(){ const q=_q0; if(!q.total || (!disponible && !q.hechas)) return '';
+      '<div style="font-size:11px;color:rgba(255,255,255,.72);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
+        (abierta ? (s.subtitulo||s.objetivo) : dmTcciMotivoCierre(s.n))+'</div>'+
+      (function(){ const q=_q0; if(!q.total || (!abierta && !q.hechas)) return '';
         return '<div style="display:flex;align-items:center;gap:7px;margin-top:6px">'+
           '<div style="flex:1;height:4px;background:rgba(255,255,255,.09);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+q.pct+'%;background:'+(q.pct===100?'#7EC8A4':'#C8A96E')+'"></div></div>'+
           '<span style="font-size:10px;color:'+(q.pct===100?'#7EC8A4':'rgba(255,255,255,.45)')+';white-space:nowrap">'+q.hechas+'/'+q.total+'</span></div>'; })()+'</div>'+
@@ -28660,6 +28901,10 @@ async function openPatientCbtiView(){
   try{
     const patEmail = S.user?.email;
     if(!patEmail){ cont.innerHTML='<div style="padding:20px">Sesión no iniciada.</div>'; return; }
+    // Se recalcula siempre: si el profesional desactivó el acompañamiento,
+    // la vista no puede seguir creyendo que hay alguien habilitando semanas.
+    S._tcciGuiadoPor = null;
+    S._tcciSemanasPro = {};
     // Buscar todos los médicos que activaron CBT-I para este paciente
     const active = await db.get('cbti_patients?patient_email=ilike.'+encodeURIComponent(patEmail)+'&active=eq.true&select=doctor_email').catch(()=>[]);
     if(!active || !active.length){
@@ -28708,17 +28953,30 @@ async function openPatientCbtiView(){
       cont.innerHTML=html;
       return;
     }
-    const drEmail = active[0].doctor_email; // si hay varios, mostramos el primero
-    // Cargar progreso
-    const prog = await db.get('cbti_progress?doctor_email=eq.'+encodeURIComponent(drEmail)+'&patient_email=ilike.'+encodeURIComponent(patEmail)+'&select=item_id,completed,completed_at,notes').catch(()=>[]);
-    const progressMap = {};
-    (prog||[]).forEach(r=>{ progressMap[r.item_id] = {completed:!!r.completed, completed_at:r.completed_at, notes:r.notes||''}; });
-    // Render
-    const doneCount = Object.values(progressMap).filter(p=>p.completed).length;
-    const pct = Math.round(doneCount/CBTI_TOTAL_ITEMS*100);
+    // ══ Paciente CON profesional ═══════════════════════════════════════
+    // Acá antes se dibujaba un programa COMPLETAMENTE DISTINTO: los 27
+    // ítems de CBTI_PROTOCOL con textos sueltos, la mayoría bajo candado
+    // y sin el material de lectura ni las tareas. O sea que tener
+    // profesional daba MENOS contenido que ir solo. Eso está al revés.
+    // Ahora es el mismo programa de siete semanas; lo único distinto es
+    // que las habilita el profesional en vez del avance propio.
+    const drEmail = active[0].doctor_email;
+    S._tcciGuiadoPor = drEmail;
+    // Semanas habilitadas: viven en cbti_progress con item_id 'semana-N',
+    // que es la tabla que ya existe y ya tiene su RLS.
+    S._tcciSemanasPro = {};
+    try{
+      const prog = await db.get('cbti_progress?doctor_email=ilike.'+encodeURIComponent(drEmail)+
+        '&patient_email=ilike.'+encodeURIComponent(patEmail)+
+        '&completed=eq.true&select=item_id') || [];
+      prog.forEach(function(r){
+        const m=/^semana-(\d+)$/.exec(String(r.item_id||''));
+        if(m) S._tcciSemanasPro[parseInt(m[1],10)]=true;
+      });
+    }catch(e){ console.warn('[tcci] semanas del profesional:', e); }
+
     let html = '';
-    // ── Ventana de sueño: si el profesional la ajustó, manda la suya; si no,
-    //    mostramos la que calcula el motor desde el diario. ──
+    // ── El horario: si el profesional lo ajustó, manda el suyo ─────────
     try{
       const ov = await dmGetWindowOverride(patEmail, null);
       let bed=null, wake=null, note='', fuente='';
@@ -28742,50 +29000,28 @@ async function openPatientCbtiView(){
         '</div>';
       }
     }catch(e){ console.warn('[patient-tcci] ventana:', e); }
-    html += '<div style="background:linear-gradient(135deg,rgba(126,200,164,0.12),rgba(200,169,110,0.08));border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:16px;margin-bottom:18px">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font-size:12px;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Tu progreso</div><div style="font-size:22px;font-weight:700;color:#C8A96E">'+pct+'%</div></div>';
-    html += '<div style="height:10px;background:rgba(255,255,255,0.08);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#7ec8a4,#C8A96E);transition:width 0.3s"></div></div>';
-    html += '<div style="font-size:12px;color:rgba(255,255,255,.9);margin-top:10px;line-height:1.5">A medida que avances en consulta con tu profesional, se desbloquean los temas del protocolo. Tu profesional marca los puntos cuando los trabajan juntos.</div>';
-    html += '</div>';
-    // Modules
-    CBTI_PROTOCOL.modules.forEach((mod)=>{
-      const itemsDone = mod.items.filter(it=>progressMap[it.id]?.completed).length;
-      const isAllComplete = itemsDone===mod.items.length;
-      const isStarted = itemsDone>0;
-      const accent = isAllComplete?'#7ec8a4':(isStarted?'#C8A96E':'rgba(255,255,255,0.15)');
-      html += '<div style="background:rgba(255,255,255,0.04);border:1px solid '+accent+';border-radius:14px;margin-bottom:12px;overflow:hidden">';
-      html += '<div onclick="document.getElementById(\'pcbti-mod-'+mod.id+'\').classList.toggle(\'open\');var el=document.getElementById(\'pcbti-mod-'+mod.id+'\');el.style.display=el.style.display===\'block\'?\'none\':\'block\';this.querySelector(\'.pcbti-chev\').style.transform=el.style.display===\'block\'?\'rotate(90deg)\':\'rotate(0deg)\';" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px">';
-      html += '<div style="font-size:24px">'+mod.icon+'</div>';
-      html += '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:2px">'+mod.name+'</div>';
-      html += '<div style="font-size:11.5px;color:rgba(255,255,255,.76)">'+itemsDone+' de '+mod.items.length+' temas desbloqueados</div></div>';
-      html += '<div class="pcbti-chev" style="color:rgba(255,255,255,.72);transition:transform 0.2s;font-size:14px">›</div>';
-      html += '</div>';
-      // Items
-      html += '<div id="pcbti-mod-'+mod.id+'" style="display:none;padding:0 16px 14px"><div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:12px"></div>';
-      mod.items.forEach((it)=>{
-        const p = progressMap[it.id]||{};
-        const unlocked = !!p.completed;
-        const dateStr = p.completed_at ? new Date(p.completed_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '';
-        const content = CBTI_PATIENT_CONTENT[it.id] || '';
-        if(unlocked){
-          html += '<div style="background:rgba(126,200,164,0.05);border:1px solid rgba(126,200,164,0.25);border-radius:10px;padding:12px;margin-bottom:8px">';
-          html += '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="color:#7ec8a4;font-size:14px;line-height:1.5">✓</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff;line-height:1.45">'+it.label+'</div>';
-          if(dateStr) html += '<div style="font-size:10.5px;color:#7ec8a4;margin-top:2px">Trabajado con tu profesional · '+dateStr+'</div>';
-          html += '</div></div>';
-          if(content) html += '<div style="font-size:12.5px;color:rgba(255,255,255,.92);line-height:1.55;padding-left:22px;margin-top:6px">'+content+'</div>';
-          html += '</div>';
-        } else {
-          html += '<div style="background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:12px;margin-bottom:8px;opacity:0.55">';
-          html += '<div style="display:flex;align-items:flex-start;gap:8px"><span style="font-size:13px;line-height:1.5">🔒</span><div style="flex:1"><div style="font-size:12.5px;font-weight:500;color:rgba(255,255,255,.9);line-height:1.45">'+it.label+'</div>';
-          html += '<div style="font-size:10.5px;color:rgba(255,255,255,.72);margin-top:3px;font-style:italic">Tu profesional lo desbloqueará cuando lo aborden en consulta</div>';
-          html += '</div></div></div>';
-        }
-      });
-      html += '</div></div>';
-    });
-    // A propósito NO se muestra acá el programa autoguiado: quien tiene
-    // profesional sigue el ritmo y el contenido que ella habilita. Dos
-    // protocolos corriendo en paralelo sobre el mismo paciente se contradicen.
+
+    // ── Quién lleva el ritmo ──────────────────────────────────────────
+    let _drNom = '';
+    try{
+      const _d = await db.get('doctors?email=ilike.'+encodeURIComponent(drEmail)+'&select=name,lname,gender') || [];
+      if(_d[0]) _drNom = ((_d[0].gender==='Femenino'?'Dra. ':'Dr. ')+(_d[0].name||'')+' '+(_d[0].lname||'')).trim();
+    }catch(_){}
+    const _habil = Object.keys(S._tcciSemanasPro).length + 1;
+    html += '<div style="background:rgba(126,200,164,.1);border:1px solid rgba(126,200,164,.3);border-radius:14px;padding:14px 15px;margin-bottom:14px">'+
+      '<div style="font-size:10px;letter-spacing:.08em;color:#7EC8A4;font-weight:700;margin-bottom:5px">PROGRAMA ACOMPAÑADO</div>'+
+      '<div style="font-size:13px;color:rgba(255,255,255,.95);line-height:1.6">'+
+        'Estás haciendo el programa con '+(_drNom?('<b>'+_drNom+'</b>'):'tu profesional')+'. '+
+        'El contenido es exactamente el mismo que el autogestionado: lo que cambia es que '+
+        '<b>las semanas las habilita '+(_drNom?'él o ella':'tu profesional')+'</b> a medida que las trabajan juntos, '+
+        'en vez de abrirse solas.'+
+        (_habil<=DM_TCCI_PROGRAMA.length
+          ? '<br><br>Ahora tenés habilitadas <b>'+Math.min(_habil,DM_TCCI_PROGRAMA.length)+' de '+DM_TCCI_PROGRAMA.length+'</b> semanas.'
+          : '')+
+      '</div></div>';
+
+    // Y de acá en más, EL MISMO programa que ve quien va solo.
+    try{ html += dmTcciRenderPrograma(); }catch(_e){ console.warn('[TCCI programa]', _e); }
     cont.innerHTML = html;
   }catch(err){
     console.error('[patient-tcci] error:', err);

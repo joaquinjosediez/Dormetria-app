@@ -5610,3 +5610,72 @@ body.dm-dir-abierto #consult-list{ padding:4px 18px 28px; }
 }
 .dm-msg-detalle{ padding:0 13px 13px; }
 .dm-msg[open] > summary{ border-bottom:1px solid var(--sep-opaque); margin-bottom:11px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod222 · Una sola TCC-I
+   Ilustración por semana, material de lectura por etapa, y del lado del
+   profesional el control de qué semanas están habilitadas. El contenido
+   del paciente es el mismo vaya solo o acompañado.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* La imagen de cada semana: parte el bloque de texto y da dónde descansar. */
+.dm-tcci-banner{
+  height:132px; border-radius:16px; overflow:hidden; margin-bottom:16px;
+  border:1px solid rgba(126,200,164,.18);
+}
+
+/* Material de lectura de la semana */
+.dm-tcci-lecturas{
+  background:rgba(255,255,255,.04); border:1px solid rgba(200,169,110,.24);
+  border-radius:14px; padding:13px 14px; margin-top:14px;
+}
+.dm-tcci-lecturas-tit{
+  font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  font-weight:700; color:#C8A96E; margin-bottom:8px;
+}
+.dm-tcci-lectura{
+  display:flex; align-items:center; gap:11px; padding:10px 2px; cursor:pointer;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.dm-tcci-lectura:first-of-type{ border-top:none; }
+.dm-tcci-lectura-ic{ font-size:17px; flex-shrink:0; }
+.dm-tcci-lectura-tit{
+  flex:1; min-width:0; font-size:13.5px; color:#F4EFE5; line-height:1.4;
+}
+.dm-tcci-lectura-ch{ color:#7EC8A4; font-size:17px; flex-shrink:0; }
+
+/* Lado profesional: habilitar semanas */
+.dm-sem-box{
+  background:rgba(255,255,255,.04); border:1px solid rgba(126,200,164,.28);
+  border-radius:14px; padding:14px 15px; margin-bottom:16px;
+}
+.dm-sem-cab{ display:flex; gap:14px; align-items:flex-start; margin-bottom:12px; }
+.dm-sem-tit{ font-size:14.5px; font-weight:700; color:#fff; }
+.dm-sem-sub{ font-size:11.5px; color:rgba(255,255,255,.76); line-height:1.5; margin-top:3px; }
+.dm-sem-cont{
+  flex-shrink:0; font-size:21px; font-weight:700; color:#7EC8A4; line-height:1;
+}
+.dm-sem-cont i{ font-size:12px; font-style:normal; color:rgba(255,255,255,.5); }
+.dm-sem-fila{
+  display:flex; align-items:center; gap:11px; padding:9px 2px; cursor:pointer;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.dm-sem-fila input{ accent-color:#7EC8A4; width:17px; height:17px; flex-shrink:0; cursor:pointer; }
+.dm-sem-fila input:disabled{ cursor:default; opacity:.6; }
+.dm-sem-n{
+  width:22px; height:22px; border-radius:50%; flex-shrink:0;
+  background:rgba(255,255,255,.08); color:rgba(255,255,255,.5);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700;
+}
+.dm-sem-fila.on .dm-sem-n{ background:#1a4a3a; color:#fff; }
+.dm-sem-txt{ flex:1; min-width:0; font-size:13px; color:rgba(255,255,255,.65); line-height:1.35; }
+.dm-sem-fila.on .dm-sem-txt{ color:#F4EFE5; }
+.dm-sem-txt span{
+  display:block; font-size:11px; color:rgba(255,255,255,.6); margin-top:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.dm-sem-tag{
+  flex-shrink:0; font-size:9.5px; font-weight:700; letter-spacing:.04em;
+  color:#C8A96E; background:rgba(200,169,110,.16); border-radius:999px; padding:2px 8px;
+}
