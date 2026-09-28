@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg223-ee95c69b">
+<link rel="stylesheet" href="css/styles.css?v=stg224-b5474bb2">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1360,10 +1360,10 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg223-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg223-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg223-dec679c9"></script>
-<script src="js/dormetria-render-resumen.js?v=stg223-2a1139e3"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg224-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg224-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg224-dec679c9"></script>
+<script src="js/dormetria-render-resumen.js?v=stg224-2a1139e3"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1382,11 +1382,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg223';
+const APP_VERSION='stg224';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg223 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg224 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -28257,6 +28257,22 @@ function dmTcciSemanaActual(){
     return Math.max(1, Math.min(DM_TCCI_PROGRAMA.length, Math.floor(dias/7)+1));
   }catch(_){ return 1; }
 }
+// Borra TODO el rastro local del programa: progreso, semanas cerradas,
+// encuestas y disposición. Es para recorrerlo de nuevo desde cero durante
+// la prueba, así que está limitado a las cuentas con acceso libre — no es
+// algo que un paciente deba poder hacer sin querer.
+function dmTcciReiniciar(){
+  if(!dmTcciTieneAcceso()) return;
+  if(!confirm('¿Volver el programa a cero?\n\nSe borra tu progreso, las semanas cerradas y las respuestas de las encuestas guardadas en este dispositivo. Lo que ya se subió al servidor queda.')) return;
+  ['dm_tcci_inicio','dm_tcci_hechos','dm_tcci_cerradas','dm_tcci_encuestas',
+   'dm_tcci_disposicion','dm_tcci_interes','dm_tcci_mig7'].forEach(function(k){
+    try{ localStorage.removeItem(k); }catch(_){}
+  });
+  try{ toast('Programa reiniciado. Arranca de cero.'); }catch(_){}
+  try{ openPatientCbtiView(); }catch(_){}
+}
+window.dmTcciReiniciar = dmTcciReiniciar;
+
 function dmTcciEmpezar(){
   try{ if(!localStorage.getItem('dm_tcci_inicio')) localStorage.setItem('dm_tcci_inicio', new Date().toISOString()); }catch(_){}
   toast('Programa iniciado ✓');
@@ -28401,7 +28417,200 @@ function dmConfeti(){
 }
 window.dmConfeti = dmConfeti;
 
+// ══════════════════════════════════════════════════════════════════════
+// Encuestas del programa (fase de prueba)
+// ----------------------------------------------------------------------
+// Tres momentos, y conviene distinguirlos porque no piden lo mismo:
+//
+//   1. ANTES de cada semana — una sola pregunta: cuánto se compromete con
+//      la tarea que viene. Sirve para dos cosas distintas: te dice a vos
+//      dónde esperar abandono, y le dice a la persona que la tarea
+//      requiere una decisión, no buena voluntad.
+//   2. AL CERRAR cada semana — si le sirvió, y cuánto le costó
+//      sostenerlo. Las dos juntas separan lo que funciona de lo que
+//      funciona pero nadie puede sostener, que es la diferencia que
+//      define si un programa conductual sirve fuera del laboratorio.
+//   3. AL TERMINAR — el balance global.
+//
+// Sobre pedirlo para abrir la semana 2: lo que se exige es FEEDBACK DEL
+// PRODUCTO, que es el precio razonable de una beta gratuita. Lo que NO se
+// exige —y por eso el sondeo de precio y el comentario son salteables— es
+// nada que se parezca a dato de investigación. Vos mismo lo escribiste en
+// el alta: un consentimiento que no es voluntario no vale ni para la ley
+// de datos ni para un comité. Condicionar el acceso al tratamiento a
+// entregar datos de investigación sería exactamente eso.
+// ══════════════════════════════════════════════════════════════════════
+
+const DM_TCCI_COMPROMISO = {
+  pregunta:'Antes de empezar: ¿qué tan decidido estás a sostener la tarea de esta semana?',
+  bajo:'Lo voy a intentar', alto:'Estoy decidido'
+};
+
+const DM_TCCI_CIERRE_PREG = [
+  { id:'sirvio', tipo:'regla', pregunta:'¿Te sirvió lo de esta semana?',
+    bajo:'Nada', alto:'Mucho' },
+  { id:'costo',  tipo:'regla', pregunta:'¿Cuánto te costó sostenerlo?',
+    bajo:'Nada', alto:'Muchísimo' },
+  { id:'comentario', tipo:'texto', opcional:true,
+    pregunta:'¿Algo que quieras contarnos de esta semana?',
+    placeholder:'Opcional. Lo que te sobró, lo que te faltó, lo que no se entendió.' }
+];
+
+const DM_TCCI_FINAL_PREG = [
+  { id:'global',     tipo:'regla', pregunta:'En general, ¿cuánto te sirvió el programa completo?',
+    bajo:'Nada', alto:'Muchísimo' },
+  { id:'duerme',     tipo:'regla', pregunta:'¿Cuánto mejoró tu sueño respecto de cuando empezaste?',
+    bajo:'Nada', alto:'Muchísimo' },
+  { id:'recomendar', tipo:'regla', pregunta:'¿Se lo recomendarías a alguien que duerme mal?',
+    bajo:'No', alto:'Sin dudas' },
+  { id:'masutil',    tipo:'texto', opcional:true,
+    pregunta:'¿Qué semana te sirvió más, y por qué?', placeholder:'Opcional.' },
+  { id:'sobro',      tipo:'texto', opcional:true,
+    pregunta:'¿Qué sacarías o cambiarías?', placeholder:'Opcional. Nos sirve más lo que no funcionó.' }
+];
+
+function dmTcciEncuestas(){
+  try{ return JSON.parse(localStorage.getItem('dm_tcci_encuestas')||'{}'); }catch(_){ return {}; }
+}
+function dmTcciTieneEncuesta(clave){ return !!dmTcciEncuestas()[clave]; }
+
+// Se guarda en el dispositivo Y se intenta subir. El orden importa: si la
+// red falla, la persona no puede quedar trabada sin poder seguir el
+// programa por un problema nuestro.
+async function dmTcciGuardarEncuesta(clave, tipo, semana, datos){
+  const reg = Object.assign({ fecha:new Date().toISOString() }, datos);
+  try{
+    const m = dmTcciEncuestas();
+    m[clave] = reg;
+    localStorage.setItem('dm_tcci_encuestas', JSON.stringify(m));
+  }catch(_){}
+  try{
+    await db.post('tcci_encuestas', {
+      patient_email: (S.user && S.user.email) || '',
+      tipo: tipo,
+      semana: semana,
+      respuestas: datos
+    }, '');
+  }catch(e){
+    // No se bloquea nada: el dato queda en el dispositivo y el programa
+    // sigue. Que la tabla no exista todavía no puede frenar un tratamiento.
+    console.warn('[TCCI-ENCUESTA] no se pudo subir:', (e&&e.message)||e);
+  }
+}
+
+// ── La hoja de preguntas ─────────────────────────────────────────────
+function dmTcciHojaEncuesta(cfg){
+  const old=document.getElementById('dm-enc'); if(old) old.remove();
+  const w=document.createElement('div');
+  w.id='dm-enc';
+  w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,.94);z-index:10006;overflow-y:auto;padding:0';
+  const campos = cfg.preguntas.map(function(p){
+    if(p.tipo==='texto'){
+      return '<div class="dm-enc-bloque">'+
+        '<div class="dm-enc-preg">'+p.pregunta+
+          (p.opcional?'<span class="dm-enc-opt">opcional</span>':'')+'</div>'+
+        '<textarea id="dm-enc-'+p.id+'" rows="3" class="dm-enc-texto" placeholder="'+(p.placeholder||'')+'"></textarea>'+
+      '</div>';
+    }
+    return '<div class="dm-enc-bloque">'+
+      '<div class="dm-enc-preg">'+p.pregunta+'</div>'+
+      '<div class="dm-enc-num"><span id="dm-enc-n-'+p.id+'">5</span><i>/10</i></div>'+
+      '<input type="range" min="1" max="10" value="5" id="dm-enc-'+p.id+'" '+
+        'oninput="var e=document.getElementById(\'dm-enc-n-'+p.id+'\');if(e)e.textContent=this.value">'+
+      '<div class="dm-enc-extremos"><span>'+(p.bajo||'')+'</span><span>'+(p.alto||'')+'</span></div>'+
+    '</div>';
+  }).join('');
+  w.innerHTML='<div class="dm-enc-caja">'+
+    (cfg.emoji?'<div class="dm-enc-emoji">'+cfg.emoji+'</div>':'')+
+    '<div class="dm-enc-tit">'+cfg.titulo+'</div>'+
+    (cfg.sub?'<div class="dm-enc-sub">'+cfg.sub+'</div>':'')+
+    campos+
+    (cfg.extra||'')+
+    '<button id="dm-enc-ok" class="dm-enc-btn">'+(cfg.boton||'Continuar')+'</button>'+
+    (cfg.saltear?'<div class="dm-enc-saltear" id="dm-enc-skip">'+cfg.saltear+'</div>':'')+
+  '</div>';
+  document.body.appendChild(w);
+  const leer=function(){
+    const d={};
+    cfg.preguntas.forEach(function(p){
+      const e=document.getElementById('dm-enc-'+p.id);
+      if(!e) return;
+      d[p.id] = (p.tipo==='texto') ? (e.value||'').trim() : Number(e.value);
+    });
+    return d;
+  };
+  document.getElementById('dm-enc-ok').onclick=function(){
+    const d=leer();
+    w.remove();
+    try{ cfg.alTerminar(d); }catch(e){ console.warn('[encuesta]', e); }
+  };
+  const skip=document.getElementById('dm-enc-skip');
+  if(skip) skip.onclick=function(){ w.remove(); try{ cfg.alSaltear&&cfg.alSaltear(); }catch(_){} };
+  return w;
+}
+
+// Terminar la semana abre primero las preguntas de cierre. En modo
+// autogestionado y en fase de prueba son obligatorias (menos el
+// comentario y el precio): es el precio de una beta gratuita. Con
+// profesional NO se piden: ahí el seguimiento lo hace él en consulta, y
+// meterle un formulario en el medio del tratamiento sobra.
 function dmTcciCerrarSemana(n){
+  const clave='cierre-'+n;
+  if(dmTcciModo()!=='guiado' && !dmTcciTieneEncuesta(clave)){
+    dmTcciHojaEncuesta({
+      emoji:'🌿',
+      titulo:'Semana '+n+', terminada',
+      sub:'Dos preguntas antes de seguir. Tardan menos de un minuto y son lo '+
+          'único que nos dice si el programa sirve de verdad.',
+      preguntas:DM_TCCI_CIERRE_PREG,
+      boton:'Listo',
+      alTerminar:function(d){
+        dmTcciGuardarEncuesta(clave,'cierre-semana',n,d);
+        // Al cerrar la PRIMERA se suma el sondeo de precio, que sí es
+        // salteable: preguntar cuánto pagaría no puede ser el peaje para
+        // seguir un tratamiento.
+        if(n===1 && !dmTcciTieneEncuesta('precio')) dmTcciSondeoPrecio(function(){ dmTcciCerrarSemanaYa(n); });
+        else dmTcciCerrarSemanaYa(n);
+      }
+    });
+    return;
+  }
+  dmTcciCerrarSemanaYa(n);
+}
+window.dmTcciCerrarSemana = dmTcciCerrarSemana;
+
+// El sondeo de precio, en su propio paso y con salida.
+function dmTcciSondeoPrecio(despues){
+  const opciones = DM_TCCI_PRECIOS.map(function(p){
+    return '<label class="dm-enc-op"><input type="radio" name="dm-enc-precio" value="'+p.id+'">'+
+      '<span>'+p.txt+(p.nota?' <i>'+p.nota+'</i>':'')+'</span></label>';
+  }).join('');
+  dmTcciHojaEncuesta({
+    emoji:'💭',
+    titulo:'Una más, y es la última',
+    sub:'Estás usando gratis algo que va a ser pago. Si tuvieras que pagar las '+
+        'siete semanas completas <b>una sola vez</b>, ¿cuánto te parecería razonable?<br>'+
+        '<span style="opacity:.8">Como referencia: una consulta con especialista en sueño ronda '+
+        'los $50.000 a $80.000, y el tratamiento suele llevar cinco o seis.</span>',
+    preguntas:[],
+    extra:'<div class="dm-enc-ops">'+opciones+'</div>',
+    boton:'Enviar',
+    saltear:'Prefiero no contestar',
+    alTerminar:function(){
+      const sel=document.querySelector('input[name="dm-enc-precio"]:checked');
+      dmTcciGuardarEncuesta('precio','precio',null,{precio: sel?sel.value:null});
+      try{ if(sel) db.post('tcci_interes',{patient_email:(S.user&&S.user.email)||'',precio_elegido:sel.value,semana_bloqueada:2},''); }catch(_){}
+      if(despues) despues();
+    },
+    alSaltear:function(){
+      dmTcciGuardarEncuesta('precio','precio',null,{precio:null, salteada:true});
+      if(despues) despues();
+    }
+  });
+}
+window.dmTcciSondeoPrecio = dmTcciSondeoPrecio;
+
+function dmTcciCerrarSemanaYa(n){
   let m={};
   try{ m=JSON.parse(localStorage.getItem('dm_tcci_cerradas')||'{}'); }catch(_){}
   m[n]=true;
@@ -28434,6 +28643,24 @@ function dmTcciCerrarSemana(n){
   '</div>';
   document.body.appendChild(w);
   try{ if(typeof openPatientCbtiView==='function' && document.getElementById('dm-tcci-lista')) openPatientCbtiView(); }catch(_){}
+  // Última semana: el balance del programa entero. Va DESPUÉS del festejo,
+  // no antes: primero se reconoce lo hecho y después se pregunta.
+  if(n===total && dmTcciModo()!=='guiado' && !dmTcciTieneEncuesta('final')){
+    setTimeout(function(){
+      dmTcciHojaEncuesta({
+        emoji:'🏁',
+        titulo:'Terminaste el programa',
+        sub:'Cinco preguntas finales. Las tres primeras son de escala; las dos '+
+            'últimas, si querés escribirlas, son las que más nos sirven.',
+        preguntas:DM_TCCI_FINAL_PREG,
+        boton:'Enviar',
+        alTerminar:function(d){
+          dmTcciGuardarEncuesta('final','final',null,d);
+          try{ toast('Gracias. Esto es lo que hace que el programa mejore.'); }catch(_){}
+        }
+      });
+    }, 900);
+  }
 }
 
 function dmTcciProgresoHtml(){
@@ -28618,6 +28845,27 @@ function dmTcciMotivoCierre(n){
 function dmTcciAbrirSemana(n){
   const s=DM_TCCI_PROGRAMA.find(x=>x.n===n); if(!s) return;
   if(!dmTcciSemanaAbierta(n)){ toast(dmTcciMotivoCierre(n)); return; }
+  // Una sola pregunta antes de abrir la semana, la primera vez que entra.
+  // No es burocracia: una tarea conductual que se empieza sin decidirla se
+  // abandona en tres días, y el número te dice a vos dónde esperar eso.
+  // Con profesional no va: el compromiso se trabaja en consulta.
+  const _kc='compromiso-'+n;
+  if(dmTcciModo()!=='guiado' && !dmTcciCerrada(n) && !dmTcciTieneEncuesta(_kc)){
+    dmTcciHojaEncuesta({
+      emoji:'🌱',
+      titulo:'Semana '+n+' · '+s.titulo,
+      sub:s.objetivo,
+      preguntas:[{ id:'compromiso', tipo:'regla',
+                   pregunta:DM_TCCI_COMPROMISO.pregunta,
+                   bajo:DM_TCCI_COMPROMISO.bajo, alto:DM_TCCI_COMPROMISO.alto }],
+      boton:'Empezar la semana',
+      alTerminar:function(d){
+        dmTcciGuardarEncuesta(_kc,'compromiso',n,d);
+        dmTcciAbrirSemana(n);
+      }
+    });
+    return;
+  }
   // El cobro no corre para quien viene acompañado por un profesional: ahí
   // el programa es parte del tratamiento, no un producto aparte.
   if(dmTcciModo()!=='guiado' && !s.libre && !dmTcciTieneAcceso()){
@@ -28890,6 +29138,11 @@ function dmTcciRenderPrograma(){
           '<span style="font-size:10px;color:'+(q.pct===100?'#7EC8A4':'rgba(255,255,255,.45)')+';white-space:nowrap">'+q.hechas+'/'+q.total+'</span></div>'; })()+'</div>'+
       '<div style="flex-shrink:0">'+estado+'</div></div>';
   });
+  if(dmTcciTieneAcceso()){
+    html+='<div onclick="dmTcciReiniciar()" style="text-align:center;margin-top:14px;padding:10px;'+
+      'font-size:11.5px;color:rgba(255,255,255,.5);cursor:pointer;border-top:1px solid rgba(255,255,255,.07)">'+
+      '↺ Reiniciar el programa (cuenta de prueba)</div>';
+  }
   html+='</div>';
   return '<div id="dm-tcci-lista">'+html+'</div>';
 }

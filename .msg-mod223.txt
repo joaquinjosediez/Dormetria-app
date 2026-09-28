@@ -1,0 +1,38 @@
+mod223 · encuestas por semana, sondeo de precio y balance final
+
+Tres momentos, y no piden lo mismo:
+
+  1. ANTES de cada semana — una pregunta: cuanto se compromete con la tarea
+     que viene. Sirve para dos cosas: te dice donde esperar abandono, y le
+     dice a la persona que la tarea requiere una decision, no buena voluntad.
+  2. AL CERRAR cada semana — si le sirvio y cuanto le costo sostenerlo. Las
+     dos JUNTAS: una semana con 8 de utilidad y 9 de costo no es una semana
+     buena, es la que hace que abandonen en la tercera. Con la utilidad sola
+     no se ve.
+  3. AL TERMINAR — balance global, recomendacion, que sacaria.
+
+El sondeo de precio va al cerrar la semana 1, que es lo que abre la 2.
+
+DONDE ESTA LA LINEA. En el alta esta escrito: "un consentimiento no
+voluntario no es valido ni para la ley de datos ni para un comite". Pedir
+feedback del producto para seguir una beta gratuita es razonable. Condicionar
+el acceso al tratamiento a entregar dato de investigacion, no. Por eso:
+
+  · obligatorio → ¿te sirvio? ¿cuanto te costo? (feedback del producto)
+  · salteable   → cuanto pagarias, comentarios libres
+
+Y con profesional NO se pide nada: el seguimiento se hace en consulta, y un
+formulario en el medio del tratamiento sobra.
+
+Las respuestas se guardan primero en el dispositivo y despues se intentan
+subir. En ese orden a proposito: que la tabla no exista todavia no puede
+frenar un tratamiento a mitad de camino.
+
+Ademas: boton de reiniciar el programa a cero, solo visible para cuentas con
+acceso libre y con confirmacion. Un paciente no puede borrarse el progreso
+sin querer.
+
+SQL: SQL-encuestas-tcci.md (tabla nueva con sus tres policies, y las
+consultas para leer utilidad contra costo por semana).
+
+Lo fija pruebas/39.
