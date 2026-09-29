@@ -5794,3 +5794,18 @@ body.dm-dir-abierto #consult-list{ padding:4px 18px 28px; }
     background:rgba(26,74,58,.1); border-radius:8px 8px 0 0;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod230 · La TCC-I, destacada para quien cumple criterio de insomnio
+   Es la indicación de primera línea de las guías, antes que la
+   medicación. Si las propias respuestas de la persona lo muestran,
+   corresponde decírselo — pero explicando por qué aparece, o se lee como
+   publicidad del programa.
+   ══════════════════════════════════════════════════════════════════════ */
+#home-tcci-card.dm-tcci-indicado{
+  border-color:#7EC8A4;
+  box-shadow:0 0 0 1px rgba(126,200,164,.3), 0 8px 26px -12px rgba(126,200,164,.45);
+}
+#home-tcci-card.dm-tcci-indicado > div:first-child{
+  background:#7EC8A4;
+}

@@ -59,6 +59,24 @@ async function dmShowSummaryNuevo(email, cont) {
       window._dmPatronDiario = window._dmPatronDiario || {};
       window._dmPatronDiario[email] = String(
         (dmCurrentMotorResult.orientacion && dmCurrentMotorResult.orientacion.texto) || '');
+      // Señales del diario que las etiquetas clínicas necesitan y que hasta
+      // ahora no salían de acá: jet lag social y dispersión del punto medio.
+      // Son las dos que definen cronodisrupción, y vivían solo en el gráfico.
+      window._dmSenalesDiario = window._dmSenalesDiario || {};
+      window._dmSenalesDiario[email] = {
+        jetLagMin: (function(){
+          try{ return typeof socialJetLagMin==='function' ? socialJetLagMin(diaryEntries) : null; }
+          catch(_){ return null; }
+        })(),
+        sdMidMin: (function(){
+          try{
+            const r = typeof computeSleepRegularity==='function'
+              ? computeSleepRegularity(dmNochesValidas(diaryEntries)) : null;
+            return r && r.sd_midpoint_min != null ? Math.round(r.sd_midpoint_min) : null;
+          }catch(_){ return null; }
+        })(),
+        noches: (diaryEntries||[]).length
+      };
     }catch(_){}
 
     // Obtener el modo del profesional (Gen/Esp)

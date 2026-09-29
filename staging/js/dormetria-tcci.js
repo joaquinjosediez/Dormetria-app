@@ -2139,5 +2139,50 @@ async function checkPatientTcciCard(){
       if(pctEl) pctEl.textContent = 'Empezá el programa autoguiado desde tu diario';
       if(homeSub) homeSub.textContent = 'Terapia cognitivo-conductual guiada. Podés empezar por tu cuenta.';
     }
+    // A quien cumple criterio de insomnio, la tarjeta no le dice lo mismo
+    // que a quien entró a mirar. Es la indicación de primera línea de las
+    // guías: si sus propias respuestas lo muestran, corresponde decírselo.
+    try{ dmTcciDestacarSiInsomnio(homeCard, homeSub, !!(active && active.length)); }catch(_){}
   }catch(e){ console.warn('[checkPatientTcciCard] error:', e); }
 }
+
+// ── ¿Este paciente cumple criterio de insomnio? ──────────────────────
+// Mismos cortes que las etiquetas del profesional, para que las dos caras
+// de la app no digan cosas distintas del mismo puntaje.
+//   · ISI ≥ 11  (Morin 2011)
+//   · AIS ≥ 10  (Soldatos 2003)
+//   · patrón de insomnio en el diario
+function dmTcciCriterioInsomnio(){
+  try{
+    const ult={};
+    (S.records||[]).forEach(function(r){
+      if(!ult[r.scale_id] || new Date(r.created_at)>new Date(ult[r.scale_id].created_at)) ult[r.scale_id]=r;
+    });
+    if(ult.isi && Number(ult.isi.score)>=11) return {si:true, por:'ISI', v:Number(ult.isi.score)};
+    if(ult.ais && Number(ult.ais.score)>=10) return {si:true, por:'AIS', v:Number(ult.ais.score)};
+    const pat=(window._dmPatronDiario||{})[(S.user&&S.user.email)||''] || '';
+    if(/patr[óo]n de insomnio/i.test(pat)) return {si:true, por:'diario', v:null};
+  }catch(_){}
+  return {si:false};
+}
+window.dmTcciCriterioInsomnio = dmTcciCriterioInsomnio;
+
+function dmTcciDestacarSiInsomnio(card, sub, yaGuiado){
+  if(!card) return;
+  const c = dmTcciCriterioInsomnio();
+  card.classList.toggle('dm-tcci-indicado', !!c.si);
+  if(!c.si || yaGuiado) return;
+  // El texto dice POR QUÉ aparece. Una recomendación sin motivo se lee
+  // como publicidad del programa; con el motivo, se lee como lo que es.
+  if(sub){
+    sub.innerHTML = c.por==='diario'
+      ? '<b>Tu diario muestra un patrón de insomnio.</b> La terapia cognitivo-conductual es lo primero que recomiendan las guías, antes que la medicación.'
+      : '<b>Tus respuestas del '+c.por+' ('+c.v+') muestran criterio de insomnio.</b> La terapia cognitivo-conductual es lo primero que recomiendan las guías, antes que la medicación.';
+  }
+  const tag = card.querySelector('div[style*="PROGRAMA"], div');
+  try{
+    const et = card.firstElementChild;
+    if(et && /PROGRAMA/.test(et.textContent)) et.textContent = 'RECOMENDADO';
+  }catch(_){}
+}
+window.dmTcciDestacarSiInsomnio = dmTcciDestacarSiInsomnio;

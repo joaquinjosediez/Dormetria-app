@@ -1,0 +1,46 @@
+mod230 · noches duplicadas, y los cortes de las etiquetas automaticas
+
+NOCHES DUPLICADAS. Nada impedia dos filas con el mismo paciente y la misma
+fecha: ni la base (sin indice unico) ni la app. No es cosmetico — el analisis
+promedia las dos filas como dos noches distintas, asi que una noche mala
+cargada dos veces pesa el doble en eficiencia, latencia y todo lo derivado.
+Ahora, antes de crear, se busca esa fecha y si existe se ACTUALIZA. Si la
+verificacion falla por red, se sigue igual: perder la carga es peor.
+SQL-noches-duplicadas.md limpia lo que quedo y agrega el indice unico.
+
+Segundo bicho de la misma familia: showDiaryNew() NO limpiaba
+S._editingDiaryId. Quien entraba a editar una noche y se volvia sin guardar
+dejaba la marca puesta, y el siguiente "+ Nuevo" PISABA la noche vieja.
+Ahora editar se declara al abrir: showDiaryNew(id).
+
+ETIQUETAS AUTOMATICAS. Eran tres reglas sueltas (STOP-BANG>=5, ISI>=15,
+IRLS>=15). Alguien que consulta por insomnio y puntua 13 en el ISI quedaba
+sin ninguna. Regla que me impuse: no inventar ningun corte.
+
+  insomnio        ISI >= 11 (Morin 2011, corte clinico; 15 es "moderado" y
+                  deja afuera el leve, que es el que mas responde a TCC-I)
+                  AIS >= 10 (Soldatos 2003)
+                  patron de insomnio en el diario
+  sahos           STOP-BANG >= 5 (Chung 2016) · Berlin > 20
+  spi             IRLS >= 15
+  parasomnia      RBDQ >= 8
+  cronodisrupcion jet lag social >= 120 min (Wittmann 2006)
+                  o dispersion del punto medio >= 90 min
+                  o cronotipo extremo (MEQ <=30 / >=70) CON jet lag >= 60
+  narcolepsia     NO se auto-marca. No hay instrumento especifico cargado
+                  (ni SNS, ni Ullanlinna, ni cataplejia). Marcarla desde un
+                  ESS alto seria etiquetar a cualquiera que duerma poco.
+
+Cada tilde guarda POR QUE se puso y la tarjeta lo muestra: un tilde
+automatico sin explicacion es una afirmacion clinica sin respaldo visible.
+
+Al paciente que cumple criterio de insomnio, la tarjeta de TCC-I del inicio
+se destaca y le dice por que aparece, con el MISMO corte que ve el
+profesional. Sin el motivo se lee como publicidad del programa.
+
+Y se saca "no modificable" de menstruacion: decia algo falso. Que el ciclo
+no se elija no significa que no se pueda hacer nada — se puede anticipar la
+fase lutea, reforzar el horario esos dias, tratar sintomas. Queda "factor
+fisiologico".
+
+Lo fijan pruebas/45 y pruebas/46.
