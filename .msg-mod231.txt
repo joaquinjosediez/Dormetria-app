@@ -1,0 +1,33 @@
+mod231 · "Que mueve la aguja" reemplaza al grafico de lineas de los pilares
+
+El grafico tenia cinco series superpuestas en un rango de 20 a 80 por ciento
+con suavizado de ±3 dias: lectura tecnica que nadie miraba. Y encima empujaba
+abajo de todo el analisis de factores —t de Welch con umbral clinico— que es
+lo mejor que tiene esa pestaña.
+
+Ahora es la MISMA informacion como titular: una barra por factor, ordenadas
+por tamaño del efecto. Lo que habia que leer en cuatro tablas se ve de un
+vistazo, y el detalle sigue abajo.
+
+Tres reglas para que no sea un grafico que afirma de mas:
+
+  1. Solo se dibuja barra si el efecto paso el umbral clinico Y p<0,05. Lo
+     que no llego va en gris diciendo "sin diferencia relevante" — que es un
+     resultado, no un hueco.
+  2. El largo es proporcional al efecto RELATIVO, no al absoluto: 15 min
+     sobre una latencia de 20 no es lo mismo que 15 sobre 120.
+  3. Nunca dice "mejora" ni "empeora" a secas. El pie aclara que es
+     asociacion dentro del mismo paciente, nombra la prueba usada, y cada
+     fila muestra sobre cuantas noches se calculo.
+
+El veredicto va en PALABRA ("mejor" / "peor"), no solo en color: un panel
+que solo distingue por rojo y verde no lo puede leer una de cada doce
+personas con daltonismo. El primer intento decia "↓ Latencia +37 min", que
+mezcla dos direcciones en la misma linea: la flecha dice "peor sueño" y el
+signo dice "mas minutos". Ahora: "peor · Latencia +37 min".
+
+El grafico viejo queda plegado en un <details> para quien lo quiera. El
+canvas sigue existiendo: sacarlo romperia el resto del render.
+
+Lo fija pruebas/47, que ademas lo ejercita con noches sinteticas donde la
+cafeina empeora el sueño y verifica que lo dibuje en rojo.

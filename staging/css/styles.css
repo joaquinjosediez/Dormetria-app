@@ -5809,3 +5809,59 @@ body.dm-dir-abierto #consult-list{ padding:4px 18px 28px; }
 #home-tcci-card.dm-tcci-indicado > div:first-child{
   background:#7EC8A4;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod231 · "Qué mueve la aguja"
+   Reemplaza al gráfico de líneas de los pilares: cinco series superpuestas
+   en un rango de 20 a 80 por ciento con suavizado de ±3 días, que en la
+   práctica nadie miraba — y que además empujaba abajo de todo el análisis
+   de factores, que es lo mejor que tiene la pestaña.
+   Misma información, como titular.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-aguja{ font-size:12.5px; }
+.dm-aguja-fila{
+  display:grid;
+  grid-template-columns:minmax(120px,1.5fr) minmax(70px,1.6fr) minmax(110px,1.3fr) auto;
+  gap:10px; align-items:center;
+  padding:9px 2px; border-bottom:1px solid rgba(0,0,0,.06);
+}
+.dm-aguja-fila:last-of-type{ border-bottom:none; }
+.dm-aguja-fila.nula{ opacity:.55; }
+.dm-aguja-rot{
+  font-weight:600; color:#0F2820; line-height:1.35; min-width:0;
+}
+.dm-aguja-barra{
+  height:9px; background:rgba(0,0,0,.05); border-radius:5px; overflow:hidden;
+  display:flex; align-items:center;
+}
+.dm-aguja-barra > span{ height:100%; border-radius:5px; display:block; }
+.dm-aguja-barra > span.vacia{
+  width:100%; background:repeating-linear-gradient(90deg,
+    rgba(0,0,0,.06) 0 4px, transparent 4px 8px);
+}
+.dm-aguja-val{ font-weight:700; font-size:12px; line-height:1.3; }
+.dm-aguja-n{
+  font-size:10.5px; color:#8a8a82; white-space:nowrap; text-align:right;
+}
+.dm-aguja-pie{
+  font-size:10.5px; color:#77776e; line-height:1.55;
+  margin-top:11px; padding:8px 10px; background:#f8fafc; border-radius:7px;
+}
+/* El gráfico viejo queda, plegado, para quien lo quiera. */
+.dm-aguja-det{ margin-top:12px; }
+.dm-aguja-det > summary{
+  cursor:pointer; list-style:none; font-size:11.5px; color:#55554e;
+  padding:7px 0; font-weight:600;
+}
+.dm-aguja-det > summary::-webkit-details-marker{ display:none; }
+.dm-aguja-det > summary::before{ content:'▸ '; }
+.dm-aguja-det[open] > summary::before{ content:'▾ '; }
+
+/* En el teléfono la grilla de cuatro columnas no entra: se apila. */
+@media (max-width:759px){
+  .dm-aguja-fila{ grid-template-columns:1fr auto; gap:5px 10px; }
+  .dm-aguja-rot{ grid-column:1; }
+  .dm-aguja-n{ grid-column:2; }
+  .dm-aguja-barra{ grid-column:1 / -1; }
+  .dm-aguja-val{ grid-column:1 / -1; }
+}
