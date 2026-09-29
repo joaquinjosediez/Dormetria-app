@@ -17,25 +17,53 @@ const app = C.leerApp();
 const i = app.indexOf('function dmAgujaHtml(entries){');
 r.ok(i > 0, 'existe el panel');
 const fn = app.slice(i, app.indexOf('// La calidad percibida, cruzada con TODAS', i));
+const css47 = C.leerCss();
 
-r.seccion('Regla 1 — solo se dibuja lo que pasó los dos filtros:');
+r.seccion('Regla 1 — el color solo se usa cuando hay algo que afirmar:');
 
-r.ok(/e\.signo!==0/.test(fn),
-     'la barra sale de signo, que ya exige umbral clínico Y p<0,05');
-r.ok(/sin diferencia relevante/.test(fn),
-     'lo que no llegó se dice, no se esconde: "no encontramos nada" es un resultado');
-r.ok(/nula/.test(fn),
-     'y va en gris, sin barra');
+r.ok(/soloNetos && e\.signo===0/.test(fn),
+     'se prefiere el efecto que pasó umbral clínico Y p<0,05');
+r.ok(/f\.lo<=0 && f\.hi>=0/.test(fn),
+     'pero además, si el IC toca el cero, no se afirma nada');
+r.ok(/GRIS/.test(fn),
+     'esa fila va en gris — el color es una afirmación');
+r.ok(/es un resultado/.test(fn),
+     'y la fila se dibuja igual: "lo miramos y cruza el cero" es información');
 
-r.seccion('Regla 2 — el largo es el efecto RELATIVO:');
+r.seccion('Regla 2 — el eje es el tamaño del efecto, no minutos ni %:');
 
-r.ok(/Math\.abs\(e\.diff\)\/base/.test(fn),
-     '15 min sobre una latencia de 20 no es lo mismo que 15 sobre 120');
-r.ok(/maxRel/.test(fn), 'y se escala contra el mayor, no contra un absoluto inventado');
+// El primer intento usaba cambio porcentual y reventaba con las variables
+// de base chica: pasar de 1 a 2 despertares es "+100 %" y se come el eje,
+// mientras que 40 minutos menos sobre 440 queda pegado al cero.
+r.ok(/d de Cohen/.test(fn),
+     'se usa d, que es adimensional y compara peras con peras');
+r.ok(/0,2 chico · 0,5 medio · 0,8 grande/.test(fn),
+     'con las anclas de interpretación a la vista');
+r.ok(/const TOPE = 2/.test(fn),
+     'y con tope: un efecto enorme no puede aplastar al resto contra el cero');
+r.ok(/dm-aguja-corte/.test(fn),
+     'lo que se sale del eje se marca, en vez de fingir que termina en el borde');
+
+r.seccion('El eje está orientado: la derecha siempre es mejor sueño');
+
+r.ok(/dirGood \|\| 1/.test(fn),
+     'se multiplica por dirGood, así "+37 min de latencia" cae a la izquierda');
+r.ok(/peor sueño/.test(fn) && /mejor sueño/.test(fn),
+     'y los extremos están rotulados');
+
+r.seccion('La media y su intervalo, como pidió:');
+
+r.ok(/dm-aguja-media/.test(fn) && /dm-aguja-ic/.test(fn),
+     'se dibujan las dos cosas');
+r.ok(/CI_dif \/ sp|v\/sp\)\*g/.test(fn),
+     'el IC de la d sale del IC de la diferencia sobre la misma desviación combinada');
+r.ok(/\.dm-aguja-ic\{[^}]*opacity:\.28/.test(css47.replace(/\s+/g, '')) ||
+     /opacity:\.28/.test(css47.slice(css47.indexOf('.dm-aguja-ic{'), css47.indexOf('.dm-aguja-ic{') + 300)),
+     'el intervalo va más sombreado que el centro');
 
 r.seccion('Regla 3 — no se afirma causalidad:');
 
-r.ok(/no causalidad|no es un ensayo|asociación dentro del mismo paciente/i.test(fn),
+r.ok(/no para concluir\s*'\+\s*'causalidad|concluir causalidad|no para concluir/i.test(fn),
      'el pie lo dice explícitamente');
 r.ok(/t de Welch/.test(fn), 'y nombra la prueba que se usó');
 r.ok(/noches/.test(fn), 'cada fila muestra sobre cuántas noches se calculó');
@@ -45,10 +73,10 @@ r.seccion('El veredicto no depende del color:');
 // Un panel que solo distingue por rojo/verde no lo puede leer una de cada
 // doce personas con daltonismo — y encima "↓ Latencia +37 min" mezclaba
 // dos direcciones en la misma línea.
-r.ok(/mejor'\s*:\s*'peor'|\(mejor\?'mejor':'peor'\)/.test(fn),
+r.ok(/f\.signo>0\?'mejor':'peor'/.test(fn),
      'dice "mejor" o "peor" en palabra');
-r.ok(!/'↑ '/.test(fn),
-     'y ya no usa la flecha, que contradecía el signo del número');
+r.ok(/sin diferencia concluyente/.test(fn),
+     'y cuando el intervalo toca el cero, lo dice así — no "sin efecto"');
 
 r.seccion('Los avisos de la tabla de abajo no se pierden:');
 
@@ -69,14 +97,20 @@ r.ok(!!ctx, 'la app arranca');
 if (ctx) {
   const vm = require('vm');
   // Noches donde la cafeína empeora el sueño, con efecto grande y claro.
+  // Con ruido: sin varianza, Welch toma el camino de separación perfecta
+  // y el intervalo queda degenerado. Datos así no existen.
+  let semilla = 7;
+  const rnd = () => { semilla = (semilla * 1103515245 + 12345) % 2147483648; return semilla / 2147483648; };
   const ns = [];
   for (let k = 0; k < 40; k++) {
     const caf = k % 2 === 0;
     const d = new Date(2026, 7, 1 + k);
     ns.push({
       diary_date: d.toISOString().slice(0, 10), bedtime: '23:30', wake_time: '07:00',
-      sleep_minutes: caf ? 380 : 445, sleep_latency_mins: caf ? 55 : 18,
-      awakenings: caf ? 2 : 1, sleep_quality: caf ? 2 : 4,
+      sleep_minutes: Math.round((caf ? 400 : 440) + rnd() * 50 - 25),
+      sleep_latency_mins: Math.round((caf ? 38 : 22) + rnd() * 18 - 9),
+      awakenings: Math.round((caf ? 1.8 : 1.1) + rnd() * 1.4 - 0.7),
+      sleep_quality: Math.round((caf ? 3 : 4) + rnd() * 1.6 - 0.8),
       coffee_cups: caf ? 300 : 0, alcohol_drinks: 0, exercise_mins: 0, screen_minutes: 0,
       day_type: (d.getDay() === 0 || d.getDay() === 6) ? 'free' : 'work'
     });
@@ -86,6 +120,8 @@ if (ctx) {
   try { html = vm.runInContext('dmAgujaHtml(_nsPrueba)', ctx); } catch (e) { html = 'ERROR ' + e.message; }
   r.ok(/dm-aguja-fila/.test(html), 'con datos sintéticos dibuja al menos una fila');
   r.ok(/peor/.test(html), 'y con cafeína que empeora el sueño, lo llama "peor"');
+  r.ok(/d=−/.test(html), 'con la d orientada en negativo (peor sueño)');
+  r.ok(/IC95%/.test(html), 'y su intervalo de confianza');
   r.ok(/#b91c1c/.test(html), 'en rojo');
 }
 

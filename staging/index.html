@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg232-cffc295b">
+<link rel="stylesheet" href="css/styles.css?v=stg233-db4f8c12">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg232-9c37dd8d"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg232-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg232-af87b0b6"></script>
-<script src="js/dormetria-render-resumen.js?v=stg232-f18070cd"></script>
-<script src="js/dormetria-tcci.js?v=stg232-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg233-9c37dd8d"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg233-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg233-af87b0b6"></script>
+<script src="js/dormetria-render-resumen.js?v=stg233-f18070cd"></script>
+<script src="js/dormetria-tcci.js?v=stg233-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg232';
+const APP_VERSION='stg233';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg232 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg233 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -6719,15 +6719,44 @@ function dmWelch(a, b){
   // Varianza cero en ambos grupos: o son idénticos (p=1) o están
   // perfectamente separados (p→0). Devolver 1 en el segundo caso, como hacía
   // antes, escondía justo el efecto más nítido posible.
-  if(v1===0 && v2===0) return {dif:m1-m2, p:(m1===m2?1:0), d:(m1===m2?0:Infinity)};
+  if(v1===0 && v2===0) return {dif:m1-m2, p:(m1===m2?1:0), d:(m1===m2?0:Infinity), se:0, df:null};
   const se=Math.sqrt(v1/n1 + v2/n2);
-  if(!(se>0)) return {dif:m1-m2, p:1, d:0};
+  if(!(se>0)) return {dif:m1-m2, p:1, d:0, se:0, df:null};
   const t=(m1-m2)/se;
   const df=Math.pow(v1/n1+v2/n2,2) /
            (Math.pow(v1/n1,2)/(n1-1) + Math.pow(v2/n2,2)/(n2-1));
   const p=Math.max(0, Math.min(1, _tCDF(Math.abs(t), df)));
   const sp=Math.sqrt(((n1-1)*v1+(n2-1)*v2)/(n1+n2-2));
-  return {dif:m1-m2, p:p, d: sp>0 ? (m1-m2)/sp : 0, t:t, df:df};
+  return {dif:m1-m2, p:p, d: sp>0 ? (m1-m2)/sp : 0, t:t, df:df, se:se};
+}
+
+// Cuantil t de dos colas al 95 %, invirtiendo _tCDF por bisección. No hace
+// falta precisión de tabla: con 40 pasos el error queda por debajo de
+// 1e-6, y el IC se dibuja en píxeles.
+function dmTCrit95(df){
+  if(!(df>0)) return 1.96;
+  if(df>2000) return 1.96;
+  let lo=0, hi=60;
+  for(let i=0;i<40;i++){
+    const mid=(lo+hi)/2;
+    // _tCDF devuelve el p de dos colas para |t|.
+    if(_tCDF(mid, df) > 0.05) lo=mid; else hi=mid;
+  }
+  return (lo+hi)/2;
+}
+
+// IC 95 % de la diferencia de medias (Welch).
+function dmICDiferencia(st){
+  if(!st) return null;
+  // Separación perfecta (varianza cero en los dos grupos y medias
+  // distintas): el intervalo tiene ancho cero sobre la diferencia. Es el
+  // caso más nítido que existe, no uno sin información.
+  if(!(st.se>0)){
+    return (st.dif!==0 && st.p===0) ? { lo: st.dif, hi: st.dif, exacto:true } : null;
+  }
+  if(st.df==null) return null;
+  const t=dmTCrit95(st.df);
+  return { lo: st.dif - t*st.se, hi: st.dif + t*st.se };
 }
 function dmFmtP(p){
   if(p==null) return '';
@@ -6979,7 +7008,9 @@ function computeHabitsImpact(entries){
       let signo=0;
       const sig = st && st.p < 0.05;
       if(Math.abs(diff) >= minDif && sig) signo = (diff>0?1:-1) * s.dirGood;
+      const _ic = dmICDiferencia(st);
       efectos.push({ id:s.id, label:s.label, unit:s.unit, mOn:ma, mOff:mb, diff, signo,
+                     ciLo: _ic?_ic.lo:null, ciHi: _ic?_ic.hi:null,
                      dirGood:s.dirGood,
                      // direccion: +1 mejora con el factor, -1 empeora, 0 igual.
                      // Es independiente de si el efecto llega a ser relevante.
@@ -7034,59 +7065,121 @@ function dmAgujaHtml(entries){
       'Hacen falta al menos 5 de cada lado.</div>';
   }
 
-  // Por cada factor, su efecto más fuerte — medido en relativo.
+  // ── El eje: tamaño del efecto (d de Cohen), no porcentaje ──────────
+  // El primer intento usaba cambio porcentual. Revienta con las variables
+  // de base chica: pasar de 1 a 2 despertares es "+100 %" y se come el
+  // eje, mientras que 40 minutos menos de sueño sobre 440 es "−9 %" y
+  // queda pegado al cero. La d es adimensional y compara peras con peras.
+  //
+  // Anclas convencionales (Cohen 1988): 0,2 chico · 0,5 medio · 0,8 grande.
+  //
+  // El eje además está ORIENTADO: se multiplica por dirGood para que la
+  // derecha sea siempre mejor sueño, sin importar si la variable sube o
+  // baja. Así "+37 min de latencia" cae a la izquierda, donde tiene que
+  // estar, sin que haya que pensarlo.
   const filas = R.habitos.map(function(hb){
-    const netos = (hb.efectos||[]).filter(function(e){ return e.signo!==0; });
-    let top=null, rel=0;
-    netos.forEach(function(e){
-      const base = Math.abs(e.mOff) > 0.001 ? Math.abs(e.mOff) : 1;
-      const r = Math.abs(e.diff)/base;
-      if(r>rel){ rel=r; top=e; }
-    });
-    return { hb:hb, top:top, rel:rel, signo: top ? top.signo : 0 };
-  });
+    let top=null, mag=0;
+    const elegir=function(soloNetos){
+      (hb.efectos||[]).forEach(function(e){
+        if(soloNetos && e.signo===0) return;
+        const d = (e.d!=null && isFinite(e.d)) ? Math.abs(e.d) : 0;
+        if(d>mag){ mag=d; top=e; }
+      });
+    };
+    elegir(true);
+    // Sin ningún efecto neto se muestra igual el de mayor d, para poder
+    // dibujar su intervalo: "lo miramos y cruza el cero" es un resultado.
+    if(!top) elegir(false);
+    if(!top) return null;
+    const g = top.dirGood || 1;
+    // El IC de la d sale del IC de la diferencia dividido por la misma
+    // desviación combinada: d = dif / sp, así que CI_d = CI_dif / sp.
+    const sp = (top.d && top.d!==0 && isFinite(top.d)) ? (top.diff/top.d) : null;
+    const aD = function(v){ return (v==null || !sp) ? null : (v/sp)*g; };
+    let lo=aD(top.ciLo), hi=aD(top.ciHi);
+    if(lo!=null && hi!=null && lo>hi){ const t=lo; lo=hi; hi=t; }
+    const dOr = (top.d!=null && isFinite(top.d)) ? top.d*g : 0;
+    return { hb:hb, top:top, d:dOr, lo:lo, hi:hi, signo: top.signo?(top.signo>0?1:-1):0 };
+  }).filter(Boolean);
 
-  // Ordenadas por efecto. Las que no tienen efecto van al final, pero van:
-  // "probamos y no encontramos nada" es información clínica.
-  filas.sort(function(a,b){ return (b.rel||0)-(a.rel||0); });
-  const maxRel = Math.max.apply(null, filas.map(function(f){ return f.rel||0; }).concat([0.0001]));
+  if(!filas.length){
+    return '<div style="font-size:12.5px;color:#5c6b63;line-height:1.55;font-style:italic">'+
+      'No hay ningún factor con noches suficientes a los dos lados para comparar.</div>';
+  }
+
+  // El eje lo fijan las MEDIAS, no los extremos de los intervalos: si lo
+  // fijara el IC, un intervalo ancho por pocas noches dejaría a todas las
+  // demás medias apretadas contra el cero. El IC que no entra se corta y
+  // se marca, que es la convención del forest plot.
+  const TOPE = 2;
+  let MAX = 0.8;                       // el eje nunca arranca más chico que "efecto grande"
+  filas.forEach(function(f){
+    if(f.d!=null && isFinite(f.d)) MAX = Math.max(MAX, Math.min(Math.abs(f.d), TOPE));
+  });
+  MAX = Math.ceil(MAX*10)/10;
+  const x = function(v){ return 50 + (Math.max(-MAX, Math.min(MAX, v))/MAX)*50; };
+
+  filas.sort(function(a,b){ return Math.abs(b.d||0)-Math.abs(a.d||0); });
 
   const VERDE='#15803d', ROJO='#b91c1c', GRIS='#9a9a92';
+  const fmt=function(v){ return (v<0?'−':'')+Math.abs(v).toFixed(2).replace('.', ','); };
   const cuerpo = filas.map(function(f){
-    const hb=f.hb;
-    const pct = f.rel ? Math.max(6, Math.round(f.rel/maxRel*100)) : 0;
-    const mejor = f.signo>0;
-    const col = f.signo===0 ? GRIS : (mejor?VERDE:ROJO);
-    // "↓ Latencia +37 min" se leía mal: la flecha dice "peor sueño" y el
-    // signo dice "más minutos". Se separan las dos cosas, y el veredicto
-    // va en palabra para que no dependa del color.
-    const titular = f.top
-      ? '<b>'+(mejor?'mejor':'peor')+'</b> · '+f.top.label+' '+
-        (f.top.diff>0?'+':'−')+
-        (Math.abs(f.top.diff)>=1 ? Math.round(Math.abs(f.top.diff)) : Math.round(Math.abs(f.top.diff)*10)/10)+
-        ' '+(f.top.unit||'')
-      : 'sin diferencia relevante';
+    const hb=f.hb, t=f.top;
+    // Gris cuando el intervalo toca el cero o el efecto no pasó el umbral
+    // clínico: el color es una afirmación y ahí no corresponde hacerla.
+    const cruza = (f.lo!=null && f.hi!=null) ? (f.lo<=0 && f.hi>=0) : true;
+    const col = (f.signo===0 || cruza) ? GRIS : (f.signo>0 ? VERDE : ROJO);
+    const xc = x(f.d||0);
+    const xa = f.lo!=null ? x(f.lo) : xc;
+    const xb = f.hi!=null ? x(f.hi) : xc;
+    const cortaIzq = (f.lo!=null && f.lo < -MAX) || (f.d!=null && f.d < -MAX);
+    const cortaDer = (f.hi!=null && f.hi >  MAX) || (f.d!=null && f.d >  MAX);
+    const abs = Math.abs(t.diff)>=1 ? Math.round(Math.abs(t.diff)) : Math.round(Math.abs(t.diff)*10)/10;
     const marcas =
-      (hb.preliminar?'<span style="font-size:9px;background:#fef9c3;color:#854d0e;border-radius:99px;padding:1px 6px;font-weight:700;margin-left:6px">preliminar</span>':'')+
-      (hb.fisiologico?'<span style="font-size:9px;background:#eef2ff;color:#4338ca;border-radius:99px;padding:1px 6px;font-weight:700;margin-left:6px">fisiológico</span>':'')+
-      (hb.personal?'<span style="font-size:9px;background:#fdf4ff;color:#86198f;border-radius:99px;padding:1px 6px;font-weight:700;margin-left:6px">tu variable</span>':'');
-    return '<div class="dm-aguja-fila'+(f.signo===0?' nula':'')+'">'+
+      (hb.preliminar?'<span class="dm-aguja-tag prelim">preliminar</span>':'')+
+      (hb.fisiologico?'<span class="dm-aguja-tag fisio">fisiológico</span>':'')+
+      (hb.personal?'<span class="dm-aguja-tag pers">tu variable</span>':'');
+    const veredicto = (f.signo===0 || cruza) ? 'sin diferencia concluyente'
+                    : (f.signo>0?'mejor':'peor');
+    return '<div class="dm-aguja-fila">'+
       '<div class="dm-aguja-rot">'+(hb.icon||'')+' '+hb.label+marcas+'</div>'+
-      '<div class="dm-aguja-barra">'+
-        (pct?'<span style="width:'+pct+'%;background:'+col+'"></span>':'<span class="vacia"></span>')+
+      '<div class="dm-aguja-eje">'+
+        '<i class="dm-aguja-cero"></i>'+
+        // El IC va detrás y más claro; la media, sólida, encima: lo que se
+        // mira primero tiene que ser la estimación, no su incertidumbre.
+        '<i class="dm-aguja-ic" style="left:'+Math.min(xa,xb)+'%;width:'+Math.max(1.2,Math.abs(xb-xa))+'%;background:'+col+'"></i>'+
+        (cortaIzq?'<i class="dm-aguja-corte izq" style="color:'+col+'">◂</i>':'')+
+        (cortaDer?'<i class="dm-aguja-corte der" style="color:'+col+'">▸</i>':'')+
+        '<i class="dm-aguja-media" style="left:'+xc+'%;background:'+col+'"></i>'+
       '</div>'+
-      '<div class="dm-aguja-val" style="color:'+col+'">'+titular+'</div>'+
-      '<div class="dm-aguja-n">'+hb.nOn+' vs '+hb.nOff+' noches</div>'+
+      '<div class="dm-aguja-val" style="color:'+col+'">'+
+        '<b>'+veredicto+'</b><br>'+
+        '<span class="dm-aguja-num">'+t.label+' '+(t.diff>0?'+':'−')+abs+' '+(t.unit||'')+
+        '<span class="dm-aguja-ic-txt"> · d='+fmt(f.d)+
+        (f.lo!=null? ' (IC95% '+fmt(f.lo)+' a '+fmt(f.hi)+')' : '')+'</span>'+
+        '</span></div>'+
+      '<div class="dm-aguja-n">'+hb.nOn+' vs '+hb.nOff+'</div>'+
     '</div>';
   }).join('');
 
-  return '<div class="dm-aguja">'+cuerpo+
+  return '<div class="dm-aguja">'+
+    '<div class="dm-aguja-cab">'+
+      '<span></span>'+
+      '<span class="dm-aguja-escala">'+
+        '<i>← peor sueño</i><b>0</b><i>mejor sueño →</i>'+
+        '<u>d ±'+String(MAX).replace('.', ',')+'</u></span>'+
+      '<span></span><span></span>'+
+    '</div>'+
+    cuerpo+
     '<div class="dm-aguja-pie">'+
-      'Cada barra compara las noches <b>con</b> y <b>sin</b> ese factor en este mismo paciente '+
-      '(t de Welch, dos colas). Solo se dibuja si la diferencia supera el umbral clínico '+
-      '<i>y</i> p&lt;0,05; el largo es proporcional al efecto <b>relativo</b>, no al absoluto. '+
-      'Es asociación dentro del mismo paciente, no causalidad: el detalle de cada factor está '+
-      'más abajo.</div>'+
+      'Cada fila compara las noches <b>con</b> y <b>sin</b> ese factor en este mismo paciente '+
+      '(t de Welch, dos colas). El punto es el tamaño del efecto (<b>d de Cohen</b>: 0,2 chico · '+
+      '0,5 medio · 0,8 grande) y la banda su <b>IC 95 %</b>. Se usa d y no minutos porque las '+
+      'variables tienen unidades distintas, y se orienta el eje para que la derecha sea siempre '+
+      'mejor sueño. <b>Si la banda toca el cero, no se afirma nada</b> y la fila queda en gris. '+
+      'Se comparan varios factores por varias variables, así que algún intervalo que excluya el '+
+      'cero es esperable por azar: sirve para generar hipótesis en consulta, no para concluir '+
+      'causalidad. El detalle de cada factor está más abajo.</div>'+
   '</div>';
 }
 

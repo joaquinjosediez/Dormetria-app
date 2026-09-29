@@ -1,0 +1,41 @@
+mod232 · "Que mueve la aguja" pasa a forest plot centrado en cero
+
+Eje centrado en cero, la media como punto solido y el IC 95 % como banda
+mas clara detras. Verde si mejora, rojo si empeora, gris si el intervalo
+toca el cero.
+
+Para esto dmWelch ahora devuelve tambien el error estandar, y se agrego
+dmTCrit95() —cuantil t al 95 % invirtiendo _tCDF por biseccion— y
+dmICDiferencia(). Sin se no hay IC, y sin IC el grafico solo podia decir
+"hay diferencia" o "no hay": la lectura binaria que conviene evitar.
+
+DOS COSAS QUE APARECIERON PROBANDO:
+
+1. El primer intento usaba CAMBIO PORCENTUAL en el eje. Revienta con las
+   variables de base chica: pasar de 1 a 2 despertares es "+100 %" y se
+   come el eje, mientras que 40 minutos menos de sueño sobre 440 es "−9 %"
+   y queda pegado al cero. El eje pasa a ser d de Cohen, que es
+   adimensional, con las anclas a la vista (0,2 / 0,5 / 0,8). El IC de la d
+   sale del IC de la diferencia sobre la misma desviacion combinada.
+
+2. dmWelch tenia una rama para varianza cero en los DOS grupos que devolvia
+   p=0 pero sin se ni df. Es un caso real —alguien que siempre contesta lo
+   mismo con el factor y siempre otra cosa sin el— y es la separacion mas
+   nitida que existe. Con IC nulo se pintaba de GRIS como "sin diferencia
+   concluyente", que es exactamente lo contrario. Ahora devuelve un
+   intervalo degenerado de ancho cero sobre la propia diferencia.
+
+Detalles de lectura:
+- El eje esta ORIENTADO: se multiplica por dirGood para que la derecha sea
+  siempre mejor sueño. Asi "+37 min de latencia" cae a la izquierda sin que
+  haya que pensarlo.
+- El eje lo fijan las MEDIAS, no los extremos de los intervalos: si lo
+  fijara el IC, un intervalo ancho por pocas noches dejaria todas las demas
+  medias apretadas contra el cero. Lo que se sale se corta y se marca con
+  una flecha, que es la convencion del forest plot.
+- Tope en d=2: mas alla el efecto ya es enorme y la diferencia entre 2,0 y
+  2,9 no cambia ninguna decision, pero estirar el eje aplasta al resto.
+
+Lo fija pruebas/47, que lo ejercita con noches sinteticas CON RUIDO —sin
+varianza, Welch toma el camino de separacion perfecta y datos asi no
+existen.
