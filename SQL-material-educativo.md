@@ -128,3 +128,87 @@ from public.patient_education
 order by assigned_at desc
 limit 20;
 ```
+
+---
+
+## Las policies que ya existían, y la que hay que borrar
+
+Al correr el SQL de arriba la tabla quedó con **ocho** policies: las cuatro
+de acá y otras cuatro que ya estaban de antes. Eso no es redundancia inocua.
+
+> **Las policies PERMISSIVE se combinan con OR, no con AND.** Agregar una
+> policy solo puede ampliar lo que se permite, nunca restringirlo. Una
+> policy laxa anula a todas las estrictas que la acompañen.
+
+Las ocho, con lo que hace cada una:
+
+| policy | cmd | qué verifica |
+|---|---|---|
+| `doctor manages own assignments` | ALL | `doctor_email = yo` — **sin verificar el vínculo** |
+| `pedu_doctor_lee` | SELECT | vínculo en `doctor_patients` |
+| `pedu_doctor_asigna` | INSERT | vínculo en `doctor_patients` **y** firma propia |
+| `pedu_doctor_quita` | DELETE | `doctor_email = yo` |
+| `patient reads own assignments` | SELECT | `patient_email` = correo del token |
+| `pedu_paciente_lee` | SELECT | `patient_email` ∈ `patients` del `auth.uid()` |
+| `patient marks own as read` | UPDATE | `patient_email` = correo del token |
+| `pedu_paciente_marca_leido` | UPDATE | ídem, con `with check` |
+
+### Qué deja pasar la primera
+
+`doctor manages own assignments` es `for all` con
+`doctor_email = auth.jwt()->>'email'` en el `using` **y** en el `with check`.
+Para SELECT, UPDATE y DELETE eso es correcto: solo toca filas propias. El
+problema es el **INSERT**.
+
+Como el `with check` solo mira `doctor_email`, un profesional puede insertar
+una fila con **cualquier** `patient_email` del sistema mientras firme con el
+suyo. No hace falta vínculo. `pedu_doctor_asigna`, que sí lo exige, queda sin
+efecto: las dos se combinan con OR y basta que una permita.
+
+Dos consecuencias:
+
+1. Un profesional puede meter material en la pantalla de inicio de un
+   paciente que no es suyo. El paciente ve "tu profesional te recomienda
+   leer esto" de alguien que no es su profesional.
+2. Peor: queda un **oráculo de enumeración**. Se inserta una fila con un
+   correo cualquiera y después se lee esa misma fila (es propia, así que la
+   policy la deja). Si `read_at` se completa, ese correo es de un paciente
+   activo de Dormetria. Eso es dato de salud por inferencia — Ley 25.326
+   art. 7 — obtenido sin ninguna relación asistencial.
+
+No hay lectura de datos clínicos ajenos: para leer filas de otros, hace
+falta el vínculo (`pedu_doctor_lee`) o ser el dueño de la fila.
+
+### El arreglo
+
+Una línea. Las tres `pedu_doctor_*` cubren lo que la app hace —leer, asignar
+y quitar—, y las dos del paciente cubren su lado.
+
+```sql
+drop policy if exists "doctor manages own assignments"
+  on public.patient_education;
+
+notify pgrst, 'reload schema';
+```
+
+Después queda así, y tiene que dar **7 filas**:
+
+```sql
+select policyname, cmd,
+       qual       as usando,
+       with_check as al_escribir
+from pg_policies
+where schemaname='public' and tablename='patient_education'
+order by cmd, policyname;
+```
+
+> **Lo que queda sin policy a propósito:** el profesional no tiene UPDATE.
+> La app nunca lo hace —asigna con POST y desasigna con DELETE—, y un UPDATE
+> sin vínculo sería el mismo agujero por otra puerta. Si alguna vez hace
+> falta, se escribe con el `exists` contra `doctor_patients`, no con un
+> `for all`.
+
+> **Si algo deja de andar al borrarla**, el síntoma sería que el panel
+> Material no asigna. Querría decir que la ficha del paciente se abre sin
+> una fila en `doctor_patients`, que es un problema aparte y más grave. Se
+> vuelve atrás corriendo de nuevo el bloque de policies de más arriba.
