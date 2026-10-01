@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg244-3e6846ec">
+<link rel="stylesheet" href="css/styles.css?v=stg245-32655800">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg244-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg244-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg244-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg244-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg244-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg245-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg245-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg245-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg245-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg245-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg244';
+const APP_VERSION='stg245';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg244 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg245 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -6818,6 +6818,24 @@ function dmMargenEjercicioMin(e){
   return (d > 12*60) ? null : d;
 }
 
+// ── Cuántos minutos antes de acostarse fue la última dosis ──────────────
+// Mismo cálculo que el margen del ejercicio, para cualquier columna de hora.
+// El tope de 12 h descarta el dato mal cargado: un café "18 h antes" es casi
+// siempre una hora escrita con el AM/PM dado vuelta, no una medición.
+function dmMargenHastaCama(e, campo){
+  if(!e || !e[campo] || !e.bedtime) return null;
+  const aMin = function(v){
+    const p = String(v).slice(0,5).split(':');
+    const h = parseInt(p[0],10), m = parseInt(p[1],10);
+    return (isNaN(h)||isNaN(m)) ? null : h*60+m;
+  };
+  const f = aMin(e[campo]), c = aMin(e.bedtime);
+  if(f==null || c==null) return null;
+  let d = c - f;
+  if(d < 0) d += 1440;
+  return (d > 18*60) ? null : d;
+}
+
 function computeHabitsImpact(entries){
   // Mismo criterio de noche valida que el actograma y las metricas. Importa:
   // una noche con AM/PM invertido mete 14 h de "sueno total" en uno de los dos
@@ -6901,10 +6919,48 @@ function computeHabitsImpact(entries){
            'proximidad. Ninguno de los dos factores por separado explica el efecto.' },
     { id:'caffeine', label:'Cafeína', icon:'☕',
       has:e=>e.coffee_cups!=null, on:e=>Number(e.coffee_cups)>0,
-      onTxt:'con cafeína', offTxt:'sin cafeína' },
+      onTxt:'con cafeína', offTxt:'sin cafeína',
+      nota:'Compara días con y sin cafeína, sin mirar la hora. Si además está '+
+           'cargada la hora de la última, el factor de abajo separa lo que de '+
+           'verdad decide: a cuántas horas de la cama fue.' },
+    // ── La hora, que es lo que decide ────────────────────────────────
+    // "Con cafeína" mete en el mismo grupo al que toma un café a las 8 y al
+    // que lo toma a las 21. La vida media de la cafeína es de 5 a 6 h, así
+    // que a las 8 de la mañana no queda nada a la hora de dormir y a las 21
+    // queda más de la mitad. Mezclados, el efecto real se diluye hasta
+    // desaparecer, y el gráfico informa "sin diferencia" sobre algo que sí
+    // la tiene.
+    //
+    // Corte a 6 h: Drake 2013 (J Clin Sleep Med 9:1195) dio 400 mg a 0, 3 y
+    // 6 h antes de acostarse y midió por polisomnografía. Las TRES dosis
+    // alteraron el sueño — también la de 6 h, que es la que la mayoría da
+    // por inofensiva. Por eso el corte va en 6 y no en 4.
+    { id:'caffeine_late', label:'Cafeína dentro de las 6 h previas', icon:'⏰',
+      has:function(e){ return dmMargenHastaCama(e,'last_caffeine_time') != null; },
+      on:function(e){ return dmMargenHastaCama(e,'last_caffeine_time') < 360; },
+      onTxt:'la última, a menos de 6 h de la cama',
+      offTxt:'cafeína solo más temprano',
+      nota:'Compara noches con cafeína TEMPRANA contra noches con cafeína TARDÍA, '+
+           'no contra días sin cafeína: lo que se mide acá es la hora, no el consumo. '+
+           'Drake 2013 midió por polisomnografía 400 mg a 0, 3 y 6 h antes de dormir: '+
+           'las tres dosis alteraron el sueño, incluida la de 6 h. '+
+           'Necesita la hora de la última cargada en el diario.' },
     { id:'alcohol', label:'Alcohol', icon:'🍷',
       has:e=>e.alcohol_drinks!=null, on:e=>Number(e.alcohol_drinks)>0,
       onTxt:'con alcohol', offTxt:'sin alcohol' },
+    // El alcohol se metaboliza a ~1 UA por hora y lo que fragmenta es tenerlo
+    // todavía en sangre durante la noche (Ebrahim 2013, Alcohol Clin Exp Res):
+    // acorta la latencia y después rompe la segunda mitad. Tres horas es el
+    // margen que se usa en la práctica para que la mayor parte ya se haya ido.
+    { id:'alcohol_late', label:'Alcohol dentro de las 3 h previas', icon:'🌙',
+      has:function(e){ return dmMargenHastaCama(e,'last_alcohol_time') != null; },
+      on:function(e){ return dmMargenHastaCama(e,'last_alcohol_time') < 180; },
+      onTxt:'el último, a menos de 3 h de la cama',
+      offTxt:'alcohol solo más temprano',
+      nota:'Compara noches con alcohol temprano contra noches con alcohol cerca de la cama. '+
+           'El alcohol acorta la latencia y después fragmenta la segunda mitad de la noche '+
+           '(Ebrahim 2013): el problema no es haber tomado, es tenerlo todavía en sangre '+
+           'mientras se duerme. Necesita la hora del último cargada en el diario.' },
     { id:'screens', label:'Pantallas antes de dormir', icon:'📱',
       has:e=>e.screen_minutes!=null, on:e=>Number(e.screen_minutes)>=30,
       onTxt:'≥30 min de pantalla', offTxt:'poca o ninguna pantalla' },
@@ -14423,6 +14479,10 @@ function renderCaffItems(){
       (total>400?'#fca5a5':'#7EC8A4')+'">'+total+' mg</b>'+
       (total>400?' <span style="color:#fca5a5">⚠️ supera 400 mg</span>':'')
     : '';
+  // El campo de hora aparece recién cuando hay algo que fechar: preguntar
+  // "¿a qué hora fue la última?" cuando no tomó nada es ruido.
+  const _lw=document.getElementById('caff-last-wrap');
+  if(_lw) _lw.style.display = caffItems.length ? '' : 'none';
   const hid=document.getElementById('d-coffee');
   if(hid) hid.value=total;
 }
@@ -14443,6 +14503,8 @@ function renderAlcItems(){
   if(totalEl) totalEl.innerHTML = alcItems.length
     ? '<span style="color:'+_DM_TENUE+'">Total:</span> <b style="color:#7EC8A4">'+total+
       ' unidades de alcohol</b>' : '';
+  const _aw=document.getElementById('alc-last-wrap');
+  if(_aw) _aw.style.display = alcItems.length ? '' : 'none';
   // El campo oculto se guarda SIN redondear: 0,8 es 0,8. Redondearlo acá
   // fue lo que hizo que una copa se contara como una unidad entera.
   const hid=document.getElementById('d-alc');
@@ -14637,10 +14699,17 @@ async function editDiaryEntry(id){
         if(e.coffee_cups>0){
           caffItems=[{label:'Registrado previamente', mg:e.coffee_cups}];
           if(typeof renderCaffItems==='function') renderCaffItems();
+          // La hora de la última, si estaba cargada. Sin esto, editar una
+          // noche la borraba: el campo salía vacío y el guardado lo manda
+          // como null.
+          const _cl=document.getElementById('d-caff-last');
+          if(_cl && e.last_caffeine_time) _cl.value=String(e.last_caffeine_time).slice(0,5);
         }
         if(e.alcohol_drinks>0){
           alcItems=[{label:'Registrado previamente', ua:e.alcohol_drinks}];
           if(typeof renderAlcItems==='function') renderAlcItems();
+          const _al=document.getElementById('d-alc-last');
+          if(_al && e.last_alcohol_time) _al.value=String(e.last_alcohol_time).slice(0,5);
           // Si en algun momento marco "no tomo alcohol", el campo se esconde
           // solo a los 220 ms de abrir el formulario — TAMBIEN al editar una
           // noche donde SI habia tomado. Se veia "Alcohol: ninguno" sobre un
@@ -14807,6 +14876,11 @@ function showDiaryNew(editandoId){
         <button class="dm-alc-mas" onclick="addAlcItem()">+</button>
       </div>
       <div id="alc-total" class="dm-alc-total"></div>
+      <div id="alc-last-wrap" style="display:none;margin:6px 0 10px">
+        <label class="dm-lbl" style="font-size:13px">¿A qué hora fue el último?</label>
+        <div class="dm-ayuda">Se metaboliza a razón de una unidad por hora. Lo que fragmenta la noche es tenerlo todavía en sangre mientras dormís.</div>
+        <input class="dm-inp" type="time" id="d-alc-last" style="max-width:150px">
+      </div>
       <button class="dm-alc-nunca" onclick="dmNoTomoAlcohol()">No tomo alcohol · no me preguntes más</button>
     </div>
   </div>
@@ -14955,7 +15029,15 @@ function showDiaryNew(editandoId){
       <button class="btn btn-s" style="width:auto;padding:10px 12px;flex-shrink:0" onclick="addCaffItem()">+</button>
     </div>
     <div id="caff-preview" style="font-size:12px;color:var(--ink3);margin-bottom:4px;min-height:16px"></div>
-    <div id="caff-total" style="font-size:13px;font-weight:500;margin-bottom:12px;min-height:18px"></div>
+    <div id="caff-total" style="font-size:13px;font-weight:500;margin-bottom:6px;min-height:18px"></div>
+    <!-- La HORA de la última. No la de cada una: lo que define si todavía
+         está activa al acostarse es la última dosis, y pedir una hora por
+         bebida suma un toque por bebida en un formulario diario. -->
+    <div id="caff-last-wrap" style="display:none;margin-bottom:12px">
+      <label class="dm-lbl" style="font-size:13px">¿A qué hora fue la última?</label>
+      <div class="dm-ayuda">La cafeína tarda unas 6 horas en bajar a la mitad. Lo que importa no es cuánta tomaste sino cuánto falta de ahí a la cama.</div>
+      <input class="dm-inp" type="time" id="d-caff-last" style="max-width:150px">
+    </div>
     <input type="hidden" id="d-coffee" value="0">
     
     </div>
@@ -15416,6 +15498,16 @@ async function saveDiary(){
     screen_minutes:screenMins,
     coffee_cups:caffTotal,
     alcohol_drinks:alcTotal,
+    // Hora de la ÚLTIMA dosis. Solo si hubo consumo: con 0 items, guardar una
+    // hora sería inventar un dato.
+    last_caffeine_time:(function(){
+      const f=document.getElementById('d-caff-last');
+      return (caffTotal>0 && f && f.value) ? f.value : null;
+    })(),
+    last_alcohol_time:(function(){
+      const f=document.getElementById('d-alc-last');
+      return (alcTotal>0 && f && f.value) ? f.value : null;
+    })(),
     medications:meds,
     // Siesta y menstruación también en columnas propias: dentro de notes son
     // texto suelto y no se pueden analizar ni graficar. El texto se conserva
@@ -19431,7 +19523,7 @@ async function showDrPTab_(tab){
         <!-- Hábitos vs calidad se mudó acá: es la tarjeta más alta de todas
              y en la columna izquierda dejaba a la derecha corriendo sola. -->
         <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
-          <div class="dm-card-title">🔍 Lo que reporta vs. lo que se mide</div>
+          <div class="dm-card-title">🔍 Impacto subjetivo vs. variables específicas</div>
           <!-- Acá va TODO lo que cruza contra la calidad percibida: la
                concordancia con los tres pilares y el impacto de los
                hábitos sobre lo reportado. Antes la concordancia vivía
@@ -22757,8 +22849,14 @@ function dmSerieNocheHtml(entries, dias){
     '<div class="dm-nn-pie">Una barra por noche, de la más vieja a la más nueva. '+
       'La línea punteada es el umbral clínico y las barras que lo cruzan van en ámbar. '+
       'Lo que se mira acá no es el promedio —ese está arriba— sino <b>cada cuánto aparece '+
-      'una noche mala y si se están espaciando</b>. Las noches sin el dato cargado quedan '+
-      'como un hueco, no como un cero.'+
+      'una noche mala y si se están espaciando</b>. '+
+      // Con la leyenda al lado del rayado. Un tope rayado sin explicación se
+      // lee como un valor; ya pasó, y es la clase de cosa que uno no vuelve
+      // a preguntar: la da por entendida mal.
+      '<span class="dm-nn-b sin" style="display:inline-block;width:14px;height:9px;'+
+      'vertical-align:middle;margin:0 3px 0 1px"></span>'+
+      '<b>Noche sin el dato cargado</b>: queda como un hueco, no como un cero — '+
+      'por eso el tope es bajo y no una barra entera.'+
       (_usaWaso
         ? ' El tiempo despierto es el <b>WASO</b>: minutos en la cama después de haberse '+
           'dormido. Corte ≥30 min (Lichstein 2003). Es el que define el insomnio de '+

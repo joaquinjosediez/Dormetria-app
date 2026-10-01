@@ -45,9 +45,9 @@ const bloqueAlc = html.slice(html.indexOf('function dmAplicarSinAlcohol()'),
                              html.indexOf('function dmAplicarSinAlcohol()') + 900);
 r.ok(/alcItems && alcItems\.length\) return/.test(bloqueAlc.replace(/\s+/g,' ')),
      'con alcohol cargado, el campo no se oculta');
-r.ok(/dmVuelvoATomar\(\)/.test(html.slice(
-       html.indexOf("alcItems=[{label:'Registrado previamente'"),
-       html.indexOf("alcItems=[{label:'Registrado previamente'") + 600)),
+const _iAlc = html.indexOf("alcItems=[{label:'Registrado previamente'");
+const _bloqueEdicionAlc = html.slice(_iAlc, html.indexOf('}catch(_ca)', _iAlc));
+r.ok(/dmVuelvoATomar\(\)/.test(_bloqueEdicionAlc),
      'y al editar una noche con alcohol se vuelve a mostrar');
 
 r.seccion('Entran más de dos variables:');

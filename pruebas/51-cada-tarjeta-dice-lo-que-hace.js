@@ -65,9 +65,9 @@ r.ok(!/id="dr-aguja"/.test(app),
 
 r.seccion('La concordancia se junta con lo que se lee al lado:');
 
-r.ok(/Lo que reporta vs\. lo que se mide/.test(app),
+r.ok(/Impacto subjetivo vs\. variables específicas/.test(app),
      'la tarjeta de la derecha cubre los dos cruces contra lo percibido');
-const i = app.indexOf('Lo que reporta vs. lo que se mide');
+const i = app.indexOf('Impacto subjetivo vs. variables específicas');
 const caja = app.slice(i, i + 900);
 r.ok(/dr-quality-concord/.test(caja) && /dr-quality-factores/.test(caja),
      'y contiene la concordancia Y los factores, que antes estaban separados');

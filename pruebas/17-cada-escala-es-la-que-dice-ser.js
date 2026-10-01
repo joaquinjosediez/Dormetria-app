@@ -75,7 +75,7 @@ const ordenes = (css.match(/#screen-doctor-patient\.active [^{]+\{ ?order:\d/g) 
 r.ok(ordenes.length >= 7, 'todas las tarjetas tienen su orden asignado',
      ordenes.length + ' con order');
 // El orden es clínico: de lo general a lo preciso, y lo interpretativo al
-// final. "Lo que reporta vs. lo que se mide" es lectura, no medición: venía
+// final. "Impacto subjetivo vs. variables específicas" es lectura, no medición: venía
 // tercera, antes de haber visto una sola métrica.
 const _ord = function (sel) {
   const m = css.match(new RegExp('#screen-doctor-patient\\.active ' + sel + ' *\\{ *order:(\\d+)'));

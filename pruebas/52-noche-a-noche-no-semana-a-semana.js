@@ -43,8 +43,13 @@ r.ok((h.match(/dm-nn-franja/g) || []).length === 3, 'una franja por cada una');
 
 r.seccion('Una barra por noche, no por semana:');
 
-r.ok((h.match(/class="dm-nn-b/g) || []).length === 90,
-     '30 noches × 3 variables = 90 barras');
+// Se cuentan las barras DENTRO de los gráficos. El pie lleva una muestra
+// del rayado como leyenda, que no es una barra de nadie.
+const enPlots = (h.match(/<div class="dm-nn-plot">[\s\S]*?<\/div>/g) || [])
+  .reduce(function (n, p) { return n + (p.match(/class="dm-nn-b/g) || []).length; }, 0);
+r.ok(enPlots === 90, '30 noches × 3 variables = 90 barras', enPlots + ' barras');
+r.ok((h.match(/class="dm-nn-b sin" style="display:inline-block/g) || []).length === 1,
+     'y una sola muestra del rayado, en el pie, para que se sepa qué es');
 r.ok(/últimas 30 noches/.test(h), 'y dice cuántas noches cubre');
 
 r.seccion('Cada franja tiene su umbral clínico dibujado:');

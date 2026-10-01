@@ -6084,10 +6084,15 @@ body.dr-desktop #dr-abajo-slot .dm-card{ max-width:none; }
 }
 .dm-nn-b.mal{ background:#C8A96E; }
 /* Una noche sin el dato no es una noche de cero: se deja el hueco. */
+/* mod244 · La noche sin el dato cargado, como ausencia y no como máximo.
+   Se dibujaba a ALTURA COMPLETA y rayada. En un gráfico donde más alto es
+   peor, la columna más alta de todas era justamente la que no tiene valor:
+   se leía como la peor noche del período. Ahora es un tope bajo, apoyado
+   en la base, que no compite con ninguna barra real. */
 .dm-nn-b.sin{
-  background:repeating-linear-gradient(0deg,
-    rgba(0,0,0,.07) 0 3px, transparent 3px 6px);
-  height:100% !important; border-radius:0;
+  background:repeating-linear-gradient(45deg,
+    rgba(0,0,0,.13) 0 2px, transparent 2px 4px);
+  height:9px !important; border-radius:2px; align-self:flex-end;
 }
 .dm-nn-b:hover{ opacity:.65; }
 
