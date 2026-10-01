@@ -1,0 +1,72 @@
+mod239 · el rango ampliado de la NSF, el WASO, y el cuadro que se quedo en la columna de al lado
+
+EL RANGO AMPLIADO DE LA NSF. La NSF publica DOS rangos por edad y usabamos
+uno solo. A los 2 anios lo recomendado es 11-14 h, pero entre 9 y 16 la propia
+fuente dice que puede estar bien. Con un unico rango, 10 h en un chico que
+esta perfecto caia como deficit: perdia 18 puntos de 50 por algo que la
+referencia no considera anormal.
+
+Ahora el puntaje de Cantidad tiene tres tramos continuos entre si:
+  dentro del recomendado  -> 50
+  dentro del ampliado     -> caida suave (6/h abajo, 4/h arriba): senialado, no castigado
+  fuera del ampliado      -> caida firme (18/h y 8/h), que es donde si hay motivo
+
+Asimetrico a proposito: dormir de menos tiene consecuencias mejor documentadas
+que dormir de mas. Un nene de 2 anios con 10 h pasa de 28/50 a 44/50 y la
+tarjeta dice "fuera de lo ideal, pero puede ser normal" en vez de "por debajo
+del rango". Ref: Hirshkowitz 2015, Sleep Health 1(1):40-43, tabla 1.
+
+Ademas: la tarjeta pediatrica de Cantidad del panel ya no muestra un
+porcentaje sino HORAS. Un 44 % etiquetado "Requiere atencion" mientras el pie
+dice que entre 9 y 16 h puede ser apropiado es una tarjeta contradiciendose a
+si misma. Las otras dos tarjetas pediatricas ya mostraban el valor crudo.
+
+Y el grafico del chico dibuja la banda ampliada, mas tenue, alrededor de la
+recomendada. La tabla de grupos (NSF_RANGES) metia al recien nacido y al de 2
+anios en una sola banda y mandaba a los de 2 a "preescolar": a Mora, de 2a8m,
+le mostraba 10-13 h cuando le corresponden 11-14. Si hay fecha de nacimiento
+el rango sale de la tabla por MESES, la misma que usa el puntaje.
+
+EL CUADRO QUE SE QUEDO EN LA COLUMNA DE AL LADO. El panel movia dos cajas a la
+derecha con `dme.children[1]`. Cuando se agrego el bloque del DIA, ese paso a
+ser el segundo hijo: `children[1]` lo movia a el, dos lineas despues se lo
+volvia a mover al mismo elemento, y el tecnico de regularidad se quedaba a la
+izquierda. No tiro ningun error — simplemente el cuadro aparecio donde no iba
+y el de sueno diurno quedo desfasado del nocturno, que es justo la comparacion
+para la que se los puso uno al lado del otro. Se mueve por id. Lo fija
+pruebas/55.
+
+EL HISTOGRAMA DE DESPERTARES ERA EL NUMERO, NO EL TIEMPO. Despertarse tres
+veces y volver a dormirse en un minuto dibujaba igual que despertarse una sola
+vez y quedarse una hora dando vueltas. La segunda es insomnio de
+mantenimiento; la primera, en la mayoria de las edades, no es nada. La barra
+es ahora el WASO (wake_in_bed_mins), corte >=30 min (Lichstein 2003; Edinger
+2004). Un "no me desperte" son 0 minutos, no un dato faltante — pero ese cero
+deducido no alcanza para decidir que la franja pasa a minutos: si no, un
+paciente que nunca cargo minutos dibujaba una linea de ceros que se lee como
+"no se despierta nunca". Sin minutos cargados se cae al conteo. Lo fija
+pruebas/54.
+
+LO QUE REPORTA VS LO QUE SE MIDE: QUE LE PESA MAS. El grafico estaba bien pero
+las etiquetas no se entendian. "Lo percibe en parte" obligaba a traducir.
+Ahora: congruente / congruente - relacion fuerte / paradojico / sin relacion en
+esta variable. El eje dice "paradojico" a la izquierda y "congruente" a la
+derecha.
+
+Y la tarjeta responde su propia pregunta: habia cinco filas y el lector tenia
+que compararlas de memoria. Arriba va el titular — "Lo que mas le pesa:
+Eficiencia" — elegido entre las asociaciones que EXCLUYEN el cero, por la r
+mas alta. Es lo que decide el plan: mover esa variable es lo que mas chance
+tiene de que lo note. Si la mas fuerte va al reves, lo dice: eso es percepcion,
+no fisiologia.
+
+Se agrego la quinta variable que faltaba, REGULARIDAD (desvio del centro del
+sueno de esa noche respecto del horario habitual), y los despertares se cruzan
+en minutos cuando el dato esta.
+
+Ademas:
+- El IC va en su propio renglon. Con nowrap en la misma linea que la r, en la
+  columna derecha se cortaba en el medio del intervalo — "(IC95% +0,25" — que
+  es peor que no mostrarlo: parece un numero cuando es la mitad de uno.
+- La matriz de factores, centrada. Los datos a la derecha dejaban el numero de
+  una columna pegado al titulo de la siguiente.

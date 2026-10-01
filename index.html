@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod238-417ec0f1">
+<link rel="stylesheet" href="css/styles.css?v=mod239-11a02e1b">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod238-e7d2aa81"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod238-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod238-af87b0b6"></script>
-<script src="js/dormetria-render-resumen.js?v=mod238-96b9fea2"></script>
-<script src="js/dormetria-tcci.js?v=mod238-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod239-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod239-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod239-af87b0b6"></script>
+<script src="js/dormetria-render-resumen.js?v=mod239-96b9fea2"></script>
+<script src="js/dormetria-tcci.js?v=mod239-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod238';
+const APP_VERSION='mod239';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -6067,19 +6067,31 @@ function updatePillarBars(entries){
     });
     const _hsMedia = _minsPorNoche.length
       ? (_minsPorNoche.reduce((a,b)=>a+b,0)/_minsPorNoche.length/60) : null;
-    const _enRango = (_rangoOwn && _hsMedia!=null)
-      ? (_hsMedia >= _rangoOwn.lo && _hsMedia <= _rangoOwn.hi) : null;
+    // Tres tramos, no dos. La NSF publica un rango recomendado Y uno
+    // ampliado ("may be appropriate"): decirle a un padre "por debajo del
+    // rango" cuando su hijo está en el tramo que la propia fuente considera
+    // posiblemente normal es alarmarlo de más.
+    const _tramoOwn = (_rangoOwn && _hsMedia!=null && typeof dmTramoCantidad==='function')
+      ? dmTramoCantidad(_hsMedia, _rangoOwn) : null;
+    const _enRango = (_tramoOwn==null) ? null : (_tramoOwn==='recomendado');
     const _fmtHs = function(h){
       if(h==null) return '—';
       const H=Math.floor(h), M=Math.round((h-H)*60);
       return H+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">h</span> '+
              (M<10?'0':'')+M+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">m</span>';
     };
-    const _cQ = _enRango===null ? '#44403c' : (_enRango ? '#14532d' : '#d97706');
-    const _stQ = _enRango===null ? 'Faltan noches'
-               : (_enRango ? 'Dentro de lo esperable' : (_hsMedia < _rangoOwn.lo ? 'Por debajo del rango' : 'Por encima del rango'));
+    const _cQ = _tramoOwn==null ? '#44403c'
+              : _tramoOwn==='recomendado' ? '#14532d'
+              : _tramoOwn==='aceptable'   ? '#4d7c0f'
+              : '#d97706';
+    const _stQ = _tramoOwn==null ? 'Faltan noches'
+               : _tramoOwn==='recomendado' ? 'Dentro de lo esperable'
+               : _tramoOwn==='aceptable'   ? 'Fuera de lo ideal, pero puede ser normal'
+               : (_tramoOwn==='bajo' ? 'Por debajo de lo aceptable' : 'Por encima de lo aceptable');
     const _subQ = _rangoOwn
-      ? ('Rango esperable '+_rangoOwn.lo+'–'+_rangoOwn.hi+' h'+(_inclSiesta?' en 24 h, siestas incluidas':'')+
+      ? ('Recomendado '+_rangoOwn.lo+'–'+_rangoOwn.hi+' h'+
+         (_rangoOwn.may_lo!=null ? ' · puede ser apropiado entre '+_rangoOwn.may_lo+' y '+_rangoOwn.may_hi+' h' : '')+
+         (_inclSiesta?' · en 24 h, siestas incluidas':'')+
          ' · '+(_rangoOwn.fuente||'NSF 2015')+(_rangoOwn.etiqueta?' · '+_rangoOwn.etiqueta:''))
       : 'Sin rango de referencia para esta edad';
 
@@ -7095,16 +7107,49 @@ function dmConcordanciaHtml(entries, campo){
     return Math.min(100, ts/tib*100);
   });
 
+  // Tiempo despierto de noche (WASO). Si el paciente marcó que NO se
+  // despertó, eso son 0 minutos, no un dato faltante.
+  const waso = v.map(function(e){
+    const w = Number(e.wake_in_bed_mins);
+    if(e.wake_in_bed_mins!=null && e.wake_in_bed_mins!=='' && !isNaN(w)) return w;
+    const a = Number(e.awakenings);
+    return (e.awakenings!=null && !isNaN(a) && a===0) ? 0 : null;
+  });
+  // Regularidad por noche: cuánto se corrió el centro del sueño de esa
+  // noche respecto del horario habitual del período. Es la quinta cosa
+  // que mueve la conducta y no se estaba cruzando contra lo que siente.
+  const mids = v.map(function(e){
+    const b = (function(h){ if(!h) return null;
+      const p=String(h).slice(0,5).split(':').map(Number);
+      if(isNaN(p[0])) return null; let m=p[0]*60+(p[1]||0);
+      if(m < 12*60) m += 1440; return m; })(e.bedtime);
+    const ts = Number(e.sleep_minutes);
+    return (b==null || !(ts>0)) ? null : b + ts/2;
+  });
+  const midsOk = mids.filter(function(x){ return x!=null; }).sort(function(a,b){ return a-b; });
+  const midRef = midsOk.length ? midsOk[Math.floor(midsOk.length/2)] : null;
+  const desvio = mids.map(function(m){ return (m==null || midRef==null) ? null : Math.abs(m-midRef); });
+
   // `dir` orienta: +1 si más de esa variable debería sentirse mejor.
-  const filas = [
-    { rot:'Horas de sueño',  x:horas, dir:+1, pie:'más horas → mejor' },
-    { rot:'Eficiencia',      x:efi,   dir:+1, pie:'menos vueltas en la cama → mejor' },
-    { rot:'Latencia',        x:lat,   dir:-1, pie:'tardar menos → mejor' },
-    { rot:'Despertares',     x:desp,  dir:-1, pie:'despertarse menos → mejor' }
-  ].map(function(f){
+  const arma = function(f){
     const p = pearson(y, f.x);
     return p ? { rot:f.rot, pie:f.pie, dir:f.dir, p:p } : null;
-  }).filter(Boolean);
+  };
+  // Los despertares se cruzan en MINUTOS cuando el dato está; si no alcanza
+  // —o si todas las noches cargadas valen lo mismo y no hay con qué
+  // correlacionar— se cae al conteo, que es el dato grueso pero existe.
+  const fDesp = arma({ rot:'Tiempo despierto', x:waso, dir:-1,
+                       pie:'menos minutos despierto → mejor' })
+             || arma({ rot:'Despertares', x:desp, dir:-1,
+                       pie:'despertarse menos → mejor' });
+
+  const filas = [
+    arma({ rot:'Horas de sueño', x:horas,  dir:+1, pie:'más horas → mejor' }),
+    arma({ rot:'Eficiencia',     x:efi,    dir:+1, pie:'menos vueltas en la cama → mejor' }),
+    arma({ rot:'Latencia',       x:lat,    dir:-1, pie:'tardar menos → mejor' }),
+    fDesp,
+    arma({ rot:'Regularidad',    x:desvio, dir:-1, pie:'horario más parejo → mejor' })
+  ].filter(Boolean);
 
   if(!filas.length) return '';
 
@@ -7116,6 +7161,19 @@ function dmConcordanciaHtml(entries, campo){
 
   filas.sort(function(a,b){ return Math.abs(b.p.r)-Math.abs(a.p.r); });
 
+  // ── Cómo se nombra cada resultado ──────────────────────────────────
+  // Las etiquetas anteriores —construidas sobre el verbo "percibir"—
+  // obligaban a traducir mentalmente qué significaba cada una. Las
+  // categorías que sí se usan en clínica son:
+  //   congruente  → lo que siente acompaña a lo que se mide
+  //   paradójico  → va en contra: duerme mejor y lo reporta peor
+  //   sin relación → el intervalo toca el cero, no se afirma nada
+  const _ver = function(ro, cruza){
+    if(cruza) return 'sin relación en esta variable';
+    if(ro < 0) return 'paradójico';
+    return Math.abs(ro) >= 0.5 ? 'congruente · relación fuerte' : 'congruente';
+  };
+
   const cuerpo = filas.map(function(f){
     // Orientado: positivo = percibe lo que se mide.
     const ro = f.p.r * f.dir;
@@ -7123,9 +7181,7 @@ function dmConcordanciaHtml(entries, campo){
     const lo = Math.min(lo0, hi0), hi = Math.max(lo0, hi0);
     const cruza = (lo <= 0 && hi >= 0);
     const c = cruza ? GRIS : (ro > 0 ? VERDE : ROJO);
-    const veredicto = cruza ? 'no se puede afirmar'
-                    : (ro > 0 ? (Math.abs(ro)>=0.5 ? 'lo percibe claramente' : 'lo percibe en parte')
-                              : 'lo percibe al revés');
+    const veredicto = _ver(ro, cruza);
     return '<div class="dm-aguja-fila">'+
       '<div class="dm-aguja-rot">'+f.rot+
         '<div style="font-size:10.5px;font-weight:400;color:#8a8a82;margin-top:2px">'+f.pie+'</div></div>'+
@@ -7142,34 +7198,56 @@ function dmConcordanciaHtml(entries, campo){
     '</div>';
   }).join('');
 
-  // Si NINGUNA asociación excluye el cero, eso es el hallazgo — y es el
-  // que cambia la conducta.
-  const ninguna = filas.every(function(f){
+  // ── Qué le pesa más ────────────────────────────────────────────────
+  // Esta es la pregunta de la tarjeta, y estaba implícita: había cuatro
+  // filas y el lector tenía que compararlas de memoria. La respuesta es
+  // la variable con la asociación más fuerte que además excluye el cero,
+  // y decidir sobre ella —no sobre las cinco a la vez— es lo que cambia
+  // el plan de tratamiento.
+  const establecidas = filas.filter(function(f){
     const a=f.p.lo*f.dir, b=f.p.hi*f.dir;
-    return Math.min(a,b) <= 0 && Math.max(a,b) >= 0;
+    return !(Math.min(a,b) <= 0 && Math.max(a,b) >= 0);
   });
+  const ninguna = !establecidas.length;
+  const pesa = establecidas.slice().sort(function(a,b){
+    return Math.abs(b.p.r)-Math.abs(a.p.r);
+  })[0];
+  const paradojica = pesa && (pesa.p.r*pesa.dir) < 0;
+
+  const titular = ninguna
+    ? '<div style="background:#fef3c7;border-left:3px solid #C8A96E;border-radius:0 8px 8px 0;'+
+      'padding:10px 12px;margin-bottom:12px;font-size:12px;color:#92400e;line-height:1.55">'+
+      '<b>Ninguna variable se establece.</b> Lo que esta persona siente a la mañana no acompaña '+
+      'a nada de lo que se mide. Si se confirma con más noches, orienta a trabajo cognitivo '+
+      '—percepción del sueño, catastrofización— antes que a más ajuste conductual.</div>'
+    : '<div style="background:'+(paradojica?'#fef2f2':'#f0fdf4')+';border-left:3px solid '+
+      (paradojica?ROJO:VERDE)+';border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:12px;'+
+      'font-size:12px;color:#334155;line-height:1.55">'+
+      '<b>Lo que más le pesa: '+pesa.rot+'.</b> '+
+      (paradojica
+        ? 'Y va al revés de lo medido: las noches en que esa variable está mejor las reporta peor. '+
+          'Eso es percepción, no fisiología, y se trabaja como tal.'
+        : 'Es la variable que mejor acompaña a cómo dice que durmió, así que es por donde conviene '+
+          'empezar: moverla es lo que más chance tiene de que lo note.')+
+      '</div>';
 
   return '<div class="dm-aguja">'+
+    titular+
     '<div class="dm-aguja-cab">'+
       '<span></span>'+
       '<span class="dm-aguja-escala">'+
-        '<i class="peor">◂ al revés</i><b>0</b><i class="mejor">lo percibe ▸</i>'+
+        '<i class="peor">◂ paradójico</i><b>0</b><i class="mejor">congruente ▸</i>'+
         '<u>correlación · r −1 a +1</u></span>'+
       '<span></span><span></span>'+
     '</div>'+
     cuerpo+
-    (ninguna
-      ? '<div style="background:#fef3c7;border-left:3px solid #C8A96E;border-radius:0 8px 8px 0;'+
-        'padding:10px 12px;margin-top:12px;font-size:12px;color:#92400e;line-height:1.55">'+
-        '<b>Ninguna asociación llega a establecerse.</b> Lo que esta persona siente a la mañana '+
-        'no acompaña a nada de lo que se mide. Si se confirma con más noches, orienta a trabajo '+
-        'cognitivo —percepción del sueño, catastrofización— antes que a más ajuste conductual.</div>'
-      : '')+
     '<div class="dm-aguja-pie">'+
       'Correlación de Pearson entre la <b>calidad que reporta cada mañana</b> y cada variable '+
       'medida esa noche, con su <b>IC 95 %</b> por la transformación z de Fisher. El eje está '+
-      'orientado: a la derecha, lo percibido acompaña a lo medido. <b>Si la banda toca el cero, '+
-      'no se afirma nada.</b> Mínimo 10 noches con los dos datos. Es asociación, no causa.</div>'+
+      'orientado: a la derecha, <b>congruente</b> —lo que siente acompaña a lo medido—; a la '+
+      'izquierda, <b>paradójico</b>. <b>Si la banda toca el cero, no se afirma nada.</b> '+
+      'Regularidad es el desvío del centro del sueño de esa noche respecto del horario habitual. '+
+      'Mínimo 10 noches con los dos datos. Es asociación, no causa.</div>'+
   '</div>';
 }
 
@@ -8195,14 +8273,14 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   // porque está todo bien".
   if(audience === 'doctor' && reg.sd_midpoint_min === null){
     _abierto = true;
-    html += '<div style="background:var(--bg-secondary);border-radius:12px;padding:13px 16px;margin-top:10px">'+
+    html += '<div id="dm-bloque-reg" style="background:var(--bg-secondary);border-radius:12px;padding:13px 16px;margin-top:10px">'+
       '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Regularidad — métricas técnicas</div>'+
       '<div style="font-size:12px;color:var(--label-2);line-height:1.5">'+
         (reg.method || 'No hay noches suficientes para calcularla.')+'</div>';
   }
   if(audience === 'doctor' && reg.sd_midpoint_min !== null){
     _abierto = true;
-    html += '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-top:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
+    html += '<div id="dm-bloque-reg" style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-top:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
       '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:2px">Regularidad — métricas técnicas <span style="font-weight:400;color:var(--label-3);font-size:11px">· uso profesional</span></div>'+
       '<div style="font-size:11px;color:var(--label-3);margin-bottom:6px;line-height:1.4">'+
         (ageYears!=null && ageYears<18
@@ -19328,7 +19406,13 @@ async function showDrPTab_(tab){
           // Primero el técnico de regularidad, después el día: así el
           // bloque de siestas queda a la altura de las métricas nocturnas
           // de la izquierda y los dos se comparan de un vistazo.
-          if(_regSlot && dme.children.length>1) _regSlot.appendChild(dme.children[1]);
+          //
+          // Por id, NO por `children[1]`. Cuando se agregó el bloque del día
+          // pasó a ser el segundo hijo, así que `children[1]` lo movía a él
+          // dos veces y el técnico de regularidad se quedaba en la columna
+          // izquierda — que es exactamente lo que se veía en pantalla.
+          const _reg=document.getElementById('dm-bloque-reg');
+          if(_regSlot && _reg) _regSlot.appendChild(_reg);
           if(_regSlot && _dia) _regSlot.appendChild(_dia);
           // Impacto de hábitos: solo aparece si el paciente REGISTRA el hábito
           // (la función devuelve '' si no hay datos suficientes o contraste).
@@ -19907,8 +19991,10 @@ async function showDrPTab_(tab){
           return m;
         };
         let _awakSum=0, _awakN=0;
+        const _hrs24=[];
         const pillarData=sorted.map((e,i)=>{
           const hrs=_minutos24(e)/60;
+          if(hrs>0) _hrs24.push(hrs);
           const qty=(typeof qtyScoreForMeses==='function' && _mesesPil!=null)
                       ? qtyScoreForMeses(hrs, _mesesPil)
                       : qtyScoreForAge(hrs, _ageForPillar);
@@ -19982,19 +20068,48 @@ async function showDrPTab_(tab){
             // PEDIÁTRICO: Cantidad se puntúa (por edad). Fragmentación queda
             // DESCRIPTIVA (sin cortes de adulto). Regularidad se puntúa por
             // jet lag social.
-            const cQ=pColor(avgQtyP);
-            const stQ=avgQtyP>=90?'Muy bien':avgQtyP>=80?'Bien':avgQtyP>=70?'Mejorable':avgQtyP>=60?'Regular':'Requiere atención';
+            // El número de esta tarjeta son HORAS, no un porcentaje, y el
+            // estado sale del tramo de la NSF.
+            //
+            // Con el puntaje suelto la tarjeta se contradecía a sí misma: un
+            // chico de 2 años con 10 h de sueño da 44 % —"Requiere atención"
+            // con las bandas genéricas— mientras el pie dice que entre 9 y 16
+            // h puede ser apropiado. Las otras dos tarjetas pediátricas ya
+            // muestran el valor crudo (desp/noche, min) por la misma razón:
+            // un porcentaje obliga a saber contra qué se calculó.
+            const _hrsProm = _hrs24.length
+              ? _hrs24.slice(-14).reduce((a,b)=>a+b,0)/Math.min(_hrs24.length,14) : null;
+            const _tramoP = (_hrsProm!=null && typeof dmTramoCantidad==='function')
+              ? dmTramoCantidad(_hrsProm, _optH) : null;
+            const cQ = _tramoP==null ? '#44403c'
+                     : _tramoP==='recomendado' ? '#14532d'
+                     : _tramoP==='aceptable'   ? '#4d7c0f' : '#d97706';
+            const stQ = _tramoP==null ? 'Faltan noches'
+                      : _tramoP==='recomendado' ? 'Dentro de lo recomendado'
+                      : _tramoP==='aceptable'   ? 'Fuera de lo ideal, pero puede ser normal'
+                      : (_tramoP==='bajo' ? 'Por debajo de lo aceptable' : 'Por encima de lo aceptable');
+            const _valQ = _hrsProm==null ? '—'
+              : (Math.floor(_hrsProm)+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">h</span> '+
+                 String(Math.round((_hrsProm-Math.floor(_hrsProm))*60)).padStart(2,'0')+
+                 '<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">m</span>');
             cards =
-              pillarCard('Cantidad', avgQtyP+'<span style="font-size:15px;font-weight:400;color:rgba(244,239,229,.72)">%</span>', cQ, stQ,
+              pillarCard('Cantidad', _valQ, cQ, stQ,
                 (function(){
                   const edad = (typeof etiquetaEdad==='function' && _mesesPil!=null) ? etiquetaEdad(_mesesPil) : null;
                   let t = _optH.lo+'–'+_optH.hi+'h en 24 h, siestas incluidas';
                   if(edad) t += ' (para '+edad+')';
+                  // El rango ampliado de la NSF, explícito. Es la diferencia
+                  // entre "duerme poco" y "duerme menos de lo ideal, dentro
+                  // de lo que puede ser normal", y cambia la conducta.
+                  if(_optH.may_lo!=null){
+                    t += ' · <b>puede ser apropiado entre '+_optH.may_lo+' y '+_optH.may_hi+' h</b>';
+                  }
                   t += ' · '+(_optH.fuente||'NSF 2015');
                   // Donde las dos sociedades no coinciden, se dice. Un 15,5 h
                   // en un lactante queda fuera del rango NSF y dentro del de
                   // la AASM: el profesional tiene que poder verlo.
                   if(_optH.aasm) t += ' (AASM 2016: '+_optH.aasm[0]+'–'+_optH.aasm[1]+'h)';
+                  t += ' · puntaje del pilar: '+avgQtyP+' %';
                   return t;
                 })(), '#1a4a3a')+
               pillarCard('Fragmentación', (_awakAvg>0?_awakAvg.toFixed(1):'0')+'<span style="font-size:13px;font-weight:400;color:rgba(244,239,229,.72)"> desp/noche</span>', '#44403c', 'Descriptivo', 'En niños la fragmentación por diario/actigrafía se sobreestima y no tiene cortes clínicos validados. Se informa como observación, no puntúa.', '#0e7490')+
@@ -22448,6 +22563,18 @@ function dmSerieNocheHtml(entries, dias){
     const lat = (e.sleep_latency_mins!=null && !isNaN(e.sleep_latency_mins))
       ? Number(e.sleep_latency_mins) : null;
     const awk = (e.awakenings!=null && !isNaN(e.awakenings)) ? Number(e.awakenings) : null;
+    // WASO — minutos despierto en la cama después de dormirse. La barra
+    // antes era el NÚMERO de despertares, y ahí dos cosas muy distintas
+    // dibujaban igual: despertarse tres veces y volver a dormirse en un
+    // minuto, o despertarse una sola vez y quedarse una hora dando
+    // vueltas. Lo que define el insomnio de mantenimiento, y lo que
+    // responde a control de estímulos, es el tiempo despierto.
+    // Corte: ≥30 min (Lichstein 2003; Edinger 2004, criterios de
+    // investigación cuantitativos para insomnio).
+    let was = null, wasExpl = false;
+    const _w = Number(e.wake_in_bed_mins);
+    if(e.wake_in_bed_mins!=null && e.wake_in_bed_mins!=='' && !isNaN(_w)){ was = _w; wasExpl = true; }
+    else if(awk === 0) was = 0;   // "no me desperté" son 0 minutos, no falta de dato
     // Eficiencia = sueño / tiempo en cama. Se recalcula por noche: el
     // promedio del período no sirve para ver cuáles fueron las malas.
     let ef = null;
@@ -22457,8 +22584,18 @@ function dmSerieNocheHtml(entries, dias){
       if(tib > 0 && tib <= 20*60) ef = Math.round(tst/tib*100);
       if(ef > 100) ef = 100;
     }
-    return { f:e.diary_date, lat:lat, ef:ef, awk:awk };
+    return { f:e.diary_date, lat:lat, ef:ef, awk:awk, waso:was, wasoExpl:wasExpl };
   });
+  // Si el WASO casi no se cargó, la franja vuelve al conteo: mejor el dato
+  // grueso que una franja vacía.
+  //
+  // Se cuentan solo las noches con el minuto CARGADO. Los ceros deducidos de
+  // "no me desperté" acompañan, pero no alcanzan para decidir el cambio: un
+  // paciente viejo que nunca cargó minutos tiene un puñado de ceros y el
+  // resto vacío, y con eso la franja habría dibujado una línea de ceros
+  // haciendo pasar por dato lo que es ausencia de dato.
+  const _nWaso = noches.filter(function(n){ return n.wasoExpl; }).length;
+  const _usaWaso = _nWaso >= 5;
 
   const fmtF = function(f){ const p=String(f).slice(0,10).split('-'); return p[2]+'/'+p[1]; };
   // Una franja por variable. `umbral` dibuja la línea de corte clínico y
@@ -22504,11 +22641,17 @@ function dmSerieNocheHtml(entries, dias){
              malo:function(x){ return x < 85; },
              leyenda:'por debajo de 85 %',
              fmt:function(x){ return x+' % de eficiencia'; } })+
-    franja({ titulo:'Despertares', val:function(n){ return n.awk; },
-             umbral:2, umbralTxt:'2', max:4,
-             malo:function(x){ return x >= 2; },
-             leyenda:'dos o más',
-             fmt:function(x){ return x+' despertares'; } });
+    (_usaWaso
+      ? franja({ titulo:'Tiempo despierto de noche', val:function(n){ return n.waso; },
+                 umbral:30, umbralTxt:'30 min', max:60,
+                 malo:function(x){ return x >= 30; },
+                 leyenda:'30 min o más despierto',
+                 fmt:function(x){ return x+' min despierto en la cama'; } })
+      : franja({ titulo:'Despertares', val:function(n){ return n.awk; },
+                 umbral:2, umbralTxt:'2', max:4,
+                 malo:function(x){ return x >= 2; },
+                 leyenda:'dos o más',
+                 fmt:function(x){ return x+' despertares'; } }));
 
   if(!html) return '';
   return '<div class="dm-nn">'+
@@ -22518,7 +22661,13 @@ function dmSerieNocheHtml(entries, dias){
       'La línea punteada es el umbral clínico y las barras que lo cruzan van en ámbar. '+
       'Lo que se mira acá no es el promedio —ese está arriba— sino <b>cada cuánto aparece '+
       'una noche mala y si se están espaciando</b>. Las noches sin el dato cargado quedan '+
-      'como un hueco, no como un cero.</div>'+
+      'como un hueco, no como un cero.'+
+      (_usaWaso
+        ? ' El tiempo despierto es el <b>WASO</b>: minutos en la cama después de haberse '+
+          'dormido. Corte ≥30 min (Lichstein 2003). Es el que define el insomnio de '+
+          'mantenimiento — tres despertares de un minuto y uno de una hora no son lo mismo.'
+        : '')+
+      '</div>'+
   '</div>';
 }
 
@@ -23682,6 +23831,32 @@ const NSF_RANGES = {
   teen:      { recMin:8,  recMax:10, mayMin:7,  mayMax:11, label:'14–17 años' }
 };
 
+// Los cuatro grupos de arriba son demasiado gruesos justo donde el rango
+// cambia más rápido. `infant` mete en una sola banda al recién nacido
+// (14–17 h) y al de 2 años (11–14 h), y `preschool` arranca a los 2,
+// cuando la NSF separa "toddler 1–2" de "preschool 3–5": a un chico de
+// 2 años y 8 meses le mostrábamos 10–13 h cuando le corresponden 11–14.
+//
+// Si hay fecha de nacimiento, el rango sale de la tabla por MESES, que es
+// la misma que usa el puntaje de Cantidad. Los grupos quedan solo como
+// respaldo para cuando no hay fecha.
+function nsfRangoActual(){
+  try{
+    const dob = (S.viewData && S.viewData.dob) || (S.user && S.user.dob);
+    if(dob && typeof edadEnMeses==='function' && typeof rangoSuenoPorMeses==='function'){
+      const m = edadEnMeses(dob);
+      if(m!=null){
+        const r = rangoSuenoPorMeses(m);
+        return { recMin:r.lo, recMax:r.hi,
+                 mayMin:(r.may_lo!=null?r.may_lo:r.lo),
+                 mayMax:(r.may_hi!=null?r.may_hi:r.hi),
+                 label:r.etiqueta };
+      }
+    }
+  }catch(_){}
+  return NSF_RANGES[S.ageGroup] || null;
+}
+
 
 function showChildMenu(){
   const modal = document.createElement('div');
@@ -23956,8 +24131,13 @@ async function renderChildDiaryList(){
     // Chart container
     let chartHtml = '';
     if(chartData.length>=2){
-      const nsf = NSF_RANGES[S.ageGroup];
-      const nsfNote = nsf ? 'La banda verde es el rango recomendado por la National Sleep Foundation para '+nsf.label+' ('+nsf.recMin+'–'+nsf.recMax+' h). Incluye siestas.' : 'Incluye siestas.';
+      const nsf = nsfRangoActual();
+      const nsfNote = nsf
+        ? ('La banda verde es el rango <b>recomendado</b> por la National Sleep Foundation para '+
+           nsf.label+' ('+nsf.recMin+'–'+nsf.recMax+' h). La banda clara alrededor es el rango que '+
+           'la misma fuente considera que <b>puede ser apropiado</b> ('+nsf.mayMin+'–'+nsf.mayMax+
+           ' h): dormir ahí no es dormir mal. Incluye siestas.')
+        : 'Incluye siestas.';
       chartHtml = '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:14px">'+
         '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Sueño total diario vs. recomendado</div>'+
         '<div style="font-size:10px;color:var(--label-3);margin-bottom:10px;line-height:1.4">'+nsfNote+'</div>'+
@@ -23965,9 +24145,11 @@ async function renderChildDiaryList(){
         '<div style="display:flex;gap:14px;font-size:10px;color:var(--label-3);margin-top:8px;flex-wrap:wrap">'+
           '<span><span style="display:inline-block;width:10px;height:10px;background:#1a4a3a;border-radius:50%;margin-right:3px;vertical-align:middle"></span>Sueño total (noche + siestas)</span>'+
           '<span><span style="display:inline-block;width:14px;height:9px;background:rgba(126,200,164,0.35);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Rango recomendado NSF</span>'+
+          '<span><span style="display:inline-block;width:14px;height:9px;background:rgba(126,200,164,0.14);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Puede ser apropiado</span>'+
         '</div></div>';
     }
     // Lista
+    const _nsfLista = nsfRangoActual();
     const listHtml = entries.map(e => {
       // El número grande debe ser el TOTAL de 24 h (nocturno + siestas):
       // las bandas etarias (AASM/NSF) se definen sobre el total, no sobre la noche.
@@ -23994,7 +24176,13 @@ async function renderChildDiaryList(){
         ? '<div style="font-size:10px;color:var(--label-3);margin-top:1px;white-space:nowrap">'+_nightH+'h noche · '+_napH+'h siestas</div>'
         : '';
       const dateStr = new Date(e.diary_date+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'short'});
-      const hrsColor = !hrs?'var(--label-2)':S.ageGroup==='infant'?(hrs>=12&&hrs<=16?'#14532d':hrs>=10?'#92400e':'#991b1b'):(hrs>=9?'#14532d':hrs>=7?'#92400e':'#991b1b');
+      // Mismo criterio que el gráfico y que el puntaje: verde dentro de lo
+      // recomendado, ámbar dentro del ampliado, rojo recién afuera. Antes
+      // había tres cortes distintos escritos a mano acá.
+      const _rl = _nsfLista || {recMin:9,recMax:11,mayMin:7,mayMax:12};
+      const hrsColor = !hrs ? 'var(--label-2)'
+        : (hrs>=_rl.recMin && hrs<=_rl.recMax) ? '#14532d'
+        : (hrs>=_rl.mayMin && hrs<=_rl.mayMax) ? '#92400e' : '#991b1b';
       return `<div style="background:var(--bg-secondary);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
         <div style="flex:1">
           <div style="font-size:14px;font-weight:600">${dateStr}</div>
@@ -24019,9 +24207,9 @@ async function renderChildDiaryList(){
         killChart('chDiary');
         const labels=chartData.map(d=>new Date(d.date+'T12:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}));
         const totals=chartData.map(d=>d.totalHrs!=null?d.totalHrs:d.hrs);
-        const nsf = NSF_RANGES[S.ageGroup] || {recMin:9,recMax:11,mayMin:7,mayMax:12};
-        const dataMax = Math.max(...totals, nsf.recMax);
-        const dataMin = Math.min(...totals, nsf.recMin);
+        const nsf = nsfRangoActual() || {recMin:9,recMax:11,mayMin:7,mayMax:12};
+        const dataMax = Math.max(...totals, nsf.mayMax);
+        const dataMin = Math.min(...totals, nsf.mayMin);
         (function(){try{if(S.charts.chDiary)S.charts.chDiary.destroy();}catch(_){}})(),S.charts.chDiary=new Chart(ctx,{
           type:'line',
           data:{labels,datasets:[{
@@ -24042,9 +24230,20 @@ async function renderChildDiaryList(){
             id:'nsfBand',
             beforeDraw:function(ch){
               const yS=ch.scales.y, area=ch.chartArea, c=ch.ctx;
+              c.save();
+              // Banda AMPLIADA ("may be appropriate"), primero y más tenue.
+              // A los 2 años lo recomendado es 11–14 h, pero entre 9 y 16 la
+              // NSF dice que puede estar bien: sin dibujarla, un punto en 10 h
+              // se leía como déficit cuando la propia fuente no lo considera
+              // anormal. Ref: Hirshkowitz 2015, tabla 1.
+              if(nsf.mayMax!=null && nsf.mayMin!=null){
+                const mT=yS.getPixelForValue(nsf.mayMax), mB=yS.getPixelForValue(nsf.mayMin);
+                c.fillStyle='rgba(126,200,164,0.12)';
+                c.fillRect(area.left, Math.max(mT,area.top), area.right-area.left,
+                           Math.min(mB,area.bottom)-Math.max(mT,area.top));
+              }
               // Banda recomendada (verde claro)
               const yTop=yS.getPixelForValue(nsf.recMax), yBot=yS.getPixelForValue(nsf.recMin);
-              c.save();
               c.fillStyle='rgba(126,200,164,0.30)';
               c.fillRect(area.left, Math.max(yTop,area.top), area.right-area.left, Math.min(yBot,area.bottom)-Math.max(yTop,area.top));
               // Líneas límite

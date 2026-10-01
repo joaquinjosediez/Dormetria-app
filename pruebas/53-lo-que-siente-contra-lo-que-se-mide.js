@@ -34,14 +34,17 @@ for (let k = 0; k < 40; k++) {
 ctx._nsC = ns;
 const h = vm.runInContext('dmConcordanciaHtml(_nsC)', ctx);
 
-r.seccion('Las cuatro asociaciones, comparables entre sí:');
+r.seccion('Las cinco asociaciones, comparables entre sí:');
 
-r.ok((h.match(/dm-aguja-fila/g) || []).length === 4, 'cuatro filas');
-['Horas de sueño', 'Eficiencia', 'Latencia', 'Despertares'].forEach(function (v) {
+// Son las cinco cosas que pueden pesarle: cuánto duerme, qué tan eficiente
+// es esa noche, cuánto tarda, cuánto se despierta y qué tan parejo es el
+// horario. La regularidad faltaba y es la que más se trabaja en consulta.
+r.ok((h.match(/dm-aguja-fila/g) || []).length === 5, 'cinco filas');
+['Horas de sueño', 'Eficiencia', 'Latencia', 'Regularidad'].forEach(function (v) {
   r.ok(h.indexOf(v) >= 0, v);
 });
-// La eficiencia no estaba y es la que más mueve en un insomnio.
-r.ok(/Eficiencia/.test(h), 'incluida la eficiencia, que antes no se cruzaba');
+r.ok(/Despertares|Tiempo despierto/.test(h),
+     'y los despertares, en minutos si están cargados y en conteo si no');
 
 r.seccion('Con el valor y su intervalo, como el de hábitos:');
 
@@ -59,9 +62,16 @@ r.ok(/dir:-1/.test(fn),
      'latencia y despertares van invertidos: tardar MENOS es mejor');
 r.ok(/const cruza = \(lo <= 0 && hi >= 0\)/.test(fn),
      'si el intervalo toca el cero, no se afirma');
-r.ok(/no se puede afirmar/.test(fn), 'y se dice así');
-r.ok(/lo percibe al revés/.test(fn),
-     'y si la correlación va en contra, también se nombra — es un hallazgo, no un error');
+// "lo percibe en parte" / "al revés" obligaba a traducir qué significaba
+// cada etiqueta. Las categorías que se usan en clínica son otras.
+r.ok(/sin relación en esta variable/.test(fn),
+     'y se dice así: sin relación en esa variable');
+r.ok(/paradójico/.test(fn),
+     'y si la correlación va en contra se llama paradójico — es un hallazgo, no un error');
+r.ok(/congruente/.test(fn),
+     'y cuando acompaña, congruente');
+r.ok(!/lo percibe en parte|lo percibe al revés/.test(fn),
+     'ya no quedan las etiquetas viejas, que nadie entendía');
 
 r.seccion('El eje es fijo de −1 a +1:');
 
@@ -69,11 +79,23 @@ r.seccion('El eje es fijo de −1 a +1:');
 r.ok(/Math\.max\(-1, Math\.min\(1, r\)\)/.test(fn),
      'la r vive en ese rango y la escala no se adapta');
 
+r.seccion('La tarjeta responde su propia pregunta: qué le pesa más');
+
+// Había cinco filas y el lector tenía que compararlas de memoria. La
+// pregunta clínica es cuál de las cinco mueve lo que la persona siente,
+// porque es sobre esa que se decide el plan.
+r.ok(/Lo que más le pesa/.test(fn), 'lo dice como titular, no en letra chica');
+r.ok(/Math\.abs\(b\.p\.r\)-Math\.abs\(a\.p\.r\)/.test(fn),
+     'y la elige por la asociación más fuerte…');
+r.ok(/const establecidas = filas\.filter/.test(fn),
+     '…entre las que excluyen el cero, no entre todas');
+r.ok(/Lo que más le pesa/.test(h), 'y sale en el HTML con datos reales');
+
 r.seccion('Y si NINGUNA se establece, eso es el hallazgo:');
 
-r.ok(/Ninguna asociación llega a establecerse/.test(fn),
+r.ok(/Ninguna variable se establece/.test(fn),
      'se dice explícitamente');
-r.ok(/trabajo\s*'\+\s*'cognitivo|orienta a trabajo/.test(fn),
+r.ok(/trabajo cognitivo/.test(fn),
      'y qué implica: trabajo cognitivo antes que más ajuste conductual');
 
 r.seccion('Mínimo de noches, como en todo lo demás:');

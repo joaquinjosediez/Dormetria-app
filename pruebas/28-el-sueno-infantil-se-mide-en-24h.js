@@ -82,9 +82,20 @@ const noche = 10.8, siestas = 2.8;
 r.ok(qtyScoreForMeses(noche + siestas, 9) === 50,
      'con las siestas, un lactante normal puntúa completo',
      qtyScoreForMeses(noche + siestas, 9) + '/50');
-r.ok(qtyScoreForMeses(noche, 9) < 35,
-     'y sin ellas se lo castiga, que es lo que pasaba',
+// Sin contarlas, 10,8 h queda fuera de lo recomendado (12–15 h) pero DENTRO
+// del rango ampliado de la NSF (10–18 h). Así que tiene que bajar —medir solo
+// la noche subcuenta— pero sin desplomarse: la propia fuente no considera
+// anormal ese valor. El umbral viejo (<35) codificaba la regla anterior, que
+// aplicaba la misma caída de 18 puntos por hora adentro y afuera del ampliado.
+r.ok(qtyScoreForMeses(noche, 9) < 50 && qtyScoreForMeses(noche, 9) >= 40,
+     'y sin ellas baja, pero sin tratarlo como patológico: cae en el rango ampliado',
      qtyScoreForMeses(noche, 9) + '/50');
+r.ok(dmTramoCantidad(noche, rangoSuenoPorMeses(9)) === 'aceptable',
+     'y se nombra como "puede ser apropiado", no como déficit');
+// Afuera del ampliado sí se desploma, que es donde hay motivo para alarmarse.
+r.ok(qtyScoreForMeses(8, 9) < 25,
+     '8 h en un lactante de 9 meses sí cae fuerte: está por debajo del ampliado',
+     qtyScoreForMeses(8, 9) + '/50');
 
 // Preescolar de 2 años: 11 h de noche + 1,5 h de siesta.
 r.ok(qtyScoreForMeses(11 + 1.5, 24) === 50,

@@ -16,16 +16,29 @@
 //
 // La tabla va en MESES, no en años. Con años, un bebé de 2 meses y uno de 11
 // caen los dos en "0 años" y comparten rango, y los rangos son distintos.
+// Cada franja trae DOS rangos, porque la NSF publica dos y usar uno solo
+// deforma el puntaje:
+//   lo/hi          → "recommended"
+//   may_lo/may_hi  → "may be appropriate", el rango ampliado
+// Para un chico de 2 años lo recomendado es 11–14 h, pero entre 9 y 16 la
+// propia NSF dice que puede estar bien. Con un único rango, 10 h de sueño en
+// un chico que está perfecto caía como déficit y arrastraba el puntaje de
+// Cantidad; con los dos, queda señalado pero sin castigo fuerte, que es lo
+// que la evidencia permite afirmar.
+// Ref: Hirshkowitz M et al., Sleep Health 2015;1(1):40-43, tabla 1.
 const DM_RANGOS_SUENO = [
-  { max_meses:3,   etiqueta:'0–3 meses',   lo:14, hi:17, fuente:'NSF 2015',
+  { max_meses:3,   etiqueta:'0–3 meses',   lo:14, hi:17, may_lo:11, may_hi:19, fuente:'NSF 2015',
     nota:'La AASM no emite recomendación por debajo de los 4 meses.' },
-  { max_meses:11,  etiqueta:'4–11 meses',  lo:12, hi:15, fuente:'NSF 2015', aasm:[12,16] },
-  { max_meses:35,  etiqueta:'1–2 años',    lo:11, hi:14, fuente:'NSF 2015 y AASM 2016' },
-  { max_meses:71,  etiqueta:'3–5 años',    lo:10, hi:13, fuente:'NSF 2015 y AASM 2016' },
-  { max_meses:167, etiqueta:'6–13 años',   lo:9,  hi:11, fuente:'NSF 2015', aasm:[9,12] },
-  { max_meses:215, etiqueta:'14–17 años',  lo:8,  hi:10, fuente:'NSF 2015 y AASM 2016' },
-  { max_meses:779, etiqueta:'18–64 años',  lo:7,  hi:9,  fuente:'NSF 2015' },
-  { max_meses:9999,etiqueta:'65 años o más', lo:7, hi:8, fuente:'NSF 2015' }
+  { max_meses:11,  etiqueta:'4–11 meses',  lo:12, hi:15, may_lo:10, may_hi:18, fuente:'NSF 2015', aasm:[12,16] },
+  { max_meses:35,  etiqueta:'1–2 años',    lo:11, hi:14, may_lo:9,  may_hi:16, fuente:'NSF 2015 y AASM 2016' },
+  { max_meses:71,  etiqueta:'3–5 años',    lo:10, hi:13, may_lo:8,  may_hi:14, fuente:'NSF 2015 y AASM 2016' },
+  { max_meses:167, etiqueta:'6–13 años',   lo:9,  hi:11, may_lo:7,  may_hi:12, fuente:'NSF 2015', aasm:[9,12] },
+  { max_meses:215, etiqueta:'14–17 años',  lo:8,  hi:10, may_lo:7,  may_hi:11, fuente:'NSF 2015 y AASM 2016' },
+  // La NSF separa 18–25 de 26–64: lo recomendado es igual (7–9 h), pero el
+  // rango ampliado del adulto joven llega a 11 h y el del adulto a 10.
+  { max_meses:311, etiqueta:'18–25 años',  lo:7,  hi:9,  may_lo:6,  may_hi:11, fuente:'NSF 2015' },
+  { max_meses:779, etiqueta:'26–64 años',  lo:7,  hi:9,  may_lo:6,  may_hi:10, fuente:'NSF 2015' },
+  { max_meses:9999,etiqueta:'65 años o más', lo:7, hi:8, may_lo:5,  may_hi:9,  fuente:'NSF 2015' }
 ];
 
 // Rango por edad en MESES. Es la función de referencia; la de años delega acá.
@@ -67,10 +80,12 @@ function etiquetaEdad(meses){
 function optimalSleepHours(ageYears){
   if(ageYears!=null && ageYears>=0 && ageYears<1 && ageYears===Math.floor(ageYears)){
     const r0 = rangoSuenoPorMeses(9);
-    return {lo:r0.lo, hi:r0.hi, etiqueta:r0.etiqueta, fuente:r0.fuente, aasm:r0.aasm, impreciso:true};
+    return {lo:r0.lo, hi:r0.hi, may_lo:r0.may_lo, may_hi:r0.may_hi,
+            etiqueta:r0.etiqueta, fuente:r0.fuente, aasm:r0.aasm, impreciso:true};
   }
   const r = rangoSuenoPorMeses(ageYears==null ? null : Math.round(ageYears*12));
-  return {lo:r.lo, hi:r.hi, etiqueta:r.etiqueta, fuente:r.fuente, aasm:r.aasm};
+  return {lo:r.lo, hi:r.hi, may_lo:r.may_lo, may_hi:r.may_hi,
+          etiqueta:r.etiqueta, fuente:r.fuente, aasm:r.aasm};
 }
 
 // Edad en AÑOS con decimales. Math.floor manda a todo el primer año a "0", que
@@ -118,18 +133,57 @@ function jetLagRegScore(sjl){
   if(sjl<30) return 30; if(sjl<60) return 24; if(sjl<90) return 18;
   if(sjl<120) return 12; if(sjl<150) return 6; return 0;
 }
+// ── Puntaje de cantidad 0–50, con los DOS rangos de la NSF ────────────
+// La versión anterior tenía un solo escalón: dentro del rango recomendado,
+// 50; fuera, caída de 18 puntos por hora. Eso trata igual a dos cosas que la
+// NSF distingue expresamente. A los 2 años, 10 h de sueño está fuera de lo
+// recomendado (11–14) pero DENTRO de lo que puede ser apropiado (9–16): con
+// la regla vieja perdía 18 puntos de 50, un tercio del puntaje, por algo que
+// la propia fuente no considera anormal.
+//
+// Tres tramos, continuos entre sí:
+//   dentro del recomendado           → 50
+//   dentro del ampliado              → caída suave (6/h por debajo, 4/h por
+//                                      encima): queda señalado, no castigado
+//   fuera del ampliado               → caída firme (18/h y 8/h), que es donde
+//                                      sí hay motivo clínico para alarmarse
+//
+// Asimetría por debajo y por encima a propósito: dormir de menos tiene
+// consecuencias mejor documentadas que dormir de más, donde el exceso suele
+// ser marcador de otra cosa antes que causa.
+function dmPuntajeCantidad(hrs, r){
+  if(hrs==null || isNaN(hrs)) return null;
+  const lo=r.lo, hi=r.hi;
+  const mLo=(r.may_lo!=null?r.may_lo:lo), mHi=(r.may_hi!=null?r.may_hi:hi);
+  if(hrs>=lo && hrs<=hi) return 50;
+  if(hrs<lo){
+    const enBorde = 50 - (lo-mLo)*6;              // puntaje justo en may_lo
+    const p = (hrs>=mLo) ? 50 - (lo-hrs)*6
+                         : enBorde - (mLo-hrs)*18;
+    return Math.max(0, Math.min(50, Math.round(p)));
+  }
+  const enBorde = 50 - (mHi-hi)*4;                // puntaje justo en may_hi
+  const p = (hrs<=mHi) ? 50 - (hrs-hi)*4
+                       : enBorde - (hrs-mHi)*8;
+  return Math.max(0, Math.min(50, Math.round(p)));
+}
+
+// Dónde cae una duración respecto de los dos rangos. Lo usa la interfaz para
+// no decir "por debajo del rango" cuando la NSF dice que puede estar bien.
+function dmTramoCantidad(hrs, r){
+  if(hrs==null || isNaN(hrs) || !r) return null;
+  if(hrs>=r.lo && hrs<=r.hi) return 'recomendado';
+  const mLo=(r.may_lo!=null?r.may_lo:r.lo), mHi=(r.may_hi!=null?r.may_hi:r.hi);
+  if(hrs>=mLo && hrs<=mHi) return 'aceptable';
+  return hrs<mLo ? 'bajo' : 'alto';
+}
+
 // Puntaje de cantidad 0–50 relativo al rango de la edad, en MESES.
 function qtyScoreForMeses(hrs, meses){
-  const r = rangoSuenoPorMeses(meses);
-  if(hrs>=r.lo && hrs<=r.hi) return 50;
-  if(hrs<r.lo){ const d=r.lo-hrs; return Math.max(0, Math.round(50 - d*18)); }
-  const d=hrs-r.hi; return Math.max(0, Math.round(50 - d*8));
+  return dmPuntajeCantidad(hrs, rangoSuenoPorMeses(meses));
 }
 
 // Puntaje de cantidad 0–50 relativo al rango óptimo de la edad.
 function qtyScoreForAge(hrs, ageYears){
-  const {lo,hi}=optimalSleepHours(ageYears);
-  if(hrs>=lo && hrs<=hi) return 50;
-  if(hrs<lo){ const d=lo-hrs; return Math.max(0, Math.round(50 - d*18)); }
-  const d=hrs-hi; return Math.max(0, Math.round(50 - d*8));
+  return dmPuntajeCantidad(hrs, optimalSleepHours(ageYears));
 }
