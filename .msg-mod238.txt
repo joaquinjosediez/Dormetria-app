@@ -1,0 +1,40 @@
+mod238 · el cero corrido, el motor que no veia las siestas, y la matriz
+
+POR QUE EL CERO NO CAIA SOBRE EL CERO. La cabecera y cada fila del forest
+plot son grids SEPARADOS con la misma plantilla. La ultima columna era
+`auto`, que se dimensiona SEGUN SU CONTENIDO: en la cabecera esta vacia
+(0 px) y en las filas dice "5 vs 33" (~60 px). Grids distintos, anchos
+distintos, todas las columnas de la cabecera corridas. Ancho fijo y listo.
+
+EL MOTOR NO VEIA LAS SIESTAS DEL DIARIO INFANTIL. conDato filtraba por
+nap_minutes, la columna del diario ADULTO. En un nene de dos años quedaba
+vacio: siestaFrecPct null, tst24 null — y por eso la version pediatrica de
+la tarjeta de Evolucion nunca se activaba, porque depende de tst24. Por eso
+"no lo adaptaste como dijimos": si lo habia adaptado, nunca llegaba a
+dispararse. Ahora el motor lee las dos fuentes, con deduplicacion.
+
+LO QUE REPORTA VS. LO QUE SE MIDE. El hueco blanco era un parrafo con tres
+correlaciones metidas en una oracion larga, que ademas no se escribia si
+faltaban noches. Pasa a ser el MISMO forest plot: horas, eficiencia,
+latencia y despertares contra la calidad que reporta, cada una con su r y
+su IC 95 % por z de Fisher, eje fijo de −1 a +1, orientado.
+Se agrega la EFICIENCIA, que no se cruzaba y es la que mas mueve en un
+insomnio. Y si NINGUNA asociacion se establece, se dice: eso orienta a
+trabajo cognitivo antes que a mas ajuste conductual.
+
+EL DETALLE, COMO MATRIZ. Era un bloque por factor con su tablita de cuatro
+filas. A todo el ancho dejaba tres cuartos de pantalla en blanco y obligaba
+a saltar de bloque en bloque para comparar la misma variable entre factores
+—que es justo lo que uno quiere hacer. Ahora una fila por VARIABLE y una
+columna por FACTOR.
+
+Ademas:
+- El degradado rojo/verde, mas notorio, y tambien suave en el eje de cada
+  fila: la mitad donde cae la barra se lee sin mirar la cabecera.
+- El bloque de sueño diurno va DESPUES del tecnico de regularidad, para
+  quedar a la altura de las metricas nocturnas.
+- El pie de los pilares: el de Regularidad tenia doce renglones y el de
+  Cantidad dos, asi que las tres tarjetas quedaban de alturas distintas.
+  Lo largo va plegado detras de "Mas" — completo, no recortado.
+
+Lo fija pruebas/53.

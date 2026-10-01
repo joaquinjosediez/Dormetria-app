@@ -635,9 +635,16 @@ function dmMetricasDiario(entries) {
   // nap_minutes es el TOTAL dormido en siestas de ese día; 0 significa "no
   // durmió siesta" (respuesta), null significa "no se preguntó" (sin dato).
   // El detalle de cada siesta vive en el JSON de notes.
-  const conDato = valid.filter(function (e) {
-    return e && e.nap_minutes != null && !isNaN(Number(e.nap_minutes)); });
-  const conSiesta = conDato.filter(function (e) { return Number(e.nap_minutes) > 0; });
+  // Minutos de siesta del día, mirando las DOS formas en que la app los
+  // guarda: el detalle del diario infantil manda sobre la columna.
+  const _minSiesta = function (e) {
+    const det = dmSiestasDeNotas(e);
+    if (det.length) return det.reduce(function (a, n) { return a + n; }, 0);
+    const v = Number(e && e.nap_minutes);
+    return (e && e.nap_minutes != null && !isNaN(v)) ? v : null;
+  };
+  const conDato = valid.filter(function (e) { return _minSiesta(e) != null; });
+  const conSiesta = conDato.filter(function (e) { return _minSiesta(e) > 0; });
 
   const siestaDias = conDato.length || null;
   const siestaNoches = conSiesta.length;
@@ -647,7 +654,7 @@ function dmMetricasDiario(entries) {
   // días: promediar los ceros diría que "duerme 12 minutos de siesta", que no
   // describe a nadie.
   const siestaMediaMin = conSiesta.length
-    ? Math.round(conSiesta.reduce(function (a, e) { return a + Number(e.nap_minutes); }, 0) / conSiesta.length)
+    ? Math.round(conSiesta.reduce(function (a, e) { return a + _minSiesta(e); }, 0) / conSiesta.length)
     : null;
   // Cuántas siestas por día en los días que hubo. Sale del detalle; si no está
   // cargado se asume una.
@@ -658,7 +665,7 @@ function dmMetricasDiario(entries) {
   // Sueño en 24 h = nocturno + siestas, promediado sobre los días con dato de
   // siesta. Se devuelve aparte y NUNCA se mezcla con tst.
   const tst24 = (tst != null && conDato.length)
-    ? Math.round(tst + conDato.reduce(function (a, e) { return a + Number(e.nap_minutes); }, 0) / conDato.length)
+    ? Math.round(tst + conDato.reduce(function (a, e) { return a + _minSiesta(e); }, 0) / conDato.length)
     : null;
 
   return { latenciaMedia, vigiliaIntrasueño, eficiencia, despertaresMedia, tst, tib,
@@ -671,14 +678,35 @@ function dmMetricasDiario(entries) {
  * "Siestas: [{start,end}]" — el mismo formato del diario infantil. Si no está,
  * devuelve 0 y quien llama decide qué hacer con eso.
  */
-function dmContarSiestas(e) {
-  if (!e || !e.notes) return 0;
+// Duraciones de las siestas que están en notes (diario infantil), ya
+// deduplicadas: la misma siesta escrita dos veces es una siesta.
+function dmSiestasDeNotas(e) {
+  if (!e || !e.notes) return [];
   const m = /Siestas: (\[.*?\])(?: \||$)/.exec(e.notes);
-  if (!m) return 0;
+  if (!m) return [];
   try {
     const arr = JSON.parse(m[1]);
-    return Array.isArray(arr) ? arr.filter(function (n) { return n && n.start; }).length : 0;
-  } catch (_) { return 0; }
+    if (!Array.isArray(arr)) return [];
+    const vistas = {}, out = [];
+    arr.forEach(function (n) {
+      if (!n || !n.start || !n.end) return;
+      const k = String(n.start) + '/' + String(n.end);
+      if (vistas[k]) return;
+      vistas[k] = true;
+      const a = String(n.start).split(':').map(Number);
+      const b = String(n.end).split(':').map(Number);
+      let d = (b[0] * 60 + (b[1] || 0)) - (a[0] * 60 + (a[1] || 0));
+      if (d < 0) d += 1440;
+      if (d > 0 && d <= 8 * 60) out.push(d);
+    });
+    return out;
+  } catch (_) { return []; }
+}
+
+function dmContarSiestas(e) {
+  const det = dmSiestasDeNotas(e);
+  if (det.length) return det.length;
+  return (e && Number(e.nap_minutes) > 0) ? 1 : 0;
 }
 
 /**

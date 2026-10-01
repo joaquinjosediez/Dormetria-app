@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod237-b16345d1">
+<link rel="stylesheet" href="css/styles.css?v=mod238-417ec0f1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod237-e7d2aa81"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod237-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod237-af87b0b6"></script>
-<script src="js/dormetria-render-resumen.js?v=mod237-96b9fea2"></script>
-<script src="js/dormetria-tcci.js?v=mod237-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod238-e7d2aa81"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod238-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod238-af87b0b6"></script>
+<script src="js/dormetria-render-resumen.js?v=mod238-96b9fea2"></script>
+<script src="js/dormetria-tcci.js?v=mod238-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod237';
+const APP_VERSION='mod238';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -7044,6 +7044,136 @@ function computeHabitsImpact(entries){
 }
 
 // ══════════════════════════════════════════════════════════════════════
+// De qué depende que se levante sintiéndose bien
+// ----------------------------------------------------------------------
+// Esto reemplaza al párrafo de "Percepción vs. lo medido", que decía lo
+// mismo en prosa: tres correlaciones con sus intervalos metidas en una
+// oración larga. Nadie la leía, y en la tarjeta quedaba un hueco blanco.
+//
+// Es la pregunta que más orienta la conducta en un insomnio: si lo que
+// la persona SIENTE a la mañana no acompaña a nada de lo que se mide,
+// el trabajo es cognitivo, no conductual. Y eso no se ve en un número
+// suelto; se ve comparando las cuatro asociaciones entre sí.
+//
+// Mismo lenguaje visual que el forest plot de hábitos —punto, banda,
+// eje orientado— para que las dos tarjetas se lean igual.
+function dmConcordanciaHtml(entries, campo){
+  const v = (entries||[]).filter(function(e){ return e && e.diary_date; });
+  if(v.length < 10) return '';
+  const col = campo || 'sleep_quality';
+
+  const pearson = function(xs, ys){
+    const pares = xs.map(function(x,i){ return [x, ys[i]]; })
+      .filter(function(p){ return p[0]!=null && p[1]!=null && !isNaN(p[0]) && !isNaN(p[1]); });
+    const n = pares.length;
+    if(n < 10) return null;
+    const mx = pares.reduce(function(a,p){ return a+p[0]; },0)/n;
+    const my = pares.reduce(function(a,p){ return a+p[1]; },0)/n;
+    let num=0, dx=0, dy=0;
+    pares.forEach(function(p){ num+=(p[0]-mx)*(p[1]-my); dx+=(p[0]-mx)*(p[0]-mx); dy+=(p[1]-my)*(p[1]-my); });
+    if(dx===0 || dy===0) return null;
+    let r = num/Math.sqrt(dx*dy);
+    r = Math.max(-0.999999, Math.min(0.999999, r));
+    // IC por la transformación z de Fisher. No es adorno: con 13 noches
+    // una r de 0,35 va de −0,25 a +0,75 y no permite afirmar nada.
+    const z = Math.atanh(r), se = 1/Math.sqrt(n-3);
+    return { r:r, n:n, lo:Math.tanh(z-1.96*se), hi:Math.tanh(z+1.96*se) };
+  };
+
+  const y = v.map(function(e){ const x=Number(e[col]); return (e[col]!=null && !isNaN(x)) ? x : null; });
+  const horas = v.map(function(e){ return (e.sleep_minutes>0) ? e.sleep_minutes/60 : null; });
+  const lat   = v.map(function(e){ const x=Number(e.sleep_latency_mins); return (e.sleep_latency_mins!=null && !isNaN(x)) ? x : null; });
+  const desp  = v.map(function(e){ const x=Number(e.awakenings); return (e.awakenings!=null && !isNaN(x)) ? x : null; });
+  // Eficiencia por noche: es la que más mueve en un insomnio y no estaba.
+  const efi = v.map(function(e){
+    const t=function(h){ if(!h) return null; const p=String(h).slice(0,5).split(':').map(Number);
+                         return isNaN(p[0])?null:p[0]*60+(p[1]||0); };
+    const b=t(e.bedtime), w=t(e.wake_time), ts=Number(e.sleep_minutes);
+    if(b==null||w==null||!(ts>0)) return null;
+    let tib=w-b; if(tib<=0) tib+=1440;
+    if(!(tib>0 && tib<=20*60)) return null;
+    return Math.min(100, ts/tib*100);
+  });
+
+  // `dir` orienta: +1 si más de esa variable debería sentirse mejor.
+  const filas = [
+    { rot:'Horas de sueño',  x:horas, dir:+1, pie:'más horas → mejor' },
+    { rot:'Eficiencia',      x:efi,   dir:+1, pie:'menos vueltas en la cama → mejor' },
+    { rot:'Latencia',        x:lat,   dir:-1, pie:'tardar menos → mejor' },
+    { rot:'Despertares',     x:desp,  dir:-1, pie:'despertarse menos → mejor' }
+  ].map(function(f){
+    const p = pearson(y, f.x);
+    return p ? { rot:f.rot, pie:f.pie, dir:f.dir, p:p } : null;
+  }).filter(Boolean);
+
+  if(!filas.length) return '';
+
+  // Eje fijo de −1 a +1: la r vive ahí y una escala que se adapta haría
+  // parecer grande a una correlación chica.
+  const x = function(r){ return 50 + Math.max(-1, Math.min(1, r))*50; };
+  const VERDE='#15803d', ROJO='#b91c1c', GRIS='#9a9a92';
+  const fmt = function(r){ return (r<0?'−':'+')+Math.abs(r).toFixed(2).replace('.', ','); };
+
+  filas.sort(function(a,b){ return Math.abs(b.p.r)-Math.abs(a.p.r); });
+
+  const cuerpo = filas.map(function(f){
+    // Orientado: positivo = percibe lo que se mide.
+    const ro = f.p.r * f.dir;
+    const lo0 = f.p.lo * f.dir, hi0 = f.p.hi * f.dir;
+    const lo = Math.min(lo0, hi0), hi = Math.max(lo0, hi0);
+    const cruza = (lo <= 0 && hi >= 0);
+    const c = cruza ? GRIS : (ro > 0 ? VERDE : ROJO);
+    const veredicto = cruza ? 'no se puede afirmar'
+                    : (ro > 0 ? (Math.abs(ro)>=0.5 ? 'lo percibe claramente' : 'lo percibe en parte')
+                              : 'lo percibe al revés');
+    return '<div class="dm-aguja-fila">'+
+      '<div class="dm-aguja-rot">'+f.rot+
+        '<div style="font-size:10.5px;font-weight:400;color:#8a8a82;margin-top:2px">'+f.pie+'</div></div>'+
+      '<div class="dm-aguja-eje">'+
+        '<i class="dm-aguja-cero"></i>'+
+        '<i class="dm-aguja-ic" style="left:'+x(lo)+'%;width:'+Math.max(1.2, x(hi)-x(lo))+'%;background:'+c+'"></i>'+
+        '<i class="dm-aguja-media" style="left:'+x(ro)+'%;background:'+c+'"></i>'+
+      '</div>'+
+      '<div class="dm-aguja-val" style="color:'+c+'">'+
+        '<b>'+veredicto+'</b><br>'+
+        '<span class="dm-aguja-num">r='+fmt(ro)+
+        '<span class="dm-aguja-ic-txt"> (IC95% '+fmt(lo)+' a '+fmt(hi)+')</span></span></div>'+
+      '<div class="dm-aguja-n">'+f.p.n+' noches</div>'+
+    '</div>';
+  }).join('');
+
+  // Si NINGUNA asociación excluye el cero, eso es el hallazgo — y es el
+  // que cambia la conducta.
+  const ninguna = filas.every(function(f){
+    const a=f.p.lo*f.dir, b=f.p.hi*f.dir;
+    return Math.min(a,b) <= 0 && Math.max(a,b) >= 0;
+  });
+
+  return '<div class="dm-aguja">'+
+    '<div class="dm-aguja-cab">'+
+      '<span></span>'+
+      '<span class="dm-aguja-escala">'+
+        '<i class="peor">◂ al revés</i><b>0</b><i class="mejor">lo percibe ▸</i>'+
+        '<u>correlación · r −1 a +1</u></span>'+
+      '<span></span><span></span>'+
+    '</div>'+
+    cuerpo+
+    (ninguna
+      ? '<div style="background:#fef3c7;border-left:3px solid #C8A96E;border-radius:0 8px 8px 0;'+
+        'padding:10px 12px;margin-top:12px;font-size:12px;color:#92400e;line-height:1.55">'+
+        '<b>Ninguna asociación llega a establecerse.</b> Lo que esta persona siente a la mañana '+
+        'no acompaña a nada de lo que se mide. Si se confirma con más noches, orienta a trabajo '+
+        'cognitivo —percepción del sueño, catastrofización— antes que a más ajuste conductual.</div>'
+      : '')+
+    '<div class="dm-aguja-pie">'+
+      'Correlación de Pearson entre la <b>calidad que reporta cada mañana</b> y cada variable '+
+      'medida esa noche, con su <b>IC 95 %</b> por la transformación z de Fisher. El eje está '+
+      'orientado: a la derecha, lo percibido acompaña a lo medido. <b>Si la banda toca el cero, '+
+      'no se afirma nada.</b> Mínimo 10 noches con los dos datos. Es asociación, no causa.</div>'+
+  '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════════════
 // Qué mueve la aguja
 // ----------------------------------------------------------------------
 // Reemplaza al gráfico de líneas de los pilares. Ese gráfico tenía cinco
@@ -7347,69 +7477,79 @@ function renderHabitsImpactHtml(entries, audiencia){
       '<strong>Cómo leerlo.</strong> Asociación dentro de un mismo paciente, no un ensayo: puede haber confusión (tomar café justamente los días de peor descanso previo). '+
       'Se comparan varios factores por varias variables, así que algún p&lt;0,05 aislado es esperable por azar. Para generar hipótesis en consulta, no para concluir causalidad. '+
       'Se muestran factores con al menos 5 noches en cada grupo; entre 5 y 6 se marcan como <strong>preliminares</strong>, porque un solo valor extremo puede darlos vuelta.</div>';
-  R.habitos.forEach(hb=>{
+  // ══════════════════════════════════════════════════════════════════
+  // El detalle, como matriz
+  // ------------------------------------------------------------------
+  // Antes era un bloque por factor, cada uno con su propia tablita de
+  // cuatro filas. A todo el ancho eso deja tres cuartos de pantalla en
+  // blanco y obliga a saltar de bloque en bloque para comparar la misma
+  // variable entre factores — que es justamente lo que se quiere hacer.
+  // Ahora: una fila por VARIABLE, una columna por FACTOR. La lectura
+  // horizontal responde "¿qué le mueve la latencia?" de un vistazo.
+  const VARS = [
+    { id:'tst',  label:'Sueño total' },
+    { id:'lat',  label:'Latencia' },
+    { id:'awk',  label:'Despertares' },
+    { id:'qual', label:'Calidad percibida' }
+  ];
+  const cols = R.habitos;
+  const anchoCol = 'minmax(110px,1fr)';
+  const grilla = 'grid-template-columns:minmax(130px,.9fr) repeat('+cols.length+','+anchoCol+')';
+
+  html += '<div class="dm-mtz" style="'+grilla+'">';
+  // Cabecera: el factor, su veredicto y su n.
+  html += '<div class="dm-mtz-esq"></div>';
+  cols.forEach(function(hb){
     const vCol = hb.veredicto==='positivo'?'#16a34a' : hb.veredicto==='negativo'?'#dc2626' : '#6b7280';
-    const vTxt = hb.veredicto==='positivo'?'Asociado a mejor sueño'
-               : hb.veredicto==='negativo'?'Asociado a peor sueño'
-               : hb.veredicto==='mixto'?'Efecto mixto' : 'Sin diferencia relevante';
-    const etiqueta = hb.fisiologico
-      ? '<span style="font-size:9.5px;background:#eef2ff;color:#4338ca;border-radius:99px;padding:2px 7px;font-weight:600" '+
-        'title="El factor en sí no se elige, pero sí se puede anticipar y acompañar">factor fisiológico</span>'
-      : (hb.personal
-        ? '<span style="font-size:9.5px;background:#fdf4ff;color:#86198f;border-radius:99px;padding:2px 7px;font-weight:600">tu variable</span>' : '');
-    const avisoPrelim = hb.preliminar
-      ? '<span style="font-size:9.5px;background:#fef9c3;color:#854d0e;border-radius:99px;padding:2px 7px;font-weight:600">preliminar</span>' : '';
-    // El hallazgo principal: la variable con mayor efecto, en palabras.
-    const _fuerte = hb.efectos.filter(e=>e.signo!==0)
-      .sort((a,b)=>Math.abs(b.diff/(b.mOff||1))-Math.abs(a.diff/(a.mOff||1)))[0];
-    const _titular = _fuerte
-      ? _fuerte.label.toLowerCase()+': '+fmtDif(_fuerte)
-      : 'sin diferencias relevantes';
-    html+='<div style="border:1px solid #eceae4;border-radius:11px;padding:10px 12px;margin-bottom:8px">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">'+
-        '<span style="font-size:15px">'+hb.icon+'</span>'+
-        '<span style="font-size:12.5px;font-weight:700;color:var(--label)">'+hb.label+'</span>'+
-        '<span style="font-size:10px;font-weight:700;color:'+vCol+';background:'+vCol+'14;border-radius:99px;padding:2px 8px">'+vTxt+'</span>'+etiqueta+avisoPrelim+
-      '</div>'+
-      '<div style="font-size:12px;color:'+vCol+';margin-bottom:8px">'+_titular+
-        '<span style="color:var(--label-3);font-weight:400"> · '+hb.nOn+' vs '+hb.nOff+' noches</span></div>'+
-      // Cuando un factor no compara "con" contra "sin" sino dos variantes
-      // del mismo hábito, hay que decirlo: si no, la fila se lee como si el
-      // grupo de referencia fueran las noches sin ejercicio.
-      (hb.nota ? '<div style="font-size:10.5px;color:var(--label-3);line-height:1.5;'+
-        'background:#f8fafc;border-radius:7px;padding:7px 9px;margin-bottom:8px">'+hb.nota+'</div>' : '')+
-      // Encabezado: sin esto los dos numeros de cada fila eran anonimos y no
-      // se sabia cual correspondia a las noches CON el factor.
-      '<div style="display:grid;grid-template-columns:1fr 62px 62px 92px;gap:4px;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--label-3);border-bottom:1px solid #f0eee9;padding-bottom:3px;margin-bottom:2px">'+
-        '<span></span>'+
-        '<span style="text-align:right;color:#1a4a3a;font-weight:700">'+hb.onTxt+'</span>'+
-        '<span style="text-align:right">'+hb.offTxt+'</span>'+
-        '<span style="text-align:right">diferencia</span></div>';
-    hb.efectos.forEach(ef=>{
-      // La p va en gris y chica SIEMPRE, incluso cuando es significativa: es
-      // un dato de apoyo, no el titular. Con n de 30 noches y comparaciones
-      // múltiples, darle protagonismo sugiere un rigor que el diseño no tiene.
-      const pTxt = ef.p!=null
-        ? '<span style="font-size:9.5px;color:#9ca3af;margin-left:6px;font-variant-numeric:tabular-nums">'+dmFmtP(ef.p)+'</span>'
-        : '';
-      const _n = v => (ef.id==='awk'||ef.id==='qual') ? v.toFixed(1) : String(Math.round(v));
-      // Verde cuando el factor MEJORA esa variable, rojo cuando la empeora.
-      // Tono fuerte si el efecto pasa el umbral clinico y p<0,05; tono suave
-      // si la direccion existe pero no llega a ser relevante, para que se
-      // lea la tendencia sin darle un peso que no tiene.
-      const _col = ef.signo>0 ? '#16a34a' : ef.signo<0 ? '#dc2626'
-                 : ef.dir>0  ? '#7fae90' : ef.dir<0  ? '#cf9a9a' : '#9ca3af';
-      html+='<div style="display:grid;grid-template-columns:1fr 62px 62px 92px;align-items:baseline;gap:4px;padding:3px 0;font-size:11.5px">'+
-        '<span style="color:#666">'+ef.label+'</span>'+
-        '<span style="text-align:right;color:#444;font-variant-numeric:tabular-nums">'+_n(ef.mOn)+'</span>'+
-        '<span style="text-align:right;color:#444;font-variant-numeric:tabular-nums">'+_n(ef.mOff)+'</span>'+
-        '<span style="text-align:right"><b style="color:'+_col+'">'+fmtDif(ef)+'</b>'+pTxt+'</span></div>';
-    });
-    if(hb.nota){
-      html+='<div style="font-size:10.5px;color:#6b6b76;line-height:1.5;margin-top:7px;padding-top:6px;border-top:1px solid #f0eee9">'+hb.nota+'</div>';
-    }
-    html+='</div>';
+    const vTxt = hb.veredicto==='positivo'?'mejor sueño'
+               : hb.veredicto==='negativo'?'peor sueño'
+               : hb.veredicto==='mixto'?'mixto' : 'sin diferencia';
+    html += '<div class="dm-mtz-col">'+
+      '<div class="dm-mtz-col-t">'+hb.icon+' '+hb.label+'</div>'+
+      '<div class="dm-mtz-col-v" style="color:'+vCol+'">'+vTxt+'</div>'+
+      '<div class="dm-mtz-col-n">'+hb.nOn+' vs '+hb.nOff+' noches'+
+        (hb.preliminar?' · <b style="color:#854d0e">preliminar</b>':'')+'</div>'+
+    '</div>';
   });
+  // Una fila por variable.
+  VARS.forEach(function(va){
+    const hay = cols.some(function(hb){ return (hb.efectos||[]).some(function(e){ return e.id===va.id; }); });
+    if(!hay) return;
+    html += '<div class="dm-mtz-rot">'+va.label+'</div>';
+    cols.forEach(function(hb){
+      const ef = (hb.efectos||[]).filter(function(e){ return e.id===va.id; })[0];
+      if(!ef){ html += '<div class="dm-mtz-c vacia">—</div>'; return; }
+      // Verde si el factor MEJORA esa variable, rojo si la empeora. Tono
+      // fuerte solo si pasó umbral clínico y p<0,05; suave si la dirección
+      // existe pero no llega — para que se lea la tendencia sin darle un
+      // peso que no tiene.
+      const c = ef.signo>0 ? '#16a34a' : ef.signo<0 ? '#dc2626'
+              : ef.dir>0  ? '#7fae90' : ef.dir<0  ? '#cf9a9a' : '#9ca3af';
+      const _n = function(v){ return (ef.id==='awk'||ef.id==='qual') ? v.toFixed(1) : String(Math.round(v)); };
+      html += '<div class="dm-mtz-c'+(ef.signo!==0?' firme':'')+'">'+
+        '<div class="dm-mtz-dif" style="color:'+c+'">'+fmtDif(ef)+'</div>'+
+        '<div class="dm-mtz-pares">'+_n(ef.mOn)+' vs '+_n(ef.mOff)+
+          (ef.p!=null ? ' · <span class="dm-mtz-p">'+dmFmtP(ef.p)+'</span>' : '')+'</div>'+
+      '</div>';
+    });
+  });
+  html += '</div>';
+
+  // Las notas de cada factor van abajo, una sola vez: dentro de cada
+  // celda repetirían lo mismo en cuatro filas.
+  const notas = cols.filter(function(hb){ return hb.nota; });
+  if(notas.length){
+    html += '<div class="dm-mtz-notas">'+notas.map(function(hb){
+      return '<div><b>'+hb.icon+' '+hb.label+'</b> — '+hb.nota+'</div>';
+    }).join('')+'</div>';
+  }
+  const fisio = cols.filter(function(hb){ return hb.fisiologico; });
+  if(fisio.length){
+    html += '<div class="dm-mtz-notas">'+
+      '<div>'+fisio.map(function(hb){ return hb.label; }).join(' y ')+
+      (fisio.length>1?' son factores fisiológicos':' es un factor fisiológico')+
+      ': no se eligen, pero sí se pueden anticipar y acompañar.</div></div>';
+  }
   html+='</div>';
   return html;
 }
@@ -19185,8 +19325,11 @@ async function showDrPTab_(tab){
           // dos a la columna derecha. Dentro de la tarjeta de la izquierda
           // quedaban en dos columnas de 180 px: ilegible.
           const _dia=document.getElementById('dm-bloque-dia');
-          if(_regSlot && _dia) _regSlot.appendChild(_dia);
+          // Primero el técnico de regularidad, después el día: así el
+          // bloque de siestas queda a la altura de las métricas nocturnas
+          // de la izquierda y los dos se comparan de un vistazo.
           if(_regSlot && dme.children.length>1) _regSlot.appendChild(dme.children[1]);
+          if(_regSlot && _dia) _regSlot.appendChild(_dia);
           // Impacto de hábitos: solo aparece si el paciente REGISTRA el hábito
           // (la función devuelve '' si no hay datos suficientes o contraste).
           try{
@@ -19816,7 +19959,21 @@ async function showDrPTab_(tab){
             '<div class="dm-pil-rot" style="color:'+cP+'">'+title+'</div>'+
             '<div class="dm-pil-val" style="color:'+cV+'">'+valHtml+'</div>'+
             '<div class="dm-pil-est" style="color:'+cV+'">'+status+'</div>'+
-            '<div class="dm-pil-pie" style="color:'+colSub+'">'+sub+'</div>'+
+            (function(){
+              const txt = String(sub||'');
+              // Sin etiquetas, para medir el largo real del texto.
+              const plano = txt.replace(/<[^>]+>/g,'');
+              if(plano.length <= 120)
+                return '<div class="dm-pil-pie" style="color:'+colSub+'">'+txt+'</div>';
+              // Corte en el final de la primera oración, si cae cerca.
+              let corte = plano.indexOf('. ');
+              if(corte < 40 || corte > 150) corte = 110;
+              const cabeza = plano.slice(0, corte+1);
+              return '<details class="dm-pil-pie dm-pil-mas" style="color:'+colSub+'">'+
+                '<summary>'+cabeza+' <b>Más</b></summary>'+
+                '<div class="dm-pil-mas-txt">'+txt+'</div>'+
+              '</details>';
+            })()+
           '</div>';
         }
         if(pEl){
@@ -19941,8 +20098,14 @@ async function showDrPTab_(tab){
           // "Qué mueve la aguja": el análisis de factores como titular, en
           // el lugar donde estaba el gráfico de líneas.
           const _cEl=document.getElementById('dr-quality-concord');
+          // El párrafo con tres correlaciones metidas en una oración larga
+          // pasa a ser el mismo forest plot que los hábitos: mismo lenguaje
+          // visual, y las cuatro asociaciones se comparan entre sí.
           if(_cEl){
-            if(!_rQty&&!_rFrag&&!_rReg){ _cEl.textContent='Percepción vs. lo medido: hacen falta al menos 10 noches con calidad reportada y horarios cargados.'; }
+            let _conc='';
+            try{ _conc = dmConcordanciaHtml(sorted) || ''; }catch(_e){ console.warn('[concordancia]', _e); }
+            if(_conc){ _cEl.innerHTML = _conc; }
+            else if(!_rQty&&!_rFrag&&!_rReg){ _cEl.textContent='Hacen falta al menos 10 noches con calidad reportada y horarios cargados para cruzar lo que siente con lo que se mide.'; }
             else {
               // El número es la r de Pearson, de −1 a +1, entre la calidad que
               // el paciente reporta y el puntaje del pilar (donde más alto es
