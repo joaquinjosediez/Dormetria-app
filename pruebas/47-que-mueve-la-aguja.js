@@ -83,12 +83,20 @@ r.seccion('Los avisos de la tabla de abajo no se pierden:');
 r.ok(/preliminar/.test(fn),   'se marca lo preliminar');
 r.ok(/fisiológico/.test(fn),  'y los factores fisiológicos');
 
-r.seccion('El gráfico viejo queda, plegado:');
+r.seccion('Y el gráfico viejo ya no está (mod240):');
 
-r.ok(/Ver la evolución de los tres pilares noche a noche/.test(app),
-     'quien lo quiera lo tiene');
-r.ok(/id="dr-pillar-chart"/.test(app),
-     'el canvas sigue existiendo — sacarlo rompería el resto del render');
+// Quedó plegado dos versiones "por si alguien lo quiere". Nadie lo abrió, y
+// mientras tanto costaba una construcción de Chart.js con cinco series en
+// cada apertura de ficha. Lo que se mira noche a noche está desglosado por
+// variable en "Noche a noche" — latencia, eficiencia y WASO, cada una con su
+// umbral clínico —, que es lo que el gráfico de líneas mezclaba en un solo
+// porcentaje.
+r.ok(!/Ver la evolución de los tres pilares noche a noche/.test(app),
+     'ya no se ofrece');
+r.ok(!/id="dr-pillar-chart"/.test(app),
+     'y el canvas tampoco quedó colgado');
+r.ok(!/dr-pillar-legend/.test(app),
+     'ni su leyenda');
 
 r.seccion('Y se dibuja de verdad:');
 

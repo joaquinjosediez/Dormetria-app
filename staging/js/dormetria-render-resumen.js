@@ -25,7 +25,7 @@ function dmCardResumen(icon, titulo, cuerpo) {
     cuerpo + '</div>';
 }
 
-function dmRenderSummaryResumen(motorResult, modo, email) {
+function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
   const o = motorResult.orientacion || {};
   const c = motorResult.conducta || {};
   const b = motorResult.banderas || [];
@@ -330,9 +330,9 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
 
     tarjetaEvolucion =
       '<div class="dm-card" style="padding:12px 14px">' +
-        '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">' +
+        '<div class="dm-evo-fila">' +
           // Rótulo y veredicto, uno debajo del otro.
-          '<div style="flex:0 0 auto;min-width:0">' +
+          '<div class="dm-evo-cab">' +
             '<div style="display:flex;align-items:center;gap:7px">' +
               '<span style="font-size:14px">📈</span>' +
               '<span style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.055em;color:#8FD4B0;white-space:nowrap">Evolución</span>' +
@@ -340,7 +340,7 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
             // La muestra va acá y no como una cifra más: cuántas noches hay no
             // es una medición del sueño, es de qué tamaño es la base. Puesta
             // junto a Latencia y Eficiencia competía con lo que sí importa.
-            '<div style="font-size:11px;color:rgba(244,239,229,.76);margin-top:2px;white-space:nowrap">' +
+            '<div style="font-size:11px;color:rgba(244,239,229,.76);margin-top:2px;line-height:1.35">' +
               muestraTxt + '</div>' +
             '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">' +
               '<span style="width:7px;height:7px;border-radius:50%;background:' + colorVer + ';flex:0 0 auto"></span>' +
@@ -576,6 +576,27 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
       '<div style="display:flex;flex-wrap:wrap;gap:7px;flex:1 1 auto">' + chipsMaterial + '</div>' +
     '</div>';
 
+
+  // ── El histograma de progresión semanal, también acá ────────────────
+  // Vivía solo en Diario de sueño. Pero en Diario lo que se mira ahora es
+  // cada noche, desglosada por latencia, eficiencia y WASO — el puntaje
+  // compuesto quedó plegado ahí, que es donde corresponde. En el Resumen,
+  // en cambio, la pregunta sí es la gruesa: "¿viene mejorando?". Esa es la
+  // barra.
+  let tarjetaSemanas = '';
+  try {
+    if (typeof renderWeeklyProgressionHtml === 'function') {
+      const _h = renderWeeklyProgressionHtml(diarioCompleto || [], true);
+      if (_h) {
+        tarjetaSemanas = '<div class="dm-card" style="padding:14px 16px">' + _h +
+          '<div style="font-size:10.5px;color:rgba(244,239,229,.55);line-height:1.5;margin-top:4px">' +
+          'Puntaje compuesto por semana (cantidad, fragmentación y regularidad). ' +
+          'Sirve para la tendencia gruesa; el detalle noche a noche está en Diario de sueño.' +
+          '</div></div>';
+      }
+    }
+  } catch (_) {}
+
   // ── Armado final ───────────────────────────────────────────────────
   // Etiquetas y Datos son dos tarjetas de contenido corto: apiladas a lo
   // ancho empujaban la orientación clínica —lo que el profesional viene a
@@ -590,7 +611,7 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   // la conducta. Van en dos columnas, con más peso a la orientación, que es
   // lo que se lee primero.
   if (modo === 'gen') {
-    return toggle + cabecera +
+    return toggle + cabecera + tarjetaSemanas +
       '<div class="dm-resumen-cols" style="display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start">' +
         '<div>' + tarjetaOrientacion + '</div>' +
         '<div>' + tarjetaTcci + tarjetaConducta + '</div>' +
@@ -599,7 +620,7 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
   }
   // "Evolución en un vistazo" va a lo ancho, justo debajo de la cabecera: son
   // cuatro cifras en fila y dentro de una columna quedaban apretadas.
-  return toggle + cabecera + tarjetaEvolucion +
+  return toggle + cabecera + tarjetaEvolucion + tarjetaSemanas +
     '<div class="dm-resumen-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">' +
       '<div>' + tarjetaOrientacion + tarjetaTcci + tarjetaConducta + '</div>' +
       '<div>' + tarjetaBanderas + tarjetaEscalas + '</div>' +

@@ -6163,3 +6163,100 @@ body.dr-desktop #dr-abajo-slot .dm-card{ max-width:none; }
   .dm-mtz{ overflow-x:auto; }
   .dm-mtz-rot{ position:sticky; left:0; background:#fff; z-index:1; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod240 · El par Generalista / Especialista, del ancho de sus botones
+   El contenedor de la pestaña es un grid, así que el `inline-flex` del par
+   dejaba de encogerse al contenido y se estiraba a todo el ancho.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-modo-wrap{
+  display:block; width:100%; margin-bottom:10px;
+  text-align:left; justify-self:start;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod240 · El cero de la cabecera, al medio de verdad
+   Estaba centrado con `position:absolute; left:50%` sobre un flex con
+   `space-between`, y el rótulo de la escala era un cuarto hijo del mismo
+   flex. En el teléfono ese rótulo pasaba a estar en flujo con
+   `margin-left:auto`, lo que rompe el reparto de `space-between`: los dos
+   rótulos —"paradójico" y "congruente"— terminaban pegados a la izquierda,
+   los dos sobre la mitad roja.
+   Ahora la píldora es un grid de 1fr / auto / 1fr: el cero queda al medio
+   por construcción, no por un porcentaje, y el rótulo de la escala salió
+   afuera, debajo, donde no compite por el reparto.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-aguja-escala-col{ display:block; min-width:0; }
+.dm-aguja-escala{
+  display:grid !important; grid-template-columns:1fr auto 1fr;
+  justify-content:initial;
+}
+.dm-aguja-escala i.peor { justify-content:flex-start; overflow:hidden; }
+.dm-aguja-escala i.mejor{ justify-content:flex-end;   overflow:hidden; }
+.dm-aguja-escala b{
+  position:static !important; transform:none !important;
+  left:auto; top:auto; bottom:auto;
+}
+.dm-aguja-escala-pie{
+  display:block; text-align:right; text-decoration:none;
+  font-size:9px; color:#8a8a82; padding:3px 2px 0; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+/* Ya no hace falta reservar lugar abajo para un rótulo absoluto. */
+.dm-aguja-cab{ padding-bottom:4px; }
+@media (max-width:759px){
+  .dm-aguja-cab{ display:grid !important; grid-template-columns:1fr; }
+  .dm-aguja-cab > span:not(.dm-aguja-escala-col){ display:none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod240 · La tarjeta de Evolución, sin pisarse en el teléfono
+   El rótulo y las cifras compartían una fila flex. El rótulo iba con
+   `flex:0 0 auto` y texto en `nowrap`, así que en 390 px ocupaba la línea
+   entera; las cifras, con `flex:1 1 0`, tienen tamaño hipotético CERO, así
+   que nunca llegan a envolver: se quedan en la misma línea con ~0 px de
+   ancho, y los valores en `nowrap` se desbordan unos sobre otros. Eso era
+   el amontonamiento, no un problema de la grilla.
+   En pantalla angosta la tarjeta se apila y las cifras toman todo el ancho.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-evo-fila{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.dm-evo-cab{ flex:0 0 auto; min-width:0; }
+@media (max-width:899px){
+  .dm-evo-fila{ flex-direction:column; align-items:stretch; gap:10px; }
+  .dm-evo-cab{ flex:1 1 auto; }
+  .dm-evo-cifras{ flex:1 1 auto !important; width:100%; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod240 · Las unidades de los pilares, legibles sobre blanco
+   El valor de cada tarjeta llega como HTML armado, con las unidades
+   ("h", "m", "desp/noche", "min") en crema fija —rgba(244,239,229,…)—,
+   que es el color para el fondo verde de la app del paciente. En el panel
+   del profesional la tarjeta es blanca, así que las unidades quedaban
+   blancas sobre blanco: "10h 05m" se leía "10  05", "±66 min" se leía
+   "±66", y "0.4 desp/noche" perdía la unidad. Justo en las tarjetas
+   pediátricas, que son las que muestran valor crudo en vez de porcentaje.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-pil-claro [style*="rgba(244,239,229"]{ color:#5c6b63 !important; }
+.dm-pil-claro .dm-pil-pie [style*="rgba(244,239,229"]{ color:#6b7a72 !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod240 · Noche y día, a la misma altura
+   Las métricas nocturnas eran la cuarta tarjeta de la columna izquierda y
+   las diurnas la segunda de la derecha: sus bordes superiores dependían de
+   cuánto midiera todo lo que tenían encima, que no es lo mismo en las dos
+   columnas. Comparar "latencia" contra "regularidad de la siesta" obligaba
+   a buscar en diagonal.
+   Ahora son dos celdas de la misma fila de grilla: arrancan parejas por
+   construcción, no por ajuste, y `stretch` las deja del mismo alto.
+   ══════════════════════════════════════════════════════════════════════ */
+#dr-noche-dia{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
+#dr-noche-dia > div{ margin-top:0 !important; }
+@media (min-width:900px){
+  body.dr-desktop #dr-noche-dia{
+    grid-template-columns:1fr 1fr; align-items:stretch; grid-column:1 / -1;
+  }
+}
+/* Con noche y día mudados a su propia fila, el contenedor original queda
+   vacío: sin esto aporta un hueco de 12 px (el gap de la columna). */
+#dr-clinical-metrics:empty{ display:none !important; }

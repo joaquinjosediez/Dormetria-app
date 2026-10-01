@@ -1,0 +1,65 @@
+mod240 · la tarjeta verde era de otra pantalla, y tres cosas que estaban bien en el contexto equivocado
+
+LA TARJETA DE SUENO DIURNO SALIA VERDE EN MEDIO DE TARJETAS BLANCAS. No era
+CSS: era la tarjeta de OTRA pantalla. La misma funcion
+(renderClinicalMetricsHtml) dibuja ese bloque en el diario del propio paciente
+—#diary-clinical-metrics, que queda en el DOM aunque su pantalla este oculta—
+y en el panel del profesional. Los dos llevaban id="dm-bloque-dia", asi que
+getElementById devolvia el PRIMERO en orden de documento: el del paciente,
+pintado para fondo verde oscuro, y lo mudaba a la columna del profesional.
+
+Por eso aparecia verde en el celular y blanco en el escritorio: depende de si
+el profesional habia abierto antes su propio diario, no del ancho de pantalla.
+Ahora los dos bloques se marcan con CLASE y se buscan con querySelector dentro
+del contenedor del profesional. Lo fija pruebas/55, que ademas mide con jsdom
+que la variante clara computa blanco — si las dos computaran igual, el sintoma
+podria haber sido de CSS.
+
+SE SACO EL GRAFICO DE LINEAS DE LOS PILARES. Quedo plegado dos versiones "por
+si alguien lo quiere". Nadie lo abrio, y costaba una construccion de Chart.js
+con cinco series en cada apertura de ficha. Lo que se mira noche a noche esta
+desglosado por variable en "Noche a noche" — latencia, eficiencia y WASO, cada
+una con su umbral —, que es justo lo que ese grafico mezclaba en un porcentaje.
+
+NOCHE Y DIA, A LA MISMA ALTURA. Emparejarlas a ojo no funciona: cada columna
+arranca donde termina lo que tiene encima, y eso no mide lo mismo de un lado
+que del otro. Las dos tarjetas pasan a ser celdas de la MISMA fila de grilla
+(#dr-noche-dia, a todo el ancho): arrancan parejas por construccion y
+`align-items:stretch` las deja del mismo alto.
+
+TRES COSAS QUE ESTABAN BIEN EN EL CONTEXTO EQUIVOCADO:
+
+1. Las unidades de los pilares ("h", "m", "min", "desp/noche") vienen en crema
+   fijo dentro del HTML del valor — el color del fondo verde de la app. Sobre
+   la tarjeta blanca del panel quedaban blancas sobre blanco: "10h 05m" se leia
+   "10  05" y "0.4 desp/noche" perdia la unidad. Justo en las tarjetas
+   pediatricas, que son las que muestran valor crudo. Ahora .dm-pil-claro las
+   recolorea; medido con jsdom da 5,62:1.
+
+2. La cabecera del forest plot centraba el cero con position:absolute sobre un
+   flex con space-between, y el rotulo de la escala era un cuarto hijo del
+   mismo flex. En el telefono ese rotulo entra en flujo con margin-left:auto y
+   rompe el reparto: "paradojico" y "congruente" terminaban los dos sobre la
+   mitad roja. Ahora la pildora es un grid de 1fr/auto/1fr —el cero queda al
+   medio por construccion, no por un porcentaje— y el rotulo salio afuera.
+
+3. El par Generalista/Especialista era un inline-flex dentro de un grid, donde
+   deja de encogerse al contenido: pasaba a ser item de grilla y se estiraba a
+   todo el ancho, con los dos botones flotando en el medio de una pildora de
+   900 px. Va envuelto en un bloque.
+
+Y la cuarta, del mismo tipo: la tarjeta de Evolucion del Resumen ponia rotulo y
+cifras en la misma fila flex. El rotulo, con nowrap, ocupaba la linea entera;
+las cifras, con flex-basis 0, tienen tamanio hipotetico CERO y por eso NUNCA
+llegan a envolver — se quedaban en la misma linea con ~0 px de ancho y los
+valores en nowrap se desbordaban unos sobre otros. Eso era el amontonamiento,
+no la grilla. En pantalla angosta la tarjeta se apila.
+
+EL HISTOGRAMA SEMANAL, TAMBIEN EN EL RESUMEN. En Diario lo que se mira ahora es
+cada noche desglosada, y el compuesto quedo plegado ahi, que es donde
+corresponde. En el Resumen la pregunta si es la gruesa: "viene mejorando". Va
+sobre el historial COMPLETO, no sobre las 30 noches que trae el motor —con 30
+se veian cuatro barras de las nueve que tiene la paciente—, pidiendo cinco
+columnas mas en una consulta que ya se hacia, sin una ida mas al servidor.
+
+Lo fijan pruebas/52, 55 y 56. 56 pruebas pasan.

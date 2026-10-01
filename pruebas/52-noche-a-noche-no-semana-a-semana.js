@@ -85,4 +85,25 @@ r.ok(/Ver el puntaje semanal/.test(app),
 r.ok(/compuesto de cinco\s*\n?\s*\/\/\s*variables|compuesto de cinco/.test(app),
      'y está escrito por qué no va primero');
 
+r.seccion('…y en el Resumen va abierto, que es donde la pregunta SÍ es gruesa:');
+
+// En Diario lo que se mira es cada noche, desglosada. En el Resumen la
+// pregunta es "¿viene mejorando?", y para eso el compuesto por semana es
+// exactamente el dato.
+const resumen = require('fs').readFileSync(
+  require('path').join(__dirname, '..', 'js', 'dormetria-render-resumen.js'), 'utf8');
+r.ok(/renderWeeklyProgressionHtml\(diarioCompleto \|\| \[\], true\)/.test(resumen),
+     'el Resumen dibuja el histograma');
+r.ok(/function renderWeeklyProgressionHtml\(allDiary, oscuro\)/.test(app),
+     'con la variante para fondo oscuro: los números iban en gris de tarjeta blanca');
+
+// Y con el historial completo, no con las 30 noches que trae el motor: el
+// histograma mira 12 semanas hacia atrás y con 30 noches se veían cuatro.
+const resumenJs = require('fs').readFileSync(
+  require('path').join(__dirname, '..', 'js', 'dormetria-summary-nuevo.js'), 'utf8');
+r.ok(/dmCurrentDiarioCompleto/.test(resumenJs),
+     'y sobre el historial completo, no sobre las últimas 30 noches');
+r.ok(/select=diary_date,bedtime/.test(resumenJs),
+     'pedido en la consulta que ya se hacía, sin una ida más al servidor');
+
 r.cerrar('Un 72 semanal puede ser siete noches mediocres o cinco buenas y dos pésimas.');

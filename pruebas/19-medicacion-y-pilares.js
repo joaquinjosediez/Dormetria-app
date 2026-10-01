@@ -38,7 +38,10 @@ r.ok(/_nPrev/.test(bloqueRender) && /_dPrev/.test(bloqueRender),
 
 r.seccion('Los tres pilares quedan parejos:');
 
-r.ok(/class="dm-pil-card"/.test(html), 'las tarjetas tienen clase propia');
+r.ok(/class="dm-pil-card'/.test(html), 'las tarjetas tienen clase propia');
+// Y la variante clara se marca: el valor llega con las unidades en crema
+// fija, que sobre la tarjeta blanca del panel queda blanco sobre blanco.
+r.ok(/dm-pil-claro/.test(html), 'y la versión sobre blanco se distingue');
 r.ok(/class="dm-pil-grid"/.test(html), 'y la grilla también');
 r.ok(/dm-pil-rot/.test(html) && /dm-pil-pie/.test(html),
      'el rótulo y el pie se pueden alinear entre tarjetas');

@@ -4,6 +4,8 @@
  */
 let dmCurrentMotorResult = null;
 let dmCurrentEmail = null;
+// Historial completo del diario, para el histograma de progresión semanal.
+let dmCurrentDiarioCompleto = [];
 
 async function dmShowSummaryNuevo(email, cont) {
   cont.innerHTML = '<div style="padding:40px; text-align:center; color:#a09080;"><div style="font-size:14px;">⏳ Cargando resumen...</div></div>';
@@ -37,10 +39,18 @@ async function dmShowSummaryNuevo(email, cont) {
       // —es la ventana clínica— pero el Resumen decía "14 noches registradas",
       // que se leía como el total y no coincidía con la pestaña Diario.
       // Consulta liviana: una sola columna.
+      // Misma consulta, con las columnas que necesita el puntaje semanal.
+      // El histograma de progresión mira hasta 12 semanas hacia atrás y el
+      // diario de arriba trae solo 30 noches: con eso se veían cuatro barras
+      // de las nueve que tiene el paciente. Pedir cinco columnas más en una
+      // consulta que ya se hacía es más barato que una segunda consulta.
       try {
-        const todas = await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}&select=diary_date`);
+        const todas = await db.get(`sleep_diary?patient_email=eq.${encodeURIComponent(email)}` +
+          `&order=diary_date.asc&select=diary_date,bedtime,wake_time,sleep_minutes,nap_minutes,` +
+          `awakenings,sleep_quality,day_type,notes`);
         S._dmNochesTotales = (todas || []).length;
-      } catch (_) { S._dmNochesTotales = null; }
+        dmCurrentDiarioCompleto = todas || [];
+      } catch (_) { S._dmNochesTotales = null; dmCurrentDiarioCompleto = []; }
     } catch (e) {
       console.warn('No se pudo traer el diario:', e);
       diaryEntries = [];
@@ -104,7 +114,7 @@ async function dmShowSummaryNuevo(email, cont) {
 function renderResumenWithMode(modo, cont) {
   if (!dmCurrentMotorResult || !dmCurrentEmail) return;
 
-  const html = dmRenderSummaryResumen(dmCurrentMotorResult, modo, dmCurrentEmail);
+  const html = dmRenderSummaryResumen(dmCurrentMotorResult, modo, dmCurrentEmail, dmCurrentDiarioCompleto);
   cont.innerHTML = html;
 
   // Enganchar eventos del toggle

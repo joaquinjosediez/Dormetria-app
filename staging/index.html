@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg240-11a02e1b">
+<link rel="stylesheet" href="css/styles.css?v=stg241-8a1c5c8c">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg240-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg240-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg240-af87b0b6"></script>
-<script src="js/dormetria-render-resumen.js?v=stg240-96b9fea2"></script>
-<script src="js/dormetria-tcci.js?v=stg240-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg241-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg241-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg241-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg241-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg241-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg240';
+const APP_VERSION='stg241';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg240 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg241 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -7242,9 +7242,12 @@ function dmConcordanciaHtml(entries, campo){
     titular+
     '<div class="dm-aguja-cab">'+
       '<span></span>'+
-      '<span class="dm-aguja-escala">'+
-        '<i class="peor">◂ paradójico</i><b>0</b><i class="mejor">congruente ▸</i>'+
-        '<u>correlación · r −1 a +1</u></span>'+
+      '<span class="dm-aguja-escala-col">'+
+        '<span class="dm-aguja-escala">'+
+          '<i class="peor">◂ paradójico</i><b>0</b><i class="mejor">congruente ▸</i>'+
+        '</span>'+
+        '<u class="dm-aguja-escala-pie">correlación · r −1 a +1</u>'+
+      '</span>'+
       '<span></span><span></span>'+
     '</div>'+
     cuerpo+
@@ -7392,11 +7395,14 @@ function dmAgujaHtml(entries){
   return '<div class="dm-aguja">'+
     '<div class="dm-aguja-cab">'+
       '<span></span>'+
-      '<span class="dm-aguja-escala">'+
-        '<i class="peor">◂ peor sueño</i>'+
-        '<b>0</b>'+
-        '<i class="mejor">mejor sueño ▸</i>'+
-        '<u>tamaño del efecto · d ±'+String(MAX).replace('.', ',')+'</u></span>'+
+      '<span class="dm-aguja-escala-col">'+
+        '<span class="dm-aguja-escala">'+
+          '<i class="peor">◂ peor sueño</i>'+
+          '<b>0</b>'+
+          '<i class="mejor">mejor sueño ▸</i>'+
+        '</span>'+
+        '<u class="dm-aguja-escala-pie">tamaño del efecto · d ±'+String(MAX).replace('.', ',')+'</u>'+
+      '</span>'+
       '<span></span><span></span>'+
     '</div>'+
     cuerpo+
@@ -8268,7 +8274,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   let _abierto = false;          // ¿quedó algún contenedor sin cerrar?
   const _filasDia = dmFilasSiestas(entries, row, C, ageYears);
   html += '</div>'+
-    '<div id="dm-bloque-dia" class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'" style="margin-top:10px">'+
+    '<div class="dm-bloque-dia dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'" style="margin-top:10px">'+
     '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno <span>· siestas</span></div>'+
     (_filasDia ||
       '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:6px 0">'+
@@ -8280,14 +8286,14 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   // porque está todo bien".
   if(audience === 'doctor' && reg.sd_midpoint_min === null){
     _abierto = true;
-    html += '<div id="dm-bloque-reg" style="background:var(--bg-secondary);border-radius:12px;padding:13px 16px;margin-top:10px">'+
+    html += '<div class="dm-bloque-reg" style="background:var(--bg-secondary);border-radius:12px;padding:13px 16px;margin-top:10px">'+
       '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Regularidad — métricas técnicas</div>'+
       '<div style="font-size:12px;color:var(--label-2);line-height:1.5">'+
         (reg.method || 'No hay noches suficientes para calcularla.')+'</div>';
   }
   if(audience === 'doctor' && reg.sd_midpoint_min !== null){
     _abierto = true;
-    html += '<div id="dm-bloque-reg" style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-top:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
+    html += '<div class="dm-bloque-reg" style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-top:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
       '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:2px">Regularidad — métricas técnicas <span style="font-weight:400;color:var(--label-3);font-size:11px">· uso profesional</span></div>'+
       '<div style="font-size:11px;color:var(--label-3);margin-bottom:6px;line-height:1.4">'+
         (ageYears!=null && ageYears<18
@@ -19336,11 +19342,13 @@ async function showDrPTab_(tab){
           <!-- "Qué mueve la aguja" se mudó a la tarjeta "Hábitos vs.
                métricas clínicas", que es la tabla que resume: acá estaba
                separado del detalle que lo explica. -->
-          <details class="dm-aguja-det dm-solo-esp">
-            <summary>Ver la evolución de los tres pilares noche a noche</summary>
-            <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
-            <div id="dr-pillar-legend"></div>
-          </details>
+          <!-- El gráfico de líneas de los pilares se sacó (stg241). Eran
+               cinco series superpuestas entre 20 % y 80 %, con suavizado de
+               ±3 días: nadie lo miraba, y lo que sí se mira —cada noche, por
+               variable— está en "Noche a noche", desglosado en latencia,
+               eficiencia y WASO. Dejarlo plegado "por si alguien lo quiere"
+               seguía costando una lectura de Chart.js en cada apertura de la
+               ficha para algo que no se abría nunca. -->
         </div>
         <!-- Los dos paneles de correlación se llamaban casi igual y se
              confundían. Este cruza la calidad reportada con los HÁBITOS del
@@ -19396,6 +19404,13 @@ async function showDrPTab_(tab){
         </div>
         </div>
         </div>
+        <!-- Noche y día, uno al lado del otro y de la misma altura.
+             Estaban en columnas distintas —la nocturna era la cuarta tarjeta
+             de la izquierda, la diurna la segunda de la derecha— así que sus
+             bordes superiores nunca coincidían y comparar una métrica contra
+             la otra obligaba a buscar. Acá son dos celdas de la MISMA fila de
+             grilla: arrancan a la misma altura por construcción. -->
+        <div id="dr-noche-dia"></div>
         <div id="dr-abajo-slot"></div>
         </div>`;
       setTimeout(()=>{
@@ -19409,18 +19424,35 @@ async function showDrPTab_(tab){
           // El bloque del DÍA (siestas) y el técnico de regularidad van los
           // dos a la columna derecha. Dentro de la tarjeta de la izquierda
           // quedaban en dos columnas de 180 px: ilegible.
-          const _dia=document.getElementById('dm-bloque-dia');
           // Primero el técnico de regularidad, después el día: así el
           // bloque de siestas queda a la altura de las métricas nocturnas
           // de la izquierda y los dos se comparan de un vistazo.
           //
-          // Por id, NO por `children[1]`. Cuando se agregó el bloque del día
-          // pasó a ser el segundo hijo, así que `children[1]` lo movía a él
-          // dos veces y el técnico de regularidad se quedaba en la columna
-          // izquierda — que es exactamente lo que se veía en pantalla.
-          const _reg=document.getElementById('dm-bloque-reg');
+          // Por CLASE y buscando DENTRO de `dme`, no por id global.
+          //
+          //   · No por `children[1]`: cuando se agregó el bloque del día
+          //     pasó a ser el segundo hijo, así que `children[1]` lo movía a
+          //     él dos veces y el técnico de regularidad se quedaba en la
+          //     columna izquierda.
+          //   · No por `getElementById`: la MISMA función dibuja el bloque
+          //     en el diario del propio paciente (#diary-clinical-metrics),
+          //     que queda en el DOM aunque la pantalla esté oculta. Con el
+          //     mismo id en los dos, getElementById devuelve el primero en
+          //     orden de documento — el del paciente, que está pintado para
+          //     fondo oscuro. Por eso en el celular la tarjeta de sueño
+          //     diurno aparecía verde en medio de tarjetas blancas: no era
+          //     un problema de CSS, era la tarjeta de OTRA pantalla.
+          const _dia=dme.querySelector('.dm-bloque-dia');
+          const _reg=dme.querySelector('.dm-bloque-reg');
+          // El técnico de regularidad va debajo del actograma, en la derecha.
           if(_regSlot && _reg) _regSlot.appendChild(_reg);
-          if(_regSlot && _dia) _regSlot.appendChild(_dia);
+          // Las métricas de la NOCHE y las del DÍA pasan a una fila propia,
+          // a todo el ancho, con una celda cada una. Antes vivían en columnas
+          // distintas y sus bordes superiores nunca coincidían.
+          const _nd=document.getElementById('dr-noche-dia');
+          const _noche=dme.firstElementChild;
+          if(_nd && _noche) _nd.appendChild(_noche);
+          if(_nd && _dia) _nd.appendChild(_dia);
           // Impacto de hábitos: solo aparece si el paciente REGISTRA el hábito
           // (la función devuelve '' si no hay datos suficientes o contraste).
           try{
@@ -20048,7 +20080,7 @@ async function showDrPTab_(tab){
           // el rotulo ocupa siempre dos renglones aunque entre en uno, y el
           // pie se pega abajo. Sin eso, "REGULARIDAD" partia en dos lineas y
           // corria hacia abajo su numero y su estado respecto de las otras.
-          return '<div class="dm-pil-card" style="'+caja+';border-top:3px solid '+cP+'">'+
+          return '<div class="dm-pil-card'+(_oscuroP?'':' dm-pil-claro')+'" style="'+caja+';border-top:3px solid '+cP+'">'+
             '<div class="dm-pil-rot" style="color:'+cP+'">'+title+'</div>'+
             '<div class="dm-pil-val" style="color:'+cV+'">'+valHtml+'</div>'+
             '<div class="dm-pil-est" style="color:'+cV+'">'+status+'</div>'+
@@ -20290,8 +20322,7 @@ async function showDrPTab_(tab){
           const _fEl=document.getElementById('dr-quality-factores');
           if(_fEl) _fEl.innerHTML = dmCalidadFactoresHtml(sorted);
         }catch(_cf){ console.error('[calidad-factores]', _cf); }
-        const ctxP=document.getElementById('dr-pillar-chart');
-        if(ctxP){killChart('dp-dr');(function(){try{if(S.charts['dp-dr'])S.charts['dp-dr'].destroy();}catch(_){}})(),S.charts['dp-dr']=new Chart(ctxP,{type:'line',data:{labels:sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Cantidad',data:pillarData.map(p=>p.qty),borderColor:'#2d9e6b',backgroundColor:'transparent',pointBackgroundColor:'#2d9e6b',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},{label:'Fragmentación',data:pillarData.map(p=>p.frag),borderColor:'#0e7490',backgroundColor:'transparent',pointBackgroundColor:'#0e7490',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},{label:'Regularidad (CPD)',data:pillarData.map(p=>p.regNight),borderColor:'#e67e22',backgroundColor:'transparent',pointBackgroundColor:'#e67e22',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:2.2,fill:false},{label:'Calidad reportada',data:sorted.map(e=>e.sleep_quality?e.sleep_quality*20:null),borderColor:'#a855f7',backgroundColor:'transparent',pointBackgroundColor:'#a855f7',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:1.6,borderDash:[5,3],spanGaps:true,fill:false},{label:'Energía reportada',data:sorted.map(e=>e.energy?e.energy*20:null),borderColor:'#0891b2',backgroundColor:'transparent',pointBackgroundColor:'#0891b2',tension:.35,pointRadius:0,pointHoverRadius:5,borderWidth:1.6,borderDash:[2,3],spanGaps:true,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false},border:{display:false}},y:{min:-8,max:108,ticks:{font:{size:9},callback:v=>(v<0||v>100)?'':v+'%'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}}}});dmPrepararSuavizado('dp-dr');buildPillarLegend('dr-pillar-legend','dp-dr');}
+        // (el gráfico de líneas de los pilares se sacó en stg241)
       },150);
     }else if(tab==='pvt'){
       // Show circadian alert PATTERN for doctor view
@@ -22680,7 +22711,14 @@ function dmSerieNocheHtml(entries, dias){
 
 // PROGRESIÓN SEMANAL — bloques de 7 días hacia atrás (hasta 12 semanas).
 // Vivía en Resumen; ahora se muestra en Diario de sueño junto al score.
-function renderWeeklyProgressionHtml(allDiary){
+// `oscuro`: la misma barra se dibuja sobre la tarjeta blanca del Diario y
+// sobre las tarjetas verdes del Resumen. Las barras de menta funcionan en
+// los dos fondos; los números y los rótulos, no.
+function renderWeeklyProgressionHtml(allDiary, oscuro){
+  const _cTit = oscuro ? 'rgba(244,239,229,.6)' : '#5c6b63';
+  const _cNum = oscuro ? '#F4EFE5' : '#3f4b45';
+  const _cNumHoy = oscuro ? '#C8A96E' : '#8A6A2A';
+  const _cLbl = oscuro ? 'rgba(244,239,229,.6)' : '#5c6b63';
   try{
     if(!allDiary || allDiary.length < 7) return '';
     const blocks = [];
@@ -22717,15 +22755,15 @@ function renderWeeklyProgressionHtml(allDiary){
                : b.score >= 55 ? 'rgba(126,200,164,.5)'
                : '#C8A96E';
       return '<div title="'+tooltipText.replace(/"/g,'&quot;')+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;cursor:help">'+
-        '<div style="font-size:12.5px;font-weight:700;color:'+(isLast?'#8A6A2A':'#3f4b45')+'">'+b.score+'</div>'+
+        '<div style="font-size:12.5px;font-weight:700;color:'+(isLast?_cNumHoy:_cNum)+'">'+b.score+'</div>'+
         '<div style="width:100%;max-width:44px;height:'+h+'px;background:'+cB+';border-radius:7px 7px 0 0;'+
           (isLast?'box-shadow:inset 0 0 0 2px #C8A96E;':'')+'"></div>'+
-        '<div style="font-size:11px;color:#5c6b63;white-space:nowrap">'+weekLbl+'</div>'+
+        '<div style="font-size:11px;color:'+_cLbl+';white-space:nowrap">'+weekLbl+'</div>'+
       '</div>';
     }).join('');
     const bestBlock = blocks.reduce((a,b)=>(!a||b.score>a.score)?b:a, null);
     const worstBlock = blocks.reduce((a,b)=>(!a||b.score<a.score)?b:a, null);
-    return '<div style="font-size:12px;color:#5c6b63;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:12px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
+    return '<div style="font-size:12px;color:'+_cTit+';text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:12px">Progresión semanal · '+blocks.length+' semanas con datos</div>'+
       '<div style="display:flex;align-items:flex-end;gap:8px;height:108px;margin-bottom:8px">'+barsHtml+'</div>'+
       '<div style="font-size:11px;color:#444;line-height:1.5">'+
         ''+   // Mejor y peor semana: se saco. La barra de arriba ya muestra la
@@ -22876,9 +22914,15 @@ function dmToggleModoHtml(modo, fn){
       (on?'rgba(126,200,164,0.22)':'transparent')+';color:'+
       (on?'#7EC8A4':'rgba(244,239,229,0.6)')+'">'+txt+'</button>';
   };
-  return '<div style="display:inline-flex;gap:2px;background:rgba(255,255,255,0.05);'+
-    'border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:3px;margin-bottom:10px">'+
-    b('gen','Generalista', modo!=='esp')+b('esp','Especialista', modo==='esp')+'</div>';
+  // El par va dentro de un envoltorio de bloque. El `inline-flex` solo se
+  // encoge al contenido si su padre es flujo normal: dentro de un grid —que
+  // es lo que es el contenedor de la pestaña— pasa a ser un ítem de grilla y
+  // `justify-items:stretch` lo estira a todo el ancho, con los dos botones
+  // flotando en el medio de una píldora de 900 px.
+  return '<div class="dm-modo-wrap">'+
+    '<div style="display:inline-flex;gap:2px;background:rgba(255,255,255,0.05);'+
+    'border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:3px">'+
+    b('gen','Generalista', modo!=='esp')+b('esp','Especialista', modo==='esp')+'</div></div>';
 }
 // Cambia el modo sin volver a dibujar nada: los gráficos ya están montados y
 // re-renderizar la pestaña entera los destruiría y los volvería a crear por
