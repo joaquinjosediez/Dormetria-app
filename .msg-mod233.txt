@@ -1,0 +1,36 @@
+mod233 · la regularidad afirmaba sobre dos noches
+
+En la ficha de Mora Silvero, 2 años, decia:
+  Jet lag social 268 min · Requiere atencion
+  Score de regularidad 0 % — Muy baja · SD del punto medio 242 min
+  Ref: NHANES 2011-2014 (n=9981)
+
+Cuatro problemas encadenados, todos del mismo tipo: afirmar con datos que
+no alcanzan.
+
+1. socialJetLagMin promediaba con UNA noche libre. Ahi "el promedio de los
+   dias libres" es esa noche: lo que haya pasado ese dia se convierte en el
+   jet lag del paciente. Ahora exige 3 noches de cada tipo o devuelve null.
+
+2. Un nene de 2 años no tiene rutina escolar, asi que "finde" y "semana"
+   son el mismo grupo. renderClinicalMetricsHtml YA lo suprimia por eso
+   —esta escrito en el codigo desde mod214— pero la tarjeta de pilares no
+   miraba esa marca, y encima decia "Este pilar SI pesa en el puntaje".
+   El mismo dato suprimido en un panel y puntuando en otro, para el mismo
+   paciente.
+
+3. computeSleepRegularity calculaba con 2 noches. Phillips 2017 y NHANES
+   lo hacen sobre semanas completas; con 2 noches la SD existe
+   matematicamente y no significa nada, pero salia como "0 % — Muy baja",
+   que es una afirmacion sobre el chico. Minimo 5 noches.
+
+4. La referencia es NHANES: adultos de 18 o mas, citada sin aclararlo en
+   una ficha pediatrica. Ahora en menores avisa que son cortes de adultos
+   y que no hay normativa pediatrica publicada para la SD del punto medio:
+   esos numeros sirven para seguir al mismo chico en el tiempo, no para
+   compararlo con una norma.
+
+Y cuando no se puede calcular, el bloque tecnico lo DICE en vez de no
+dibujarse: un hueco se lee como "no se calculo porque esta todo bien".
+
+Lo fija pruebas/48.

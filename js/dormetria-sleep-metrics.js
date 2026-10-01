@@ -92,7 +92,8 @@ function edadAniosExacta(dob){
 // (Sun 2019). Cantidad usa el rango de Paruthi/AASM 2016 por edad.
 function isPediatric(ageYears){ return ageYears!=null && ageYears<13; }
 // Jet lag social (min) desde un set de entradas: |punto medio finde − semana|.
-function socialJetLagMin(entries){
+function socialJetLagMin(entries, minPorGrupo){
+  const MIN = minPorGrupo || 3;
   const wd=[], we=[];
   (entries||[]).forEach(e=>{
     if(!e.bedtime||!e.sleep_minutes) return;
@@ -103,7 +104,10 @@ function socialJetLagMin(entries){
     const isFree=(e.day_type==='free')||(day===0||day===6);
     (isFree?we:wd).push(mid);
   });
-  if(!wd.length||!we.length) return null;
+  // Menos de MIN noches en cualquiera de los dos grupos: no se devuelve
+  // un número. Un promedio de una o dos noches no es un promedio, y acá el
+  // resultado se muestra como hallazgo clínico y además puntúa.
+  if(wd.length < MIN || we.length < MIN) return null;
   const m=a=>a.reduce((x,y)=>x+y,0)/a.length;
   return Math.round(Math.abs(m(we)-m(wd)));
 }
