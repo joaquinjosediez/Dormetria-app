@@ -1,0 +1,45 @@
+mod237 · noche a noche, y el puntaje seguia sumando siestas repetidas
+
+LA DEDUPLICACION ESTABA EN UN SOLO LUGAR. En mod235 la puse en
+dmSiestasDelDia(), que alimenta el cuadro de siestas. Pero
+computeChildSleep24h() —la que calcula el sueño de 24 h y alimenta el
+PUNTAJE DE CANTIDAD— lee parseChildNaps() directo. O sea que el cuadro ya
+mostraba el numero bien y el puntaje seguia sumando las repetidas. Respuesta
+a "¿el puntaje bajo porque se duplicaban siestas?": si, en parte, y recien
+ahora termina de corregirse. Va donde corresponde: adentro del parseo.
+
+EL PRORRATEO. Para el total de 24 h lo correcto es el promedio por dia de
+(noche + siesta de ESE dia): si de 17 dias durmio siesta en 15, los dos sin
+siesta cuentan como 0. Usar el promedio de los dias CON siesta infla el
+total. Pero mi implementacion igual estaba mal: sumaba el promedio de noche
+(sobre SU conjunto) con el de siesta (sobre OTRO). Ahora usa
+computeChildSleep24h, que suma por dia y promedia despues — la misma que
+alimenta el puntaje, asi que no puede haber discrepancia.
+Se muestran los DOS numeros, porque contestan preguntas distintas: cuanto
+duerme CUANDO duerme, y cuanto suma por dia.
+
+LAS TRES CIFRAS, SOLO EN PEDIATRIA. En un adulto sin siestas quedaba
+"— DIURNO · sin siestas registradas" y el mismo numero repetido dos veces:
+tres recuadros para decir una sola cosa. Vuelve a ser una fila.
+
+LAYOUT. El cuadro de metricas no se parte en dos adentro: lo nocturno usa
+todo el ancho de su tarjeta y el bloque del DIA se va a la columna derecha,
+debajo de las metricas de regularidad. Y "Habitos vs. metricas clinicas" va
+a todo el ancho: en ~300 px el eje del forest plot no se podia leer y la
+cabecera "peor / 0 / mejor" se superponia consigo misma.
+
+NOCHE A NOCHE. "Progresion semanal" mostraba el PUNTAJE agregado por semana
+(si, era el puntaje). Un compuesto de cinco variables por semana esconde lo
+que se mira en consulta: un 72 semanal puede ser siete noches mediocres o
+cinco buenas y dos pesimas, y la conducta no es la misma.
+Ahora: una barra por NOCHE de latencia, eficiencia y despertares, cada una
+con su umbral clinico dibujado y el porcentaje de noches que lo cruza. La
+eficiencia se recalcula por noche —el promedio del periodo daria 30 barras
+iguales— y una noche sin el dato queda como hueco, no como cero.
+El puntaje semanal queda plegado: sirve para la tendencia gruesa.
+
+Se saca el bloque "Cortes de ADULTOS" del cuadro de regularidad: ocupaba
+cuatro renglones de advertencia y lo unico que hay que saber es que no hay
+norma pediatrica contra la cual comparar.
+
+Lo fija pruebas/52.

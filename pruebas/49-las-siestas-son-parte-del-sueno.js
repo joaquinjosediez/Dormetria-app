@@ -81,8 +81,17 @@ r.ok(/el número que usa el puntaje de cantidad/.test(html),
      'diciendo cuál de los tres alimenta el puntaje');
 r.ok(html.indexOf('dm-met-resumen') < html.indexOf('Latencia promedio'),
      'y van ANTES que la latencia: primero cuánto duerme, después cómo');
-r.ok(/prorrateadas por los \d+% de días con siesta/.test(html),
-     'y se prorratea la siesta por su frecuencia — promediarla sobre los días CON siesta la infla');
+// Los dos números de siesta se muestran juntos, porque contestan
+// preguntas distintas: cuánto duerme CUANDO duerme (promedio de los días
+// con siesta) y cuánto suma por día (promediado sobre todos). Mostrar
+// uno solo deja al otro adivinándose — y usar el primero para el total
+// de 24 h lo infla en alguien que no siestea todos los días.
+r.ok(/días que duerme siesta/.test(html),
+     'se muestra cuánto duerme los días que duerme siesta');
+r.ok(/cuentan como 0, o el total de 24 h queda inflado/.test(html),
+     'y por qué los días sin siesta cuentan como 0 en el total');
+r.ok(/Noche \+ siesta <b>del mismo día<\/b>, promediado después/.test(html),
+     'el total suma por día y promedia después — no mezcla denominadores');
 
 r.seccion('No se le da consejo de adulto a un nene de dos años:');
 

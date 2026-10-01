@@ -57,11 +57,32 @@ r.ok(ss.length === 2,
 r.ok(ss[0].dur === 80 && ss[1].dur === 30,
      'y se conservan las dos distintas, no se colapsan todas');
 
-// Esto limpia lo que ya quedó guardado sin tocar la base, y protege de
-// cualquier otro camino que las duplique.
-const dedup = app.slice(app.indexOf('function dmSiestasDelDia(e){'),
-                        app.indexOf('function dmSiestasDelDia(e){') + 1800);
-r.ok(/En el\s*\n?\s*\/\/ actograma se superponen/.test(dedup) || /se superponen/.test(dedup),
-     'y está escrito por qué el actograma mostraba una sola');
+// Y la deduplicación vive en el PARSEO, no en una pantalla. Al principio
+// la puse solo en dmSiestasDelDia() — que alimenta el cuadro de siestas —
+// mientras computeChildSleep24h(), la que calcula el sueño de 24 h y
+// alimenta el PUNTAJE DE CANTIDAD, leía parseChildNaps() directo. O sea
+// que el cuadro ya mostraba el número bien y el puntaje seguía sumando
+// las repetidas.
+const parseo = app.slice(app.indexOf('function parseChildNaps(entry){'),
+                         app.indexOf('function parseChildNaps(entry){') + 1300);
+r.ok(/vistas\[k\]/.test(parseo),
+     'parseChildNaps deduplica: así lo tienen TODOS los consumidores');
+r.ok(/puntaje suma otra|el puntaje suma otra|cada consumidor decide/.test(parseo),
+     'y está escrito por qué no puede vivir en una pantalla');
+
+ctx._dup24 = [];
+for (let k = 0; k < 6; k++) {
+  ctx._dup24.push({
+    diary_date: '2026-09-0' + (k + 1), bedtime: '21:00', wake_time: '07:00',
+    sleep_minutes: 600,
+    notes: 'Siestas: [{"start":"13:00","end":"14:20"},{"start":"13:00","end":"14:20"}]'
+  });
+}
+const c24 = vm.runInContext('computeChildSleep24h(_dup24, "2024-01-26")', ctx);
+r.ok(c24 && Math.round(c24.avgNapMin) === 80,
+     'el sueño DIURNO de 24 h cuenta la siesta una vez (dio ' +
+     (c24 ? Math.round(c24.avgNapMin) : '—') + ' min, duplicado habría dado 160)');
+r.ok(c24 && Math.round(c24.avgTotalMin) === 680,
+     'y el total de 24 h queda en 11h 20m, no en 12h 40m');
 
 r.cerrar('Un conteo que no coincide con el actograma no es un error de vista: son datos inventados.');

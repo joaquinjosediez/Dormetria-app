@@ -6007,3 +6007,79 @@ body.dm-dir-abierto #consult-list{ padding:4px 18px 28px; }
   .dm-aguja-cab > span:not(.dm-aguja-escala){ display:none; }
   .dm-aguja-escala u{ position:static; margin-left:auto; align-self:center; padding-right:6px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod237 · "Hábitos vs. métricas clínicas" a todo el ancho
+   Dentro de la columna izquierda el forest plot quedaba en ~300 px: el
+   eje de −d a +d no se podía leer y la cabecera "peor / 0 / mejor" se
+   superponía consigo misma.
+   ══════════════════════════════════════════════════════════════════════ */
+body.dr-desktop #dr-abajo-slot{ grid-column:1 / -1; }
+body.dr-desktop #dr-abajo-slot .dm-card{ max-width:none; }
+/* Con el ancho completo, la fila del forest plot puede darle más lugar al
+   eje, que es lo que se mira. */
+@media (min-width:1100px){
+  .dm-aguja-fila, .dm-aguja-cab{
+    grid-template-columns:minmax(150px,1fr) minmax(260px,2.2fr) minmax(220px,1.4fr) auto;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod237 · Noche a noche: latencia, eficiencia y despertares
+   La progresión semanal mostraba el PUNTAJE agregado por semana. Un
+   compuesto de cinco variables por semana esconde lo que se mira en
+   consulta: cada cuánto aparece una noche mala y si se están espaciando.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-nn-h{
+  font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:#5c6b63; margin-bottom:14px;
+}
+.dm-nn-franja{ margin-bottom:18px; }
+.dm-nn-franja:last-of-type{ margin-bottom:6px; }
+.dm-nn-cab{
+  display:flex; align-items:baseline; justify-content:space-between;
+  gap:10px; margin-bottom:6px; flex-wrap:wrap;
+}
+.dm-nn-tit{ font-size:13px; font-weight:700; color:#0F2820; }
+.dm-nn-sub{ font-size:11px; color:#77776e; }
+.dm-nn-sub b{ color:#b45309; }
+
+.dm-nn-plot{
+  position:relative; display:flex; align-items:flex-end; gap:2px;
+  height:64px; padding:0 1px;
+  border-bottom:1px solid rgba(0,0,0,.14);
+}
+.dm-nn-b{
+  flex:1 1 0; min-width:2px; border-radius:2px 2px 0 0;
+  background:#1a4a3a; transition:opacity .15s;
+}
+.dm-nn-b.mal{ background:#C8A96E; }
+/* Una noche sin el dato no es una noche de cero: se deja el hueco. */
+.dm-nn-b.sin{
+  background:repeating-linear-gradient(0deg,
+    rgba(0,0,0,.07) 0 3px, transparent 3px 6px);
+  height:100% !important; border-radius:0;
+}
+.dm-nn-b:hover{ opacity:.65; }
+
+.dm-nn-umbral{
+  position:absolute; left:0; right:0; height:0;
+  border-top:1px dashed rgba(180,83,9,.55); pointer-events:none;
+}
+.dm-nn-umbral b{
+  position:absolute; right:0; top:-14px;
+  font-size:9.5px; font-weight:700; color:#b45309;
+  background:#fff; padding:0 3px; border-radius:3px;
+}
+.dm-nn-pie{
+  font-size:10.5px; color:#77776e; line-height:1.55;
+  margin-top:12px; padding:9px 11px; background:#f8fafc; border-radius:7px;
+}
+.dm-nn-sem{ margin-top:14px; }
+.dm-nn-sem > summary{
+  cursor:pointer; list-style:none; font-size:11.5px; font-weight:600;
+  color:#55554e; padding:7px 0;
+}
+.dm-nn-sem > summary::-webkit-details-marker{ display:none; }
+.dm-nn-sem > summary::before{ content:'▸ '; }
+.dm-nn-sem[open] > summary::before{ content:'▾ '; }

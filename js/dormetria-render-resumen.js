@@ -352,12 +352,35 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
           // última celda se caía a un segundo renglón. Con 0 la grilla usa
           // el espacio que hay y entra todo en una fila.
           '<div class="dm-evo-cifras" style="flex:1 1 0;min-width:0">' +
-            celda('Tiempo de sueño', (met.tst == null || isNaN(met.tst)) ? '—' :
-                  (Math.floor(met.tst/60) + 'h ' + String(Math.round(met.tst%60)).padStart(2,'0') + 'm'),
+            (function(){
+              const hhmm = function(v){
+                return (v==null || isNaN(v)) ? '—'
+                  : (Math.floor(v/60) + 'h ' + String(Math.round(v%60)).padStart(2,'0') + 'm');
+              };
+              // Edad del paciente: define qué tres cifras se muestran.
+              let _edad = null;
+              try{
+                const d = paciente.dob ? new Date(paciente.dob) : null;
+                if(d && !isNaN(d)) _edad = Math.floor((Date.now()-d.getTime())/31557600000);
+              }catch(_){}
+              if(_edad != null && _edad < 13 && met.tst24 != null){
+                // Pediátrico: nocturno, diurno y total. El total es el que
+                // se compara contra el rango de la NSF y el que alimenta el
+                // puntaje de cantidad — así que tiene que estar a la vista,
+                // no deducirse de otras dos celdas.
+                const _diurno = Math.max(0, met.tst24 - (met.tst||0));
+                return celda('Sueño nocturno', hhmm(met.tst), 'de acostarse a despertarse') +
+                       celda('Sueño diurno', _diurno ? hhmm(_diurno) : '—',
+                             met.siestaFrecPct != null
+                               ? ('siestas · ' + met.siestaFrecPct + '% de los días')
+                               : 'siestas') +
+                       celda('Total en 24 h', hhmm(met.tst24), 'contra el rango de la NSF');
+              }
+              return celda('Tiempo de sueño', hhmm(met.tst),
                   (met.tst24 != null && met.tst != null && met.tst24 > met.tst)
-                    ? ('nocturno · ' + Math.floor(met.tst24/60) + 'h ' +
-                       String(Math.round(met.tst24%60)).padStart(2,'0') + 'm en 24 h')
-                    : 'nocturno') +
+                    ? ('nocturno · ' + hhmm(met.tst24) + ' en 24 h')
+                    : 'nocturno');
+            })() +
             celda('Latencia', num(met.latenciaMedia, ' min'), met.latenciaMedia > 30 ? 'sobre umbral' : 'en rango') +
             // Una sola fuente. Antes esta celda mostraba e.actual —la
             // eficiencia de la ventana de la evolución— mientras las otras
@@ -371,7 +394,15 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
             // aparte a proposito, y el pie dice el total en 24 h cuando se
             // puede calcular. Mezclarlos en una sola cifra esconde justo lo
             // que hay que ver en un insomnio.
-            celda('Siestas',
+            (function(){
+              let _e2 = null;
+              try{
+                const d = paciente.dob ? new Date(paciente.dob) : null;
+                if(d && !isNaN(d)) _e2 = Math.floor((Date.now()-d.getTime())/31557600000);
+              }catch(_){}
+              // En pediatría la siesta ya está arriba, como "Sueño diurno".
+              if(_e2 != null && _e2 < 13 && met.tst24 != null) return '';
+              return celda('Siestas',
               (met.siestaFrecPct == null)
                 ? '—'
                 : (met.siestaNoches === 0
@@ -382,7 +413,8 @@ function dmRenderSummaryResumen(motorResult, modo, email) {
                 : (met.siestaNoches === 0
                     ? 'ningun dia'
                     : (met.siestaMediaMin + ' min' +
-                       (met.siestaCantMedia > 1.4 ? ' · ' + met.siestaCantMedia + '/dia' : '')))) +
+                       (met.siestaCantMedia > 1.4 ? ' · ' + met.siestaCantMedia + '/dia' : ''))));
+            })() +
             celda('Adherencia', e ? num(e.adherencia, '%') : '—', '') +
           '</div>' +
         '</div>' +

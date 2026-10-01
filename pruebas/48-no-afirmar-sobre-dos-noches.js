@@ -82,10 +82,16 @@ r.ok(/La regularidad no puntúa en este caso/.test(app),
 
 r.seccion('Y la referencia no se cita fuera de su población:');
 
-r.ok(/Cortes de ADULTOS/.test(app),
-     'en una ficha pediátrica se avisa que NHANES es de 18 o más');
-r.ok(/No hay valores normativos pediátricos publicados/.test(app),
-     'y que no hay norma pediátrica para comparar');
+// El aviso decía "Cortes de ADULTOS. NHANES 2011-2014 (n=9981, 18+)".
+// Era correcto y era demasiado: ocupaba cuatro renglones de advertencia
+// arriba de los números, y lo que hay que saber es una sola cosa — que
+// no hay norma pediátrica contra la cual comparar.
+r.ok(/Sin normativa pediátrica publicada para la SD del punto medio/.test(app),
+     'en una ficha pediátrica se avisa que no hay norma para comparar');
+r.ok(/sirve para seguir\s*'\+\s*'al mismo chico|seguir al mismo chico en el tiempo/.test(app),
+     'y para qué sí sirve: seguir al mismo chico en el tiempo');
+r.ok(!/Cortes de ADULTOS/.test(app),
+     'sin el bloque largo de advertencia arriba de los números');
 
 r.seccion('El hueco tampoco puede quedar mudo:');
 

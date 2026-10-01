@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod236-fe373156">
+<link rel="stylesheet" href="css/styles.css?v=mod237-b16345d1">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod236-e7d2aa81"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod236-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod236-af87b0b6"></script>
-<script src="js/dormetria-render-resumen.js?v=mod236-f18070cd"></script>
-<script src="js/dormetria-tcci.js?v=mod236-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod237-e7d2aa81"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod237-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod237-af87b0b6"></script>
+<script src="js/dormetria-render-resumen.js?v=mod237-96b9fea2"></script>
+<script src="js/dormetria-tcci.js?v=mod237-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod236';
+const APP_VERSION='mod237';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -6173,7 +6173,20 @@ function parseChildNaps(entry){
   if(!m) return [];
   try{
     const arr = JSON.parse(m[1]);
-    return Array.isArray(arr) ? arr.filter(n=>n && n.start) : [];
+    if(!Array.isArray(arr)) return [];
+    // Dos siestas con el MISMO inicio y el mismo fin el mismo día no son
+    // dos siestas: es la fila que se arrastró de otro registro (ver
+    // mod235). La deduplicación va ACÁ, en el parseo, y no en una
+    // pantalla: si no, cada consumidor decide por su cuenta y el cuadro
+    // de siestas muestra una cosa mientras el puntaje suma otra.
+    const vistas = {};
+    return arr.filter(function(n){
+      if(!n || !n.start) return false;
+      const k = String(n.start)+'/'+String(n.end||'');
+      if(vistas[k]) return false;
+      vistas[k] = true;
+      return true;
+    });
   }catch(_){ return []; }
 }
 function _napDurationMin(nap){
@@ -7658,19 +7671,10 @@ function dmSiestasDelDia(e){
       out.push({ ini: ini, fin: dur ? ini+dur : null, dur: dur });
     });
   }catch(_){}
-  if(out.length){
-    // Dos siestas con el mismo inicio y la misma duración el mismo día no
-    // son dos siestas: es la fila que se arrastró de otro registro. En el
-    // actograma se superponen y se ven como una sola — de ahí que el
-    // conteo dijera 1,9 con un actograma que muestra 1.
-    const vistas = {};
-    return out.filter(function(x){
-      const k = String(x.ini)+'/'+String(x.dur);
-      if(vistas[k]) return false;
-      vistas[k] = true;
-      return true;
-    });
-  }
+  // Las repetidas ya las filtró parseChildNaps(): la deduplicación vive
+  // en el parseo para que TODOS los consumidores la tengan, incluido el
+  // puntaje de cantidad.
+  if(out.length) return out;
   // Diario adulto: una sola siesta, con hora de inicio opcional.
   const min = Number(e && e.nap_minutes);
   if(min > 0){
@@ -7905,9 +7909,21 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   // pregunta y es lo que alimenta el puntaje de cantidad.
   let _sie0 = null;
   try{ _sie0 = dmMetricasSiestas(entries); }catch(_){}
-  const _diurno = (_sie0 && _sie0.nConSiesta && _sie0.durMedia)
-    ? _sie0.durMedia * (_sie0.nConSiesta / _sie0.nDias) : 0;
-  const _total24 = (m.avgTotal!=null) ? m.avgTotal + _diurno : null;
+  // La cuenta buena la hace computeChildSleep24h: suma noche + siesta
+  // DEL MISMO DÍA y recién después promedia, así que no mezcla
+  // denominadores. Es además la que alimenta el puntaje de cantidad.
+  let _c24 = null;
+  try{
+    const _dob = (typeof S!=='undefined' && S.viewData && S.viewData.dob) ? S.viewData.dob
+               : ((typeof S!=='undefined' && S.user) ? S.user.dob : null);
+    _c24 = computeChildSleep24h(entries, _dob);
+  }catch(_){}
+  const _diurno = _c24 ? _c24.avgNapMin
+    : ((_sie0 && _sie0.nConSiesta && _sie0.durMedia)
+        ? _sie0.durMedia * (_sie0.nConSiesta / _sie0.nDias) : 0);
+  const _nocturno = _c24 ? _c24.avgNightMin : m.avgTotal;
+  const _total24 = _c24 ? _c24.avgTotalMin
+                        : ((m.avgTotal!=null) ? m.avgTotal + _diurno : null);
   const _cifra = function(rot, val, pie, col){
     return '<div class="dm-met-cifra">'+
       '<div class="dm-met-cifra-v"'+(col?' style="color:'+col+'"':'')+'>'+val+'</div>'+
@@ -7918,17 +7934,29 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
 
   let html = '<div class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'">'+
     '<div class="dm-metricas-h" style="color:'+C.sub+'">Métricas clínicas <span>· '+m.n+' noches</span></div>'+
-    '<div class="dm-met-resumen">'+
-      _cifra('Nocturno', m.fmtDur(m.avgTotal), 'de acostarse a despertarse')+
+    ((ageYears!=null && ageYears<13)
+      ? '<div class="dm-met-resumen">'+
+      _cifra('Nocturno', m.fmtDur(_nocturno), 'de acostarse a despertarse')+
+      // Los dos números de siesta, porque contestan preguntas distintas:
+      // cuánto duerme CUANDO duerme, y cuánto suma por día en promedio.
+      // Mostrar uno solo deja al otro adivinándose.
       _cifra('Diurno', _diurno ? m.fmtDur(_diurno) : '—',
-             _sie0 && _sie0.nConSiesta
-               ? 'siestas, prorrateadas por los '+_sie0.pct+'% de días con siesta'
+             (_sie0 && _sie0.nConSiesta)
+               ? ('<b>'+m.fmtDur(_sie0.durMedia)+'</b> los '+_sie0.nConSiesta+' días que duerme siesta. '+
+                  'Acá se promedia sobre los '+(_sie0.nDias)+' días: los '+(_sie0.nDias-_sie0.nConSiesta)+
+                  ' sin siesta cuentan como 0, o el total de 24 h queda inflado.')
                : 'sin siestas registradas')+
       _cifra('Total en 24 h', _total24!=null?m.fmtDur(_total24):'—',
-             'el número que usa el puntaje de cantidad', '#C8A96E')+
-    '</div>'+
-    '<div class="dm-met-cols">'+
-    '<div class="dm-met-col"><div class="dm-met-col-h">Noche</div>'+
+             'Noche + siesta <b>del mismo día</b>, promediado después. '+
+             'Es el número que usa el puntaje de cantidad.', '#C8A96E')+
+        '</div>'
+      // Adulto: una sola fila, como estaba. Si igual hay siestas cargadas
+      // el total de 24 h se menciona al pie, sin ocupar tres recuadros.
+      : row('Sueño total promedio', m.fmtDur(m.avgTotal), null,
+            (_diurno > 0)
+              ? ('Nocturno. Con las siestas, '+m.fmtDur(_total24)+' en 24 h.')
+              : 'Nocturno. No hay siestas registradas en el período.'))+
+    '<div class="dm-met-col-h">Noche</div>'+
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
     row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub);
@@ -8000,11 +8028,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     // Cierra la columna de la noche y abre la del día. Las siestas van
     // AFUERA del guardado por rutina escolar: no tienen nada que ver con
     // ella y son centrales justamente en quien no la tiene.
-    '</div><div class="dm-met-col"><div class="dm-met-col-h">Día</div>'+
-    (dmFilasSiestas(entries, row, C, ageYears) ||
-      '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:6px 0">'+
-      'Sin siestas registradas en el período, o sin el dato cargado en al menos 3 días.</div>')+
-    '</div></div>';
+    '';
 
   // Bloque adicional para el paciente: versión amigable de la variación
   if(audience === 'patient' && reg.sd_midpoint_min !== null){
@@ -8013,26 +8037,37 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
                 'Cuánto suele variar el centro de tu sueño respecto a tu horario habitual');
   }
 
+    // ── El bloque del DÍA, en su propia tarjeta ──────────────────────
+  // Se marca con un id para que el panel lo mueva a la columna derecha,
+  // igual que hace con el bloque técnico de regularidad.
+  let _abierto = false;          // ¿quedó algún contenedor sin cerrar?
+  const _filasDia = dmFilasSiestas(entries, row, C, ageYears);
+  html += '</div>'+
+    '<div id="dm-bloque-dia" class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'" style="margin-top:10px">'+
+    '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno <span>· siestas</span></div>'+
+    (_filasDia ||
+      '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:6px 0">'+
+      'Sin siestas registradas en el período, o sin el dato cargado en al menos 3 días.</div>')+
+    '</div>';
+
   // Bloque técnico solo para el médico. Si no hay noches suficientes se
   // dice, en vez de no mostrar nada: el hueco se lee como "no se calculó
   // porque está todo bien".
   if(audience === 'doctor' && reg.sd_midpoint_min === null){
-    html += '</div>'+
-      '<div style="background:var(--bg-secondary);border-radius:12px;padding:13px 16px;margin-top:10px">'+
+    _abierto = true;
+    html += '<div style="background:var(--bg-secondary);border-radius:12px;padding:13px 16px;margin-top:10px">'+
       '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Regularidad — métricas técnicas</div>'+
       '<div style="font-size:12px;color:var(--label-2);line-height:1.5">'+
         (reg.method || 'No hay noches suficientes para calcularla.')+'</div>';
   }
   if(audience === 'doctor' && reg.sd_midpoint_min !== null){
-    html += '</div>'+
-      '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-top:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
+    _abierto = true;
+    html += '<div style="background:var(--bg-secondary);border-radius:12px;padding:14px 16px;margin-top:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
       '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:2px">Regularidad — métricas técnicas <span style="font-weight:400;color:var(--label-3);font-size:11px">· uso profesional</span></div>'+
       '<div style="font-size:11px;color:var(--label-3);margin-bottom:6px;line-height:1.4">'+
         (ageYears!=null && ageYears<18
-          ? '<b style="color:#92400e">Cortes de ADULTOS.</b> NHANES 2011-2014 (n=9981, 18+ años). '+
-            'No hay valores normativos pediátricos publicados para la SD del punto medio: '+
-            'estos números sirven para seguir al mismo chico en el tiempo, no para compararlo '+
-            'con una norma.'
+          ? 'Sin normativa pediátrica publicada para la SD del punto medio: sirve para seguir '+
+            'al mismo chico en el tiempo, no para compararlo con una norma.'
           : 'Ref: NHANES 2011-2014 (n=9981) · cortes recalibrados para población clínica.')+
       '</div>'+
       row('Score de regularidad', reg.score+'% — '+reg.label, sdMidColor)+
@@ -8051,7 +8086,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
       '</div></div>';
   }
 
-  html += '</div>';
+  if(_abierto) html += '</div>';
   return html;
 }
 
@@ -19146,12 +19181,21 @@ async function showDrPTab_(tab){
         if(dme){
           dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor', (function(){ const d=S.viewData&&S.viewData.dob; return d?Math.floor((Date.now()-new Date(d))/31557600000):null; })());
           const _regSlot=document.getElementById('dr-reg-slot');
+          // El bloque del DÍA (siestas) y el técnico de regularidad van los
+          // dos a la columna derecha. Dentro de la tarjeta de la izquierda
+          // quedaban en dos columnas de 180 px: ilegible.
+          const _dia=document.getElementById('dm-bloque-dia');
+          if(_regSlot && _dia) _regSlot.appendChild(_dia);
           if(_regSlot && dme.children.length>1) _regSlot.appendChild(dme.children[1]);
           // Impacto de hábitos: solo aparece si el paciente REGISTRA el hábito
           // (la función devuelve '' si no hay datos suficientes o contraste).
           try{
             const _hi=renderHabitsImpactHtml(subj);
-            if(_hi){ dme.insertAdjacentHTML('beforeend', _hi); }
+            // A todo el ancho, no dentro de la columna izquierda: el eje del
+            // forest plot necesita espacio o la cabecera se pisa sola.
+            const _ancho=document.getElementById('dr-abajo-slot');
+            if(_hi && _ancho) _ancho.insertAdjacentHTML('afterbegin', _hi);
+            else if(_hi) dme.insertAdjacentHTML('beforeend', _hi);
           }catch(_e){ console.warn('[habitos]', _e); }
           // Comentarios y corrección de horarios van al FINAL de la ficha.
           // Estaban en el medio de las métricas clínicas, entre dos bloques
@@ -19168,10 +19212,21 @@ async function showDrPTab_(tab){
           }catch(_e){ console.warn('[noches a revisar]', _e); }
         }
         // Progresión semanal (movida desde Resumen)
+        // El puntaje semanal pasa a estar plegado: lo que se mira primero
+        // es cada noche, no un compuesto de cinco variables por semana.
         const _wpEl=document.getElementById('dr-weekly-prog');
         if(_wpEl){
+          let _h='';
+          try{ _h = dmSerieNocheHtml(subj) || ''; }catch(_e){ console.warn('[noche a noche]', _e); }
           const _wpHtml=renderWeeklyProgressionHtml(subj);
-          if(_wpHtml){ _wpEl.innerHTML=_wpHtml; _wpEl.style.display=''; }
+          if(_wpHtml){
+            // El puntaje semanal queda, plegado. Es un compuesto de cinco
+            // variables: sirve para ver la tendencia gruesa, no para
+            // decidir — y ocupando el lugar principal tapaba lo que sí.
+            _h += '<details class="dm-nn-sem"><summary>Ver el puntaje semanal</summary>'+
+                  '<div style="padding-top:10px">'+_wpHtml+'</div></details>';
+          }
+          if(_h){ _wpEl.innerHTML=_h; _wpEl.style.display=''; }
         }
         // Resumen de hábitos de 14 días en una sola línea arriba del actograma
         // (las capas de colores en el gráfico ya muestran el detalle noche a
@@ -22199,6 +22254,109 @@ function calcSleepScore(entries, ageYears){
     color: total>=85?'#34C759':total>=70?'#1a4a3a':total>=55?'#FF9500':total>=40?'#FF6B00':'#FF3B30',
     bg:    total>=85?'#f0fdf4':total>=70?'#eef8f5':total>=55?'#FFF9EC':total>=40?'#FFF3E0':'#fef2f2',
   };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// Noche a noche: latencia, eficiencia y despertares
+// ----------------------------------------------------------------------
+// La progresión semanal mostraba el PUNTAJE agregado por semana. Un
+// puntaje compuesto por semana esconde justo lo que se mira en consulta:
+// con qué frecuencia aparecen las noches malas y si se están espaciando.
+// Doce barras de un número que mezcla cinco cosas no dicen eso.
+//
+// Acá va una barra por NOCHE, de las tres variables sobre las que se
+// decide: latencia, eficiencia y despertares. Cada una con su umbral
+// clínico dibujado, que es lo que convierte una barra en un hallazgo.
+function dmSerieNocheHtml(entries, dias){
+  const N = dias || 35;
+  const v = (entries||[])
+    .filter(function(e){ return e && e.diary_date; })
+    .sort(function(a,b){ return a.diary_date < b.diary_date ? -1 : 1; })
+    .slice(-N);
+  if(v.length < 5) return '';
+
+  const toMin = function(t){
+    if(!t) return null;
+    const p = String(t).slice(0,5).split(':').map(Number);
+    if(isNaN(p[0])) return null;
+    return p[0]*60 + (p[1]||0);
+  };
+  const noches = v.map(function(e){
+    const lat = (e.sleep_latency_mins!=null && !isNaN(e.sleep_latency_mins))
+      ? Number(e.sleep_latency_mins) : null;
+    const awk = (e.awakenings!=null && !isNaN(e.awakenings)) ? Number(e.awakenings) : null;
+    // Eficiencia = sueño / tiempo en cama. Se recalcula por noche: el
+    // promedio del período no sirve para ver cuáles fueron las malas.
+    let ef = null;
+    const bed = toMin(e.bedtime), wake = toMin(e.wake_time), tst = Number(e.sleep_minutes);
+    if(bed!=null && wake!=null && tst>0){
+      let tib = wake - bed; if(tib <= 0) tib += 1440;
+      if(tib > 0 && tib <= 20*60) ef = Math.round(tst/tib*100);
+      if(ef > 100) ef = 100;
+    }
+    return { f:e.diary_date, lat:lat, ef:ef, awk:awk };
+  });
+
+  const fmtF = function(f){ const p=String(f).slice(0,10).split('-'); return p[2]+'/'+p[1]; };
+  // Una franja por variable. `umbral` dibuja la línea de corte clínico y
+  // `malo` decide el color de cada barra.
+  const franja = function(cfg){
+    const vals = noches.map(cfg.val);
+    const conDato = vals.filter(function(x){ return x!=null; });
+    if(conDato.length < 3) return '';
+    const max = Math.max(cfg.max || 0, Math.max.apply(null, conDato));
+    const barras = noches.map(function(n, i){
+      const x = cfg.val(n);
+      if(x==null){
+        return '<span class="dm-nn-b sin" title="'+fmtF(n.f)+' · sin dato"></span>';
+      }
+      const h = Math.max(3, Math.round(x/max*100));
+      const mal = cfg.malo(x);
+      return '<span class="dm-nn-b'+(mal?' mal':'')+'" style="height:'+h+'%" '+
+             'title="'+fmtF(n.f)+' · '+cfg.fmt(x)+'"></span>';
+    }).join('');
+    const pct = Math.round(conDato.filter(cfg.malo).length/conDato.length*100);
+    const yUmbral = Math.round(cfg.umbral/max*100);
+    return '<div class="dm-nn-franja">'+
+      '<div class="dm-nn-cab">'+
+        '<span class="dm-nn-tit">'+cfg.titulo+'</span>'+
+        '<span class="dm-nn-sub">'+cfg.leyenda+' · <b>'+pct+'%</b> de las noches</span>'+
+      '</div>'+
+      '<div class="dm-nn-plot">'+
+        (yUmbral>0 && yUmbral<100
+          ? '<i class="dm-nn-umbral" style="bottom:'+yUmbral+'%"><b>'+cfg.umbralTxt+'</b></i>' : '')+
+        barras+
+      '</div>'+
+    '</div>';
+  };
+
+  const html =
+    franja({ titulo:'Latencia', val:function(n){ return n.lat; },
+             umbral:30, umbralTxt:'30 min', max:60,
+             malo:function(x){ return x > 30; },
+             leyenda:'más de 30 min para dormirse',
+             fmt:function(x){ return x+' min para dormirse'; } })+
+    franja({ titulo:'Eficiencia', val:function(n){ return n.ef; },
+             umbral:85, umbralTxt:'85 %', max:100,
+             malo:function(x){ return x < 85; },
+             leyenda:'por debajo de 85 %',
+             fmt:function(x){ return x+' % de eficiencia'; } })+
+    franja({ titulo:'Despertares', val:function(n){ return n.awk; },
+             umbral:2, umbralTxt:'2', max:4,
+             malo:function(x){ return x >= 2; },
+             leyenda:'dos o más',
+             fmt:function(x){ return x+' despertares'; } });
+
+  if(!html) return '';
+  return '<div class="dm-nn">'+
+    '<div class="dm-nn-h">Noche a noche · últimas '+noches.length+' noches</div>'+
+    html+
+    '<div class="dm-nn-pie">Una barra por noche, de la más vieja a la más nueva. '+
+      'La línea punteada es el umbral clínico y las barras que lo cruzan van en ámbar. '+
+      'Lo que se mira acá no es el promedio —ese está arriba— sino <b>cada cuánto aparece '+
+      'una noche mala y si se están espaciando</b>. Las noches sin el dato cargado quedan '+
+      'como un hueco, no como un cero.</div>'+
+  '</div>';
 }
 
 // PROGRESIÓN SEMANAL — bloques de 7 días hacia atrás (hasta 12 semanas).
