@@ -1,0 +1,31 @@
+mod236 · cada tarjeta dice lo que hace, y el forest plot va con su detalle
+
+EL TITULO DECIA LO QUE LA TARJETA NO HACE. "Habitos vs. calidad que reporta"
+comparaba los habitos contra sueño total, latencia y despertares: o sea
+contra lo MEDIDO, no contra lo percibido. Y la tarjeta de la derecha
+—"Habitos y calidad reportada"— es la que si cruza contra lo reportado.
+Dos nombres casi iguales para dos cosas distintas.
+
+Peor: la prueba 17 tenia una seccion llamada "Los dos paneles de correlacion
+no se llaman igual" que asertaba JUSTAMENTE el titulo equivocado. O sea que
+la prueba estaba fijando el error que pretendia evitar. Corregida.
+
+  · "Habitos vs. metricas clinicas" — y el subtitulo nombra las variables, y
+    aclara cual es la otra tarjeta.
+  · "Lo que reporta vs. lo que se mide" — ahora contiene los DOS cruces
+    contra lo percibido: la concordancia con los pilares (que vivia suelta
+    adentro de "Pilares del sueño", a tres tarjetas de distancia) y el
+    impacto de los habitos sobre lo reportado.
+
+EL FOREST PLOT SE MUDA. Estaba adentro de "Pilares del sueño", separado de
+la tabla que resume. Ahora va arriba de esa misma tabla, con un separador y
+el rotulo "El detalle, factor por factor". Primero el resumen, despues el
+detalle, en la misma tarjeta.
+
+LA DIVISION PEOR/MEJOR. Era una linea de 9,5 px en gris claro y se perdia —
+y sin ella el grafico no se puede leer: una barra a la izquierda no
+significa nada si no se sabe que la izquierda es peor. Ahora las dos mitades
+del eje estan teñidas (rojo a la izquierda, verde a la derecha), con el cero
+marcado entre las dos y el rotulo de la escala abajo.
+
+Lo fija pruebas/51.

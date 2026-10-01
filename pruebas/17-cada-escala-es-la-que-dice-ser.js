@@ -42,10 +42,19 @@ r.ok(!/sassv:'Adicción al smartphone/.test(html),
 
 r.seccion('Los dos paneles de correlación no se llaman igual:');
 
+// Esta prueba fijaba el título "Hábitos vs. calidad que reporta" — que
+// estaba MAL: esa tarjeta compara los hábitos contra sueño total,
+// latencia y despertares, o sea contra lo MEDIDO. La que cruza contra lo
+// percibido es la otra. Dos nombres casi iguales para dos cosas
+// distintas es exactamente lo que esta prueba tendría que haber evitado.
 r.ok(/Percepción vs\. lo medido/.test(html),
-     'el de los pilares dice que compara con lo medido');
-r.ok(/Hábitos vs\. calidad que reporta/.test(html),
-     'el de los hábitos dice que compara con los hábitos');
+     'la concordancia dice que compara lo reportado con lo medido');
+r.ok(/Hábitos vs\. métricas clínicas/.test(html),
+     'y la de hábitos dice contra qué los compara: las métricas clínicas');
+r.ok(!/Hábitos vs\. calidad que reporta/.test(html),
+     'el nombre viejo ya no está — decía lo que la tarjeta no hace');
+r.ok(/El cruce contra la calidad que la persona <em>reporta<\/em> es otra/.test(html),
+     'y la propia tarjeta aclara cuál es la otra, para que no se confundan');
 r.ok(!/Factores asociados al sueño/.test(html),
      'y no quedó ninguno con el nombre viejo, que servía para los dos');
 

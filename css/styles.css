@@ -5965,3 +5965,45 @@ body.dm-dir-abierto #consult-list{ padding:4px 18px 28px; }
   .dm-met-cifra-r{ margin-top:0; }
   .dm-met-cifra-p{ flex-basis:100%; margin-top:2px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   mod236 · La división peor/mejor, visible
+   Era una línea de 9,5 px en gris claro y se perdía — y sin ella el
+   gráfico no se puede leer: una barra a la izquierda no significa nada si
+   no se sabe que la izquierda es peor. Ahora las dos mitades están
+   teñidas, con el cero marcado entre las dos.
+   ══════════════════════════════════════════════════════════════════════ */
+.dm-aguja-cab{ margin-bottom:2px; }
+.dm-aguja-escala{
+  position:relative; display:flex; align-items:stretch; justify-content:space-between;
+  font-size:10px; color:#55554e; min-height:20px;
+  border-radius:5px; overflow:hidden;
+  background:linear-gradient(90deg,
+    rgba(185,28,28,.10) 0%, rgba(185,28,28,.03) 48%,
+    rgba(21,128,61,.03) 52%, rgba(21,128,61,.10) 100%);
+}
+.dm-aguja-escala i{
+  font-style:normal; font-weight:700; letter-spacing:.02em;
+  display:flex; align-items:center; padding:0 8px;
+}
+.dm-aguja-escala i.peor { color:#b91c1c; }
+.dm-aguja-escala i.mejor{ color:#15803d; }
+.dm-aguja-escala b{
+  position:absolute; left:50%; top:0; bottom:0; transform:translateX(-50%);
+  display:flex; align-items:center; padding:0 6px;
+  font-size:9.5px; font-weight:700; color:#55554e;
+  background:rgba(255,255,255,.85);
+  border-left:1px solid rgba(0,0,0,.22); border-right:1px solid rgba(0,0,0,.22);
+}
+.dm-aguja-escala u{
+  position:absolute; right:0; top:22px; text-decoration:none;
+  font-size:9px; color:#8a8a82; white-space:nowrap;
+}
+/* El rótulo de la escala se apoya abajo: hay que dejarle el lugar. */
+.dm-aguja-cab{ padding-bottom:14px; }
+
+@media (max-width:759px){
+  .dm-aguja-cab{ display:grid !important; grid-template-columns:1fr; padding-bottom:4px; }
+  .dm-aguja-cab > span:not(.dm-aguja-escala){ display:none; }
+  .dm-aguja-escala u{ position:static; margin-left:auto; align-self:center; padding-right:6px; }
+}

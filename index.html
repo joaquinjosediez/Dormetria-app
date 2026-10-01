@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod235-e5d9f368">
+<link rel="stylesheet" href="css/styles.css?v=mod236-fe373156">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod235-e7d2aa81"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod235-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod235-af87b0b6"></script>
-<script src="js/dormetria-render-resumen.js?v=mod235-f18070cd"></script>
-<script src="js/dormetria-tcci.js?v=mod235-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod236-e7d2aa81"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod236-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod236-af87b0b6"></script>
+<script src="js/dormetria-render-resumen.js?v=mod236-f18070cd"></script>
+<script src="js/dormetria-tcci.js?v=mod236-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod235';
+const APP_VERSION='mod236';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -7165,8 +7165,10 @@ function dmAgujaHtml(entries){
     '<div class="dm-aguja-cab">'+
       '<span></span>'+
       '<span class="dm-aguja-escala">'+
-        '<i>← peor sueño</i><b>0</b><i>mejor sueño →</i>'+
-        '<u>d ±'+String(MAX).replace('.', ',')+'</u></span>'+
+        '<i class="peor">◂ peor sueño</i>'+
+        '<b>0</b>'+
+        '<i class="mejor">mejor sueño ▸</i>'+
+        '<u>tamaño del efecto · d ±'+String(MAX).replace('.', ',')+'</u></span>'+
       '<span></span><span></span>'+
     '</div>'+
     cuerpo+
@@ -7314,10 +7316,20 @@ function renderHabitsImpactHtml(entries, audiencia){
   };
   const colFor=s=> s>0?'#16a34a' : s<0?'#dc2626' : '#6b7280';
   let html='<div class="dm-card" style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px">'+
-    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Hábitos vs. calidad que reporta '+
+    '<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:3px">Hábitos vs. métricas clínicas '+
       '<span style="font-weight:400;color:var(--label-3);font-size:11px">· '+R.n+' noches</span></div>'+
     '<div style="font-size:11px;color:var(--label-3);line-height:1.5;margin-bottom:11px">'+
-      'Compara las noches con y sin cada factor <em>en este mismo paciente</em>, con <strong>t de Welch</strong> (dos colas, no asume varianzas iguales). Se marca como efecto solo si la diferencia supera el umbral clínico <em>y</em> p&lt;0,05.</div>'+
+      'Compara las noches con y sin cada factor <em>en este mismo paciente</em> sobre lo MEDIDO '+
+      '—sueño total, latencia, despertares— con <strong>t de Welch</strong> (dos colas, no asume '+
+      'varianzas iguales). Se marca como efecto solo si la diferencia supera el umbral clínico '+
+      '<em>y</em> p&lt;0,05. El cruce contra la calidad que la persona <em>reporta</em> es otra '+
+      'tarjeta, la de la derecha.</div>'+
+    // El resumen gráfico de esta misma tabla va ACÁ arriba, que es su
+    // lugar: estaba adentro de "Pilares del sueño", separado del detalle
+    // que explica. Lo que hay que leer en cuatro tablas, de un vistazo.
+    (function(){ try{ return dmAgujaHtml(entries); }catch(_){ return ''; } })()+
+    '<div style="height:1px;background:var(--sep-opaque);margin:16px 0 13px"></div>'+
+    '<div style="font-size:12px;font-weight:700;color:var(--label-2);margin-bottom:9px">El detalle, factor por factor</div>'+
     '<div style="font-size:10.5px;color:var(--label-3);line-height:1.45;margin-bottom:11px;padding:7px 9px;background:#f8fafc;border-radius:7px">'+
       '<strong>Cómo leerlo.</strong> Asociación dentro de un mismo paciente, no un ensayo: puede haber confusión (tomar café justamente los días de peor descanso previo). '+
       'Se comparan varios factores por varias variables, así que algún p&lt;0,05 aislado es esperable por azar. Para generar hipótesis en consulta, no para concluir causalidad. '+
@@ -19061,13 +19073,14 @@ async function showDrPTab_(tab){
                tiene esta pestaña— empujándolo abajo de todo.
                En su lugar va el mismo análisis, como titular.
                El gráfico sigue disponible para quien lo quiera. -->
-          <div id="dr-aguja" style="margin-top:12px"></div>
+          <!-- "Qué mueve la aguja" se mudó a la tarjeta "Hábitos vs.
+               métricas clínicas", que es la tabla que resume: acá estaba
+               separado del detalle que lo explica. -->
           <details class="dm-aguja-det dm-solo-esp">
             <summary>Ver la evolución de los tres pilares noche a noche</summary>
             <div class="chart-wrap" style="height:180px"><canvas id="dr-pillar-chart"></canvas></div>
             <div id="dr-pillar-legend"></div>
           </details>
-          <div id="dr-quality-concord" class="dm-solo-esp" style="font-size:10.5px;color:#77776e;margin-top:6px;line-height:1.5"></div>
         </div>
         <!-- Los dos paneles de correlación se llamaban casi igual y se
              confundían. Este cruza la calidad reportada con los HÁBITOS del
@@ -19112,7 +19125,13 @@ async function showDrPTab_(tab){
         <!-- Hábitos vs calidad se mudó acá: es la tarjeta más alta de todas
              y en la columna izquierda dejaba a la derecha corriendo sola. -->
         <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
-          <div class="dm-card-title">🔍 Hábitos y calidad reportada</div>
+          <div class="dm-card-title">🔍 Lo que reporta vs. lo que se mide</div>
+          <!-- Acá va TODO lo que cruza contra la calidad percibida: la
+               concordancia con los tres pilares y el impacto de los
+               hábitos sobre lo reportado. Antes la concordancia vivía
+               suelta dentro de "Pilares del sueño", a tres tarjetas de
+               distancia de lo único con lo que se lee junta. -->
+          <div id="dr-quality-concord" style="font-size:12px;color:var(--label-2);line-height:1.6;margin-bottom:12px"></div>
           <div id="dr-quality-factores"></div>
         </div>
         </div>
@@ -19866,10 +19885,6 @@ async function showDrPTab_(tab){
           const _rEner=_pearson(_qual,_ener);
           // "Qué mueve la aguja": el análisis de factores como titular, en
           // el lugar donde estaba el gráfico de líneas.
-          try{
-            const _aEl=document.getElementById('dr-aguja');
-            if(_aEl) _aEl.innerHTML = dmAgujaHtml(sorted);
-          }catch(_e){ console.warn('[aguja]', _e); }
           const _cEl=document.getElementById('dr-quality-concord');
           if(_cEl){
             if(!_rQty&&!_rFrag&&!_rReg){ _cEl.textContent='Percepción vs. lo medido: hacen falta al menos 10 noches con calidad reportada y horarios cargados.'; }
