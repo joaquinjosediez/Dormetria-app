@@ -1,0 +1,47 @@
+mod234 · las siestas, y "sueño total" que significaba dos cosas
+
+TENIAS RAZON CON EL PUNTAJE. "Sueño total promedio" significaba dos cosas
+distintas en la misma pantalla:
+  · la tabla de metricas lo sacaba de sleep_minutes → NOCTURNO
+  · el pilar Cantidad usaba computeChildSleep24h → noche + siestas, 24 HORAS
+Asi que el puntaje podia decir "dentro del rango" mientras la tabla mostraba
+un total que no llegaba, y las dos cosas estaban bien porque no eran lo
+mismo. Mismo patron de "dos ventanas bajo una etiqueta" que la ventana
+clinica (mod207) y el PVT (mod215).
+Ahora son dos filas: "Sueño nocturno promedio" y "Sueño total en 24 h", y
+esta dice cual de las dos alimenta el puntaje. La siesta se PRORRATEA por su
+frecuencia: promediarla sobre los dias CON siesta la infla.
+
+POR QUE NO VEIAS LAS SIESTAS. dmFilasSiestas() vivia DENTRO del guardado
+(_bebe || _sinRutina), que existe para no mostrar deuda de sueño ni jet lag
+social a quien no tiene rutina escolar. Se llevo puestas las siestas
+justamente en los bebes y los chicos chicos, que son los unicos que siestean
+todos los dias y donde la siesta es un tercio del sueño de 24 h. Un guardado
+hecho para una cosa, aplicado a tres.
+
+Y ademas solo leia nap_minutes, que es la columna del diario ADULTO: el
+diario infantil guarda las siestas en notes y las lee parseChildNaps(). Dos
+razones independientes para que no apareciera nada.
+
+LO QUE SE AGREGA (dmMetricasSiestas):
+  · siestas por dia, con su dispersion
+  · duracion media, con su dispersion
+  · REGULARIDAD DE LA SIESTA: SD de la hora de inicio, en la misma unidad
+    que el horario nocturno. Una siesta que se corre dos horas de un dia al
+    otro desordena la noche igual que acostarse a horas distintas.
+  · DE LA SIESTA A LA NOCHE: intervalo entre el fin de la ultima siesta y
+    la hora de acostarse. Es el mecanismo —presion de sueño gastada
+    demasiado cerca de la noche— y es lo accionable: no hay que sacar la
+    siesta, hay que adelantarla.
+
+El pilar Regularidad de un chico sin rutina escolar deja de decir "No
+aplica" y pasa a mostrar la dispersion de la hora de acostarse y la de la
+siesta. NO puntua: no hay cortes pediatricos publicados para ninguna de las
+dos, y un corte inventado es peor que no tener etiqueta.
+
+Y los umbrales se vuelven etarios: el corte de 30 min de siesta es de
+ADULTOS. En un chico de dos o tres años una siesta de hora y media es lo
+esperable, y marcarla en ambar empuja a sacar una siesta que le corresponde
+tener. Igual el intervalo hasta la noche: 3 h a los 2 años es normal.
+
+Lo fija pruebas/49.
