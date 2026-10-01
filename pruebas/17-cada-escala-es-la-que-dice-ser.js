@@ -74,8 +74,23 @@ r.seccion('El orden de la ficha en el celular está completo:');
 const ordenes = (css.match(/#screen-doctor-patient\.active [^{]+\{ ?order:\d/g) || []);
 r.ok(ordenes.length >= 7, 'todas las tarjetas tienen su orden asignado',
      ordenes.length + ' con order');
-r.ok(/#dr-factores-card *\{ *order:3/.test(css),
-     'la de hábitos va tercera, pegada a Pilares');
+// El orden es clínico: de lo general a lo preciso, y lo interpretativo al
+// final. "Lo que reporta vs. lo que se mide" es lectura, no medición: venía
+// tercera, antes de haber visto una sola métrica.
+const _ord = function (sel) {
+  const m = css.match(new RegExp('#screen-doctor-patient\\.active ' + sel + ' *\\{ *order:(\\d+)'));
+  return m ? Number(m[1]) : null;
+};
+const oActo = _ord('\\.dm-diary-acto');
+const oNd   = _ord('#dr-noche-dia');
+const oReg  = _ord('#dr-reg-slot');
+const oFac  = _ord('#dr-factores-card');
+r.ok(oActo != null && oNd != null && oReg != null && oFac != null,
+     'actograma, métricas, regularidad e interpretación tienen orden');
+r.ok(oActo < oNd, 'primero los horarios en crudo, después las métricas');
+r.ok(oNd < oReg, 'las métricas de sueño antes que la regularidad técnica');
+r.ok(oReg < oFac, 'y lo interpretativo al final, no antes de haber medido nada',
+     'acto ' + oActo + ' · métricas ' + oNd + ' · regularidad ' + oReg + ' · lectura ' + oFac);
 
 // Sin order explícito caía en 0 y se ponía delante de todo, incluso del
 // selector de período. Es exactamente lo que se veía.

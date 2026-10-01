@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod240-8a1c5c8c">
+<link rel="stylesheet" href="css/styles.css?v=mod241-3e6846ec">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod240-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod240-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod240-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=mod240-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod240-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod241-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod241-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod241-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=mod241-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=mod241-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod240';
+const APP_VERSION='mod241';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -8156,9 +8156,21 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     '</div>';
   };
 
-  let html = '<div class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'">'+
-    '<div class="dm-metricas-h" style="color:'+C.sub+'">Métricas clínicas <span>· '+m.n+' noches</span></div>'+
-    ((ageYears!=null && ageYears<13)
+  // En pediatría las tres cifras de 24 h salen a su PROPIO bloque, encima
+  // de los dos de detalle. Si viven adentro del de la noche, la tarjeta de
+  // la izquierda arranca con ellas y la de la derecha arranca con "Sueño
+  // diurno": los dos encabezados que uno quiere comparar —noche contra
+  // día— quedan a alturas distintas por el alto de ese resumen. Afuera, y
+  // a todo el ancho, los dos detalles arrancan parejos por construcción.
+  const _ped13 = (ageYears!=null && ageYears<13);
+  let html = '';
+  if(_ped13){
+    html += '<div class="dm-bloque-resumen24 dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'">'+
+      '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño en 24 h <span>· '+m.n+' noches</span></div>';
+  }
+  html += (_ped13 ? '' : '<div class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'">'+
+    '<div class="dm-metricas-h" style="color:'+C.sub+'">Métricas clínicas <span>· '+m.n+' noches</span></div>')+
+    (_ped13
       ? '<div class="dm-met-resumen">'+
       _cifra('Nocturno', m.fmtDur(_nocturno), 'de acostarse a despertarse')+
       // Los dos números de siesta, porque contestan preguntas distintas:
@@ -8180,7 +8192,12 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
             (_diurno > 0)
               ? ('Nocturno. Con las siestas, '+m.fmtDur(_total24)+' en 24 h.')
               : 'Nocturno. No hay siestas registradas en el período.'))+
-    '<div class="dm-met-col-h">Noche</div>'+
+    // En pediatría se cierra el bloque de 24 h y se abre el de la noche,
+    // que es el que va a quedar al lado del de sueño diurno.
+    (_ped13
+      ? '</div><div class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'" style="margin-top:10px">'+
+        '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño nocturno <span>· '+m.n+' noches</span></div>'
+      : '<div class="dm-met-col-h">Noche</div>')+
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
     row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub);
@@ -8262,17 +8279,30 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   }
 
     // ── El bloque del DÍA, en su propia tarjeta ──────────────────────
-  // Se marca con un id para que el panel lo mueva a la columna derecha,
-  // igual que hace con el bloque técnico de regularidad.
+  // Se marca con una clase para que el panel lo mueva a su propia fila,
+  // al lado del de la noche.
+  //
+  // PERO solo si tiene algo que decir. Un adulto que no duerme siesta no
+  // necesita una tarjeta entera para informar que no duerme siesta, y
+  // menos todavía que las métricas clínicas se corran media pantalla
+  // hacia abajo para emparejarse con un recuadro vacío. En ese caso la
+  // ausencia se informa en una línea, adentro del bloque de la noche, y
+  // no se emite tarjeta: sin tarjeta, el panel no mueve nada y las
+  // métricas se quedan donde estaban.
   let _abierto = false;          // ¿quedó algún contenedor sin cerrar?
   const _filasDia = dmFilasSiestas(entries, row, C, ageYears);
-  html += '</div>'+
-    '<div class="dm-bloque-dia dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'" style="margin-top:10px">'+
-    '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno <span>· siestas</span></div>'+
-    (_filasDia ||
-      '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:6px 0">'+
-      'Sin siestas registradas en el período, o sin el dato cargado en al menos 3 días.</div>')+
-    '</div>';
+  if(_filasDia){
+    html += '</div>'+
+      '<div class="dm-bloque-dia dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'" style="margin-top:10px">'+
+      '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno <span>· siestas</span></div>'+
+      _filasDia+
+      '</div>';
+  }else{
+    html += '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno</div>'+
+      '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:2px 0 8px">'+
+      'Sin siestas registradas en el período, o sin el dato cargado en al menos 3 días.</div>'+
+      '</div>';
+  }
 
   // Bloque técnico solo para el médico. Si no hay noches suficientes se
   // dice, en vez de no mostrar nada: el hueco se lee como "no se calculó
@@ -19396,14 +19426,23 @@ async function showDrPTab_(tab){
           <div id="dr-quality-factores"></div>
         </div>
         </div>
-        </div>
+        <!-- Las tres cifras de 24 h (solo pediátrico), a todo el ancho y
+             ENCIMA de los dos detalles: así "Sueño nocturno" y "Sueño
+             diurno" arrancan a la misma altura. -->
+        <div id="dr-resumen24"></div>
         <!-- Noche y día, uno al lado del otro y de la misma altura.
              Estaban en columnas distintas —la nocturna era la cuarta tarjeta
              de la izquierda, la diurna la segunda de la derecha— así que sus
              bordes superiores nunca coincidían y comparar una métrica contra
              la otra obligaba a buscar. Acá son dos celdas de la MISMA fila de
-             grilla: arrancan a la misma altura por construcción. -->
+             grilla: arrancan a la misma altura por construcción.
+             Va DENTRO de .dm-diary-top para que en el celular, donde los dos
+             contenedores de columna se disuelven con display:contents, el
+             orden clínico se pueda armar con la propiedad order junto al
+             resto. (Sin comillas invertidas: este bloque es una plantilla
+             de JS y una comilla invertida la corta al medio.) -->
         <div id="dr-noche-dia"></div>
+        </div>
         <div id="dr-abajo-slot"></div>
         </div>`;
       setTimeout(()=>{
@@ -19439,13 +19478,25 @@ async function showDrPTab_(tab){
           const _reg=dme.querySelector('.dm-bloque-reg');
           // El técnico de regularidad va debajo del actograma, en la derecha.
           if(_regSlot && _reg) _regSlot.appendChild(_reg);
+          // Las tres cifras de 24 h (pediátrico) van a todo el ancho, encima.
+          const _r24=dme.querySelector('.dm-bloque-resumen24');
+          const _res=document.getElementById('dr-resumen24');
+          if(_res && _r24) _res.appendChild(_r24);
           // Las métricas de la NOCHE y las del DÍA pasan a una fila propia,
           // a todo el ancho, con una celda cada una. Antes vivían en columnas
           // distintas y sus bordes superiores nunca coincidían.
+          //
+          // Solo si HAY tarjeta de día. Sin siestas, la ausencia se informa
+          // en una línea adentro del bloque de la noche y no se emite
+          // tarjeta: mover las métricas a una fila nueva para emparejarlas
+          // con una celda vacía las empujaba media pantalla hacia abajo.
           const _nd=document.getElementById('dr-noche-dia');
-          const _noche=dme.firstElementChild;
-          if(_nd && _noche) _nd.appendChild(_noche);
-          if(_nd && _dia) _nd.appendChild(_dia);
+          if(_nd && _dia){
+            const _noche=dme.querySelector(
+              '.dm-metricas:not(.dm-bloque-dia):not(.dm-bloque-resumen24)');
+            if(_noche) _nd.appendChild(_noche);
+            _nd.appendChild(_dia);
+          }
           // Impacto de hábitos: solo aparece si el paciente REGISTRA el hábito
           // (la función devuelve '' si no hay datos suficientes o contraste).
           try{

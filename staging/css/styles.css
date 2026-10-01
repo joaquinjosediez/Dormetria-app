@@ -4546,13 +4546,30 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   #screen-doctor-patient.active .dm-diary-left,
   #screen-doctor-patient.active .dm-diary-right{ display:contents !important; }
 
+  /* El orden es clínico: de lo general a lo preciso, y lo interpretativo
+     al final. Antes "lo que reporta vs. lo que se mide" —que es lectura, no
+     medición— venía tercero, antes de haber visto una sola métrica.
+
+       1 score · 2 pilares · 3 progresión semanal   → el panorama
+       4 actograma                                  → los horarios en crudo
+       5 sueño en 24 h · 6 noche y día              → las métricas
+       7 regularidad técnica                        → lo fino
+       8 lo que reporta vs. lo que se mide          → la interpretación */
   #screen-doctor-patient.active .dm-diary-score   { order:1; }
   #screen-doctor-patient.active .dm-diary-pillars { order:2; }
-  #screen-doctor-patient.active #dr-factores-card { order:3; }
-  #screen-doctor-patient.active #dr-weekly-prog   { order:4; }
-  #screen-doctor-patient.active .dm-diary-acto    { order:5; }
+  #screen-doctor-patient.active #dr-weekly-prog   { order:3; }
+  #screen-doctor-patient.active .dm-diary-acto    { order:4; }
+  #screen-doctor-patient.active #dr-resumen24     { order:5; }
   #screen-doctor-patient.active #dr-clinical-metrics { order:6; }
-  #screen-doctor-patient.active #dr-reg-slot      { order:7; }
+  #screen-doctor-patient.active #dr-noche-dia     { order:7; }
+  #screen-doctor-patient.active #dr-reg-slot      { order:8; }
+  #screen-doctor-patient.active #dr-factores-card { order:9; }
+  /* Sin siestas no se emite tarjeta de día: el contenedor queda vacío y
+     aportaría un hueco del tamaño del gap. */
+  #screen-doctor-patient.active #dr-noche-dia:empty,
+  #screen-doctor-patient.active #dr-resumen24:empty{ display:none !important; }
+  #screen-doctor-patient.active #dr-noche-dia,
+  #screen-doctor-patient.active #dr-resumen24{ margin-top:0; }
 
   /* ── El bloque de botones sueltos, plegado detrás de "Más" ────────── */
   /* !important porque los dos divs traen style="display:flex" escrito en la
@@ -6251,10 +6268,24 @@ body.dr-desktop #dr-abajo-slot .dm-card{ max-width:none; }
    construcción, no por ajuste, y `stretch` las deja del mismo alto.
    ══════════════════════════════════════════════════════════════════════ */
 #dr-noche-dia{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
-#dr-noche-dia > div{ margin-top:0 !important; }
+#dr-noche-dia > div,
+#dr-resumen24 > div{ margin-top:0 !important; }
+/* El margen es para el caso suelto (.dm-diary-top en display:block, entre
+   900 px y el corte de escritorio). Donde el contenedor es grid o flex, el
+   gap ya separa y el margen sumaría el doble. */
+#dr-resumen24{ margin-top:12px; }
 @media (min-width:900px){
+  body.dr-desktop #dr-resumen24,
+  body.dr-desktop #dr-noche-dia{ margin-top:0; }
+}
+#dr-noche-dia:empty, #dr-resumen24:empty{ display:none !important; margin:0 !important; }
+@media (min-width:900px){
+  /* Las dos filas nuevas son hijas de .dm-diary-top, que en escritorio es un
+     grid de dos columnas: sin esto caerían en la columna izquierda. */
+  body.dr-desktop #dr-resumen24,
+  body.dr-desktop #dr-noche-dia{ grid-column:1 / -1; }
   body.dr-desktop #dr-noche-dia{
-    grid-template-columns:1fr 1fr; align-items:stretch; grid-column:1 / -1;
+    grid-template-columns:1fr 1fr; align-items:stretch;
   }
 }
 /* Con noche y día mudados a su propia fila, el contenedor original queda

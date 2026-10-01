@@ -45,7 +45,7 @@ r.ok((app.match(/class="dm-bloque-reg"/g) || []).length >= 2,
 r.seccion('Y se los busca DENTRO del contenedor del profesional:');
 
 const bloque = app.slice(app.indexOf("const _regSlot=document.getElementById('dr-reg-slot')"),
-                         app.indexOf("const _regSlot=document.getElementById('dr-reg-slot')") + 2200);
+                         app.indexOf("const _regSlot=document.getElementById('dr-reg-slot')") + 4000);
 r.ok(/dme\.querySelector\('\.dm-bloque-reg'\)/.test(bloque),
      'la regularidad, acotada a dme');
 r.ok(/dme\.querySelector\('\.dm-bloque-dia'\)/.test(bloque),
@@ -67,6 +67,31 @@ const iNoche = bloque.indexOf("_nd.appendChild(_noche)");
 const iDia   = bloque.indexOf("_nd.appendChild(_dia)");
 r.ok(iNoche >= 0 && iDia >= 0 && iNoche < iDia,
      'la noche a la izquierda, el día a la derecha');
+
+r.seccion('Pero solo si hay algo que poner del lado del día:');
+
+// Un adulto que no duerme siesta no necesita una tarjeta entera para
+// informar que no duerme siesta — y menos que las métricas clínicas se
+// corran media pantalla hacia abajo para emparejarse con un recuadro vacío.
+r.ok(/if\(_nd && _dia\)\{/.test(bloque),
+     'sin tarjeta de día no se mueve nada');
+r.ok(/if\(_filasDia\)\{/.test(app),
+     'y sin siestas no se emite la tarjeta…');
+r.ok(/Sin siestas registradas en el período/.test(app),
+     '…sino una línea adentro del bloque de la noche');
+r.ok(/#dr-noche-dia:empty[^}]*display:none/.test(css.replace(/\s+/g, ' ')),
+     'y el contenedor vacío no aporta un hueco');
+
+r.seccion('En pediatría, las tres cifras de 24 h van arriba y a lo ancho:');
+
+// Si viven adentro del bloque de la noche, la tarjeta de la izquierda
+// arranca con ellas y la de la derecha con "Sueño diurno": los dos
+// encabezados que uno quiere comparar quedan a alturas distintas.
+r.ok(/dm-bloque-resumen24/.test(app), 'el resumen de 24 h es su propio bloque');
+r.ok(/id="dr-resumen24"/.test(app), 'con su propia fila');
+r.ok(/_res\.appendChild\(_r24\)/.test(bloque), 'y se lo muda ahí');
+r.ok(/Sueño nocturno/.test(app) && /Sueño diurno/.test(app),
+     'así los dos detalles arrancan por su encabezado, parejos');
 r.ok(/#dr-noche-dia\{[^}]*display:grid/.test(css),
      'y la fila es una grilla, así que las dos arrancan a la misma altura');
 r.ok(/align-items:stretch/.test(css.slice(css.indexOf('#dr-noche-dia'))),
