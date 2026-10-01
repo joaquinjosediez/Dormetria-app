@@ -75,12 +75,53 @@ r.seccion('Pero solo si hay algo que poner del lado del día:');
 // corran media pantalla hacia abajo para emparejarse con un recuadro vacío.
 r.ok(/if\(_nd && _dia\)\{/.test(bloque),
      'sin tarjeta de día no se mueve nada');
-r.ok(/if\(_filasDia\)\{/.test(app),
-     'y sin siestas no se emite la tarjeta…');
-r.ok(/Sin siestas registradas en el período/.test(app),
-     '…sino una línea adentro del bloque de la noche');
 r.ok(/#dr-noche-dia:empty[^}]*display:none/.test(css.replace(/\s+/g, ' ')),
      'y el contenedor vacío no aporta un hueco');
+
+// Esto se comprueba RENDERIZANDO, no buscando un texto. La primera versión
+// del arreglo falló justamente acá: `dmFilasSiestas` devolvía una fila que
+// decía "Ninguna" —texto, no vacío— así que la guarda nunca se activaba y la
+// tarjeta se seguía emitiendo. Un `test()` sobre el fuente no lo habría visto.
+const vm = require('vm');
+const ctx = C.appEvaluada({ silencioso: true });
+const { JSDOM } = require('jsdom');
+const noche = function (k, conSiesta) {
+  const d = new Date(2026, 7, 1 + k);
+  const e = {
+    diary_date: d.toISOString().slice(0, 10), bedtime: '23:30', wake_time: '07:30',
+    sleep_minutes: 440, sleep_latency_mins: 25, awakenings: 1,
+    wake_in_bed_mins: 20, sleep_quality: 3, day_type: 'work', nap_minutes: 0
+  };
+  if (conSiesta) e.notes = 'Siestas: [{"start":"13:' + (10 + k % 40) + '","end":"14:' + (40 + k % 15) + '"}]';
+  return e;
+};
+const sinSiestas = [], conSiestas = [];
+for (let k = 0; k < 20; k++) { sinSiestas.push(noche(k, false)); conSiestas.push(noche(k, true)); }
+ctx._sinS = sinSiestas; ctx._conS = conSiestas;
+const bloquesDe = function (expr) {
+  const h = vm.runInContext(expr, ctx);
+  const d = new JSDOM('<div id="c">' + h + '</div>');
+  return [...d.window.document.getElementById('c').children]
+    .map(function (x) { return { cls: x.className || '', txt: (x.textContent || '').replace(/\s+/g, ' ') }; });
+};
+const sinDia = bloquesDe('renderClinicalMetricsHtml(_sinS, "doctor", 35)');
+const conDia = bloquesDe('renderClinicalMetricsHtml(_conS, "doctor", 35)');
+const hayDia = function (bs) { return bs.some(function (b) { return /dm-bloque-dia/.test(b.cls); }); };
+
+r.ok(!hayDia(sinDia), 'veinte noches sin siestas: NO se emite tarjeta de día',
+     sinDia.length + ' bloques');
+r.ok(hayDia(conDia), 'con siestas sí se emite', conDia.length + ' bloques');
+r.ok(/Ninguna siesta en los 20 días/.test(sinDia[0].txt),
+     'y la ausencia se informa adentro del bloque de la noche');
+// "No durmió siesta en 20 días con el dato" es un hallazgo; "no cargó el
+// dato" no dice nada del paciente. No pueden decir lo mismo.
+const vacias = sinSiestas.map(function (e) {
+  const c = Object.assign({}, e); delete c.nap_minutes; delete c.notes; return c;
+});
+ctx._vac = vacias;
+const sinDato = bloquesDe('renderClinicalMetricsHtml(_vac, "doctor", 35)');
+r.ok(/Sin el dato de siestas cargado/.test(sinDato[0].txt),
+     'y no se confunde con no haber cargado el dato');
 
 r.seccion('En pediatría, las tres cifras de 24 h van arriba y a lo ancho:');
 

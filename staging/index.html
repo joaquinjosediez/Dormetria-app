@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg242-3e6846ec">
+<link rel="stylesheet" href="css/styles.css?v=stg243-3e6846ec">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg242-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg242-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg242-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg242-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg242-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg243-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg243-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg243-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg243-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg243-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg242';
+const APP_VERSION='stg243';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg242 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg243 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -7988,9 +7988,12 @@ function dmFilasSiestas(entries, row, C, ageYears){
   const reloj = function(m){ if(m==null) return '—'; const mm=((Math.round(m)%1440)+1440)%1440;
                              return String(Math.floor(mm/60)).padStart(2,'0')+':'+String(mm%60).padStart(2,'0'); };
 
-  if(!S2.nConSiesta){
-    return row('Siestas', 'Ninguna', null, 'sobre '+S2.nDias+' días con el dato cargado');
-  }
+  // Cero siestas no es contenido: es la ausencia de contenido. Devolver una
+  // fila que dice "Ninguna" hacía que la tarjeta se emitiera igual, y con
+  // ella el reacomodo entero de la pantalla para emparejarla con las
+  // métricas de la noche. Quien llama decide cómo informar la ausencia; acá
+  // se devuelve vacío, que es lo que hay.
+  if(!S2.nConSiesta) return '';
 
   // El corte de 30 minutos es de ADULTOS. En un chico de dos o tres años
   // una siesta de hora y media es lo esperable, y marcarla en ámbar
@@ -8305,10 +8308,15 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
       _filasDia+
       '</div>';
   }else{
+    // Dos ausencias distintas, y la diferencia importa: "no durmió siesta
+    // en 45 días con el dato cargado" es un hallazgo; "no cargó el dato"
+    // no dice nada del paciente.
     html += '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno</div>'+
       '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:2px 0 8px">'+
-      'Sin siestas registradas en el período, o sin el dato cargado en al menos 3 días.</div>'+
-      '</div>';
+      ((_sie0 && _sie0.nDias)
+        ? ('Ninguna siesta en los '+_sie0.nDias+' días con el dato cargado.')
+        : 'Sin el dato de siestas cargado en al menos 3 días.')+
+      '</div></div>';
   }
 
   // Bloque técnico solo para el médico. Si no hay noches suficientes se
