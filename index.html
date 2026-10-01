@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod234-db4f8c12">
+<link rel="stylesheet" href="css/styles.css?v=mod235-e5d9f368">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod234-e7d2aa81"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod234-5f20136e"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod234-af87b0b6"></script>
-<script src="js/dormetria-render-resumen.js?v=mod234-f18070cd"></script>
-<script src="js/dormetria-tcci.js?v=mod234-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod235-e7d2aa81"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod235-5f20136e"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod235-af87b0b6"></script>
+<script src="js/dormetria-render-resumen.js?v=mod235-f18070cd"></script>
+<script src="js/dormetria-tcci.js?v=mod235-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod234';
+const APP_VERSION='mod235';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -7646,7 +7646,19 @@ function dmSiestasDelDia(e){
       out.push({ ini: ini, fin: dur ? ini+dur : null, dur: dur });
     });
   }catch(_){}
-  if(out.length) return out;
+  if(out.length){
+    // Dos siestas con el mismo inicio y la misma duración el mismo día no
+    // son dos siestas: es la fila que se arrastró de otro registro. En el
+    // actograma se superponen y se ven como una sola — de ahí que el
+    // conteo dijera 1,9 con un actograma que muestra 1.
+    const vistas = {};
+    return out.filter(function(x){
+      const k = String(x.ini)+'/'+String(x.dur);
+      if(vistas[k]) return false;
+      vistas[k] = true;
+      return true;
+    });
+  }
   // Diario adulto: una sola siesta, con hora de inicio opcional.
   const min = Number(e && e.nap_minutes);
   if(min > 0){
@@ -7876,31 +7888,37 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
     reg.sd_midpoint_min<90?'#d97706':
     reg.sd_midpoint_min<120?'#dc2626':'#991b1b';
 
-  // Sección común a ambas audiencias
+  // ── Cabecera: cuánto duerme, repartido ────────────────────────────
+  // Tres cifras, antes que cualquier otra cosa: es lo primero que se
+  // pregunta y es lo que alimenta el puntaje de cantidad.
+  let _sie0 = null;
+  try{ _sie0 = dmMetricasSiestas(entries); }catch(_){}
+  const _diurno = (_sie0 && _sie0.nConSiesta && _sie0.durMedia)
+    ? _sie0.durMedia * (_sie0.nConSiesta / _sie0.nDias) : 0;
+  const _total24 = (m.avgTotal!=null) ? m.avgTotal + _diurno : null;
+  const _cifra = function(rot, val, pie, col){
+    return '<div class="dm-met-cifra">'+
+      '<div class="dm-met-cifra-v"'+(col?' style="color:'+col+'"':'')+'>'+val+'</div>'+
+      '<div class="dm-met-cifra-r">'+rot+'</div>'+
+      (pie?'<div class="dm-met-cifra-p">'+pie+'</div>':'')+
+    '</div>';
+  };
+
   let html = '<div class="dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'">'+
     '<div class="dm-metricas-h" style="color:'+C.sub+'">Métricas clínicas <span>· '+m.n+' noches</span></div>'+
+    '<div class="dm-met-resumen">'+
+      _cifra('Nocturno', m.fmtDur(m.avgTotal), 'de acostarse a despertarse')+
+      _cifra('Diurno', _diurno ? m.fmtDur(_diurno) : '—',
+             _sie0 && _sie0.nConSiesta
+               ? 'siestas, prorrateadas por los '+_sie0.pct+'% de días con siesta'
+               : 'sin siestas registradas')+
+      _cifra('Total en 24 h', _total24!=null?m.fmtDur(_total24):'—',
+             'el número que usa el puntaje de cantidad', '#C8A96E')+
+    '</div>'+
+    '<div class="dm-met-cols">'+
+    '<div class="dm-met-col"><div class="dm-met-col-h">Noche</div>'+
     row('Hora promedio de acostarse', m.fmtClock(m.avgBed))+
     row('Hora promedio de levantarse', m.fmtClock(m.avgWake))+
-    (function(){
-      // Si hay siestas registradas, el nocturno solo no alcanza para
-      // interpretar nada — y menos en un chico, donde la siesta puede ser
-      // un tercio del sueño.
-      let sie = null;
-      try{ sie = dmMetricasSiestas(entries); }catch(_){}
-      const hayS = sie && sie.nConSiesta > 0 && sie.durMedia;
-      if(!hayS) return row('Sueño total promedio', m.fmtDur(m.avgTotal),
-                           null, 'Nocturno. No hay siestas registradas en el período.');
-      // El promedio de siesta es sobre los DÍAS CON siesta; para el total
-      // de 24 h hay que prorratearlo por la frecuencia, o se infla.
-      const siestaPorDia = sie.durMedia * (sie.nConSiesta / sie.nDias);
-      const total24 = (m.avgTotal!=null) ? m.avgTotal + siestaPorDia : null;
-      return row('Sueño nocturno promedio', m.fmtDur(m.avgTotal), null,
-                 'Solo la noche — de la hora de acostarse a la de despertarse')+
-             row('Sueño total en 24 h', total24!=null?m.fmtDur(total24):'—', null,
-                 'Noche + siestas, prorrateadas por los '+sie.pct+'% de días con siesta. '+
-                 '<b>Este es el número que usa el puntaje de cantidad</b>, y el que se compara '+
-                 'contra el rango de la NSF en pediatría.');
-    })()+
     row('Latencia promedio', m.fmtMin(m.avgLatency), latColor, latSub);
 
   // La eficiencia SÍ le sirve al paciente: es el número que explica por qué
@@ -7967,9 +7985,14 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
           : '')+
         dmQueEs('Cuánto se corre tu horario los días libres respecto de los de trabajo. Es distinto de la deuda de sueño: ahí importa CUÁNTO dormís, acá importa A QUÉ HORA. Podés dormir las mismas horas y aun así tener el horario corrido.'))+
     row('Noches con menos de 7 horas', m.under7Pct+'%', insufColor))+
-    // Las siestas van AFUERA del guardado: no tienen nada que ver con la
-    // rutina escolar y son centrales justamente en quien no la tiene.
-    dmFilasSiestas(entries, row, C, ageYears);
+    // Cierra la columna de la noche y abre la del día. Las siestas van
+    // AFUERA del guardado por rutina escolar: no tienen nada que ver con
+    // ella y son centrales justamente en quien no la tiene.
+    '</div><div class="dm-met-col"><div class="dm-met-col-h">Día</div>'+
+    (dmFilasSiestas(entries, row, C, ageYears) ||
+      '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:6px 0">'+
+      'Sin siestas registradas en el período, o sin el dato cargado en al menos 3 días.</div>')+
+    '</div></div>';
 
   // Bloque adicional para el paciente: versión amigable de la variación
   if(audience === 'patient' && reg.sd_midpoint_min !== null){
@@ -14139,6 +14162,25 @@ async function editChildDiaryEntry(id){
     if(!rows||!rows.length){ toast('No se encontró el registro'); return; }
     const e = rows[0];
     showChildDiaryNew(id);
+    // Repoblar las siestas guardadas. Sin esto el formulario se abría
+    // vacío y guardar la edición BORRABA las siestas que ya estaban.
+    setTimeout(function(){
+      try{
+        const guardadas = (typeof parseChildNaps==='function') ? parseChildNaps(e) : [];
+        guardadas.forEach(function(n){
+          addSiestaRow();
+          const fila = document.getElementById('siesta-'+_siestaCount);
+          if(!fila) return;
+          const ini = fila.querySelector('[id$="-start"]');
+          const fin = fila.querySelector('[id$="-end"]');
+          const hum = fila.querySelector('[id$="-mood"]');
+          if(ini && n.start) ini.value = String(n.start).slice(0,5);
+          if(fin && n.end)   fin.value = String(n.end).slice(0,5);
+          if(hum && n.mood)  hum.value = n.mood;
+        });
+        if(typeof updateNapData==='function') updateNapData();
+      }catch(_){}
+    }, 240);
     setTimeout(()=>{
       const dateEl=document.getElementById('d-date'); if(dateEl) dateEl.value=e.diary_date;
       const bedEl=document.getElementById('d-bed'); if(bedEl&&e.bedtime) bedEl.value=e.bedtime.slice(0,5);
@@ -23757,6 +23799,7 @@ function showChildDiaryNew(editandoId){
   S._editingDiaryId = editandoId || null;
   S._fromChild = true;
   _childAwakenings = [];
+  dmLimpiarSiestas();
   showScreen('diary-new');
   // Esta pantalla la comparten el diario adulto y el infantil: hay que decir
   // cuál está activo antes de dibujar, o dmPintarPaso usa los pasos del otro.
@@ -23993,6 +24036,19 @@ function renumberSiestas(){
     if(t) t.textContent = 'Siesta ' + (i+1);
   });
 }
+// Vaciar las siestas del formulario. Tiene que correr al abrir CUALQUIER
+// registro: la pantalla es la misma y lo que no se limpia se arrastra.
+function dmLimpiarSiestas(){
+  try{
+    const l = document.getElementById('siesta-list');
+    if(l) l.innerHTML = '';
+    const inp = document.getElementById('d-nap-data');
+    if(inp) inp.value = '[]';
+    _siestaCount = 0;
+  }catch(_){}
+}
+window.dmLimpiarSiestas = dmLimpiarSiestas;
+
 function addSiestaRow(){
   _siestaCount++;
   const id = 'siesta-'+_siestaCount;

@@ -69,12 +69,18 @@ r.ok(!/Jet lag social/.test(html) || /sin rutina escolar/.test(html),
 
 r.seccion('"Sueño total" deja de significar dos cosas:');
 
-r.ok(/Sueño nocturno promedio/.test(html),
-     'la tabla dice "nocturno" cuando es solo la noche');
-r.ok(/Sueño total en 24 h/.test(html),
-     'y agrega el total de 24 h');
-r.ok(/Este es el número que usa el puntaje de cantidad/.test(html),
-     'diciendo cuál de los dos alimenta el puntaje');
+// Desde mod235 las tres cifras van arriba de todo, en su propio bloque:
+// es lo primero que se pregunta y lo que define el puntaje de cantidad.
+r.ok(/>Nocturno</.test(html),
+     'el bloque de cabecera separa el nocturno');
+r.ok(/>Diurno</.test(html),
+     'del diurno');
+r.ok(/>Total en 24 h</.test(html),
+     'y muestra el total');
+r.ok(/el número que usa el puntaje de cantidad/.test(html),
+     'diciendo cuál de los tres alimenta el puntaje');
+r.ok(html.indexOf('dm-met-resumen') < html.indexOf('Latencia promedio'),
+     'y van ANTES que la latencia: primero cuánto duerme, después cómo');
 r.ok(/prorrateadas por los \d+% de días con siesta/.test(html),
      'y se prorratea la siesta por su frecuencia — promediarla sobre los días CON siesta la infla');
 

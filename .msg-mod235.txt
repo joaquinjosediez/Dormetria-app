@@ -1,0 +1,35 @@
+mod235 · las siestas se arrastraban de un registro al siguiente
+
+"1,9 siestas por dia" con un actograma que muestra una. No era un numero mal
+calculado: eran siestas que no ocurrieron, escritas en la base.
+
+La pantalla del diario se REUSA: no se vuelve a construir. Las filas de
+siesta viven en el DOM (#siesta-list) y el JSON en un campo oculto
+(#d-nap-data). showChildDiaryNew() limpiaba _childAwakenings pero NO las
+siestas. Entonces: cargas el lunes con una siesta, guardas, tocas "+ Nuevo"
+— y la fila del lunes sigue ahi. Agregas la del martes y se guardan DOS.
+Si la arrastrada tenia el mismo horario, en el actograma las dos barras se
+superponen y se ve UNA sola.
+
+Tres arreglos:
+ 1. dmLimpiarSiestas() al abrir cualquier registro.
+ 2. Al EDITAR se repueblan las siestas guardadas. Sin esto el remedio era
+    peor: abrir una noche para corregir la hora y guardar le borraba las
+    siestas que ya tenia.
+ 3. Al LEER, dos siestas con el mismo inicio y la misma duracion el mismo
+    dia cuentan como una. Limpia lo ya guardado sin tocar la base y protege
+    de cualquier otro camino que las duplique.
+
+SQL-siestas-duplicadas.md limpia el dato guardado (opcional: el numero ya
+sale bien sin eso, pero un export o una consulta directa lo sigue viendo
+mal).
+
+METRICAS CLINICAS REORDENADAS. Era una sola lista vertical que mezclaba el
+total de sueño con la latencia, la deuda, el jet lag y las siestas — y las
+siestas quedaban al final, que es donde no se ven. Ahora:
+  · arriba, tres cifras: Nocturno · Diurno · Total en 24 h, con el aviso de
+    cual alimenta el puntaje de cantidad. Primero CUANTO duerme.
+  · abajo, dos columnas: Noche a la izquierda, Dia a la derecha.
+Y si no hay siestas, la columna del dia lo dice en vez de quedar vacia.
+
+Lo fijan pruebas/50 y el ajuste de pruebas/49.
