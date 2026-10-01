@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Progresión semanal — opciones</title>
+</head>
+<body style="margin:0">
+<div style="font-family:'Instrument Sans',system-ui,-apple-system,sans-serif;background:#0F2820;padding:22px;color:#F4EFE5">
+<style>
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:27px;margin:0 0 4px;color:#F4EFE5}
+  .sub{font-size:13px;color:rgba(244,239,229,.6);margin:0 0 26px;line-height:1.6;max-width:760px}
+  .opt{margin-bottom:30px}
+  .opt-h{display:flex;align-items:baseline;gap:10px;margin-bottom:3px}
+  .opt-n{font-size:11px;font-weight:700;letter-spacing:.1em;color:#C8A96E}
+  .opt-t{font-size:16px;font-weight:600;color:#F4EFE5}
+  .opt-d{font-size:12.5px;color:rgba(244,239,229,.62);line-height:1.6;margin:0 0 12px;max-width:780px}
+  .par{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.par{grid-template-columns:1fr}}
+  .card{background:#17352a;border:1px solid rgba(126,200,164,.16);border-radius:16px;padding:14px 16px}
+  .card-h{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+          color:rgba(244,239,229,.6);margin-bottom:12px}
+  .pie{font-size:10.5px;color:rgba(244,239,229,.5);line-height:1.5;margin-top:9px}
+  .caso{font-size:10.5px;color:rgba(244,239,229,.45);margin-bottom:7px;letter-spacing:.04em}
+  /* columnas */
+  .cols{display:flex;align-items:flex-end;gap:8px;height:108px}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+  .num{font-size:12.5px;font-weight:700}
+  .lbl{font-size:11px;color:rgba(244,239,229,.6);white-space:nowrap}
+  .bar{border-radius:7px 7px 0 0;width:100%}
+  /* filas */
+  .fil{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .fil:last-child{margin-bottom:0}
+  .fil-l{font-size:11px;color:rgba(244,239,229,.6);width:66px;flex:0 0 auto;text-align:right}
+  .fil-t{flex:1 1 auto;height:19px;border-radius:5px;background:rgba(255,255,255,.055);
+         position:relative;overflow:hidden}
+  .fil-f{position:absolute;inset:0 auto 0 0;border-radius:5px}
+  .fil-n{font-size:12.5px;font-weight:700;width:30px;flex:0 0 auto;text-align:right}
+  .nota{font-size:11.5px;color:#C8A96E;background:rgba(200,169,110,.1);
+        border-left:3px solid #C8A96E;border-radius:0 7px 7px 0;padding:9px 11px;
+        line-height:1.6;margin-top:16px}
+</style>
+
+<div class="wrap">
+  <h1>Progresión semanal — tres maneras de llenar el ancho</h1>
+  <p class="sub">El problema no es el hueco en sí: es que la <b>misma tarjeta</b> tiene que
+  verse bien con 3 semanas y con 12. Cada opción resuelve el caso de pocas semanas de una
+  manera distinta, y las tres se muestran acá con los dos casos al lado para que se vea qué
+  se gana y qué se pierde. Izquierda: Mora, 3 semanas. Derecha: Belén, 9.</p>
+
+  <!-- ══ A ══════════════════════════════════════════════════════════ -->
+  <div class="opt">
+    <div class="opt-h"><span class="opt-n">OPCIÓN A</span><span class="opt-t">Sin tope: la barra ocupa su lugar</span></div>
+    <p class="opt-d">Se saca el <code>max-width:44px</code> y queda solo la separación fija.
+    Con 12 semanas no cambia nada; con 3, cada barra mide un tercio del ancho.
+    Es la de una línea de código. El costo es que con pocas semanas deja de parecer un
+    histograma y pasa a parecer tres bloques — y lo que se mira, la <i>forma</i> de la serie,
+    es lo primero que se pierde cuando cada barra es más ancha que alta.</p>
+    <div class="par">
+      <div class="card">
+        <div class="card-h">Progresión semanal · 3 semanas con datos</div>
+        <div class="caso">Mora — 3 semanas</div>
+        <div class="cols" id="a3"></div>
+        <div class="pie">Puntaje compuesto por semana.</div>
+      </div>
+      <div class="card">
+        <div class="card-h">Progresión semanal · 9 semanas con datos</div>
+        <div class="caso">Belén — 9 semanas</div>
+        <div class="cols" id="a9"></div>
+        <div class="pie">Puntaje compuesto por semana.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ B ══════════════════════════════════════════════════════════ -->
+  <div class="opt">
+    <div class="opt-h"><span class="opt-n">OPCIÓN B</span><span class="opt-t">Tope que se afloja según cuántas semanas hay</span></div>
+    <p class="opt-d">El tope deja de ser fijo y se calcula: pocas semanas, barras más anchas;
+    muchas, las de siempre. Entre 44 px y 96 px, con la separación creciendo a la par para que
+    nunca lleguen a tocarse. Cierra la mayor parte del hueco sin que una tarjeta de 3 semanas
+    parezca otro gráfico que una de 12 — <b>la misma escala visual en los dos casos</b>.</p>
+    <div class="par">
+      <div class="card">
+        <div class="card-h">Progresión semanal · 3 semanas con datos</div>
+        <div class="caso">Mora — 3 semanas</div>
+        <div class="cols" id="b3"></div>
+        <div class="pie">Puntaje compuesto por semana.</div>
+      </div>
+      <div class="card">
+        <div class="card-h">Progresión semanal · 9 semanas con datos</div>
+        <div class="caso">Belén — 9 semanas</div>
+        <div class="cols" id="b9"></div>
+        <div class="pie">Puntaje compuesto por semana.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ C ══════════════════════════════════════════════════════════ -->
+  <div class="opt">
+    <div class="opt-h"><span class="opt-n">OPCIÓN C</span><span class="opt-t">Filas horizontales con carril de fondo</span></div>
+    <p class="opt-d">Se gira el gráfico: una fila por semana, cada una a todo el ancho, con el
+    carril gris marcando el 100. No queda hueco por construcción, y aparece algo que el
+    histograma no da: <b>contra cuánto</b> es ese 71 — la barra se lee contra el carril, no
+    contra la barra de al lado. El costo es que la tendencia se lee de arriba abajo, que es menos
+    inmediato, y con 12 semanas ocupa el triple de alto.</p>
+    <div class="par">
+      <div class="card">
+        <div class="card-h">Progresión semanal · 3 semanas con datos</div>
+        <div class="caso">Mora — 3 semanas</div>
+        <div id="c3"></div>
+        <div class="pie">Puntaje compuesto por semana · el carril es 100.</div>
+      </div>
+      <div class="card">
+        <div class="card-h">Progresión semanal · 9 semanas con datos</div>
+        <div class="caso">Belén — 9 semanas</div>
+        <div id="c9"></div>
+        <div class="pie">Puntaje compuesto por semana · el carril es 100.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota"><b>Mi voto: B.</b> A es la más barata pero rompe la lectura justo en el
+  paciente que recién empieza, que es el que menos semanas tiene. C es la que más información
+  agrega —el contra-qué— pero convierte una tarjeta chica en una lista larga en cuanto el
+  paciente lleva tres meses, y la tendencia es lo que se viene a mirar acá.
+  B deja el gráfico igual donde ya funcionaba y solo arregla el caso que no.</div>
+</div>
+
+<script>
+(function(){
+  var tres  = [71,71,67];
+  var nueve = [69,71,86,92,94,92,87,90,93];
+  function color(s){
+    return s>=85 ? '#7EC8A4'
+         : s>=70 ? 'rgba(126,200,164,.72)'
+         : s>=55 ? 'rgba(126,200,164,.5)'
+         : '#C8A96E';
+  }
+  function lbl(i,n){ return i===n-1 ? 'Esta sem.' : ('−'+(n-1-i)+' sem.'); }
+
+  // A y B: columnas. tope=null → sin límite.
+  function columnas(cont, datos, tope, gap){
+    var n = datos.length;
+    cont.style.gap = gap + 'px';
+    cont.innerHTML = datos.map(function(s,i){
+      var h = Math.max(10, Math.round(s/100*84));
+      var last = i===n-1;
+      return '<div class="col">'+
+        '<div class="num" style="color:'+(last?'#C8A96E':'#F4EFE5')+'">'+s+'</div>'+
+        '<div class="bar" style="height:'+h+'px;background:'+color(s)+';'+
+          (tope?'max-width:'+tope+'px;':'')+
+          (last?'box-shadow:inset 0 0 0 2px #C8A96E;':'')+'"></div>'+
+        '<div class="lbl">'+lbl(i,n)+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // C: filas.
+  function filas(cont, datos){
+    var n = datos.length;
+    cont.innerHTML = datos.map(function(s,i){
+      var last = i===n-1;
+      return '<div class="fil">'+
+        '<div class="fil-l">'+lbl(i,n)+'</div>'+
+        '<div class="fil-t"><div class="fil-f" style="width:'+s+'%;background:'+color(s)+';'+
+          (last?'box-shadow:inset 0 0 0 2px #C8A96E;':'')+'"></div></div>'+
+        '<div class="fil-n" style="color:'+(last?'#C8A96E':'#F4EFE5')+'">'+s+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // B: el tope se afloja cuando hay pocas semanas, y la separación lo acompaña.
+  function topeB(n){ return Math.round(Math.max(44, Math.min(96, 540/n))); }
+  function gapB(n){  return n<=4 ? 18 : n<=7 ? 12 : 8; }
+
+  columnas(document.getElementById('a3'), tres,  null, 8);
+  columnas(document.getElementById('a9'), nueve, null, 8);
+  columnas(document.getElementById('b3'), tres,  topeB(3), gapB(3));
+  columnas(document.getElementById('b9'), nueve, topeB(9), gapB(9));
+  filas(document.getElementById('c3'), tres);
+  filas(document.getElementById('c9'), nueve);
+})();
+</script>
+</div>
+
+</body>
+</html>
