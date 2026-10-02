@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg245-32655800">
+<link rel="stylesheet" href="css/styles.css?v=stg246-cc196b26">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg245-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg245-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg245-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg245-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg245-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg246-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg246-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg246-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg246-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg246-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg245';
+const APP_VERSION='stg246';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg245 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg246 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -7097,6 +7097,12 @@ function computeHabitsImpact(entries){
       if(Math.abs(diff) >= minDif && sig) signo = (diff>0?1:-1) * s.dirGood;
       const _ic = dmICDiferencia(st);
       efectos.push({ id:s.id, label:s.label, unit:s.unit, mOn:ma, mOff:mb, diff, signo,
+                     // Si la diferencia llega al umbral CLÍNICO, aparte de si
+                     // llega al estadístico. La interfaz necesita las dos por
+                     // separado: 2 minutos con p<0,001 y 40 minutos con p=0,07
+                     // son hallazgos de distinta naturaleza y no pueden pintar
+                     // igual.
+                     relevante: Math.abs(diff) >= minDif,
                      ciLo: _ic?_ic.lo:null, ciHi: _ic?_ic.hi:null,
                      dirGood:s.dirGood,
                      // direccion: +1 mejora con el factor, -1 empeora, 0 igual.
@@ -7673,7 +7679,27 @@ function renderHabitsImpactHtml(entries, audiencia){
       const c = ef.signo>0 ? '#16a34a' : ef.signo<0 ? '#dc2626'
               : ef.dir>0  ? '#7fae90' : ef.dir<0  ? '#cf9a9a' : '#9ca3af';
       const _n = function(v){ return (ef.id==='awk'||ef.id==='qual') ? v.toFixed(1) : String(Math.round(v)); };
-      html += '<div class="dm-mtz-c'+(ef.signo!==0?' firme':'')+'">'+
+      // ── El fondo de la celda, por grado de asociación ──────────────
+      // Tres intensidades, y las tres necesitan las DOS condiciones para no
+      // mentir:
+      //
+      //   fuerte  p<0,05 Y supera el umbral clínico  → es un hallazgo
+      //   medio   p<0,05 pero la diferencia es chica → existe, no mueve nada
+      //   tenue   0,05 ≤ p < 0,10                    → tendencia, no hallazgo
+      //
+      // El tinte tenue es deliberadamente casi invisible. Pintar una
+      // tendencia del mismo modo que un hallazgo es lo que convierte una
+      // tabla exploratoria en una conclusión, y acá se comparan seis
+      // factores por cuatro variables: algún p<0,05 aislado es esperable
+      // por azar, y el ojo va directo a lo que está pintado.
+      const _d = ef.dir || 0;
+      let _tono = '';
+      if(_d !== 0 && ef.p != null){
+        if(ef.p < 0.05) _tono = (ef.relevante ? ' t3' : ' t2');
+        else if(ef.p < 0.10) _tono = ' t1';
+        if(_tono) _tono += (_d > 0 ? ' pos' : ' neg');
+      }
+      html += '<div class="dm-mtz-c'+(ef.signo!==0?' firme':'')+_tono+'">'+
         '<div class="dm-mtz-dif" style="color:'+c+'">'+fmtDif(ef)+'</div>'+
         '<div class="dm-mtz-pares">'+_n(ef.mOn)+' vs '+_n(ef.mOff)+
           (ef.p!=null ? ' · <span class="dm-mtz-p">'+dmFmtP(ef.p)+'</span>' : '')+'</div>'+
@@ -7681,6 +7707,21 @@ function renderHabitsImpactHtml(entries, audiencia){
     });
   });
   html += '</div>';
+
+  // La leyenda del tinte. Un fondo de color sin decodificador es una
+  // invitación a inventarle un significado.
+  html += '<div class="dm-mtz-leyenda">'+
+    '<i><u style="background:rgba(21,128,61,.19);box-shadow:inset 3px 0 0 #15803d"></u>'+
+      '<u style="background:rgba(185,28,28,.19);box-shadow:inset 3px 0 0 #b91c1c;margin-left:-3px"></u>'+
+      'p&lt;0,05 <b>y</b> diferencia clínicamente relevante</i>'+
+    '<i><u style="background:rgba(21,128,61,.11)"></u>'+
+      '<u style="background:rgba(185,28,28,.11);margin-left:-3px"></u>'+
+      'p&lt;0,05 pero la diferencia es chica</i>'+
+    '<i><u style="background:rgba(21,128,61,.055)"></u>'+
+      '<u style="background:rgba(185,28,28,.055);margin-left:-3px"></u>'+
+      'tendencia (0,05 ≤ p &lt; 0,10) — <b>no es un hallazgo</b></i>'+
+    '<i>Verde: acompaña a mejor sueño. Rojo: a peor.</i>'+
+  '</div>';
 
   // Las notas de cada factor van abajo, una sola vez: dentro de cada
   // celda repetirían lo mismo en cuatro filas.

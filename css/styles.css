@@ -6166,7 +6166,30 @@ body.dr-desktop #dr-abajo-slot .dm-card{ max-width:none; }
   padding:8px 10px; border-left:1px solid #f1efe9;
   border-bottom:1px solid #f4f2ed; text-align:center;
 }
+/* ══ mod245 · El fondo de la celda, por grado de asociación ══════════
+   Tres intensidades por dirección. El tinte tenue —la tendencia— es
+   deliberadamente casi invisible: pintarla igual que un hallazgo es lo
+   que convierte una tabla exploratoria en una conclusión, y acá se
+   comparan seis factores por cuatro variables.
+   El borde izquierdo acompaña al color SOLO en el tramo fuerte: sin él,
+   quien no distingue rojo de verde no puede leer la tabla. */
 .dm-mtz-c.firme{ background:rgba(0,0,0,.015); }
+.dm-mtz-c.t1.pos{ background:rgba(21,128,61,.055); }
+.dm-mtz-c.t2.pos{ background:rgba(21,128,61,.11); }
+.dm-mtz-c.t3.pos{ background:rgba(21,128,61,.19); box-shadow:inset 3px 0 0 #15803d; }
+.dm-mtz-c.t1.neg{ background:rgba(185,28,28,.055); }
+.dm-mtz-c.t2.neg{ background:rgba(185,28,28,.11); }
+.dm-mtz-c.t3.neg{ background:rgba(185,28,28,.19); box-shadow:inset 3px 0 0 #b91c1c; }
+/* La leyenda del tinte, con las muestras de verdad. */
+.dm-mtz-leyenda{
+  display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px;
+  font-size:10.5px; color:#6b6b76; margin-top:9px;
+}
+.dm-mtz-leyenda i{ font-style:normal; display:inline-flex; align-items:center; gap:5px; }
+.dm-mtz-leyenda u{
+  text-decoration:none; width:26px; height:13px; border-radius:3px;
+  display:inline-block; border:1px solid rgba(0,0,0,.07);
+}
 .dm-mtz-c.vacia{ color:#c9c7c0; }
 .dm-mtz-dif{ font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
 .dm-mtz-pares{
