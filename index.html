@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod246-440b24f0">
+<link rel="stylesheet" href="css/styles.css?v=mod247-440b24f0">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod246-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod246-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod246-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=mod246-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod246-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod247-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod247-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod247-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=mod247-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=mod247-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod246';
+const APP_VERSION='mod247';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -16913,7 +16913,30 @@ async function renderPatientList(filter){
             return escHtml(ln ? (ln + ', ' + fn) : (fn || u.email));
           })();
           const isArch = archived.has(u.email.toLowerCase());
-          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" style="position:relative;display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${nameDisplay}${dmEsDemo(u)?' <span style="background:rgba(200,169,110,.20);border:1px solid rgba(200,169,110,.45);color:#C8A96E;font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:1px 6px;border-radius:999px;vertical-align:middle">EJEMPLO</span>':''}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div>${dmChipsFila(u)}</div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,.72);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
+          // ── La fila, compacta ──────────────────────────────────────
+          // Se sacaron el correo y los chips de patología. El correo no se
+          // mira nunca —no es cómo se reconoce a un paciente— y los chips
+          // repetían lo que ya dice la franja de color de la izquierda, que
+          // además admite varias patologías apiladas. Entre los dos se iban
+          // dos renglones por fila: en una lista de 90, eso es la diferencia
+          // entre ver seis pacientes de un vistazo y ver dieciocho.
+          //
+          // El correo sigue estando en el `title` (se ve al pasar el mouse) y
+          // se sigue pudiendo buscar por él.
+          const _soloPorEmail = (function(){
+            if(!f) return false;
+            const _n=((u.name||'')+' '+(u.lname||'')).trim().toLowerCase();
+            return !_n.includes(f) && String(u.email||'').toLowerCase().includes(f);
+          })();
+          // El `title` carga lo que se sacó de la fila: el correo y, en
+          // palabras, las patologías que la franja dice en colores. La franja
+          // sola deja afuera a quien no distingue rojo de verde.
+          const _tituloFila = (function(){
+            const ids=(u&&u.tags&&u.tags.resolved)||[];
+            const et = ids.map(function(t){ return (PATHOLOGY_TAGS[t]||{label:t}).label; }).join(' · ');
+            return escHtml((u.email||'') + (et ? ('\n' + et) : ''));
+          })();
+          return`<div class="pat-row${(S.viewEmail&&u.email===S.viewEmail)?' pat-row-active':''}" data-pemail="${u.email}" title="${_tituloFila}" style="position:relative;display:flex;align-items:center;gap:10px;padding:7px 16px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;${isArch?'opacity:0.7':''}" onclick="if(event.target.tagName!=='BUTTON')viewPatient('${u.email}')">${(u.tags&&u.tags.resolved&&u.tags.resolved.length)?'<div class="dm-patlist-stripe">'+u.tags.resolved.map(t=>{const meta=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span title="'+escHtml((PATHOLOGY_TAGS[t]||{label:t}).label)+'" style="background:'+meta.color+'"></span>';}).join('')+'</div>':''}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nameDisplay}${dmEsDemo(u)?' <span style="background:rgba(200,169,110,.20);border:1px solid rgba(200,169,110,.45);color:#C8A96E;font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:1px 6px;border-radius:999px;vertical-align:middle">EJEMPLO</span>':''}</div>${_soloPorEmail?'<div style="font-size:11.5px;color:var(--ink3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(u.email)+'</div>':''}</div><div style="flex-shrink:0;font-size:12px;color:rgba(255,255,255,.72);font-weight:500;white-space:nowrap;margin-left:4px">${(function(){try{const _d=u.dob?new Date(u.dob):null;if(!_d)return '';const _a=Math.floor((Date.now()-_d)/31557600000);return _a>=0?_a+' a':'';}catch(_){return '';}})()}</div><div class="chev" style="flex-shrink:0">›</div></div>`;
         }).join('');
         document.getElementById('dr-patient-list').innerHTML=rows||'<div style="padding:24px;text-align:center;color:var(--label-3);font-size:14px">'+(currentView==='archived'?'Sin pacientes archivados':'Sin resultados')+'</div>';
         const totalActive = validPts.filter(u=>u&&u.email&&!archived.has(u.email.toLowerCase())).length;
@@ -18344,6 +18367,11 @@ async function toggleDrTag(id){
 // Las etiquetas, escritas, en la fila del listado. Hasta ahora solo había
 // una rayita de color al costado: para saber que el rojo era "Insomnio"
 // había que entrar al paciente, que es justo lo que el listado evita.
+// Los chips de patología de la fila se sacaron en mod247 (la franja de color
+// ya dice lo mismo y no cuesta un renglón). La función queda porque la misma
+// lista de etiquetas con su color se usa en otras vistas, pero NO la llama
+// nadie desde el listado: si aparece un chip ahí, es que alguien la volvió a
+// enganchar sin querer.
 function dmChipsFila(u){
   const ids=(u&&u.tags&&u.tags.resolved)||[];
   if(!ids.length) return '';
@@ -18368,10 +18396,8 @@ async function backgroundFillMissingTags(patients){
         const stripeHtml='<div class="dm-patlist-stripe">'+st.resolved.map(t=>{const m=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+m.color+'"></span>';}).join('')+'</div>';
         row.insertAdjacentHTML('afterbegin', stripeHtml);
       }
-      if(row && !row.querySelector('.dm-patlist-chips')){
-        const celda=row.querySelector('div[style*="flex:1"]');
-        if(celda) celda.insertAdjacentHTML('beforeend', dmChipsFila(u));
-      }
+      // Los chips de la fila se sacaron (mod247): la franja de color de la
+      // izquierda ya dice lo mismo y no cuesta un renglón.
     }catch(_bgTagErr){ /* seguimos con el resto aunque uno falle */ }
     await new Promise(r=>setTimeout(r,120)); // throttle: no saturar la API con 24+ requests simultáneos
   }
