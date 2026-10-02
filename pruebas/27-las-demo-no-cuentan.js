@@ -29,8 +29,18 @@ r.ok(/const esDemo = r => dmEsCuentaDemo\(r\);/.test(html),
 
 r.seccion('Fuera de la adherencia del profesional:');
 
-r.ok(/const rows=\(pats\|\|\[\]\)\.filter\(p=>!dmEsCuentaDemo\(p\)\)\.map/.test(html),
+r.ok(/const rows=\(pats\|\|\[\]\)\.filter\(p=> _adhSoloDemos \|\| !dmEsCuentaDemo\(p\)\)\.map/.test(html),
      'se filtran antes de calcular nada');
+// Con UNA excepción: si no hay ningún paciente real, excluirlos deja la
+// pantalla en 0/0/0 con cuatro gráficos vacíos — y eso se lee como "mis
+// pacientes no registran nada", que es exactamente lo contrario de lo que
+// pasa. Ahí entran, con el cartel que dice que son de muestra.
+r.ok(/_adhSoloDemos = \(typeof dmPanelSoloDemos==='function'\) && dmPanelSoloDemos\(emails\)/.test(html),
+     'salvo que TODOS los pacientes del panel sean de ejemplo');
+r.ok(/Todos los pacientes de tu listado son/.test(html),
+     'y en ese caso la pantalla lo dice');
+r.ok(/en cuanto vincules uno \s*'\+\s*'real, desaparecen|vincules uno real, desaparecen/.test(html.replace(/\n/g,' ')),
+     'y avisa que con un paciente real se van');
 r.ok(/weight_kg,auth_id,code,is_demo/.test(html),
      'y la consulta trae is_demo para poder hacerlo');
 

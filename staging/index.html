@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg248-440b24f0">
+<link rel="stylesheet" href="css/styles.css?v=stg249-08a90a25">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1089,7 +1089,7 @@
 <!-- CBT-I PATIENT LIST -->
 <div id="screen-cbti-list" class="screen" style="background:#0F2820;color:#fff">
   <div class="topbar" style="background:#0F2820;border-bottom:1px solid rgba(255,255,255,0.08)">
-    <button class="back" onclick="dmVolverAlPanel()" style="color:#fff">← Volver</button>
+    <button class="back dm-volver-pro" onclick="dmVolverAlPanel()" style="color:#fff">← Volver</button>
     <div style="font-weight:700;font-size:16px;color:#fff">🌿 Módulo TCC-I (CBT-I)</div>
     <div style="width:24px"></div>
   </div>
@@ -1229,7 +1229,7 @@
 <!-- CONSULT DIRECTORY -->
 <div id="screen-consult" class="screen">
   <div class="topbar">
-    <button id="consult-back-btn" class="topbar-btn" onclick="goHomeCtx()">← Volver</button>
+    <button id="consult-back-btn" class="topbar-btn dm-volver-pro" onclick="goHomeCtx()">← Volver</button>
     <div style="text-align:center"><div style="font-size:14px;font-weight:500;color:#e8f5f0">Profesionales</div></div>
     <div style="width:70px"></div>
   </div>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg248-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg248-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg248-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg248-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg248-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg249-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg249-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg249-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg249-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg249-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg248';
+const APP_VERSION='stg249';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg248 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg249 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -1499,6 +1499,57 @@ async function dmSyncPushTags(){
       navigator.serviceWorker.register('sw.js').catch(e=>console.log('[PWA] sw:', e.message));
     });
   }
+  // ── Aviso de versión nueva ──────────────────────────────────────────
+  // La app instalada en el escritorio y el teléfono no se recarga sola: queda
+  // abierta días. Publicar una versión no alcanzaba para que nadie la viera, y
+  // desde adentro no hay forma de saber que uno está mirando algo viejo —
+  // justamente el problema que hace perder una tarde comprobando un cambio
+  // que ya estaba publicado.
+  //
+  // `version.json` pesa 40 bytes y se pide con no-store, así que ni el service
+  // worker ni la caché del navegador pueden devolver uno viejo.
+  function dmChequearVersion(){
+    try{
+      if(typeof APP_VERSION === 'undefined') return;
+      fetch('version.json?t='+Date.now(), {cache:'no-store'})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(j){
+          if(!j || !j.version || j.version === APP_VERSION) return;
+          if(document.getElementById('dm-nueva-version')) return;
+          const d=document.createElement('div');
+          d.id='dm-nueva-version';
+          d.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);'+
+            'z-index:99998;background:#1a4a3a;color:#F4EFE5;border:1px solid #7EC8A4;'+
+            'border-radius:999px;padding:9px 10px 9px 16px;display:flex;align-items:center;'+
+            'gap:10px;font:500 13px/1.3 system-ui,sans-serif;box-shadow:0 8px 28px -10px rgba(0,0,0,.6);'+
+            'max-width:92vw';
+          d.innerHTML='<span>Hay una versión nueva ('+String(j.version).replace(/[^a-z0-9.\-]/gi,'')+')</span>'+
+            '<button style="background:#7EC8A4;color:#0F2820;border:none;border-radius:999px;'+
+            'padding:7px 14px;font:700 13px system-ui,sans-serif;cursor:pointer">Actualizar</button>';
+          d.querySelector('button').onclick=function(){
+            try{
+              if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+                navigator.serviceWorker.getRegistrations().then(function(rs){
+                  rs.forEach(function(r){ try{ r.update(); }catch(_){} });
+                });
+              }
+              if(window.caches && caches.keys) caches.keys().then(function(ks){
+                return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+              }).then(function(){ location.reload(true); });
+              else location.reload(true);
+            }catch(_){ location.reload(); }
+          };
+          document.body.appendChild(d);
+        })
+        .catch(function(){});
+    }catch(_){}
+  }
+  window.dmChequearVersion = dmChequearVersion;
+  window.addEventListener('load', function(){ setTimeout(dmChequearVersion, 4000); });
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible') dmChequearVersion();
+  });
+
   // Android / escritorio: el navegador ofrece instalar y guardamos el evento
   window._dmInstallPrompt=null;
   window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); window._dmInstallPrompt=e; try{ updateInstallUI(); }catch(_){} });
@@ -16563,6 +16614,18 @@ function dmTopbarRefrescarAdmin(){
 }
 function dmTopbarGo(tab){
   dmTopbarCloseMenu();
+  // showDrTab_ escribe en #dr-content / #drp-content, que viven DENTRO de
+  // screen-doctor-home. Estando en TCC-I, el directorio o el panel admin,
+  // esos contenedores están ocultos: el clic en una pestaña actualizaba un
+  // contenido invisible y la pantalla no cambiaba. Parecía trabada, y la
+  // única salida era el botón Volver — que es justamente el que sobra
+  // cuando la barra de arriba está siempre visible.
+  if(tab !== 'more'){            // TCC-I abre su propia pantalla
+    try{
+      const _act = document.querySelector('.screen.active');
+      if(!_act || _act.id !== 'screen-doctor-home') showScreen('doctor-home');
+    }catch(_){}
+  }
   showDrTab(tab, document.getElementById('drnav-'+(tab==='metrics'?'metrics':tab)));
 }
 function dmTopbarToggleMenu(e){
@@ -17516,12 +17579,16 @@ const DM_RATINGS_DEMO = [
 // ¿Están TODOS los pacientes de este panel marcados como ejemplo? Solo
 // entonces tiene sentido mostrar números de muestra: con un paciente real
 // vinculado, el panel ya tiene que decir la verdad sobre ese paciente.
-function dmPanelSoloDemos(){
+function dmPanelSoloDemos(lista){
   try{
-    let ems=[];
-    try{ ems=JSON.parse(localStorage.getItem('dm_dr_pts_'+S.user.email)||'[]'); }catch(_){}
-    if(!ems.length) return false;
-    return ems.every(function(e){ return dmEsCuentaDemo(String(e)); });
+    let ems = lista;
+    if(!ems){
+      try{ ems=JSON.parse(localStorage.getItem('dm_dr_pts_'+S.user.email)||'[]'); }catch(_){ ems=[]; }
+    }
+    if(!ems || !ems.length) return false;
+    return ems.every(function(e){
+      return dmEsCuentaDemo(typeof e==='string' ? e : (e && (e.email||e.patient_email)) || '');
+    });
   }catch(_){ return false; }
 }
 window.dmPanelSoloDemos = dmPanelSoloDemos;
@@ -17671,7 +17738,12 @@ async function renderDoctorAdherence(){
     // Las cinco de ejemplo estan vinculadas a todos los paneles desde mod191:
     // si entran en la adherencia, el profesional lee su cartera con cinco
     // pacientes que no son suyos y que ademas registran perfecto.
-    const rows=(pats||[]).filter(p=>!dmEsCuentaDemo(p)).map(p=>{
+    // …pero si TODOS los pacientes del panel son de ejemplo, excluirlos deja
+    // la pantalla en 0/0/0 con cuatro gráficos vacíos, que se lee como "mis
+    // pacientes no registran nada" y no como "acá no hay nada que mostrar".
+    // Es el caso del profesional que recién entra y el de una demostración.
+    const _adhSoloDemos = (typeof dmPanelSoloDemos==='function') && dmPanelSoloDemos(emails);
+    const rows=(pats||[]).filter(p=> _adhSoloDemos || !dmEsCuentaDemo(p)).map(p=>{
       const k=(p.email||'').toLowerCase();
       const i=info[k]||{last:null,nDiary:0,d7:0,d30:0,nEval:0};
       const daysSince = i.last? Math.floor((NOW-i.last)/86400000) : null;
@@ -17743,7 +17815,22 @@ async function renderDoctorAdherence(){
     const chartBox=(t,id,extra)=>'<div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:11px 13px;min-width:0">'+
       '<div style="font-size:11px;color:rgba(255,255,255,.72);letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase">'+t+'</div>'+
       '<div style="position:relative;height:'+(extra||150)+'px"><canvas id="'+id+'"></canvas></div></div>';
-    let html='<div style="display:flex;gap:8px;margin-bottom:12px">'+
+    // Dos avisos, por dos situaciones que NO son "mis pacientes no registran".
+    const _avisoAdh = _adhSoloDemos
+      ? '<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.45);'+
+        'border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12.5px;'+
+        'color:#E8D5A8;line-height:1.55"><b>Ejemplo.</b> Todos los pacientes de tu listado son '+
+        'de muestra, así que acá se cuentan ellos. Normalmente los pacientes de ejemplo quedan '+
+        'fuera de la adherencia, para que no se mezclen con tu cartera: en cuanto vincules uno '+
+        'real, desaparecen de este panel.</div>'
+      : (!rows.length && emails.length
+          ? '<div style="background:rgba(252,165,165,.12);border:1px solid rgba(252,165,165,.4);'+
+            'border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12.5px;'+
+            'color:#fca5a5;line-height:1.55"><b>No se pudo leer la ficha de tus '+emails.length+
+            ' pacientes.</b> Los ceros de abajo no son el dato: es que no llegó ninguno. '+
+            'Probá recargar; si sigue igual, avisá.</div>'
+          : '');
+    let html=_avisoAdh+'<div style="display:flex;gap:8px;margin-bottom:12px">'+
       card(alDia,'Al día<br>(≤3 días)','#7EC8A4')+card(tibios,'Aflojando<br>(4–14 días)','#C8A96E')+card(perdidos,'Dejó de registrar<br>(+14 días)','#fca5a5')+
       (sinCuenta?card(sinCuenta,'Nunca entró<br>(sin cuenta)','#C084FC'):'')+
       '</div>'+
@@ -18374,7 +18461,7 @@ async function toggleDrTag(id){
 // Las etiquetas, escritas, en la fila del listado. Hasta ahora solo había
 // una rayita de color al costado: para saber que el rojo era "Insomnio"
 // había que entrar al paciente, que es justo lo que el listado evita.
-// Los chips de patología de la fila se sacaron en stg248 (la franja de color
+// Los chips de patología de la fila se sacaron en mod247 (la franja de color
 // ya dice lo mismo y no cuesta un renglón). La función queda porque la misma
 // lista de etiquetas con su color se usa en otras vistas, pero NO la llama
 // nadie desde el listado: si aparece un chip ahí, es que alguien la volvió a
@@ -18403,7 +18490,7 @@ async function backgroundFillMissingTags(patients){
         const stripeHtml='<div class="dm-patlist-stripe">'+st.resolved.map(t=>{const m=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+m.color+'"></span>';}).join('')+'</div>';
         row.insertAdjacentHTML('afterbegin', stripeHtml);
       }
-      // Los chips de la fila se sacaron (stg248): la franja de color de la
+      // Los chips de la fila se sacaron (mod247): la franja de color de la
       // izquierda ya dice lo mismo y no cuesta un renglón.
     }catch(_bgTagErr){ /* seguimos con el resto aunque uno falle */ }
     await new Promise(r=>setTimeout(r,120)); // throttle: no saturar la API con 24+ requests simultáneos

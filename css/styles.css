@@ -370,6 +370,10 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
   body.dr-desktop #dr-topbar-desktop{ grid-column:1 / -1;grid-row:1; }
   /* (el display:none base se movió FUERA del media query, más abajo) */
   body.dm-pro-nav #dr-bottomnav{ display:none !important; }
+  /* Con la barra de arriba siempre visible, "Volver" es un paso de más: hay
+     que apretarlo antes de poder ir a cualquier otra pestaña. En el celular
+     no hay barra, así que ahí el botón se queda. */
+  body.dm-pro-nav .dm-volver-pro{ display:none !important; }
   /* El topbar viejo de la columna izquierda (logo + Salir) es redundante:
      ambos viven ahora en la barra superior. */
   body.dr-desktop #screen-doctor-home > .topbar{ display:none; }

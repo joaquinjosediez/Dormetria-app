@@ -52,7 +52,7 @@ const soloDemos = app.slice(app.indexOf('function dmPanelSoloDemos'),
                             app.indexOf('function dmRatingsDemoHtml'));
 r.ok(/ems\.every\(/.test(soloDemos),
      'hacen falta TODOS los pacientes de ejemplo, no alguno');
-r.ok(/if\(!ems\.length\) return false/.test(soloDemos),
+r.ok(/if\(!ems \|\| !ems\.length\) return false/.test(soloDemos),
      'y sin ningún paciente tampoco: ahí el mensaje correcto es el vacío');
 r.ok(/esPropio && dmPanelSoloDemos\(\)/.test(app),
      'y solo en el panel propio');
@@ -63,7 +63,12 @@ r.ok(/return;/.test(llamada), 'se corta ahí, sin mezclar con lo real');
 
 r.seccion('La cuenta de ejemplo se reconoce por la base, no por el nombre:');
 
-r.ok(/dmEsCuentaDemo\(String\(e\)\)/.test(soloDemos),
+r.ok(/dmEsCuentaDemo\(/.test(soloDemos),
      'usa el mismo criterio que el resto de la app');
+// Recibe correos sueltos (desde localStorage) o filas de paciente (desde la
+// adherencia). Si solo aceptara una de las dos formas, el panel de métricas
+// pediría un helper paralelo y las dos reglas se irían separando.
+r.ok(/e\.email\|\|e\.patient_email/.test(soloDemos),
+     'y acepta tanto el correo suelto como la fila entera');
 
 r.cerrar('Mostrar una muestra está bien. Guardarla sería publicidad falsa sobre una persona real.');
