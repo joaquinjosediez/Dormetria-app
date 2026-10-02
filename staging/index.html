@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg250-08a90a25">
+<link rel="stylesheet" href="css/styles.css?v=stg251-08a90a25">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg250-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg250-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg250-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg250-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg250-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg251-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg251-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg251-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg251-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg251-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg250';
+const APP_VERSION='stg251';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg250 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg251 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -17791,28 +17791,65 @@ async function renderDoctorAdherence(){
     //
     // Son números inventados sobre pacientes inventados, y el cartel de
     // arriba lo dice. Nada de esto se escribe en ninguna parte.
-    const _adhInventada = _adhSoloDemos && !rows.length;
+    // ── Cartera de muestra ────────────────────────────────────────────
+    // Dos problemas distintos, un solo arreglo.
+    //
+    //   1. Si no llegó ninguna ficha, no hay nada que calcular y la pantalla
+    //      queda en 0/0/0 con cuatro gráficos vacíos.
+    //   2. Si SÍ llegaron, los pacientes de ejemplo están cargados hace
+    //      meses: casi todos dan "hace 56 días · 0 registros · posible
+    //      abandono". Es el dato real, y es una pésima demostración — un
+    //      colega ve una pantalla que dice que nadie usa la app.
+    //
+    // Cuando el panel es de puro ejemplo, los números de adherencia se ponen
+    // a mano sobre los nombres que haya. Se conservan nombre, correo y
+    // escalas; se reemplazan los días sin registrar, los registros y la
+    // evolución. No es el estado real de esas fichas y el cartel lo dice.
+    //
+    // El reparto es el de una cartera que funciona, que es lo que hay que
+    // poder mostrar: la mayoría al día, un par aflojando, UNO que dejó.
+    const _adhInventada = _adhSoloDemos;
     if(_adhInventada){
-      [ ['Buendía','Bruno',   1, 6,26, 74, 12, +6, 3,3],
-        ['Curie','Marie',     2, 5,24, 68, 10, +4, 4,3],
-        ['de Arco','Juana',   0, 7,29, 91, 15, +9, 2,2],
-        ['Ferrante','Elena',  3, 4,19, 55,  8, +1, 3,2],
-        ['Frankenstein','Victor', 5, 3,14, 41, 6, -2, 2,1],
-        ['Gray','Dorian',     9, 2, 9, 33,  5, -5, 3,1],
-        ['Kafka','Franz',     6, 3,12, 38,  7, -3, 2,2],
-        ['Kahlo','Frida',     1, 6,25, 63, 11, +7, 3,3],
-        ['Lovelace','Ada',    2, 7,28, 84, 14, +5, 4,4],
-        ['Pan','Peter',      21, 0, 2, 11,  2, null, 2,0],
-        ['Quijano','Alonso', 34, 0, 0,  6,  1, null, 1,0],
-        ['Van Winkle','Rip', 47, 0, 0,  3,  1, null, 1,0],
-        ['Woolf','Virginia',  1, 5,22, 59,  9, +2, 3,2],
-        ['Wormwood','Matilda',4, 4,17, 47,  8,  0, 2,2]
-      ].forEach(function(d){
-        rows.push({ name:d[0]+', '+d[1], lname:d[0], fname:d[1],
-          email:(d[1]+'.'+d[0]).toLowerCase().replace(/[^a-z]/g,'')+'@demo.dormetria.com',
-          phone:'', daysSince:d[2], d7:d[3], d30:d[4], nDiary:d[5], nEval:d[6],
-          faltaDatos:false, delta:d[7], pedidas:d[8], respondidas:d[9],
-          conEvolucion:Math.max(0,d[9]-1), alta:false, sinCuenta:false, code:null });
+      if(!rows.length){
+        // Ni siquiera llegaron las fichas: se inventan también los nombres.
+        [['Buendía','Bruno'],['Curie','Marie'],['de Arco','Juana'],
+         ['Ferrante','Elena'],['Frankenstein','Victor'],['Gray','Dorian'],
+         ['Kafka','Franz'],['Kahlo','Frida'],['Lovelace','Ada'],['Pan','Peter'],
+         ['Quijano','Alonso'],['Van Winkle','Rip'],['Woolf','Virginia'],
+         ['Wormwood','Matilda']].forEach(function(d){
+          rows.push({ name:d[0]+', '+d[1], lname:d[0], fname:d[1],
+            email:(d[1]+'.'+d[0]).toLowerCase().replace(/[^a-z]/g,'')+'@demo.dormetria.com',
+            phone:'', nEval:8, faltaDatos:false, alta:false, sinCuenta:false, code:null });
+        });
+      }
+      // Orden estable por apellido para que el reparto no baile entre cargas.
+      const _ord = rows.slice().sort(function(a,b){
+        return String(a.lname||a.email).localeCompare(String(b.lname||b.email),'es',{sensitivity:'base'});
+      });
+      const N = _ord.length;
+      _ord.forEach(function(r, i){
+        const desdeElFinal = N - 1 - i;
+        if(desdeElFinal === 0){            // el único que dejó de registrar
+          r.daysSince = 26; r.d7 = 0; r.d30 = 2;  r.nDiary = 24; r.delta = null;
+        }else if(desdeElFinal <= 2){       // dos aflojando
+          r.daysSince = 5 + desdeElFinal;  r.d7 = 2; r.d30 = 11 + desdeElFinal*3;
+          // Uno empeorando de verdad: un tablero donde "Empeorando" siempre
+          // marca cero no demuestra nada y además se huele falso.
+          r.nDiary = 38 + desdeElFinal*4;  r.delta = (desdeElFinal === 1) ? -5 : 1;
+        }else{                             // el resto, al día
+          r.daysSince = i % 4;             // 0 a 3 días
+          r.d7  = 5 + (i % 3);             // 5 a 7 de los últimos 7
+          r.d30 = [29,24,27,22,28,23,26,21,25][i % 9];   // 21 a 29, sin empates
+          r.nDiary = 52 + (i * 7) % 40;
+          r.delta = [6, 3, 9, 4, 2, 7, 5][i % 7];
+        }
+        // Escalas: pedidas respondidas casi siempre, que es lo que se ve en
+        // una cartera que viene siguiendo.
+        r.pedidas = 2 + (i % 3);
+        r.respondidas = (desdeElFinal === 0) ? 1 : r.pedidas - (i % 2 === 0 ? 0 : 1);
+        r.conEvolucion = Math.max(0, r.respondidas - 1);
+        r.sinCuenta = false;
+        r.faltaDatos = false;
       });
     }
 
@@ -17859,15 +17896,12 @@ async function renderDoctorAdherence(){
     const _avisoAdh = _adhSoloDemos
       ? '<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.45);'+
         'border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12.5px;'+
-        'color:#E8D5A8;line-height:1.55"><b>Cartera de ejemplo'+
-        (_adhInventada ? ' · números inventados' : '')+'.</b> '+
-        (_adhInventada
-          ? 'Todos los pacientes de tu listado son de muestra y no tienen registro cargado, '+
-            'así que estos números están puestos a mano para que se vea qué muestra la '+
-            'pantalla. No salen de ninguna base y no se guardan en ninguna.'
-          : 'Todos los pacientes de tu listado son de muestra, así que acá se cuentan ellos. '+
-            'Normalmente quedan fuera de la adherencia para que no se mezclen con tu cartera.')+
-        ' En cuanto vincules un paciente real, este panel pasa a mostrar solo lo tuyo.</div>'
+        'color:#E8D5A8;line-height:1.55"><b>Cartera de ejemplo · números puestos a mano.</b> '+
+        'Todos los pacientes de tu listado son de muestra. Sus fichas están cargadas hace '+
+        'meses, así que el dato real sería "casi todos abandonaron": acá se reemplaza por '+
+        'una cartera en seguimiento, que es lo que esta pantalla sirve para mostrar. '+
+        'No sale de ninguna base y no se guarda en ninguna. '+
+        'En cuanto vincules un paciente real, este panel pasa a mostrar solo lo tuyo.</div>'
       : (!rows.length && emails.length
           ? '<div style="background:rgba(252,165,165,.12);border:1px solid rgba(252,165,165,.4);'+
             'border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12.5px;'+

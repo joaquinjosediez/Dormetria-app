@@ -41,12 +41,23 @@ r.ok(/Todos los pacientes de tu listado son/.test(html),
      'y en ese caso la pantalla lo dice');
 r.ok(/vincules un paciente real/.test(html.replace(/\n/g, ' ')),
      'y avisa que con un paciente real se van');
-// Si no llegó ninguna ficha, los numeros se ponen a mano para que la
-// pantalla muestre algo. Eso hay que decirlo con todas las letras.
-r.ok(/const _adhInventada = _adhSoloDemos && !rows\.length/.test(html),
-     'y si ni siquiera hay fichas, los numeros son inventados…');
-r.ok(/números inventados/.test(html),
+// Las fichas de ejemplo estan cargadas hace meses: el dato REAL de esas
+// cuentas es "casi todos abandonaron". Mostrar eso en una demostracion dice
+// lo contrario de lo que la pantalla sirve para decir, asi que los numeros de
+// adherencia se ponen a mano. Lo que no se negocia es que se avise.
+r.ok(/const _adhInventada = _adhSoloDemos;/.test(html),
+     'con el panel de puro ejemplo, los numeros se ponen a mano…');
+r.ok(/números puestos a mano/.test(html),
      '…y el cartel lo dice así, sin eufemismo');
+r.ok(/el dato real sería "casi todos abandonaron"/.test(html),
+     'y dice tambien cual seria el dato real, para que nadie lo descubra despues');
+// El reparto tiene que ser el de una cartera que funciona, no uno perfecto:
+// un tablero donde "Empeorando" siempre marca cero se huele falso.
+const bloqueDemo = html.slice(html.indexOf('const _adhInventada'),
+                              html.indexOf("const mode=window._drAdhSort"));
+r.ok(/desdeElFinal === 0/.test(bloqueDemo), 'uno solo deja de registrar');
+r.ok(/desdeElFinal <= 2/.test(bloqueDemo), 'dos aflojando');
+r.ok(/-5/.test(bloqueDemo), 'y uno empeorando de verdad');
 r.ok(/weight_kg,auth_id,code,is_demo/.test(html),
      'y la consulta trae is_demo para poder hacerlo');
 
