@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod250-08a90a25">
+<link rel="stylesheet" href="css/styles.css?v=mod251-08a90a25">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod250-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod250-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod250-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=mod250-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod250-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod251-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod251-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod251-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=mod251-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=mod251-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod250';
+const APP_VERSION='mod251';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -16489,6 +16489,13 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
     const asb=document.getElementById('admin-setup-btn');if(asb)asb.style.display='none';
   }
   const _pl=document.getElementById('dr-panel-label'); if(_pl) _pl.textContent=(['psychiatry','neurology','pneumology','ent','pediatrics','cardiology','general'].includes(d.specialty)?'Panel profesional':'Panel profesional');showScreen('doctor-home');showDrTab_('patients');setTimeout(function(){ try{ dmContarNotificaciones(); }catch(_){} }, 600);setTimeout(()=>{updateDrAvailBtn();updateDrListedBtn();},200);}
+// Los códigos de los pacientes de ejemplo. Va ACÁ, en el nivel superior:
+// estaba dentro de la rama 'patients' de showDrTab_, y como dmSembrarDemos
+// se llama desde otros caminos, el `const` todavía no se había inicializado
+// y tiraba un TDZ que se tragaba el catch. La siembra no corría nunca salvo
+// que el profesional hubiera abierto antes la pestaña Pacientes.
+const DM_CODIGOS_DEMO = ['KAFKA1','CURIE1','PETER1','KAHLO1','WINKLE'];
+
 function showDrTab(tab,el){
   // Update bottom nav (uses original tab name for active state)
   ['patients','alerts','link','profile','more'].forEach(t=>{
@@ -16531,9 +16538,9 @@ function dmBuildDoctorTopbar(){
         '<button class="dr-tb-tab" data-tab="more" onclick="dmTopbarGo(\'more\')"><span style="font-size:15px;line-height:1">🌿</span>TCC-I</button>'+
         '<span style="width:1px;height:20px;background:rgba(244,239,229,.16);margin:0 4px;flex-shrink:0"></span>'+
         '<button class="dr-tb-tab" data-tab="profile" onclick="dmTopbarGo(\'profile\')">'+ic('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')+'Mi perfil</button>'+
-        '<button class="dr-tb-tab" data-tab="dir" onclick="showConsultDir()">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio</button>'+
+        '<button class="dr-tb-tab" data-tab="dir" onclick="dmTopbarGo(\'dir\')">'+ic('M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')+'Directorio</button>'+
         '<button class="dr-tb-tab" onclick="dmMenuPerfiles()">'+ic('M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')+'Mi perfil paciente</button>'+
-        '<button class="dr-tb-tab" id="dr-tb-admin-tab" data-tab="admin" style="display:none" onclick="showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Admin</button>'+
+        '<button class="dr-tb-tab" id="dr-tb-admin-tab" data-tab="admin" style="display:none" onclick="dmTopbarGo(\'admin\')">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Admin</button>'+
       '</div>'+
       '<div class="dr-tb-actions" style="display:none">'+
         '<button class="dr-tb-icon" title="Cómo se usa" aria-label="Cómo se usa" onclick="dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'</button>'+
@@ -16605,22 +16612,65 @@ function dmTopbarRefrescarAdmin(){
     b.style.display = (typeof getAdminEmails==='function' && getAdminEmails().indexOf(yo)>=0) ? '' : 'none';
   }catch(_){}
 }
+// ── Una sola puerta para todas las pestañas del profesional ───────────
+// Antes cada botón hacía lo suyo: unos llamaban dmTopbarGo, el Directorio
+// llamaba showConsultDir() directo y TCC-I entraba por 'more'. Tres caminos
+// distintos para lo mismo, y los tres son `onclick=` en línea: si uno tira
+// una excepción, el navegador no muestra NADA. Eso es exactamente lo que se
+// siente como "el botón no funciona" — y no deja ni un rastro para saber
+// cuál de los tres falló.
+//
+// Ahora: un solo camino, el error se ve, y además se COMPRUEBA que la
+// pantalla haya cambiado de verdad. Que un botón no haga nada en silencio
+// es peor que un error en rojo.
+const DM_PANTALLA_DE_TAB = {
+  patients:'doctor-home', alerts:'doctor-home', metrics:'doctor-home',
+  link:'doctor-home', profile:'doctor-home',
+  more:'cbti-list', dir:'consult', admin:'admin'
+};
 function dmTopbarGo(tab){
-  dmTopbarCloseMenu();
-  // showDrTab_ escribe en #dr-content / #drp-content, que viven DENTRO de
-  // screen-doctor-home. Estando en TCC-I, el directorio o el panel admin,
-  // esos contenedores están ocultos: el clic en una pestaña actualizaba un
-  // contenido invisible y la pantalla no cambiaba. Parecía trabada, y la
-  // única salida era el botón Volver — que es justamente el que sobra
-  // cuando la barra de arriba está siempre visible.
-  if(tab !== 'more'){            // TCC-I abre su propia pantalla
-    try{
+  try{
+    dmTopbarCloseMenu();
+    const destino = DM_PANTALLA_DE_TAB[tab] || 'doctor-home';
+
+    // Las pestañas que se dibujan DENTRO del panel (#dr-content vive adentro
+    // de screen-doctor-home) necesitan que esa pantalla esté activa primero:
+    // si no, se pinta un contenedor oculto y no cambia nada a la vista.
+    if(destino === 'doctor-home'){
       const _act = document.querySelector('.screen.active');
       if(!_act || _act.id !== 'screen-doctor-home') showScreen('doctor-home');
-    }catch(_){}
+      showDrTab(tab, document.getElementById('drnav-'+tab));
+    }else if(tab === 'dir'){
+      showConsultDir();
+    }else if(tab === 'admin'){
+      showAdminPanel();
+    }else{
+      showDrTab(tab, document.getElementById('drnav-'+tab));
+    }
+
+    // ¿Llegó? Las pantallas propias cambian el .screen activo; las que viven
+    // dentro del panel, no — para esas alcanza con haber llegado a
+    // doctor-home. Se chequea en el siguiente turno del navegador, porque
+    // showConsultDir y openCbtiModule son asíncronas.
+    const _antes = (function(){ const a=document.querySelector('.screen.active'); return a?a.id:null; })();
+    setTimeout(function(){
+      try{
+        if(destino === 'doctor-home') return;
+        const _a = document.querySelector('.screen.active');
+        const _id = (_a && _a.id) || null;
+        if(_id === 'screen-'+destino) return;          // llegó
+        if(_id !== _antes) return;                     // el usuario ya se fue a otra cosa
+        console.warn('[NAV] '+tab+' no llegó a '+destino+' (quedó en '+(_id||'ninguna')+')');
+        if(typeof toast==='function') toast('No se pudo abrir esa sección. Probá recargar.');
+      }catch(_){}
+    }, 700);
+  }catch(e){
+    console.error('[NAV] '+tab, e);
+    if(typeof toast==='function') toast('Error al abrir: '+((e&&e.message)||e));
   }
-  showDrTab(tab, document.getElementById('drnav-'+(tab==='metrics'?'metrics':tab)));
 }
+window.dmTopbarGo = dmTopbarGo;
+
 function dmTopbarToggleMenu(e){
   if(e){ e.stopPropagation(); }
   const me=document.getElementById('dr-tb-me');
@@ -16825,7 +16875,10 @@ async function showDrTab_(tab){
 //
 // Se siembran SOLO cuando el listado está vacío. Quien ya tiene pacientes
 // propios no se los encuentra de golpe mezclados con su cartera.
-const DM_CODIGOS_DEMO = ['KAFKA1','CURIE1','PETER1','KAHLO1','WINKLE'];
+// (La constante se movió al nivel superior — ver DM_CODIGOS_DEMO arriba.
+//  Acá estaba declarada DENTRO de la rama 'patients' de showDrTab_, así que
+//  dmSembrarDemos, llamada desde otro lado, tiraba "Cannot access
+//  DM_CODIGOS_DEMO before initialization" y la siembra nunca corría.)
 
 // ¿Es una cuenta de prueba? Tres señales, en orden de confianza:
 //   1. La marca is_demo de la base, que es la única explícita.
