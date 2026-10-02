@@ -39,8 +39,14 @@ r.ok(/_adhSoloDemos = \(typeof dmPanelSoloDemos==='function'\) && dmPanelSoloDem
      'salvo que TODOS los pacientes del panel sean de ejemplo');
 r.ok(/Todos los pacientes de tu listado son/.test(html),
      'y en ese caso la pantalla lo dice');
-r.ok(/en cuanto vincules uno \s*'\+\s*'real, desaparecen|vincules uno real, desaparecen/.test(html.replace(/\n/g,' ')),
+r.ok(/vincules un paciente real/.test(html.replace(/\n/g, ' ')),
      'y avisa que con un paciente real se van');
+// Si no llegó ninguna ficha, los numeros se ponen a mano para que la
+// pantalla muestre algo. Eso hay que decirlo con todas las letras.
+r.ok(/const _adhInventada = _adhSoloDemos && !rows\.length/.test(html),
+     'y si ni siquiera hay fichas, los numeros son inventados…');
+r.ok(/números inventados/.test(html),
+     '…y el cartel lo dice así, sin eufemismo');
 r.ok(/weight_kg,auth_id,code,is_demo/.test(html),
      'y la consulta trae is_demo para poder hacerlo');
 

@@ -27,9 +27,11 @@ r.ok(/Ejemplo — no son calificaciones tuyas/.test(h),
      'lo dice primero, arriba de todo');
 r.ok(/no se publica[\s\S]{0,40}Directorio/.test(h),
      'y aclara que no sale en el Directorio');
-r.ok((h.match(/EJEMPLO/g) || []).length === 4,
+const _firmas = (h.match(/dm-aguja-x|EJEMPLO/g) || []).length;
+const _tarjetas = (h.match(/letter-spacing:1px/g) || []).length;
+r.ok(_firmas === _tarjetas && _tarjetas >= 4,
      'cada firma va marcada: una captura recortada tampoco engaña',
-     (h.match(/EJEMPLO/g) || []).length + ' marcas');
+     _tarjetas + ' calificaciones, ' + _firmas + ' marcas');
 r.ok(/calificaciones de ejemplo/.test(h),
      'y el contador también lo dice');
 

@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod248-08a90a25">
+<link rel="stylesheet" href="css/styles.css?v=mod249-08a90a25">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod248-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod248-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod248-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=mod248-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod248-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod249-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod249-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod249-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=mod249-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=mod249-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod248';
+const APP_VERSION='mod249';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -16836,7 +16836,13 @@ function dmEsCuentaDemo(p, doctores){
   if(!p) return false;
   const email = (typeof p === 'string') ? p : (p.email || p.patient_email || '');
   if(typeof p === 'object' && p.is_demo === true) return true;
-  if(/@dormetria\.com$/i.test(String(email||''))) return true;
+  // Con subdominio: los de ejemplo se dieron de alta como
+  // nombre@demo.dormetria.com, y el patrón viejo —@dormetria.com al final—
+  // no los reconocía, porque antes de "dormetria.com" hay un punto y no una
+  // arroba. Por eso quedaban contados como pacientes reales: entraban en la
+  // adherencia del profesional y, al revés, el panel de puro ejemplo no se
+  // reconocía como tal.
+  if(/@([a-z0-9-]+\.)*dormetria\.com$/i.test(String(email||''))) return true;
   const docs = doctores || (typeof p === 'object' ? (p.doctors || p.doctores) : null);
   if(docs && docs.some && docs.some(function(d){
     return /^demo@dormetria\.com$/i.test(String(d||'')); })) return true;
@@ -17563,10 +17569,12 @@ function drToggleAlta(email){
 // Las firmas son las de los pacientes DEMO, que son cuentas de ejemplo
 // declaradas. No se inventa ningún paciente.
 const DM_RATINGS_DEMO = [
-  { rating:5, quien:'Marta Demo',   comment:'Entendí por primera vez qué me estaba pasando a la noche. El cuadro de la latencia lo explicó mejor que cualquier charla.' },
-  { rating:5, quien:'Roberto Demo', comment:'Me mandó a hacer el estudio de apnea con el registro del diario en la mano. Un mes después estaba durmiendo distinto.' },
-  { rating:4, quien:'Lucía Demo',   comment:'Me costó al principio cargar el diario todas las mañanas, pero ver el actograma de dos meses valió la pena.' },
-  { rating:5, quien:'Diego Demo',   comment:'Trabajo por turnos y nadie me había dado un plan que contemplara eso. Acá sí.' }
+  { rating:5, quien:'Lovelace, Ada',       comment:'Entendí por primera vez qué me estaba pasando a la noche. El cuadro de la latencia lo explicó mejor que cualquier charla.' },
+  { rating:5, quien:'Buendía, Bruno',      comment:'Me mandó a hacer el estudio de apnea con el registro del diario en la mano. Un mes después estaba durmiendo distinto.' },
+  { rating:4, quien:'de Arco, Juana',      comment:'Me costó al principio cargar el diario todas las mañanas, pero ver el actograma de dos meses valió la pena.' },
+  { rating:5, quien:'Kahlo, Frida',        comment:'Trabajo por turnos y nadie me había dado un plan que contemplara eso. Acá sí.' },
+  { rating:4, quien:'Woolf, Virginia',     comment:'Lo mejor fue dejar de mirar el reloj de noche. Parece una pavada y me cambió la madrugada.' },
+  { rating:5, quien:'Frankenstein, Victor',comment:'Tenía tres diagnósticos distintos de tres médicos. Acá por fin vi los datos de mi propio sueño y se ordenó todo.' }
 ];
 
 // ¿Están TODOS los pacientes de este panel marcados como ejemplo? Solo
@@ -17769,6 +17777,38 @@ async function renderDoctorAdherence(){
                          ? (('auth_id' in p) ? true : null) : false,
               code: p.code || null};
     });
+    // ── Cartera de muestra ────────────────────────────────────────────
+    // Si el panel es de puro ejemplo y no llegó ninguna ficha, no hay nada
+    // que calcular. Mostrar 0/0/0 con cuatro gráficos vacíos no informa: lo
+    // que hace falta acá es que un colega vea PARA QUÉ sirve la pantalla.
+    //
+    // Son números inventados sobre pacientes inventados, y el cartel de
+    // arriba lo dice. Nada de esto se escribe en ninguna parte.
+    const _adhInventada = _adhSoloDemos && !rows.length;
+    if(_adhInventada){
+      [ ['Buendía','Bruno',   1, 6,26, 74, 12, +6, 3,3],
+        ['Curie','Marie',     2, 5,24, 68, 10, +4, 4,3],
+        ['de Arco','Juana',   0, 7,29, 91, 15, +9, 2,2],
+        ['Ferrante','Elena',  3, 4,19, 55,  8, +1, 3,2],
+        ['Frankenstein','Victor', 5, 3,14, 41, 6, -2, 2,1],
+        ['Gray','Dorian',     9, 2, 9, 33,  5, -5, 3,1],
+        ['Kafka','Franz',     6, 3,12, 38,  7, -3, 2,2],
+        ['Kahlo','Frida',     1, 6,25, 63, 11, +7, 3,3],
+        ['Lovelace','Ada',    2, 7,28, 84, 14, +5, 4,4],
+        ['Pan','Peter',      21, 0, 2, 11,  2, null, 2,0],
+        ['Quijano','Alonso', 34, 0, 0,  6,  1, null, 1,0],
+        ['Van Winkle','Rip', 47, 0, 0,  3,  1, null, 1,0],
+        ['Woolf','Virginia',  1, 5,22, 59,  9, +2, 3,2],
+        ['Wormwood','Matilda',4, 4,17, 47,  8,  0, 2,2]
+      ].forEach(function(d){
+        rows.push({ name:d[0]+', '+d[1], lname:d[0], fname:d[1],
+          email:(d[1]+'.'+d[0]).toLowerCase().replace(/[^a-z]/g,'')+'@demo.dormetria.com',
+          phone:'', daysSince:d[2], d7:d[3], d30:d[4], nDiary:d[5], nEval:d[6],
+          faltaDatos:false, delta:d[7], pedidas:d[8], respondidas:d[9],
+          conEvolucion:Math.max(0,d[9]-1), alta:false, sinCuenta:false, code:null });
+      });
+    }
+
     const mode=window._drAdhSort||'abandono';
     const cmpAp=(a,b)=>((a.lname||a.fname||a.email).toLowerCase()).localeCompare((b.lname||b.fname||b.email).toLowerCase(),'es',{sensitivity:'base'});
     if(mode==='abandono') rows.sort((a,b)=>((a.daysSince==null?9999:a.daysSince)<(b.daysSince==null?9999:b.daysSince)?1:-1));
@@ -17812,10 +17852,15 @@ async function renderDoctorAdherence(){
     const _avisoAdh = _adhSoloDemos
       ? '<div style="background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.45);'+
         'border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12.5px;'+
-        'color:#E8D5A8;line-height:1.55"><b>Ejemplo.</b> Todos los pacientes de tu listado son '+
-        'de muestra, así que acá se cuentan ellos. Normalmente los pacientes de ejemplo quedan '+
-        'fuera de la adherencia, para que no se mezclen con tu cartera: en cuanto vincules uno '+
-        'real, desaparecen de este panel.</div>'
+        'color:#E8D5A8;line-height:1.55"><b>Cartera de ejemplo'+
+        (_adhInventada ? ' · números inventados' : '')+'.</b> '+
+        (_adhInventada
+          ? 'Todos los pacientes de tu listado son de muestra y no tienen registro cargado, '+
+            'así que estos números están puestos a mano para que se vea qué muestra la '+
+            'pantalla. No salen de ninguna base y no se guardan en ninguna.'
+          : 'Todos los pacientes de tu listado son de muestra, así que acá se cuentan ellos. '+
+            'Normalmente quedan fuera de la adherencia para que no se mezclen con tu cartera.')+
+        ' En cuanto vincules un paciente real, este panel pasa a mostrar solo lo tuyo.</div>'
       : (!rows.length && emails.length
           ? '<div style="background:rgba(252,165,165,.12);border:1px solid rgba(252,165,165,.4);'+
             'border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12.5px;'+
