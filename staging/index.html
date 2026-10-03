@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg252-08a90a25">
+<link rel="stylesheet" href="css/styles.css?v=stg253-fc9738db">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg252-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg252-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg252-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg252-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg252-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg253-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg253-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg253-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg253-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg253-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg252';
+const APP_VERSION='stg253';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg252 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg253 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -3341,6 +3341,21 @@ function showScreen(id){
     // regla con !important para que se le colara a un paciente.
     document.body.classList.toggle('dm-rol-pro', !!_isDr);
     document.body.classList.toggle('dr-desktop', !!_twoPanel);
+    // ── Marcas de pantalla que tienen que morir al salir de ella ──────
+    // `dm-dir-abierto` la ponía showConsultDir y la sacaba SOLO el onclick
+    // del botón Volver. Al esconder ese botón en escritorio (mod248) no
+    // quedó nadie que la sacara: la clase se pegaba al body para siempre.
+    //
+    // Y no es cosmética. `body.dm-dir-abierto #app{display:flex}` tiene la
+    // misma especificidad que `body.dr-desktop #app{display:grid}` y está
+    // más abajo en la hoja, así que gana: el panel de dos columnas se
+    // desarmaba en una pila, con la barra de abajo apareciendo en el medio.
+    // Se arreglaba recargando, que es lo que lo hacía difícil de atribuir.
+    //
+    // La regla general: una clase que marca "estoy en tal pantalla" se
+    // limpia al cambiar de pantalla, en UN solo lugar, no en el handler del
+    // botón que se suponía que era la única salida.
+    document.body.classList.toggle('dm-dir-abierto', id === 'consult');
     // ── La barra superior, en TODAS las pantallas del profesional ──────
     // Estaba atada a `dr-desktop`, que marca otra cosa: el layout de dos
     // paneles (lista + ficha). TCC-I, el directorio y el panel admin no lo
@@ -17441,15 +17456,15 @@ async function renderPatientList(filter){
             // MEQ: solo extremos y moderados disparan alerta (intermedio NO)
             if(sc.id==='meq'){
               if(i.l !== 'Intermedio'){
-                if(reviewedSet.has(String(r.id))) return;
-                pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_patientPhone:patientPhones[pEmail]||'',_interp:i,_scName:sc.name});
+                const _visto = reviewedSet.has(String(r.id));
+                pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_patientPhone:patientPhones[pEmail]||'',_interp:i,_scName:sc.name,_visto:_visto});
               }
               return;
             }
             // Resto: filtro por color de fondo
             if(i.bg==='#fee2e2'||i.bg==='#fef2f2'||i.bg==='#fef3c7'||i.bg==='#ffedd5'){
-              if(reviewedSet.has(String(r.id))) return;
-              pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_patientPhone:patientPhones[pEmail]||'',_interp:i,_scName:sc.name});
+              const _visto = reviewedSet.has(String(r.id));
+              pathResults.push({...r,_patientEmail:pEmail,_patientName:patientNames[pEmail]||pEmail.split('@')[0],_patientPhone:patientPhones[pEmail]||'',_interp:i,_scName:sc.name,_visto:_visto});
             }
           });
         }
@@ -17504,7 +17519,9 @@ async function renderPatientList(filter){
             asunto:(list.length>1 ? list.length+' escalas fuera de rango' : r0._scName+' · '+r0._interp.l),
             resumen:list.map(function(r){ return r._scName+' '+r.score; }).join(' · '),
             fecha:r0.created_at,
-            leido:false,
+            // Vista solo si están vistas TODAS las escalas del paciente: con
+            // una sin mirar, la tarjeta sigue siendo pendiente.
+            leido:list.every(function(r){ return r._visto === true; }),
             color:darkBorder,
             cuerpo:_html
           };
@@ -22261,15 +22278,19 @@ async function dmRenderBandeja(alertas){
                      : '<div class="dm-solic-vacio">Nada pendiente. Todo al día.</div>')+
       '</div>'+
       '<div class="dm-bandeja-col">'+
+        // La columna derecha es lo YA VISTO. Antes vivía plegada detrás de un
+        // "Resueltas ·" cerrado, y las marcadas como vistas ni siquiera
+        // llegaban hasta acá: se descartaban antes, y lo único que quedaba
+        // era un renglón diciendo "8 marcada(s) como vista(s)". O sea que la
+        // columna estaba vacía mientras había ocho cosas que mostrar.
+        '<div class="sec-title">Vistas'+(hecho.length?' · '+hecho.length:'')+'</div>'+
         (hecho.length
-          ? '<details class="dm-solic-hechas"'+(pend.length?'':' open')+'>'+
-              '<summary>Resueltas · '+hecho.length+'</summary>'+
-              hecho.slice(0,40).map(fila).join('')+
-            '</details>'
-          : '<div class="dm-solic-vacio">Todavía no resolviste ninguna.</div>')+
-        (vistas ? '<div style="font-size:12px;color:var(--label-2);margin-top:12px">'+vistas+
-          ' marcada(s) como vista(s) — <a href="javascript:void(0)" onclick="resetReviewedAlerts()" '+
-          'style="color:#7EC8A4;font-weight:600;text-decoration:underline">mostrar todas</a></div>' : '')+
+          ? hecho.slice(0,40).map(fila).join('')+
+            (hecho.length>40 ? '<div class="dm-solic-vacio">… y '+(hecho.length-40)+' más</div>' : '')
+          : '<div class="dm-solic-vacio">Lo que vayas mirando se va a ir acumulando acá.</div>')+
+        (vistas ? '<div class="dm-bandeja-pie">'+vistas+
+          ' marcada(s) como vista(s) · <a href="javascript:void(0)" onclick="resetReviewedAlerts()">'+
+          'volver a marcarlas como pendientes</a></div>' : '')+
       '</div>'+
     '</div>';
 }

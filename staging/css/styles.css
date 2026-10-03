@@ -5476,8 +5476,20 @@ body.dr-desktop #drp-content > .dm-edu-wrap{ grid-column:1 / -1; }
   .dm-solic-cols{ grid-template-columns:1fr 1fr; align-items:start; }
 }
 .dm-solic-col{ min-width:0; }
+/* mod252 · Sobre el verde oscuro del panel, --label-3 daba un gris que
+   prácticamente no se leía: el texto de la columna derecha quedaba invisible
+   y parecía que la pantalla estaba rota. Medido, pasaba de 2:1. */
 .dm-solic-vacio{
-  font-size:13px; color:var(--label-3); padding:14px 2px;
+  font-size:13px; color:rgba(244,239,229,.72); padding:14px 2px; line-height:1.55;
+}
+.dm-bandeja-pie{
+  font-size:12px; color:rgba(244,239,229,.68); margin-top:14px; line-height:1.55;
+  border-top:1px solid rgba(126,200,164,.16); padding-top:10px;
+}
+.dm-bandeja-pie a{ color:#7EC8A4; font-weight:600; text-decoration:underline; }
+/* Los encabezados de las dos columnas, parejos y legibles. */
+.dm-bandeja-col > .sec-title{
+  color:rgba(244,239,229,.82); margin-bottom:10px;
 }
 .dm-solic.hecha{ opacity:.72; }
 .dm-solic-hechas{
@@ -5585,7 +5597,13 @@ body.dm-foco-diario .dm-foco-card{
 /* flex-direction:column, que es lo que ya hace #app por defecto. Sin esto,
    con la barra visible, el `display:flex` de acá la ponía AL LADO de la
    pantalla en vez de arriba — y por eso se la escondía. */
-body.dm-dir-abierto #app{ max-width:none; width:100%; display:flex; flex-direction:column; }
+/* `:not(.dr-desktop)` es cinturón y tirantes. Esta regla tiene la MISMA
+   especificidad que `body.dr-desktop #app{display:grid}` y está más abajo en
+   la hoja, así que le ganaba: si la clase quedaba pegada al body —y quedaba,
+   porque solo la sacaba el botón Volver— el panel de dos columnas del
+   profesional se desarmaba en una pila. Ahora, aunque la clase sobreviva,
+   no puede pisar el layout del panel. */
+body.dm-dir-abierto:not(.dr-desktop) #app{ max-width:none; width:100%; display:flex; flex-direction:column; }
 body.dm-dir-abierto #screen-consult .scroll,
 body.dm-dir-abierto #screen-consult .hero{
   max-width:1280px; margin-left:auto; margin-right:auto; width:100%;

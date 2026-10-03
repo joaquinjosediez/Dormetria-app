@@ -23,12 +23,20 @@ console.log('═══ Pruebas de Dormetria ═══');
 const fallaron = [];
 for (const f of archivos) {
   try {
+    // Con timeout. El comentario de arriba decía que si una prueba se cuelga
+    // las demás siguen corriendo, y era mentira: execFileSync sin timeout
+    // espera para siempre y se cuelga la suite entera. Una prueba que tarda
+    // más de 60 s está colgada, no lenta.
     const salida = execFileSync('node', [path.join(AQUI, f)],
-                                { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+                                { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+                                  timeout: 60000, killSignal: 'SIGKILL' });
     process.stdout.write(salida);
   } catch (e) {
     fallaron.push(f);
     process.stdout.write(e.stdout || '');
+    if (e.killed || e.signal === 'SIGKILL') {
+      process.stdout.write('\n  SE COLGÓ: pasó los 60 s y se la mató.\n');
+    }
     if (e.stderr) process.stdout.write('\n' + e.stderr);
   }
 }
