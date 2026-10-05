@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod253-fc9738db">
+<link rel="stylesheet" href="css/styles.css?v=mod254-fc9738db">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod253-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod253-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod253-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=mod253-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod253-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod254-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod254-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod254-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=mod254-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=mod254-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod253';
+const APP_VERSION='mod254';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -10926,17 +10926,14 @@ async function dmCifrasInicio(){
     const cuentan = semana.filter(function(p){ return !(p.esHoy && !p.hecho); });
     const hechos  = cuentan.filter(function(p){ return p.hecho; }).length;
     const consist = cuentan.length ? Math.round(hechos/cuentan.length*100) : 0;
-    let variacion=null;
-    try{
-      const reg=computeSleepRegularity(dmNochesValidas(rows));
-      if(reg && reg.sd_midpoint_min!=null) variacion=Math.round(reg.sd_midpoint_min);
-    }catch(_){}
-    const caja=function(v,rot,col){
-      return '<div style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.2);'+
-        'border-radius:16px;padding:14px 15px">'+
-        '<div style="font-size:23px;font-weight:700;color:'+col+'">'+v+'</div>'+
-        '<div style="font-size:12.5px;color:rgba(244,239,229,.84);line-height:1.35;margin-top:3px">'+rot+'</div></div>';
-    };
+    // La "variación de tu horario" (±X min) estaba acá al lado y se sacó.
+    // Es la SD del punto medio del sueño: un número que el paciente no puede
+    // accionar —no dice qué hacer con él— y que además no es suyo en el
+    // mismo sentido que la constancia. La constancia mide lo único que la
+    // persona SÍ controla: si registró. Cómo durmió no lo eligió.
+    //
+    // La dispersión del horario sigue estando, donde se puede leer con su
+    // referencia y su explicación: en las métricas clínicas del diario.
     // Los puntos: un día, un punto. Lleno el que registró. Un hueco es un
     // hueco y no un fracaso — que es exactamente la diferencia con la racha.
     const puntos = semana.map(function(p){
@@ -10951,8 +10948,7 @@ async function dmCifrasInicio(){
         '<div style="font-size:12.5px;color:rgba(244,239,229,.84);line-height:1.35;margin-top:3px">'+
           'constancia esta semana</div>'+
         '<div class="dm-pts">'+puntos+'</div>'+
-      '</div>'+
-      caja(variacion!=null?('±'+variacion+'<span style="font-size:13px">min</span>'):'—','variación de tu horario','#C8A96E');
+      '</div>';
 
     try{ dmMensajeAliento(rows, racha); }catch(e){ console.warn('[aliento]', e); }
   }catch(_){}
