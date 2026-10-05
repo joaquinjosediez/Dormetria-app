@@ -16,7 +16,51 @@ chmod +x publicar.sh volver-atras.sh probar-en-beta.sh promover-beta.sh
 
 ---
 
-## Publicar una versión
+## Subir lo que Claude ya dejó hecho  ← el de todos los días
+
+```
+./subir.sh
+```
+
+Corre las pruebas y, **solo si pasan todas**, publica. Si alguna falla no
+sube nada y te dice cuál: esa línea es la que hay que pasarle a Claude.
+
+Es lo mismo que escribir `npm test && git push origin main`, sin tener que
+acordarse de las dos partes.
+
+### ¿Qué es `npm test`?
+
+Son los chequeos automáticos que viven en la carpeta `pruebas/`. Cada uno
+abre la app, prueba una cosa concreta —que el diario guarde, que el panel no
+muestre datos de otro paciente, que un botón haga algo— y dice OK o MAL.
+Al final imprime una línea:
+
+```
+Las 64 pruebas pasan. Se puede publicar.
+```
+
+o, si algo se rompió:
+
+```
+NO PASA (1 de 64):
+   x 44-no-pintar-en-un-id-que-no-existe.js
+```
+
+Existen porque es una app clínica en uso: cada publicación llega a pacientes
+reales, y mirar la pantalla y decir "se ve bien" no alcanza para saber que no
+se rompió otra cosa en el camino.
+
+Se corre **desde la Terminal, parado en esta carpeta** — la misma ventana
+donde hacés el `git push`:
+
+```
+cd ~/Documents/Dormetria-app
+./subir.sh
+```
+
+---
+
+## Publicar una versión descargada del chat
 
 ```
 ./publicar.sh mod166
