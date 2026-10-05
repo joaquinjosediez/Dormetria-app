@@ -28,6 +28,14 @@ sube nada y te dice cuál: esa línea es la que hay que pasarle a Claude.
 Es lo mismo que escribir `npm test && git push origin main`, sin tener que
 acordarse de las dos partes.
 
+**No imprime las 64 pruebas una por una.** Si pasan todas muestra una línea;
+si falla alguna, ahí sí muestra todo, porque el detalle es lo único que
+sirve para arreglarlo. Para verlas igual:
+
+```
+./subir.sh -v
+```
+
 ### ¿Qué es `npm test`?
 
 Son los chequeos automáticos que viven en la carpeta `pruebas/`. Cada uno

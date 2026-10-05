@@ -41,16 +41,31 @@ else
     echo "   Instalando lo que necesitan las pruebas (solo esta vez)…"
     npm install --silent --no-audit --no-fund
   fi
-  echo "── Pruebas ──"
-  if ! npm test; then
+  # Las pruebas escriben cientos de renglones. Si pasan todas, eso es ruido:
+  # alcanza con la última línea. Si falla alguna, ahí sí se muestra todo,
+  # porque el detalle es lo único que sirve para arreglarlo.
+  # Con  ./subir.sh -v  se ve todo siempre.
+  echo "── Pruebas ── (un rato; se muestran solo si falla alguna)"
+  LOG=$(mktemp -t dormetria-pruebas)
+  if [ "${1:-}" = "-v" ] || [ "${1:-}" = "--todo" ]; then
+    npm test | tee "$LOG"; ESTADO=${PIPESTATUS[0]}
+  else
+    npm test > "$LOG" 2>&1; ESTADO=$?
+  fi
+  if [ "$ESTADO" != "0" ]; then
+    echo
+    cat "$LOG"
     echo
     echo "═══════════════════════════════════════════════════════════"
     echo " NO SE PUBLICÓ NADA."
     echo " Arriba dice qué falló. La app en internet sigue intacta."
-    echo " Pasale a Claude el nombre de la prueba que dice 'x'."
+    echo " Pasale a Claude las líneas que empiezan con 'x'."
     echo "═══════════════════════════════════════════════════════════"
+    rm -f "$LOG"
     exit 1
   fi
+  grep -E 'pruebas pasan|NO PASA' "$LOG" | tail -1 | sed 's/^/   /'
+  rm -f "$LOG"
 fi
 
 # ── 3 · Publicar ───────────────────────────────────────────────────────
