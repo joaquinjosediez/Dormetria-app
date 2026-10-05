@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod252-fc9738db">
+<link rel="stylesheet" href="css/styles.css?v=mod253-fc9738db">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod252-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod252-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod252-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=mod252-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod252-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod253-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod253-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod253-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=mod253-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=mod253-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod252';
+const APP_VERSION='mod253';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -24586,7 +24586,8 @@ function renderChildQuickActions(){
   const actions = [
     {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>', label:'Registrar noche', sub:'Anotar el sueño de anoche', fn:"S._editingDiaryId=null;showChildDiaryNew()"},
     {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>', label:'Evaluar sueño', sub:'Cuestionarios validados', fn:"showChildTab('scales',document.getElementById('ch-tab-scales'))"},
-    {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>', label:'Ver historial', sub:'Gráficos y tendencias', fn:"showChildTab('diary',document.getElementById('ch-tab-diary'))"},
+    {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>', label:'Gráficos', sub:'Actograma, horas y regularidad', fn:"window._chDiarioModo='graficos';showChildTab('diary')"},
+    {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10M18 15l3 3-3 3"/></svg>', label:'Registros', sub:'Ver y corregir lo cargado', fn:"window._chDiarioModo='registros';showChildTab('diary')"},
     {svg:'<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>', label:'Info para padres', sub:'Guía de sueño saludable', fn:"showChildTab('info',document.getElementById('ch-tab-info'))"}
   ];
   el.innerHTML = actions.map(a =>
@@ -24634,6 +24635,13 @@ function renderChildScales(){
       </div>`;
     }).join('');
 }
+
+// Cambia entre Gráficos y Registros sin salir del panel.
+function dmChDiarioModo(m){
+  window._chDiarioModo = (m === 'registros') ? 'registros' : 'graficos';
+  try{ renderChildDiaryList(); }catch(_){}
+}
+window.dmChDiarioModo = dmChDiarioModo;
 
 async function renderChildDiaryList(){
   const el = document.getElementById('ch-diary-list');
@@ -24802,7 +24810,31 @@ async function renderChildDiaryList(){
         </div>
       </div>`;
     }).join('');
-    el.innerHTML = chartHtml + actogramHtml + regNote + '<div style="font-size:11px;font-weight:700;color:var(--label-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Registros</div>' + listHtml;
+    // ── Dos vistas, un panel ──────────────────────────────────────────
+    // Estaba todo junto detrás de un botón que decía "Ver historial ·
+    // Gráficos y tendencias". El actograma quedaba sepultado y nadie
+    // encontraba dónde corregir una noche mal cargada. Son dos preguntas
+    // distintas —"¿cómo viene durmiendo?" y "¿dónde arreglo lo de anoche?"—
+    // y ahora cada una tiene su botón en el inicio y su pestaña acá.
+    const _modo = (window._chDiarioModo === 'registros') ? 'registros' : 'graficos';
+    const _sel = function(id, txt){
+      const on = (_modo === id);
+      return '<button type="button" onclick="dmChDiarioModo(\''+id+'\')" '+
+        'style="appearance:none;border:none;cursor:pointer;font-family:inherit;border-radius:999px;'+
+        'padding:7px 16px;font-size:13px;font-weight:700;background:'+
+        (on?'rgba(126,200,164,0.22)':'transparent')+';color:'+
+        (on?'#7EC8A4':'rgba(244,239,229,0.6)')+'">'+txt+'</button>';
+    };
+    const _barra = '<div style="display:inline-flex;gap:2px;background:rgba(255,255,255,0.05);'+
+      'border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:3px;margin-bottom:14px">'+
+      _sel('graficos','Gráficos')+_sel('registros','Registros')+'</div>';
+
+    el.innerHTML = _barra + (_modo === 'graficos'
+      ? (chartHtml + actogramHtml + regNote +
+         '<div style="font-size:11.5px;color:rgba(244,239,229,.72);line-height:1.55;padding:4px 2px">'+
+         'Para corregir una noche mal cargada, entrá en <b>Registros</b>.</div>')
+      : ('<div style="font-size:11px;font-weight:700;color:rgba(244,239,229,.72);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">'+
+         entries.length+' noches cargadas</div>' + listHtml));
     // Dibujar gráfico de sueño total con banda NSF
     if(chartData.length>=2){
       setTimeout(()=>{
