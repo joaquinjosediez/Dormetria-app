@@ -7,3 +7,12 @@ docs/*.docx
 docs/*.pdf
 docs/*.jpg
 .~lock.*#
+
+# Las dependencias de las pruebas. Se reinstalan con `npm install`.
+#
+# Estaban VERSIONADAS: 1859 archivos, 26 MB, que GitHub Pages empaquetaba en
+# cada publicacion — incluidos 116 .md/.html/.xml que Jekyll intentaba
+# procesar y 23 archivos con un espacio en el nombre ("README 2.md"), copias
+# de conflicto de algun sincronizador. Nada de eso tiene por que viajar al
+# sitio publicado de una app clinica.
+node_modules/
