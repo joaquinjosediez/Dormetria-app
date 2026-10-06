@@ -68,9 +68,24 @@ r.ok(/offsetParent !== null/.test(nav),
      'no alcanza con que la pantalla esté activa: se mira si se VE');
 r.ok(/getBoundingClientRect\(\)\.height > 20/.test(nav),
      'con alto real, no con una clase');
-r.ok(/la pantalla está activa pero no se ve nada/.test(nav),
-     'y lo registra con el estado del body, para poder diagnosticarlo');
-r.ok(/Se destrabó la vista/.test(nav),
-     'además se destraba solo en vez de dejar al profesional sin salida');
+r.ok(/quedó invisible/.test(nav) && /dmEstadoPanel\(\)/.test(nav),
+     'y lo registra con el estado completo del panel, no solo del body');
+r.ok(/dmResetPanel\(\)/.test(nav) && /showDrTab\(tab===/.test(nav),
+     'se destraba Y reintenta: sacar dos clases y quedarse ahí no alcanzaba');
+
+r.seccion('Y hay cómo diagnosticarlo sin abrir la consola:');
+
+// Tres veces en dos días apareció el mismo síntoma y las tres tuve que
+// adivinar, porque desde afuera una pantalla escondida y un botón roto se
+// ven igual.
+r.ok(/function dmEstadoPanel\(\)\{/.test(app), 'hay una función que resume el estado');
+['screen-doctor-home', 'dr-metrics-desktop', 'screen-doctor-patient',
+ 'dr-desktop-placeholder', 'dr-content-side'].forEach(function (id) {
+  r.ok(app.slice(app.indexOf('function dmEstadoPanel')).indexOf(id) > 0 &&
+       app.slice(app.indexOf('function dmEstadoPanel')).indexOf(id) < 1400, '  mide ' + id);
+});
+r.ok(/function dmResetPanel\(\)\{/.test(app), 'y una salida de emergencia');
+r.ok(/Destrabar la vista/.test(app) && /Copiar diagnóstico/.test(app),
+     'las dos, a mano, desde el menú del avatar');
 
 r.cerrar('Un estado que no significa nada no puede existir: el CSS lo interpreta igual.');

@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg256-fc9738db">
+<link rel="stylesheet" href="css/styles.css?v=stg257-fc9738db">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg256-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg256-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg256-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg256-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg256-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg257-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg257-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg257-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg257-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg257-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg256';
+const APP_VERSION='stg257';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg256 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg257 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -16606,6 +16606,8 @@ function dmBuildDoctorTopbar(){
           '<button id="dr-tb-admin" style="display:none" onclick="dmTopbarCloseMenu();showAdminPanel()">'+ic('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z')+'Panel Admin</button>'+
           '<hr>'+
           '<button onclick="dmTopbarCloseMenu();dmStartTour(\'doctor_home\')">'+ic('M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')+'Cómo se usa</button>'+
+          '<button onclick="dmTopbarCloseMenu();dmResetPanel();dmTopbarGo(\'patients\')">'+ic('M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15')+'Destrabar la vista</button>'+
+          '<button onclick="dmTopbarCloseMenu();dmCopiarDiagnostico()">'+ic('M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z')+'Copiar diagnóstico</button>'+
           '<button onclick="dmTopbarCloseMenu();dmQuitarDemos()">'+ic('M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16')+'Quitar los ejemplos</button>'+
           '<button onclick="dmTopbarCloseMenu();showFeedbackModal()">'+ic('M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z')+'Ayudanos a mejorar</button>'+
           '<hr>'+
@@ -16657,6 +16659,50 @@ function dmTopbarRefrescarAdmin(){
     b.style.display = (typeof getAdminEmails==='function' && getAdminEmails().indexOf(yo)>=0) ? '' : 'none';
   }catch(_){}
 }
+// ── Diagnóstico del panel ─────────────────────────────────────────────
+// Tres veces en dos días apareció el mismo síntoma —"los botones de arriba
+// no hacen nada"— y las tres veces tuve que adivinar, porque desde afuera
+// una pantalla escondida y un botón roto se ven igual. Esto devuelve, en una
+// línea, todo lo que hace falta para distinguirlos.
+function dmEstadoPanel(){
+  const med = function(id){
+    const e = document.getElementById(id);
+    if(!e) return id+':no-existe';
+    const r = e.getBoundingClientRect();
+    return id+':'+Math.round(r.width)+'x'+Math.round(r.height)+
+           (getComputedStyle(e).display==='none'?'(none)':'');
+  };
+  return [
+    'v=' + (typeof APP_VERSION!=='undefined' ? APP_VERSION : '?'),
+    'ancho=' + window.innerWidth,
+    'pantalla=' + ((document.querySelector('.screen.active')||{}).id || '-'),
+    'body=[' + document.body.className + ']',
+    med('screen-doctor-home'), med('dr-metrics-desktop'),
+    med('screen-doctor-patient'), med('dr-desktop-placeholder'),
+    med('dr-content-side'), med('dr-content')
+  ].join(' · ');
+}
+window.dmEstadoPanel = dmEstadoPanel;
+
+// Devuelve el panel a su estado por defecto: lista de pacientes a la
+// izquierda, nada raro encima. Es la salida de emergencia.
+function dmResetPanel(){
+  try{
+    const c = document.body.classList;
+    ['dr-metrics-view','dm-dir-abierto','dr-wide','dr-metrics-view'].forEach(function(k){ c.remove(k); });
+    c.add('dr-tab-patients');
+  }catch(_){}
+}
+window.dmResetPanel = dmResetPanel;
+
+// Para mandármelo sin abrir la consola.
+async function dmCopiarDiagnostico(){
+  const t = dmEstadoPanel();
+  try{ await navigator.clipboard.writeText(t); if(typeof toast==='function') toast('Diagnóstico copiado. Pegámelo en el chat.'); }
+  catch(_){ try{ prompt('Copiá esto y pegámelo:', t); }catch(__){ console.log(t); } }
+}
+window.dmCopiarDiagnostico = dmCopiarDiagnostico;
+
 // ── Una sola puerta para todas las pestañas del profesional ───────────
 // Antes cada botón hacía lo suyo: unos llamaban dmTopbarGo, el Directorio
 // llamaba showConsultDir() directo y TCC-I entraba por 'more'. Tres caminos
@@ -16718,13 +16764,15 @@ function dmTopbarGo(tab){
           .some(function(e){ return e && e.offsetParent !== null && (e.textContent||'').trim(); });
         const _pantallaSeVe = _a && _a.getBoundingClientRect().height > 20;
         if(!_hay && !_pantallaSeVe){
-          console.warn('[NAV] '+tab+': la pantalla está activa pero no se ve nada. body="'+
-                       document.body.className+'"');
-          // Se destraba solo: las marcas del panel de dos columnas son lo
-          // único que puede estar escondiéndolo.
-          document.body.classList.remove('dr-metrics-view');
-          document.body.classList.remove('dm-dir-abierto');
-          if(typeof toast==='function') toast('Se destrabó la vista. Si vuelve a pasar, avisá.');
+          const _estado = dmEstadoPanel();
+          console.warn('[NAV] '+tab+' quedó invisible ·', _estado);
+          // Destrabado completo y reintento. Antes sacaba dos clases y se
+          // quedaba ahí: si el que escondía era otra, el profesional seguía
+          // mirando una pantalla vacía sin forma de salir.
+          dmResetPanel();
+          try{ showDrTab(tab==='dir'||tab==='admin'?'patients':tab,
+                         document.getElementById('drnav-'+tab)); }catch(_){}
+          if(typeof toast==='function') toast('Se destrabó la vista. Copiá el diagnóstico desde tu avatar → Diagnóstico.');
         }
       }catch(_){}
     }, 700);
