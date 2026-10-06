@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod254-fc9738db">
+<link rel="stylesheet" href="css/styles.css?v=mod255-fc9738db">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod254-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod254-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod254-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=mod254-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod254-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod255-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod255-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod255-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=mod255-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=mod255-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod254';
+const APP_VERSION='mod255';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -3349,6 +3349,33 @@ function showScreen(id){
     // limpia al cambiar de pantalla, en UN solo lugar, no en el handler del
     // botón que se suponía que era la única salida.
     document.body.classList.toggle('dm-dir-abierto', id === 'consult');
+    // `dr-metrics-view` y `dr-tab-patients` son del MISMO tipo: dicen qué está
+    // mostrando el panel de dos columnas de doctor-home. Las pone y las saca
+    // showDrTab_… que no corre cuando se va a TCC-I, al directorio o a admin,
+    // porque esos salen por otra puerta. Resultado: al volver, el body queda
+    // diciendo "estoy mostrando métricas" sobre una pantalla que no es esa, y
+    // la regla
+    //     body.dr-desktop:not(.dr-tab-patients) #screen-doctor-home{display:none}
+    // esconde el panel entero. Desde afuera: el botón no hace nada.
+    //
+    // Fuera de doctor-home no significan nada, así que mueren acá.
+    if(id !== 'doctor-home'){
+      document.body.classList.remove('dr-metrics-view');
+      document.body.classList.remove('dr-tab-patients');
+    }else if(_isDr){
+      // Y al entrar, NUNCA las dos apagadas. Con dr-desktop puesto y ninguna
+      // de las dos, el CSS esconde el panel de pacientes (por el :not) y
+      // tampoco muestra el de métricas (que pide dr-metrics-view): queda la
+      // pantalla en blanco, con la barra de arriba intacta. Clavado: parece
+      // que los botones dejaron de funcionar.
+      //
+      // Es un estado que no significa nada, así que no puede existir. El
+      // default es la lista de pacientes.
+      const _c = document.body.classList;
+      if(!_c.contains('dr-tab-patients') && !_c.contains('dr-metrics-view')){
+        _c.add('dr-tab-patients');
+      }
+    }
     // ── La barra superior, en TODAS las pantallas del profesional ──────
     // Estaba atada a `dr-desktop`, que marca otra cosa: el layout de dos
     // paneles (lista + ficha). TCC-I, el directorio y el panel admin no lo
@@ -16669,10 +16696,29 @@ function dmTopbarGo(tab){
         if(destino === 'doctor-home') return;
         const _a = document.querySelector('.screen.active');
         const _id = (_a && _a.id) || null;
-        if(_id === 'screen-'+destino) return;          // llegó
-        if(_id !== _antes) return;                     // el usuario ya se fue a otra cosa
-        console.warn('[NAV] '+tab+' no llegó a '+destino+' (quedó en '+(_id||'ninguna')+')');
-        if(typeof toast==='function') toast('No se pudo abrir esa sección. Probá recargar.');
+        if(_id !== 'screen-'+destino){
+          if(_id !== _antes) return;                   // el usuario ya se fue a otra cosa
+          console.warn('[NAV] '+tab+' no llegó a '+destino+' (quedó en '+(_id||'ninguna')+')');
+          if(typeof toast==='function') toast('No se pudo abrir esa sección. Probá recargar.');
+          return;
+        }
+        // Llegó, pero ¿se VE? Que la pantalla esté activa no alcanza: el
+        // contenido puede haber ido a un contenedor que el layout tiene
+        // escondido, y entonces el clic se siente igual que un botón muerto.
+        // Esto es lo que no detectaba el chequeo anterior.
+        const _hay = ['dr-content-side','drp-content','dr-content']
+          .map(function(x){ return document.getElementById(x); })
+          .some(function(e){ return e && e.offsetParent !== null && (e.textContent||'').trim(); });
+        const _pantallaSeVe = _a && _a.getBoundingClientRect().height > 20;
+        if(!_hay && !_pantallaSeVe){
+          console.warn('[NAV] '+tab+': la pantalla está activa pero no se ve nada. body="'+
+                       document.body.className+'"');
+          // Se destraba solo: las marcas del panel de dos columnas son lo
+          // único que puede estar escondiéndolo.
+          document.body.classList.remove('dr-metrics-view');
+          document.body.classList.remove('dm-dir-abierto');
+          if(typeof toast==='function') toast('Se destrabó la vista. Si vuelve a pasar, avisá.');
+        }
       }catch(_){}
     }, 700);
   }catch(e){
