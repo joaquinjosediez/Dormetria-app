@@ -5,7 +5,7 @@
 // El nombre lleva la versión: al activarse, `activate` borra todas las cachés
 // que no se llamen así. Con un nombre fijo, una caché vieja podía sobrevivir
 // publicaciones enteras y servir estáticos de hace semanas.
-const CACHE = 'dormetria-mod256';
+const CACHE = 'dormetria-mod257';
 const SHELL = ['./', './index.html', './css/styles.css', './js/dormetria-sleep-metrics.js', './manifest.json'];
 
 self.addEventListener('install', (ev) => {

@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg257-fc9738db">
+<link rel="stylesheet" href="css/styles.css?v=stg258-fc9738db">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg257-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg257-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg257-3c290cd2"></script>
-<script src="js/dormetria-render-resumen.js?v=stg257-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=stg257-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg258-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg258-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg258-3c290cd2"></script>
+<script src="js/dormetria-render-resumen.js?v=stg258-acaebf39"></script>
+<script src="js/dormetria-tcci.js?v=stg258-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg257';
+const APP_VERSION='stg258';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg257 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg258 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -3366,9 +3366,20 @@ function showScreen(id){
     // esconde el panel entero. Desde afuera: el botón no hace nada.
     //
     // Fuera de doctor-home no significan nada, así que mueren acá.
-    if(id !== 'doctor-home'){
+    // OJO con el alcance: la ficha de un paciente (doctor-patient) es LA MISMA
+    // vista de dos columnas que doctor-home. En mod255 esto decía
+    // `id !== 'doctor-home'`, así que al abrir un paciente se sacaba
+    // dr-tab-patients y la regla
+    //     body.dr-desktop:not(.dr-tab-patients) #screen-doctor-home{display:none}
+    // hacía desaparecer la lista lateral: la ficha pasaba a ocupar todo.
+    // El criterio correcto es el mismo que gobierna el layout: _twoPanel.
+    if(!_twoPanel){
       document.body.classList.remove('dr-metrics-view');
       document.body.classList.remove('dr-tab-patients');
+    }else if(_isDr && id === 'doctor-patient'){
+      // Abrir un paciente siempre significa lista + ficha. Nunca métricas.
+      document.body.classList.remove('dr-metrics-view');
+      document.body.classList.add('dr-tab-patients');
     }else if(_isDr){
       // Y al entrar, NUNCA las dos apagadas. Con dr-desktop puesto y ninguna
       // de las dos, el CSS esconde el panel de pacientes (por el :not) y
@@ -3553,12 +3564,52 @@ function dmVerNotaNoche(e, ev){
     ? null : parseInt(e.awake_in_bed_after_mins, 10);
   if(isNaN(_finCama)) _finCama = null;
 
+  // ── Medicación de ESA noche ───────────────────────────────────────
+  // Faltaba, y es lo primero que se pregunta mirando una noche mala: si
+  // tomó algo y qué. Estaba guardado desde siempre; había que abrir el
+  // registro entero para verlo.
+  var _medTxt = '', _medDet = '';
+  try{
+    var _ms = e.medications;
+    if(typeof _ms === 'string' && _ms && _ms !== '[]'){ try{ _ms = JSON.parse(_ms); }catch(_e3){ _ms = null; } }
+    if(Array.isArray(_ms) && _ms.length){
+      var _esc = function(x){ return String(x||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+      _medTxt = _ms.length === 1 ? '1 fármaco' : (_ms.length + ' fármacos');
+      _medDet = '<div style="margin:1px 0 4px 0">' + _ms.map(function(m){
+        var _nom = _esc((m && (m.name || m.nombre)) || (typeof m === 'string' ? m : '') || 'sin nombre');
+        var _dos = _esc((m && (m.dose || m.dosis)) || '');
+        return '<div style="font-size:12px;color:#6b7c74;padding:1px 0 1px 3px">· ' + _nom +
+               (_dos ? ' <span style="color:#9a9a92">' + _dos + '</span>' : '') + '</div>';
+      }).join('') + '</div>';
+    }else if(_ms != null && (Array.isArray(_ms) ? _ms.length === 0 : String(_ms) === '')){
+      _medTxt = 'ninguno';   // lo cargó y dijo que no: es un dato, no un hueco
+    }
+  }catch(_e4){}
+
+  // Sustancias de esa noche, con la hora si está cargada. Solo si hubo:
+  // una lista de ceros no dice nada y llena el globo.
+  var _sust = '';
+  try{
+    var _hhmm = function(v){ return v ? (' · ' + String(v).slice(0,5)) : ''; };
+    var _caf = Number(e.coffee_cups);
+    if(e.coffee_cups != null && !isNaN(_caf) && _caf > 0){
+      _sust += _dato('Cafeína', Math.round(_caf) + ' mg' + _hhmm(e.last_caffeine_time));
+    }
+    var _alc = Number(e.alcohol_drinks);
+    if(e.alcohol_drinks != null && !isNaN(_alc) && _alc > 0){
+      _sust += _dato('Alcohol', (Math.round(_alc * 10) / 10) + ' UA' + _hhmm(e.last_alcohol_time));
+    }
+  }catch(_e5){}
+
   globo.innerHTML='<div style="font-size:12px;color:#1a4a3a;font-weight:700;margin-bottom:7px">'+f+'</div>'+
     _dato('Durmió', e.no_sleep===true ? 'no durmió' : _hm(e.sleep_minutes))+
     _dato('Tardó en dormirse', _lat)+
     _dato('Despertares', _despTxt)+
     _despDet+
     (_finCama ? _dato('En cama ya despierto', _hm(_finCama)) : '')+
+    (_medTxt ? _dato('Medicación', _medTxt) : '')+
+    _medDet+
+    _sust+
     (t ? '<div style="margin-top:9px;padding-top:8px;border-top:1px solid #f0eee9;font-size:13px;color:#3f3f46;line-height:1.5;white-space:pre-wrap">'+
          String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>' : '');
   capa.appendChild(globo);

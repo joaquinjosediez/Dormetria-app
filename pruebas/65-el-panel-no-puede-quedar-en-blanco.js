@@ -41,9 +41,15 @@ r.ok(/body\.dr-desktop\.dr-metrics-view #dr-metrics-desktop\{ display:block/.tes
 r.seccion('Al salir de doctor-home, las dos marcas mueren:');
 
 const bloque = app.slice(app.indexOf("classList.toggle('dm-dir-abierto'"),
-                         app.indexOf("classList.toggle('dm-dir-abierto'") + 2000);
-r.ok(/if\(id !== 'doctor-home'\)\{/.test(bloque),
-     'se limpian según la pantalla, en showScreen, que corre siempre');
+                         app.indexOf("classList.toggle('dm-dir-abierto'") + 3600);
+// Y el alcance correcto es `_twoPanel`, no `id === 'doctor-home'`: la ficha
+// de un paciente es LA MISMA vista de dos columnas. Con el criterio de
+// mod255, abrir un paciente sacaba dr-tab-patients y la lista lateral
+// desaparecía — la ficha pasaba a ocupar toda la pantalla.
+r.ok(/if\(!_twoPanel\)\{/.test(bloque),
+     'se limpian al salir de la vista de dos columnas, no de una pantalla');
+r.ok(/id === 'doctor-patient'/.test(bloque),
+     'y abrir un paciente deja lista + ficha, nunca métricas');
 r.ok(/remove\('dr-metrics-view'\)/.test(bloque), 'dr-metrics-view');
 r.ok(/remove\('dr-tab-patients'\)/.test(bloque), 'dr-tab-patients');
 
