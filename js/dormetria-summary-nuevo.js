@@ -168,6 +168,21 @@ async function dmPintarEtiquetasResumen() {
     if (typeof renderTagHeaderPills === 'function' && S.viewData) {
       try { renderTagHeaderPills(S.viewData, estado); } catch (_) {}
     }
+    // Y SE GUARDA. Acá estaba el agujero: esta es la única vez que las
+    // etiquetas se resuelven con las señales del DIARIO disponibles —el motor
+    // acaba de publicar _dmPatronDiario y _dmSenalesDiario unas líneas antes—,
+    // pero el resultado se pintaba y se tiraba.
+    //
+    // El listado lateral no mira el diario: lee patients.tags.resolved, que lo
+    // escribió un cálculo anterior hecho SOLO con las escalas. Por eso un
+    // paciente con "Insomnio · auto · patrón de insomnio en el diario" en la
+    // ficha no tenía la franja roja en la lista: en la base nunca se guardó.
+    //
+    // Peor: una vez que resolved existe como array, backgroundFillMissingTags
+    // lo da por resuelto y no vuelve a calcularlo nunca.
+    if (typeof persistResolvedTags === 'function') {
+      try { await persistResolvedTags(dmCurrentEmail, estado); } catch (_) {}
+    }
   } catch (err) {
     console.warn('[Resumen] etiquetas:', err);
     slot.innerHTML = '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px">No se pudieron cargar las etiquetas</div>';
