@@ -17,12 +17,48 @@ echo "── Dormetria · subir ──"
 echo
 
 # ── 1 · ¿Hay algo para subir? ──────────────────────────────────────────
+VER_LOCAL=$(grep -o "const APP_VERSION='[^']*'" index.html | head -1 | sed "s/.*'\(.*\)'/\1/")
 PENDIENTES=$(git log --oneline origin/main..main 2>/dev/null | wc -l | tr -d ' ')
 if [ "$PENDIENTES" = "0" ]; then
   echo "No hay nada nuevo para publicar: GitHub ya tiene lo último."
+  # ── ¿Y el sitio? ────────────────────────────────────────────────────
+  # Que GitHub tenga el commit no significa que esté PUBLICADO. El 5 de
+  # octubre una caída de Actions dejó el build de Pages fallando tres horas:
+  # el push estaba bien, el sitio servía una versión de dos días antes, y
+  # desde acá parecía que no había nada que hacer. Ahora se chequea.
+  VER_WEB=$(curl -s --max-time 10 "https://app.dormetria.com/version.json?t=$(date +%s)" \
+            | sed -n 's/.*"version"[^"]*"\([^"]*\)".*/\1/p')
   echo
-  echo "Si esperabas ver un cambio en la app y no aparece, no es el push:"
-  echo "es la versión vieja guardada en caché. Abrí la app y apretá Cmd+R."
+  if [ -z "$VER_WEB" ]; then
+    echo "   (No pude consultar qué versión está publicada.)"
+  elif [ "$VER_WEB" = "$VER_LOCAL" ]; then
+    echo "   Publicado y sirviéndose: $VER_WEB."
+    echo
+    echo "   Si en la app ves algo viejo, es la caché: abrila y apretá Cmd+R."
+    exit 0
+  else
+    echo "   ⚠️  Acá tenés $VER_LOCAL pero el sitio sirve $VER_WEB."
+    echo
+    echo "   El código está en GitHub; lo que no terminó es la PUBLICACIÓN."
+    echo "   Suele pasar cuando el build de Pages se cae o se cancela, y no"
+    echo "   se reintenta solo: hay que darle algo nuevo que publicar."
+    echo
+    printf "   ¿Hago un commit vacío para que vuelva a publicar? (s/n) "
+    read -r RE
+    case "$RE" in
+      s|S|si|SI|Si|y|Y)
+        git commit --allow-empty -q -m "republicar $VER_LOCAL (el deploy anterior no llego a completarse)"
+        if git push origin main; then
+          echo
+          echo "   Listo. Mirá en un minuto: https://app.dormetria.com/version.json"
+          echo "   Si sigue en $VER_WEB, el build esta fallando:"
+          echo "   https://github.com/joaquinjosediez/Dormetria-app/actions"
+        fi
+        ;;
+      *) echo "   No hice nada." ;;
+    esac
+    exit 0
+  fi
   exit 0
 fi
 echo "   Para publicar: $PENDIENTES cambio(s)."
