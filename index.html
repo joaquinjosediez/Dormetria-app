@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod259-30911f2f">
+<link rel="stylesheet" href="css/styles.css?v=mod260-30911f2f">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod259-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod259-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod259-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod259-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod259-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod260-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod260-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod260-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod260-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod260-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod259';
+const APP_VERSION='mod260';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -27791,6 +27791,11 @@ const COMMON_MEDS = [
   {name:'Escitalopram', cat:'ISRS'},
   {name:'Fluoxetina', cat:'ISRS'},
   {name:'Venlafaxina', cat:'IRSN'},
+  // La desvenlafaxina es el metabolito activo de la venlafaxina y se
+  // prescribe como farmaco propio: quien la toma no la encontraba en la
+  // lista y la cargaba a mano en "Otro", con lo cual quedaba fuera de
+  // cualquier agrupacion por categoria.
+  {name:'Desvenlafaxina', cat:'IRSN'},
   {name:'Duloxetina', cat:'IRSN'},
   // Gabapentinoides: se usan fuera de indicación para dormir, y en el síndrome
   // de piernas inquietas —que esta app etiqueta como SPI— son de primera línea.
@@ -28091,7 +28096,24 @@ function dmScoreTxt(score, maxScore, scaleId){
 // Por qué sí/no y no una escala: para comparar noches con y sin, que es lo
 // único que se puede hacer con 30 registros. Una escala de 1 a 5 partiría la
 // muestra en pedazos demasiado chicos.
-const DM_MAX_VARS = 5;
+// Cuantas variables propias se pueden CREAR. Baja de 5 a 3.
+//
+// No es una restriccion cosmetica: cada variable propia es una comparacion
+// mas contra la calidad del sueno, encima de los ocho habitos que ya se
+// analizan. Con cinco son trece pruebas por paciente, y a p<0.05 la chance
+// de que al menos una de cruce por azar pasa de la mitad. El piso de 8
+// noches y 5 por grupo achica el ruido pero no arregla la multiplicidad.
+// Tres es lo que se puede marcar todas las noches sin que el diario se
+// vuelva un formulario, que es el otro costo.
+const DM_MAX_VARS = 3;
+
+// Cuantas se LEEN. Mas alto a proposito: bajar el tope no puede hacer
+// desaparecer lo que un paciente ya venia marcando. Con un solo numero, el
+// slice de dmGetVarsPersonales habria escondido la cuarta y la quinta
+// variable de quien ya las tenia, junto con todo su historial en
+// custom_flags, sin decir nada. Se dejan de poder crear; las que existen
+// se siguen viendo y analizando.
+const DM_MAX_VARS_LEE = 5;
 
 // De quien son las variables que hay que leer.
 // Cuando el profesional abre la ficha de un paciente, S.user sigue siendo EL
@@ -28108,8 +28130,8 @@ function dmGetVarsPersonales(){
   try{
     const _f = dmFuenteVars();
     const v = (_f && _f.custom_vars);
-    if(Array.isArray(v)) return v.slice(0, DM_MAX_VARS);
-    if(typeof v === 'string' && v) return (JSON.parse(v)||[]).slice(0, DM_MAX_VARS);
+    if(Array.isArray(v)) return v.slice(0, DM_MAX_VARS_LEE);
+    if(typeof v === 'string' && v) return (JSON.parse(v)||[]).slice(0, DM_MAX_VARS_LEE);
   }catch(_){}
   return [];
 }
@@ -28129,11 +28151,11 @@ function dmRenderVarsPersonales(){
   const vars = dmGetVarsPersonales();
   if(!vars.length){
     return '<div class="dm-diary-block">'+
-      '<div class="sec-title" style="margin-top:0">Tu propia variable</div>'+
+      '<div class="sec-title" style="margin-top:0">Tus propias variables</div>'+
       '<div style="font-size:12.5px;color:rgba(244,239,229,.82);line-height:1.55;margin-bottom:10px">'+
-        'Podés seguir algo que solo importa en tu caso —si tomaste la medicación, si dormiste con tu hijo, si tuviste guardia— '+
-        'y la app te va a mostrar si se asocia a mejor o peor sueño.</div>'+
-      '<button type="button" onclick="dmAbrirVarsPersonales()" style="width:100%;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(126,200,164,0.45);border-radius:10px;padding:11px;color:#F4EFE5;font-size:13.5px;cursor:pointer;font-family:var(--font)">+ Crear mi variable</button>'+
+        'Podés seguir hasta '+DM_MAX_VARS+' cosas que solo importan en tu caso —si tomaste la medicación, si dormiste con tu hijo, si tuviste guardia— '+
+        'y la app te va a mostrar si se asocian a mejor o peor sueño.</div>'+
+      '<button type="button" onclick="dmAbrirVarsPersonales()" style="width:100%;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(126,200,164,0.45);border-radius:10px;padding:11px;color:#F4EFE5;font-size:13.5px;cursor:pointer;font-family:var(--font)">+ Crear mis variables</button>'+
     '</div>';
   }
   return '<div class="dm-diary-block">'+
@@ -28153,6 +28175,38 @@ function dmRenderVarsPersonales(){
   '</div>';
 }
 
+// Un campo del modal de variables. Se extrajo para poder agregar uno mas sin
+// volver a dibujar el modal entero, que borraria lo que haya tipeado.
+function dmVarCampoHtml(i, v){
+  const inp='width:100%;box-sizing:border-box;background:#fff;border:1px solid #d8d4cb;'+
+    'border-radius:11px;padding:11px 12px;font-size:14px;font-family:var(--font);color:#10231c';
+  const ej=['Ej: tome la medicacion','Ej: dormi con mi hijo','Ej: tuve guardia',
+            'Ej: entrene fuerte','Ej: discuti en casa'];
+  return '<label style="font-size:10.5px;letter-spacing:.05em;color:#5c6b64;display:block;margin-bottom:4px">'+
+      'VARIABLE '+(i+1)+(i>0?' (opcional)':'')+'</label>'+
+    '<input id="dm-var'+(i+1)+'" type="text" maxlength="34" placeholder="'+(ej[i]||'Ej: algo que cambie noche a noche')+'" '+
+      'data-vid="'+((v&&v.id)||'')+'" '+
+      'value="'+((v&&v.label||'').replace(/"/g,'&quot;'))+'" '+
+      'style="'+inp+';margin-bottom:12px">';
+}
+
+function dmVarsAgregarCampo(){
+  const cont=document.getElementById('dm-vars-campos');
+  if(!cont) return;
+  const n=cont.querySelectorAll('input').length;
+  if(n >= DM_MAX_VARS){ return; }
+  cont.insertAdjacentHTML('beforeend', dmVarCampoHtml(n, null));
+  const nuevo=document.getElementById('dm-var'+(n+1));
+  if(nuevo) nuevo.focus();
+  // El boton desaparece al llegar al tope en vez de quedar sin hacer nada:
+  // un boton que no responde se lee como una falla de la app.
+  if(n+1 >= DM_MAX_VARS){
+    const b=document.getElementById('dm-vars-mas');
+    if(b) b.style.display='none';
+  }
+}
+window.dmVarsAgregarCampo = dmVarsAgregarCampo;
+
 function dmAbrirVarsPersonales(){
   const vars = dmGetVarsPersonales();
   const old=document.getElementById('dm-vars-modal'); if(old) old.remove();
@@ -28164,23 +28218,26 @@ function dmAbrirVarsPersonales(){
   w.innerHTML='<div style="background:#F4EFE5;border-radius:20px;padding:22px 20px;width:100%;max-width:420px;max-height:86vh;overflow-y:auto">'+
     '<div style="font-size:17px;font-weight:700;color:#10231c;margin-bottom:5px">Tus variables</div>'+
     '<div style="font-size:12.5px;color:#5c6b64;margin-bottom:16px;line-height:1.5">Hasta '+DM_MAX_VARS+' cosas que quieras seguir. Las vas a marcar cada noche y la app te dirá si se asocian a mejor o peor sueño. Para borrar una, dejá el campo vacío.</div>'+
+    '<div id="dm-vars-campos">'+
     (function(){
-      // Un campo por variable cargada, mas uno libre para agregar. Antes eran
-      // dos casillas fijas y no habia forma de tener una tercera.
-      const _ej=['Ej: tomé la medicación','Ej: dormí con mi hijo','Ej: tuve guardia',
-                 'Ej: entrené fuerte','Ej: discutí en casa'];
-      const n=Math.min(DM_MAX_VARS, vars.length+1);
+      // Un campo por variable cargada, mas uno libre. Los demas se agregan
+      // con el boton: antes habia que guardar y volver a abrir el modal para
+      // que apareciera el siguiente, asi que nadie pasaba de dos.
+      const n=Math.min(Math.max(DM_MAX_VARS, vars.length), vars.length+1);
       let h='';
-      for(let i=0;i<n;i++){
-        h+='<label style="font-size:10.5px;letter-spacing:.05em;color:#5c6b64;display:block;margin-bottom:4px">'+
-             'VARIABLE '+(i+1)+(i>0?' (opcional)':'')+'</label>'+
-           '<input id="dm-var'+(i+1)+'" type="text" maxlength="34" placeholder="'+_ej[i]+'" '+
-             'data-vid="'+((vars[i]&&vars[i].id)||'')+'" '+
-             'value="'+((vars[i]&&vars[i].label||'').replace(/"/g,'&quot;'))+'" '+
-             'style="'+inp+';margin-bottom:12px">';
-      }
+      for(let i=0;i<n;i++) h+=dmVarCampoHtml(i, vars[i]);
       return h;
     })()+
+    '</div>'+
+    // El boton existe porque la caja vacia sola no se lee como "pueden ser
+    // tres": se lee como "esta es la tuya". El bloque del diario decia "Tu
+    // propia variable", en singular, y el modal mostraba un campo por vez.
+    // La funcion estaba entera desde siempre y no la usaba nadie.
+    '<button type="button" id="dm-vars-mas" onclick="dmVarsAgregarCampo()" '+
+      'style="'+(Math.min(Math.max(DM_MAX_VARS, vars.length), vars.length+1) >= DM_MAX_VARS ? 'display:none;' : '')+
+      'width:100%;background:none;border:1.5px dashed #b9c6c0;border-radius:11px;'+
+      'padding:10px;color:#1a4a3a;font-size:13px;font-weight:600;cursor:pointer;'+
+      'font-family:var(--font);margin-bottom:4px">+ Agregar otra</button>'+
     '<div style="background:rgba(0,0,0,.04);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:11.5px;color:#5c6b64;line-height:1.5">'+
       'Elegí algo que <strong>cambie</strong> de una noche a otra. Si pasa todas las noches o ninguna, no hay con qué comparar.</div>'+
     '<div style="display:flex;gap:8px;margin-top:16px">'+
@@ -28235,7 +28292,10 @@ async function dmGuardarVarsPersonales(){
   const previas = dmGetVarsPersonales();
   const usados = {};
   const vars=[];
-  for(let i=0;i<DM_MAX_VARS;i++){
+  // Se recorre hasta el tope de LECTURA, no el de creacion: a quien ya
+  // tenia cinco, abrir el modal y guardar con un for hasta 3 le borraba
+  // las dos ultimas sin avisar.
+  for(let i=0;i<DM_MAX_VARS_LEE;i++){
     const el=document.getElementById('dm-var'+(i+1));
     if(!el) continue;
     const label=(el.value||'').trim();
