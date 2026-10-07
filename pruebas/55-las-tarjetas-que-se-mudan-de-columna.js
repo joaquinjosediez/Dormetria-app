@@ -73,8 +73,11 @@ r.seccion('Pero solo si hay algo que poner del lado del día:');
 // Un adulto que no duerme siesta no necesita una tarjeta entera para
 // informar que no duerme siesta — y menos que las métricas clínicas se
 // corran media pantalla hacia abajo para emparejarse con un recuadro vacío.
-r.ok(/if\(_nd && _dia\)\{/.test(bloque),
-     'sin tarjeta de día no se mueve nada');
+// Y desde mod259, tampoco con una tarjeta de día ANÉMICA: tres filas al
+// lado de diez dejan media columna en blanco. El criterio completo y su
+// porqué están en pruebas/69; acá alcanza con que la guarda siga ahí.
+r.ok(/if\(_nd && _dia && _filasEnDia >= 5\)\{/.test(bloque),
+     'sin tarjeta de día —o con una de tres filas— no se mueve nada');
 r.ok(/#dr-noche-dia:empty[^}]*display:none/.test(css.replace(/\s+/g, ' ')),
      'y el contenedor vacío no aporta un hueco');
 

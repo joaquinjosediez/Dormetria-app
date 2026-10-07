@@ -4561,8 +4561,8 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
        1 score · 2 pilares · 3 progresión semanal   → el panorama
        4 actograma                                  → los horarios en crudo
        5 sueño en 24 h · 6 noche y día              → las métricas
-       7 regularidad técnica                        → lo fino
-       8 lo que reporta vs. lo que se mide          → la interpretación */
+       7 lo que reporta vs. lo que se mide          → la interpretación
+       8 regularidad técnica                        → lo fino, que cierra */
   #screen-doctor-patient.active .dm-diary-score   { order:1; }
   #screen-doctor-patient.active .dm-diary-pillars { order:2; }
   #screen-doctor-patient.active #dr-weekly-prog   { order:3; }
@@ -4570,8 +4570,8 @@ textarea.dm-inp{ font-weight:500; font-size:16.5px; line-height:1.6; resize:vert
   #screen-doctor-patient.active #dr-resumen24     { order:5; }
   #screen-doctor-patient.active #dr-clinical-metrics { order:6; }
   #screen-doctor-patient.active #dr-noche-dia     { order:7; }
-  #screen-doctor-patient.active #dr-reg-slot      { order:8; }
-  #screen-doctor-patient.active #dr-factores-card { order:9; }
+  #screen-doctor-patient.active #dr-factores-card { order:8; }
+  #screen-doctor-patient.active #dr-reg-slot      { order:9; }
   /* Sin siestas no se emite tarjeta de día: el contenedor queda vacío y
      aportaría un hueco del tamaño del gap. */
   #screen-doctor-patient.active #dr-noche-dia:empty,

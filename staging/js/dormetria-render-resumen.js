@@ -251,7 +251,17 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
               if (isNaN(d)) return '';
               const dias = Math.floor((Date.now() - d) / 86400000);
               const txt = d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
-              const viejo = dias >= 90;
+              // Dos meses, no tres. Un PHQ-9 moderado de hace 90 días ya no
+              // describe a nadie, y para entonces la consulta en la que
+              // servía repetirlo ya pasó. 60 días es el intervalo con el que
+              // se sigue un cuadro anímico o un insomnio en tratamiento.
+              //
+              // Y solo si está FUERA de rango. A una escala que dio normal no
+              // se le pide repetición: el propio criterio de la app dice que
+              // las normales no se vuelven a pedir solas. "PHQ-9 bajo el
+              // punto de corte — conviene repetirla" era ruido en la tarjeta
+              // justo donde solo tiene que haber lo que cambia la conducta.
+              const viejo = dias >= 60 && f.severidad !== 'ok';
               const cuanto = dias < 1 ? 'hoy'
                 : dias < 30 ? ('hace ' + dias + ' d')
                 : dias < 365 ? ('hace ' + Math.round(dias / 30) + ' meses')
@@ -443,7 +453,8 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
         const i = sc.interp(r.score) || {};
         const alterada = i.bg === '#fee2e2' || i.bg === '#fef2f2';
         return { nombre: sc.name, score: r.score, max: r.max_score || sc.max || null,
-                 etiqueta: i.l || '', alterada: alterada, fecha: r.created_at, id: r.id };
+                 etiqueta: i.l || '', alterada: alterada, fecha: r.created_at, id: r.id,
+                 scaleId: sc.id };
       }).filter(Boolean)
         .sort(function (a, b) { return (b.alterada ? 1 : 0) - (a.alterada ? 1 : 0); });
 
@@ -454,13 +465,43 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
 
       filas = alteradas.map(function (x) {
         const f = x.fecha ? new Date(x.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '';
+        // Una escala alterada de hace dos meses es el caso que mas se
+        // escapa: sigue figurando en rojo, se lee como el estado de hoy, y
+        // nadie la vuelve a pedir porque no hay nada que lo recuerde.
+        //
+        // Del lado del PACIENTE el aviso ya existe (banner "Repetir X" a los
+        // 30 dias, en su pantalla de inicio). Del lado del profesional no
+        // habia nada: el unico lugar que decia la antiguedad era la tarjeta
+        // de banderas, y solo para las tres escalas que emiten bandera
+        // (STOP-BANG, Epworth, PHQ-9). Un ISI o un GASQ alterado de hace
+        // cuatro meses no lo decia nadie.
+        const dias = x.fecha ? Math.floor((Date.now() - new Date(x.fecha)) / 86400000) : null;
+        const vieja = dias != null && dias >= 60;
+        const cuanto = dias == null ? ''
+          : dias < 365 ? ('hace ' + Math.round(dias / 30) + ' meses')
+          : ('hace ' + Math.floor(dias / 365) + ' a\u00f1o' + (dias >= 730 ? 's' : ''));
         // Clicable: abre las respuestas del cuestionario sin salir del Resumen.
-        return '<div onclick="showDrEvalAnswersById(\'' + x.id + '\')" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-top:0.5px solid rgba(126,200,164,0.08);cursor:pointer">' +
-          '<span style="font-size:13px;color:#F4EFE5;font-weight:600">' + escHtml(x.nombre) + '</span>' +
-          '<span style="font-size:12.5px;color:#E88;font-weight:700;white-space:nowrap">' +
-            x.score + (x.max ? '/' + x.max : '') + ' · ' + escHtml(x.etiqueta) +
-            (f ? ' <span style="color:rgba(244,239,229,.72);font-weight:500">' + f + '</span>' : '') +
-          '</span></div>';
+        return '<div style="padding:7px 0;border-top:0.5px solid rgba(126,200,164,0.08)">' +
+          '<div onclick="showDrEvalAnswersById(\'' + x.id + '\')" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;cursor:pointer">' +
+            '<span style="font-size:13px;color:#F4EFE5;font-weight:600">' + escHtml(x.nombre) + '</span>' +
+            '<span style="font-size:12.5px;color:#E88;font-weight:700;white-space:nowrap">' +
+              x.score + (x.max ? '/' + x.max : '') + ' \u00b7 ' + escHtml(x.etiqueta) +
+              (f ? ' <span style="color:rgba(244,239,229,.72);font-weight:500">' + f + '</span>' : '') +
+            '</span>' +
+          '</div>' +
+          // El aviso lleva el boton al lado, no en otra pestana: saber que
+          // conviene repetirla y tener que ir a buscarla a mano es
+          // exactamente por lo que no se repite.
+          (vieja
+            ? ('<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:4px">' +
+                 '<span style="font-size:11px;color:#C8A96E">' + cuanto + ' \u2014 conviene repetirla</span>' +
+                 '<button onclick="event.stopPropagation();if(typeof dmPedirEscala===\'function\')dmPedirEscala(\'' + x.scaleId + '\')" ' +
+                   'style="background:rgba(200,169,110,0.16);border:0.5px solid rgba(200,169,110,0.42);' +
+                   'border-radius:8px;padding:3px 9px;font-size:11px;font-weight:600;color:#C8A96E;' +
+                   'cursor:pointer;font-family:inherit;white-space:nowrap">Ped\u00edrsela</button>' +
+               '</div>')
+            : '') +
+        '</div>';
       }).join('');
 
       if (normales.length) {

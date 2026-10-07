@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod258-fc9738db">
+<link rel="stylesheet" href="css/styles.css?v=mod259-30911f2f">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod258-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod258-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod258-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod258-acaebf39"></script>
-<script src="js/dormetria-tcci.js?v=mod258-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod259-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod259-9363f7fe"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod259-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod259-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod259-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod258';
+const APP_VERSION='mod259';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -18907,6 +18907,40 @@ function drArchiveFromProfile(email){
     showDrPTab_('summary');
   }catch(_){ toast('No se pudo cambiar el estado'); }
 }
+// ─── Del Resumen a "Sugerir escalas", con la escala ya tildada ───────
+// El aviso "conviene repetirla" sin un camino de un clic no sirve: hay que
+// acordarse del nombre, cambiar de pestana, encontrarla entre veinticinco y
+// tildarla. Eso es lo que hace que no se repita nunca.
+function dmPedirEscala(id){
+  try{
+    // La pestana se activa por su ELEMENTO, no por el id: showDrPTab pinta
+    // el .tab que recibe. Sin el, la pestana cambia de contenido y el
+    // subrayado se queda en Resumen.
+    const tabs = Array.prototype.slice.call(
+      document.querySelectorAll('#screen-doctor-patient .tab'));
+    const el = tabs.filter(function(t){ return /Sugerir escalas/i.test(t.textContent||''); })[0];
+    if(el) showDrPTab('suggest', el);
+    else showDrPTab_('suggest');
+    // El listado se arma con un await adentro, asi que no esta en el DOM
+    // cuando esta linea corre. Se espera a que aparezca, con tope: si la
+    // escala no esta disponible para este perfil (filtros por sexo o edad)
+    // no existe checkbox, y quedarse sondeando para siempre seria peor que
+    // no hacer nada.
+    let intentos = 0;
+    const buscar = setInterval(function(){
+      const cb = document.querySelector('#suggest-scale-list input[value="'+id+'"]');
+      if(cb){
+        clearInterval(buscar);
+        if(!cb.checked){ cb.checked = true; cb.dispatchEvent(new Event('change')); }
+        const lab = cb.closest('label');
+        if(lab) lab.scrollIntoView({block:'center', behavior:'smooth'});
+      }else if(++intentos > 40){
+        clearInterval(buscar);
+        if(typeof toast==='function') toast('Esa escala no esta disponible para este perfil');
+      }
+    }, 100);
+  }catch(e){ console.warn('[pedir escala]', e); }
+}
 function showDrPTab(tab,el){document.querySelectorAll('#screen-doctor-patient .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showDrPTab_(tab);}
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -20059,9 +20093,11 @@ async function showDrPTab_(tab){
             <span><span style="display:inline-block;width:10px;height:3px;background:#7c3aed;margin-right:3px;vertical-align:middle"></span>📱 Pantallas (ancho = minutos antes de dormir)</span>
           </div>
         </div>
-        <div id="dr-reg-slot" class="dm-solo-esp"></div>
         <!-- Hábitos vs calidad se mudó acá: es la tarjeta más alta de todas
-             y en la columna izquierda dejaba a la derecha corriendo sola. -->
+             y en la columna izquierda dejaba a la derecha corriendo sola.
+             Y va ANTES de la regularidad técnica: lo que cruza la calidad
+             reportada contra lo medido es lo que se mira al lado del
+             actograma; la regularidad técnica es el detalle fino y cierra. -->
         <div class="dm-card dm-light dm-solo-esp" id="dr-factores-card">
           <div class="dm-card-title">🔍 Impacto subjetivo vs. variables específicas</div>
           <!-- Acá va TODO lo que cruza contra la calidad percibida: la
@@ -20072,6 +20108,7 @@ async function showDrPTab_(tab){
           <div id="dr-quality-concord" style="font-size:12px;color:var(--label-2);line-height:1.6;margin-bottom:12px"></div>
           <div id="dr-quality-factores"></div>
         </div>
+        <div id="dr-reg-slot" class="dm-solo-esp"></div>
         </div>
         <!-- Las tres cifras de 24 h (solo pediátrico), a todo el ancho y
              ENCIMA de los dos detalles: así "Sueño nocturno" y "Sueño
@@ -20137,8 +20174,27 @@ async function showDrPTab_(tab){
           // en una línea adentro del bloque de la noche y no se emite
           // tarjeta: mover las métricas a una fila nueva para emparejarlas
           // con una celda vacía las empujaba media pantalla hacia abajo.
+          //
+          // Y solo si el bloque del día tiene SUFICIENTE para llenar su
+          // celda. Emparejar una tarjeta de 3 filas contra una de 10 no
+          // empareja nada: deja media columna en blanco y hace que las dos
+          // se lean como si a la derecha faltara algo. Es lo que pasa con
+          // casi todos los adultos, que duermen siesta uno o dos días de
+          // treinta: el bloque sale con las tres filas de base y nada más.
+          //
+          // Con 5 o más filas (las 3 de base más al menos dos de
+          // regularidad, margen hasta la noche o comparación de noches) el
+          // bloque tiene cuerpo propio y la comparación lado a lado es lo
+          // que se quiere. Con menos, el día va DEBAJO de la noche, en la
+          // columna de siempre, que es donde no desacomoda nada.
+          //
+          // Se cuentan hijos del bloque menos la cabecera: cada fila de
+          // `row()` es un div directo, así que el conteo es exacto y no
+          // depende de medir alturas, que en el celular y en escritorio dan
+          // distinto y cambian con el ancho de la ventana.
           const _nd=document.getElementById('dr-noche-dia');
-          if(_nd && _dia){
+          const _filasEnDia = _dia ? Math.max(0, _dia.children.length - 1) : 0;
+          if(_nd && _dia && _filasEnDia >= 5){
             const _noche=dme.querySelector(
               '.dm-metricas:not(.dm-bloque-dia):not(.dm-bloque-resumen24)');
             if(_noche) _nd.appendChild(_noche);
@@ -28772,6 +28828,22 @@ function getReminderPrefs(){
 }
 
 function scheduleLocalReminder(){
+  // ESTO NO ES EL RECORDATORIO DIARIO. Es un setInterval en la pagina: solo
+  // puede disparar mientras la app esta ABIERTA, y ademas exige que el
+  // minuto coincida exacto, cosa que no pasa si el navegador frena los
+  // temporizadores en segundo plano (lo hacen todos) o si el telefono se
+  // durmio. En un telefono, donde la app esta cerrada 23 horas por dia, no
+  // llega casi nunca.
+  //
+  // El recordatorio que de verdad llega con la app cerrada es el push de
+  // OneSignal: la app solo escribe las etiquetas (reminder_hour,
+  // reminder_on, role) en dmSyncPushTags, y el ENVIO es una campana
+  // recurrente configurada en el panel de OneSignal, que no vive en este
+  // repositorio. Si los recordatorios no estan llegando todos los dias, el
+  // problema esta ahi o en el estado del dispositivo (push_estado en la
+  // ficha), no en esta funcion.
+  //
+  // Se deja porque en escritorio, con la app abierta todo el dia, sirve.
   // Check every minute if it's time to remind
   clearInterval(window._reminderInterval);
   window._reminderInterval = setInterval(()=>{
@@ -28797,10 +28869,25 @@ function scheduleLocalReminder(){
 
 // Initialize reminders on app load
 (function initReminders(){
-  const prefs = getReminderPrefs();
-  if(prefs.enabled && Notification.permission==='granted'){
-    scheduleLocalReminder();
-  }
+  // Esto corre durante el parseo del script, sin red alguna, y leia
+  // `Notification.permission` sin preguntar si `Notification` EXISTE.
+  //
+  // En una pestana de Safari en iPhone no existe: la API de notificaciones
+  // solo aparece en la app agregada a la pantalla de inicio. Y el corto-
+  // circuito no salvaba el caso real: `prefs.enabled` sale de localStorage,
+  // asi que justo en quien YA habia configurado el recordatorio y despues
+  // abrio el enlace en una pestana —el que llega por WhatsApp, que es como
+  // llegan casi todos— la condicion de la izquierda daba true, la derecha
+  // tiraba ReferenceError y, al estar en un IIFE sin try, cortaba el resto
+  // del script inline. En el resto de la app la guarda ya estaba
+  // (typeof Notification!=='undefined' en tres lugares); aca se habia pasado.
+  try{
+    if(typeof Notification === 'undefined') return;
+    const prefs = getReminderPrefs();
+    if(prefs.enabled && Notification.permission==='granted'){
+      scheduleLocalReminder();
+    }
+  }catch(e){ console.warn('[recordatorio local]', e && e.message); }
 })();
 
 function fixScaleColors(){
