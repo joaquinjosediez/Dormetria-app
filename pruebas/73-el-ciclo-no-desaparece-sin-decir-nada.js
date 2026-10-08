@@ -1,103 +1,119 @@
 // "Una paciente no ve dónde poner si está en su día menstrual."
 //
-// No se cambió nada: el bloque "Tu ciclo" está en el paso 4 del diario desde
-// siempre, y la condición que lo muestra no se toca desde mod119. El problema
-// es la condición en sí:
+// No se había cambiado nada: el bloque "Tu ciclo" está en el paso 4 del
+// diario desde siempre. Lo que estaba mal era la pregunta.
 //
-//     ${((S.user && S.user.sex) === 'F') ? ... : ''}
+// La condición era `S.user.sex === 'F'`, a secas, desde mod119. O sea: el
+// bloque aparecía solo si podíamos demostrar que la persona es mujer. Y el
+// sexo es OPCIONAL en el perfil — nada en el alta obliga a cargarlo —, así
+// que quien nunca lo completó no tiene 'F' ni nada y el bloque desaparecía
+// sin una sola pista. Desde afuera se ve como una app rota, no como un
+// perfil incompleto.
 //
-// Tres formas de que eso dé falso en alguien que menstrúa:
+// Ahora la pregunta es la otra, que es la que se puede contestar con lo que
+// hay: ¿sabemos que NO corresponde? Se oculta únicamente con una respuesta
+// explícita.
 //
-//   · El sexo es OPCIONAL en el perfil. Quien nunca lo completó no tiene 'F'
-//     ni nada, y el bloque entero desaparece. Sin aviso, sin explicación:
-//     desde afuera se ve como que la app lo sacó. Es, con diferencia, el caso
-//     más probable, porque no hay nada en el alta que obligue a cargarlo.
-//   · El registro de profesionales guarda 'Femenino', no 'F'. Un perfil
-//     migrado o cargado por esa vía no entra.
-//   · Cualquier variante de capitalización.
-//
-// Y un dato perdido acá no es cosmético: la menstruación y los cinco días
-// previos se analizan como dos factores separados en el panel. Sin la marca,
-// esos dos factores no existen para esa paciente.
+// El costo de los dos errores no es simétrico, y por eso el default es
+// mostrar: a un hombre que nunca cargó el sexo le aparece un botón de más
+// que apaga con un toque; a una mujer se le perdían dos factores del
+// análisis —los días de sangrado y los cinco previos— sin que se enterara
+// ninguno de los dos.
 
 const C = require('./comun');
 const r = C.crearReporte('El ciclo no desaparece sin decir nada');
 
 const app = C.leerApp();
+const css = C.leerCss();
 
-r.seccion('La condición dejó de ser una comparación suelta:');
+r.seccion('Se muestra salvo que haya una respuesta explícita:');
 
 r.ok(/\$\{dmSigueCiclo\(S\.user\) \? /.test(app),
      'el diario pregunta por un criterio con nombre');
 r.ok(!/\(\(S\.user&&S\.user\.sex\)==='F'\)/.test(app),
      'y no quedó la comparación literal contra una sola cadena');
 
-// Desde el comentario que explica el criterio, no desde la firma: el porqué
-// es la mitad del arreglo y tiene que estar fijado igual que el código.
-const fn = app.slice(app.indexOf('// ¿Esta persona menstrua?'),
+const fn = app.slice(app.indexOf('// ¿Se muestra "Tu ciclo" en el diario?'),
                      app.indexOf('window.dmSigueCiclo'));
-r.ok(/sx === 'f' \|\| sx === 'femenino'/.test(fn),
-     'acepta cualquier forma de femenino');
-r.ok(/String\(u\.sex\|\|''\)\.trim\(\)\.toLowerCase\(\)/.test(fn),
-     'sin importar mayúsculas ni espacios');
-// Dos respuestas que solo puede haber dado alguien que menstrúa.
-r.ok(/u\.has_menarche  === true/.test(fn), 'y "ya tuve la menarca" alcanza');
-r.ok(/u\.has_menopause === false/.test(fn), 'y "no, aún menstruo" también');
+// Un comentario va partido en varias líneas con "// " al principio: buscar
+// una frase entera en crudo no encuentra nada. Y al revés, buscar un nombre
+// de columna en crudo lo encuentra aunque solo esté nombrado en el comentario
+// para decir que NO se usa. Las dos vistas, por separado.
+const prosa  = (t) => t.replace(/^\s*\/\/ ?/gm, '').replace(/\s+/g, ' ');
+const codigo = (t) => t.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
+// La inversión es el arreglo: antes había que demostrar que SÍ, ahora hay que
+// demostrar que NO.
+r.ok(/return true;\n\}/.test(fn),
+     'el default es mostrarlo: lo que se demuestra es la excepción');
+r.ok(/sx==='m' \|\| sx==='masculino' \|\| sx==='x' \|\| sx==='otro'/.test(fn),
+     'se oculta con sexo masculino u otro, en cualquier forma');
+r.ok(/u\.has_menarche === false/.test(fn), 'o con "todavía no tuve la menarca"');
+r.ok(/edad < 9/.test(fn), 'o con una edad en que no puede haberla');
+r.ok(/El costo de los dos errores no es el mismo/i.test(prosa(fn)),
+     'y queda escrito por qué el default es ese y no el otro');
 
 r.seccion('`track_menstrual` NO se usa, y está dicho por qué:');
 
 // Esa columna la escribe un checkbox con display:none que está `checked` de
 // fábrica y no se destilda nunca: vale true para todo paciente que haya
-// guardado Mi Perfil, hombres incluidos. Usarla como señal habría mostrado
-// el bloque del ciclo a medio padrón.
+// guardado Mi Perfil, hombres incluidos.
 r.ok(/NO se usa `track_menstrual`/.test(fn), 'queda escrito que no sirve como señal');
-r.ok(!/track_menstrual/.test(fn.replace(/\/\/[^\n]*/g, '')),
-     'y no se la consulta en el código, solo se la menciona en el comentario');
+r.ok(!/track_menstrual/.test(codigo(fn)),
+     'y no se la consulta en el código');
 
 const guardar = app.slice(app.indexOf("track_menstrual:(function(){"),
                           app.indexOf("track_menstrual:(function(){") + 420);
 r.ok(/_sx==='f' \|\| _sx==='femenino'/.test(guardar),
      'de ahora en más sigue al sexo elegido, que es lo que decía representar');
 
-r.seccion('Y cuando no se sabe, se dice:');
+r.seccion('Se apaga igual que el alcohol, que es lo que el paciente ya conoce:');
 
-const indef = app.slice(app.indexOf('function dmCicloIndefinido(u){'),
-                        app.indexOf('window.dmCicloIndefinido'));
-r.ok(/if\(dmSigueCiclo\(u\)\) return false/.test(indef),
-     'no se ofrece si ya se muestra');
-r.ok(/if\(sx\) return false/.test(indef),
-     'ni a quien cargó un sexo distinto: ahí no hay nada que preguntar');
-// Una nena de cuatro años y una señora de 75 no necesitan el ofrecimiento.
-r.ok(/edad < 9 \|\| edad > 60/.test(indef),
-     'ni fuera de la franja en que la pregunta tiene sentido');
-r.ok(/Quiero registrar mi ciclo/.test(app),
-     'y el aviso lleva un botón, no solo una explicación');
-r.ok(/dmIrACargarSexo\(\)/.test(app), 'que va a donde se arregla');
+r.ok(/No menstrúo · no me preguntes más/.test(app), 'mismo texto y mismo lugar');
+r.ok(/class="dm-alc-nunca" onclick="dmNoTengoCiclo\(\)"/.test(app),
+     'y la misma clase, así que se ve igual');
 
-const ir = app.slice(app.indexOf('function dmIrACargarSexo(){'),
-                     app.indexOf('window.dmIrACargarSexo'));
-// Mandar a la pantalla de perfil pierde la noche a medio cargar.
-r.ok(/openMiPerfil\(\)/.test(ir),
-     'el perfil se abre como modal ENCIMA del diario');
-r.ok(/renderMiPerfilEdit\(c\)/.test(ir),
-     'directo a la edición: quien tocó el botón ya sabe a qué viene');
-r.ok(/sx\.scrollIntoView/.test(ir), 'y con el campo de sexo a la vista');
+const apagar = app.slice(app.indexOf('// ── El ciclo se apaga como el alcohol'),
+                         app.indexOf('window.dmNoTengoCiclo=dmNoTengoCiclo'));
+r.ok(/localStorage\.setItem\('dm_sin_ciclo','1'\)/.test(apagar),
+     'la preferencia vive donde la del alcohol');
+// Esto es lo que NO hay que hacer, y por eso está fijado: poner "ya llegó a
+// la menopausia" en la ficha de una mujer de 30 con anticoncepción continua,
+// solo para esconder un botón, es inventar un diagnóstico. Y encima
+// habilitaría la MRS y bloquearía la PSST.
+r.ok(!/has_menopause/.test(codigo(apagar)),
+     'y NO escribe has_menopause: esconder un botón no es un diagnóstico');
+r.ok(/inventar un diagnostico/i.test(prosa(apagar)),
+     'con el motivo escrito, para que nadie lo "simplifique" después');
+r.ok(/_periodActive\) return/.test(apagar),
+     'y editando una noche que TIENE el período marcado, no se esconde');
+
+const volver = app.slice(app.indexOf('function dmVuelveElCiclo(){'),
+                         app.indexOf('function dmAplicarSinCiclo(){'));
+r.ok(/localStorage\.removeItem\('dm_sin_ciclo'\)/.test(volver), 'y se puede volver atrás');
+r.ok(/Ciclo: no lo registro/.test(app) && /dmVuelveElCiclo\(\)/.test(app),
+     'con el aviso y el "cambiar" a la vista, no escondido en el perfil');
+r.ok(/\.dm-alc-aviso\{/.test(css) && /\.dm-alc-oculto\{/.test(css),
+     'reusando el CSS que ya existía');
+
+r.seccion('Y se aplica al abrir el formulario, con el del alcohol:');
+
+r.ok(/try\{ dmAplicarSinAlcohol\(\); \}catch\(_\)\{\}\n\s*try\{ dmAplicarSinCiclo\(\); \}catch\(_\)\{\}/.test(app),
+     'en el mismo timeout, cada uno en su try');
 
 r.seccion('El bloque sigue donde estaba, en el paso 4:');
 
-// El agrupador por títulos (DM_PASOS.titulos) quedó desactivado: los pasos se
-// escriben directamente en el HTML. Vale la pena fijarlo, porque en mod260 se
-// renombró "Tu propia variable" → "Tus propias variables" y si ese agrupador
-// siguiera vivo, el bloque de variables se habría ido al paso 5 sin que nadie
-// lo notara.
 const paso4 = app.slice(app.indexOf('<div class="dm-paso" data-paso="4"'),
                         app.indexOf('<div class="dm-paso" data-paso="5"'));
-r.ok(/id="period-section"/.test(paso4), '"Tu ciclo" está en el paso 4');
+r.ok(/id="dm-campo-ciclo"/.test(paso4), '"Tu ciclo" está en el paso 4');
+r.ok(/id="period-section"/.test(paso4) && /id="period-btn"/.test(paso4),
+     'con el botón de marcar la noche');
 r.ok(/id="dm-vars-slot"/.test(paso4), 'y las variables propias también');
-r.ok(/const k=p\.titulos\.findIndex/.test(app) &&
-     app.indexOf('return;\n  }catch(e){ console.warn(\'[DIARIO]\'') <
+// El agrupador por títulos (DM_PASOS.titulos) quedó desactivado: los pasos se
+// escriben directo en el HTML. Si siguiera vivo, el renombre de "Tu propia
+// variable" de mod260 habría mandado ese bloque al paso 5 sin que se notara.
+r.ok(app.indexOf("return;\n  }catch(e){ console.warn('[DIARIO]'") <
      app.indexOf('const k=p.titulos.findIndex'),
-     'y el agrupador por títulos sigue desactivado, así que renombrar no mueve nada');
+     'y el agrupador por títulos sigue desactivado: renombrar no mueve nada');
 
 r.seccion('Lo que se pierde si no está, para que no se subestime:');
 
@@ -105,4 +121,4 @@ r.ok(/id:'premenstrual'/.test(app) && /DM_DIAS_PREMENSTRUAL/.test(app),
      'la menstruación y los días previos son dos factores del análisis');
 r.ok(/has_period/.test(app), 'y se guardan en su propia columna');
 
-r.cerrar('Un campo que desaparece sin decir por qué se lee como una app rota, no como un perfil incompleto.');
+r.cerrar('Cuando no se sabe, el default tiene que ser el error barato. Acá era mostrar de más, no perder un dato.');

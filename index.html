@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod262-d51796b6">
+<link rel="stylesheet" href="css/styles.css?v=mod263-d51796b6">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod262-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod262-0e166ec6"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod262-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod262-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod262-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod263-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod263-0e166ec6"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod263-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod263-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod263-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod262';
+const APP_VERSION='mod263';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -9643,51 +9643,41 @@ const SCALE_COOLDOWN_DAYS = {
 };
 const SCALE_COOLDOWN_DEFAULT = 21;
 
-// ¿Esta persona menstrua? De eso depende que el diario muestre "Tu ciclo".
+// ¿Se muestra "Tu ciclo" en el diario?
 //
-// Estaba resuelto con `S.user.sex === 'F'`, a secas, desde mod119. Funciona
-// mientras el perfil tenga el sexo cargado con ESE valor exacto. No lo tiene
-// siempre:
+// Estaba al reves. La version anterior preguntaba "¿es mujer?" y solo
+// entonces mostraba el bloque, con `S.user.sex === 'F'` a secas. El sexo es
+// OPCIONAL en el perfil: quien nunca lo cargo no tiene 'F' ni nada, y el
+// bloque desaparecia sin una sola pista de por que. Asi se perdio el dato de
+// al menos una paciente, que lo reporto como "la app no me deja marcarlo".
 //
-//   · el alta de un profesional y el registro del paciente guardan 'F', pero
-//     el registro de profesionales guarda 'Femenino', y hay perfiles viejos
-//     migrados con una cosa o la otra;
-//   · y sobre todo: el sexo es OPCIONAL. Quien nunca lo completo no tiene
-//     'F' ni nada, y el bloque entero desaparecia del diario sin una sola
-//     pista de por que. Desde afuera se ve como que la app lo saco.
+// Ahora la pregunta es la otra, que es la que se puede contestar con lo que
+// hay: ¿sabemos que NO corresponde? Se oculta unicamente con una respuesta
+// explicita, y en todos los demas casos se muestra. El costo de los dos
+// errores no es el mismo: a un hombre que nunca cargo el sexo le aparece un
+// boton de mas que apaga con un toque; a una mujer se le perdian dos
+// factores del analisis —los dias de sangrado y los cinco previos— sin que
+// se enterara ninguno de los dos.
 //
-// Ahora se acepta cualquier forma de "femenino" y, ademas, dos respuestas que
-// solo puede haber dado alguien que menstrua: "ya tuve la menarca" y "no,
-// aun menstruo" en la pregunta de menopausia.
+// Las tres respuestas explicitas:
+//   · sexo masculino u otro cargado en el perfil;
+//   · "todavia no tuve la menarca", o una edad en que no puede haberla;
+//   · la persona misma lo apago desde el diario, igual que con el alcohol.
 //
 // NO se usa `track_menstrual`: esa columna la escribe un checkbox con
-// display:none que esta `checked` de fabrica y nunca se destilda, asi que
+// display:none que esta `checked` de fabrica y no se destilda nunca, asi que
 // vale true para todo paciente que haya guardado Mi Perfil, hombres
-// incluidos. Esta arreglada mas abajo, pero como senal no sirve: hay datos
-// viejos mal guardados.
+// incluidos. Esta arreglada, pero los datos viejos ya estan mal.
 function dmSigueCiclo(u){
   u = u || (typeof S!=='undefined' && S.user) || {};
   const sx = String(u.sex||'').trim().toLowerCase();
-  if(sx === 'f' || sx === 'femenino') return true;
-  if(u.has_menarche  === true)  return true;
-  if(u.has_menopause === false) return true;   // "no, aun menstruo"
-  return false;
-}
-window.dmSigueCiclo = dmSigueCiclo;
-
-// Y el caso que genero la consulta: no sabemos. Sin sexo cargado no se puede
-// afirmar ni una cosa ni la otra, y esconder el bloque en silencio es elegir
-// una de las dos. Se dice, con el camino para arreglarlo de una vez.
-function dmCicloIndefinido(u){
-  u = u || (typeof S!=='undefined' && S.user) || {};
-  if(dmSigueCiclo(u)) return false;
-  const sx = String(u.sex||'').trim();
-  if(sx) return false;              // dijo que no es femenino: no se insiste
+  if(sx==='m' || sx==='masculino' || sx==='x' || sx==='otro') return false;
+  if(u.has_menarche === false) return false;
   const edad = _computeAgeYears(u.dob);
-  if(edad != null && (edad < 9 || edad > 60)) return false;
+  if(edad != null && edad < 9) return false;
   return true;
 }
-window.dmCicloIndefinido = dmCicloIndefinido;
+window.dmSigueCiclo = dmSigueCiclo;
 
 function _computeAgeYears(dob){
   if(!dob) return null;
@@ -14733,6 +14723,45 @@ function dmVuelvoATomar(){
   if(c) c.classList.remove('dm-alc-oculto');
   const a=document.getElementById('dm-alc-aviso'); if(a) a.remove();
 }
+// ── El ciclo se apaga como el alcohol ────────────────────────────────
+// Mismo patron, a proposito: el paciente ya lo conoce de "No tomo alcohol ·
+// no me preguntes mas". Es una preferencia de lo que se pregunta cada noche,
+// no un dato clinico: por eso vive en localStorage y NO escribe
+// has_menopause. Poner "ya llego a la menopausia" en la ficha de una mujer de
+// 30 con anticoncepcion continua, solo para esconder un boton, seria inventar
+// un diagnostico — y ademas habilitaria la MRS y bloquearia la PSST.
+function dmNoTengoCiclo(){
+  try{ localStorage.setItem('dm_sin_ciclo','1'); }catch(_){}
+  dmAplicarSinCiclo();
+  if(typeof toast==='function') toast('Listo, no te lo pregunto más');
+}
+function dmVuelveElCiclo(){
+  try{ localStorage.removeItem('dm_sin_ciclo'); }catch(_){}
+  const c=document.getElementById('dm-campo-ciclo');
+  if(c) c.classList.remove('dm-alc-oculto');
+  const a=document.getElementById('dm-ciclo-aviso'); if(a) a.remove();
+}
+function dmAplicarSinCiclo(){
+  let sin=false;
+  try{ sin = localStorage.getItem('dm_sin_ciclo')==='1'; }catch(_){}
+  const campo=document.getElementById('dm-campo-ciclo');
+  if(!campo || !sin) return;
+  // Igual que con el alcohol: si la noche que se esta EDITANDO tiene el
+  // periodo marcado, esconder el campo le muestra "no registro" encima de un
+  // dato que existe.
+  if(typeof _periodActive!=='undefined' && _periodActive) return;
+  campo.classList.add('dm-alc-oculto');
+  if(!document.getElementById('dm-ciclo-aviso')){
+    const av=document.createElement('div');
+    av.id='dm-ciclo-aviso';
+    av.className='dm-alc-aviso';
+    av.innerHTML='Ciclo: no lo registro <button onclick="dmVuelveElCiclo()">cambiar</button>';
+    campo.parentNode.insertBefore(av, campo.nextSibling);
+  }
+}
+window.dmNoTengoCiclo=dmNoTengoCiclo; window.dmVuelveElCiclo=dmVuelveElCiclo;
+window.dmAplicarSinCiclo=dmAplicarSinCiclo;
+
 function dmAplicarSinAlcohol(){
   let sin=false;
   try{ sin = localStorage.getItem('dm_sin_alcohol')==='1'; }catch(_){}
@@ -15156,7 +15185,10 @@ function showDiaryNew(editandoId){
       dEl._daytypeWired=true;
     }
   },180);
-  setTimeout(function(){ try{ dmAplicarSinAlcohol(); }catch(_){} }, 220);
+  setTimeout(function(){
+    try{ dmAplicarSinAlcohol(); }catch(_){}
+    try{ dmAplicarSinCiclo(); }catch(_){}
+  }, 220);
 
   // ── Medicación habitual ───────────────────────────────────────────────
   // Quien toma tres remedios todas las noches no los va a cargar de a uno
@@ -15418,17 +15450,14 @@ function showDiaryNew(editandoId){
     
     </div>
 
-    ${dmSigueCiclo(S.user) ? `<div class="dm-campo">
+    ${dmSigueCiclo(S.user) ? `<div class="dm-campo" id="dm-campo-ciclo">
       <label class="dm-lbl">Tu ciclo</label>
       <div class="dm-ayuda">Los días de menstruación y los cinco previos se analizan por separado.</div>
       <div id="period-section" style="margin-bottom:4px">
       <button type="button" id="period-btn" onclick="togglePeriod()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(225,29,72,0.12);border:1.5px solid rgba(225,29,72,0.45);border-radius:999px;padding:10px 16px;cursor:pointer;font-family:var(--font);width:100%;justify-content:flex-start"><span style="font-size:16px;line-height:1">🩸</span><span id="period-btn-label" style="font-size:13.5px;color:#F4EFE5;font-weight:600">Marcar período menstrual</span><span id="period-check" style="margin-left:auto;font-size:15px;line-height:1">⬜</span></button>
+      <button class="dm-alc-nunca" onclick="dmNoTengoCiclo()">No menstrúo · no me preguntes más</button>
     </div>
-    </div>` : (dmCicloIndefinido(S.user) ? `<div class="dm-campo">
-      <label class="dm-lbl">Tu ciclo</label>
-      <div class="dm-ayuda">No tenemos tu sexo cargado, así que no mostramos el registro del ciclo. Si menstruás, cargalo una vez y el botón aparece en cada noche.</div>
-      <button type="button" onclick="dmIrACargarSexo()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(225,29,72,0.45);border-radius:12px;padding:11px 14px;cursor:pointer;font-family:var(--font);width:100%;justify-content:flex-start;color:#F4EFE5;font-size:13.5px"><span style="font-size:16px;line-height:1">🩸</span><span>Quiero registrar mi ciclo</span><span style="margin-left:auto;opacity:.6">›</span></button>
-    </div>` : ``)}
+    </div>` : ``}
 
     <input type="hidden" id="d-alc" value="0">
     <div id="dm-vars-slot"></div>
@@ -28609,33 +28638,6 @@ async function dmGuardarVarsPersonales(){
 
 // ── PERIOD TRACKING ──
 let _periodActive = false;
-
-// Del diario al perfil, y de vuelta. Sin esto el aviso dice "cargalo" y la
-// persona tiene que salir del diario a medio completar y buscar donde.
-function dmIrACargarSexo(){
-  try{
-    if(typeof toast==='function') toast('Cargá tu sexo y volvé al diario');
-    // openMiPerfil abre el modal ENCIMA del diario, que es lo que se quiere:
-    // la noche a medio completar se queda donde estaba. Mandar a la pantalla
-    // de perfil haria perder lo tipeado.
-    if(typeof openMiPerfil==='function'){
-      openMiPerfil();
-      // Directo a la edicion, no a la vista: el que toco el boton ya sabe
-      // que viene a cambiar un dato.
-      setTimeout(function(){
-        try{
-          const c=document.querySelector('#mp-modal [data-mp]');
-          if(c && typeof renderMiPerfilEdit==='function') renderMiPerfilEdit(c);
-          const sx=document.getElementById('mp-sex');
-          if(sx){ sx.focus(); sx.scrollIntoView({block:'center'}); }
-        }catch(_){}
-      }, 120);
-      return;
-    }
-    if(typeof showScreen==='function') showScreen('profile');
-  }catch(e){ console.warn('[ciclo]', e); }
-}
-window.dmIrACargarSexo = dmIrACargarSexo;
 
 function togglePeriod(){
   _periodActive = !_periodActive;
