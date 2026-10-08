@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg264-d51796b6">
+<link rel="stylesheet" href="css/styles.css?v=stg265-d51796b6">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg264-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg264-0e166ec6"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg264-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg264-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg264-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg265-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg265-0e166ec6"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg265-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg265-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg265-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg264';
+const APP_VERSION='stg265';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg264 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg265 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -9677,14 +9677,30 @@ const SCALE_COOLDOWN_DEFAULT = 21;
 // incluidos. Esta arreglada, pero los datos viejos ya estan mal.
 function dmSigueCiclo(u){
   u = u || (typeof S!=='undefined' && S.user) || {};
-  const sx = String(u.sex||'').trim().toLowerCase();
-  if(sx==='m' || sx==='masculino' || sx==='x' || sx==='otro') return false;
+  // Misma normalizacion que usan los filtros de escalas: una sola forma de
+  // leer este campo en toda la app.
+  const sx = dmSexoNorm(u.sex);
+  if(sx === 'M' || sx === 'X') return false;
   if(u.has_menarche === false) return false;
   const edad = _computeAgeYears(u.dob);
   if(edad != null && edad < 9) return false;
   return true;
 }
 window.dmSigueCiclo = dmSigueCiclo;
+
+// 'F' o 'M', venga como venga. Los formularios de paciente guardan 'F'/'M',
+// el registro de profesionales guarda 'Femenino'/'Masculino', y hay perfiles
+// viejos migrados con cualquiera de las dos. Comparar la cadena cruda contra
+// 'F' ya costo dos bugs; esto es para que no cueste un tercero.
+// Devuelve null si no hay dato: "no se sabe" no es "no es".
+function dmSexoNorm(v){
+  const s = String(v==null?'':v).trim().toLowerCase();
+  if(!s) return null;
+  if(s==='f' || s==='femenino' || s==='female' || s==='mujer') return 'F';
+  if(s==='m' || s==='masculino' || s==='male'   || s==='varon' || s==='varón') return 'M';
+  return 'X';
+}
+window.dmSexoNorm = dmSexoNorm;
 
 function _computeAgeYears(dob){
   if(!dob) return null;
@@ -9704,8 +9720,18 @@ function scaleIsEligible(scaleId, user, role){
   const f = SCALE_FILTERS[scaleId];
   if(!f) return true; // universal
   if(f.professional_only && role !== 'doctor') return false;
-  // sexo (solo si el usuario lo tiene registrado)
-  if(f.sex && user.sex && !f.sex.includes(user.sex)) return false;
+  // Sexo, solo si el usuario lo tiene registrado — y comparando la FORMA
+  // NORMALIZADA, no la cadena cruda.
+  //
+  // Los filtros declaran 'F' y 'M'. Los formularios de paciente guardan eso,
+  // pero el de profesionales guarda 'Femenino', y hay perfiles migrados con
+  // una cosa o la otra. Con la comparacion literal, una paciente guardada
+  // como 'Femenino' quedaba sin MRS, sin PSST y sin FSFI — las tres escalas
+  // femeninas— y nadie lo veia, porque una escala que no aparece no deja
+  // rastro. Es el mismo defecto que dejo sin registro de ciclo a una
+  // paciente, en otro lugar del codigo.
+  const _sx = dmSexoNorm(user.sex);
+  if(f.sex && _sx && !f.sex.includes(_sx)) return false;
   // edad
   const age = _computeAgeYears(user.dob);
   const meetsAge = (f.age_min == null || age == null || age >= f.age_min) &&

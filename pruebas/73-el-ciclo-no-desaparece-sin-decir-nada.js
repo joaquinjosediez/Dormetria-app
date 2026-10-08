@@ -45,8 +45,10 @@ const codigo = (t) => t.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
 // demostrar que NO.
 r.ok(/return true;\n\}/.test(fn),
      'el default es mostrarlo: lo que se demuestra es la excepción');
-r.ok(/sx==='m' \|\| sx==='masculino' \|\| sx==='x' \|\| sx==='otro'/.test(fn),
-     'se oculta con sexo masculino u otro, en cualquier forma');
+r.ok(/sx === 'M' \|\| sx === 'X'/.test(fn),
+     'se oculta con sexo masculino u otro');
+r.ok(/const sx = dmSexoNorm\(u\.sex\)/.test(fn),
+     'leyendo el campo con la MISMA normalización que los filtros de escalas');
 r.ok(/u\.has_menarche === false/.test(fn), 'o con "todavía no tuve la menarca"');
 r.ok(/edad < 9/.test(fn), 'o con una edad en que no puede haberla');
 r.ok(/El costo de los dos errores no es el mismo/i.test(prosa(fn)),
@@ -120,5 +122,24 @@ r.seccion('Lo que se pierde si no está, para que no se subestime:');
 r.ok(/id:'premenstrual'/.test(app) && /DM_DIAS_PREMENSTRUAL/.test(app),
      'la menstruación y los días previos son dos factores del análisis');
 r.ok(/has_period/.test(app), 'y se guardan en su propia columna');
+
+r.seccion('Una sola forma de leer el sexo en toda la app:');
+
+// Este campo ya costó dos bugs. El de "Tu ciclo", y otro que no deja rastro:
+// los filtros de escalas declaran sex:['F'] y comparaban la cadena cruda, así
+// que una paciente guardada como 'Femenino' —como las guarda el registro de
+// profesionales, y como pueden haber quedado perfiles migrados— se quedaba
+// sin MRS, sin PSST y sin FSFI. Una escala que no aparece no se nota.
+const norm = app.slice(app.indexOf("function dmSexoNorm(v){"),
+                       app.indexOf('window.dmSexoNorm'));
+r.ok(/s==='f' \|\| s==='femenino' \|\| s==='female' \|\| s==='mujer'/.test(norm),
+     'dmSexoNorm entiende las formas que de verdad hay en la base');
+r.ok(/if\(!s\) return null/.test(norm),
+     'y devuelve null sin dato: "no se sabe" no es "no es"');
+r.ok(/const _sx = dmSexoNorm\(user\.sex\);/.test(app) &&
+     /if\(f\.sex && _sx && !f\.sex\.includes\(_sx\)\) return false/.test(app),
+     'los filtros de escalas la usan');
+r.ok(!/f\.sex && user\.sex && !f\.sex\.includes\(user\.sex\)/.test(app),
+     'y no quedó la comparación cruda');
 
 r.cerrar('Cuando no se sabe, el default tiene que ser el error barato. Acá era mostrar de más, no perder un dato.');
