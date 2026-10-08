@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod265-d51796b6">
+<link rel="stylesheet" href="css/styles.css?v=mod266-d51796b6">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod265-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod265-0e166ec6"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod265-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod265-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod265-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod266-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod266-617b0955"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod266-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod266-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod266-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,7 +1391,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod265';
+const APP_VERSION='mod266';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -5359,12 +5359,24 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
       // mostraba 1 activo sobre 11. La fuente correcta es accesos_diarios.
       let drAccesos = null;
       try{
+        // 13 semanas, no 30 dias: el contador de "activos 30 d" usa la
+        // ventana corta, pero el histograma necesita la historia entera.
+        const _desdeHist = new Date(Date.now() - 95*86400000).toISOString().slice(0,10);
         const _ac = await db.get('accesos_diarios?select=email,dia&dia=gte.'+
-                     new Date(D30).toISOString().slice(0,10)+'&limit=20000');
+                     _desdeHist+'&limit=20000');
         const _s = new Set();
-        (_ac||[]).forEach(function(r){ if(r && r.email) _s.add(String(r.email).toLowerCase()); });
+        (_ac||[]).forEach(function(r){
+          if(r && r.email && new Date(r.dia+'T12:00:00Z').getTime() >= D30){
+            _s.add(String(r.email).toLowerCase());
+          }
+        });
         const _mails = new Set((allDrs||[]).map(function(d){ return String(d.email||'').toLowerCase(); }));
         drAccesos = new Set([..._s].filter(function(e){ return _mails.has(e); }));
+        // Para el histograma: una fila por acceso, con created_at, que es lo
+        // que dmSerieSemanal sabe leer. `dia` es una fecha sin hora.
+        window._admAccesosDrs = (_ac||[])
+          .filter(function(r){ return r && r.email && _mails.has(String(r.email).toLowerCase()); })
+          .map(function(r){ return { email:r.email, created_at: r.dia+'T12:00:00Z' }; });
       }catch(_){ drAccesos = null; }
 
       const drSugSet=new Set();
@@ -5421,6 +5433,12 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
         return days>=0?days:null;
       }).filter(v=>v!==null && v>0);
       const avgStay = stays.length ? Math.round(stays.reduce((a,b)=>a+b,0)/stays.length) : 0;
+      const medStay = (function(){
+        if(!stays.length) return null;
+        const o = stays.slice().sort(function(a,b){ return a-b; });
+        const m = Math.floor(o.length/2);
+        return o.length % 2 ? o[m] : Math.round((o[m-1]+o[m])/2);
+      })();
       const _appList2=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       // La verdad sobre "está publicado" vive en la BASE (listed/public_profile),
       // no en el localStorage de este navegador. Antes el contador decía 0 aunque
@@ -5496,12 +5514,51 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
           const _todoRegistro = (diaryRows||[]).concat(evalRows||[]);
           const _serieReg = _serieOk ? dmSerieSemanal(_todoRegistro, _SEMS, 'conteo') : null;
           const _serieAct = _serieOk ? dmSerieSemanal(_todoRegistro, _SEMS, 'unicos', 'patient_email') : null;
+
+          // ── Las demas series ────────────────────────────────────────
+          // Ojo con la diferencia: ALTAS por semana es un flujo (cuantas
+          // cuentas nuevas entraron esa semana) y el numero grande de la
+          // tarjeta es un ACUMULADO. Son dos cosas distintas y la barra no
+          // se puede leer como "el total subio": por eso el pie lo aclara
+          // en cada una.
+          const _altasPts = _serieOk ? dmSerieSemanal(allPts, _SEMS, 'conteo') : null;
+          const _altasDrs = _serieOk ? dmSerieSemanal(allDrs, _SEMS, 'conteo') : null;
+          const _pieAltas = _serieOk
+            ? 'altas por semana · 12 semanas · la última, en curso'
+            : 'sin histograma: la lectura vino recortada';
+          // Activos de 30 dias: ventana movil de cuatro semanas, una por
+          // semana. Es la que de verdad contesta "¿se mantiene el volumen?",
+          // porque no la mueve una semana floja.
+          const _serieAct30 = (function(){
+            if(!_serieOk || !_serieAct) return null;
+            return _serieAct.map(function(_, i){
+              const desde = Date.now() - (_SEMS - i) * 7*86400000;
+              const hasta = Date.now() - (_SEMS - 1 - i) * 7*86400000;
+              const set = new Set();
+              _todoRegistro.forEach(function(r){
+                if(!r || !r.created_at) return;
+                const t = new Date(r.created_at).getTime();
+                if(t > hasta || t <= hasta - 30*86400000) return;
+                const e = String(r.patient_email||'').toLowerCase();
+                if(e) set.add(e);
+              });
+              return set.size;
+            });
+          })();
+          // Profesionales que abrieron la app, por semana. Sale de
+          // accesos_diarios, que tiene `dia` (date), no created_at: se
+          // adapta a la forma que dmSerieSemanal espera.
+          const _accesosDrs = (function(){
+            if(!_serieOk || !window._admAccesosDrs) return null;
+            return dmSerieSemanal(window._admAccesosDrs, _SEMS, 'unicos', 'email');
+          })();
           const _pieSerie = _serieOk
             ? '12 semanas · la última, en curso'
             : 'sin histograma: la lectura vino recortada y faltarían las semanas viejas';
 
           const b1 = bloque('Pacientes', [
-            dato({label:'Cuentas creadas', val:n(totalPts), sub:'en total'}),
+            dato({label:'Cuentas creadas', val:n(totalPts), sub:'en total · '+_pieAltas,
+                  serie:_altasPts, color:'#1a4a3a'}),
             dato({label:'Vinculados', val:vinculados==null?'—':n(vinculados),
                   sub:vinculados==null?'sin dato':'a algún profesional',
                   p:pct(vinculados, totalPts), color:'#1a4a3a'}),
@@ -5514,8 +5571,12 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
                   sub:'pacientes distintos que registraron algo · '+_pieSerie,
                   p:pct(activePts7, totalPts), color:'#15803d', acento:true,
                   serie:_serieAct}),
-            dato({label:'Activos · 30 días', val:n(activePts30), sub:'registraron algo',
-                  p:pct(activePts30, totalPts), color:'#15803d'}),
+            // Ventana movil de 30 dias, medida una vez por semana. Es la
+            // que mejor contesta "¿se mantiene el volumen?": no la mueve
+            // una semana floja, como si pasa con la de 7 dias.
+            dato({label:'Activos · 30 días', val:n(activePts30),
+                  sub:'registraron algo · '+(_serieAct30?'ventana móvil de 30 d, medida cada semana':_pieSerie),
+                  p:pct(activePts30, totalPts), color:'#15803d', serie:_serieAct30}),
           ]);
 
           const b2 = bloque('Uso', [
@@ -5529,13 +5590,25 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
             // el mismo día del alta—. Y para alguien que sigue activo, "la
             // última señal" es hoy, así que mezcla a quien se fue con quien
             // sigue. El pie ahora lo dice.
-            dato({label:'Permanencia', val:n(avgStay), unidad:'d', sub:'del alta a la última señal · sobre '+stays.length+' de '+((allPts||[]).length||0)+' pacientes que registraron algo'}),
+            // La MEDIANA, al lado del promedio. Esta distribucion tiene cola
+            // larga —unos pocos de ocho meses contra muchos de dos semanas— y
+            // ahi el promedio describe a los extremos, no al paciente tipico.
+            // Con las dos cifras a la vista, la diferencia entre ellas es el
+            // dato. Y el pie dice lo que la cifra NO es, que es lo primero
+            // que se pregunta al verla.
+            dato({label:'Permanencia', val:n(avgStay), unidad:'d',
+                  sub:'promedio del alta a la última señal'+
+                      (medStay!=null ? ' · mediana '+n(medStay)+' d' : '')+
+                      ' · sobre '+stays.length+' de '+((allPts||[]).length||0)+
+                      ' que registraron algo. No cuenta a quien nunca registró nada, y '+
+                      'en quien sigue activo la última señal es hoy: mezcla al que se fue con el que sigue.'}),
           ]);
 
           const b3 = bloque('Profesionales', [
-            dato({label:'Registrados', val:n(totalDrs), sub:'en total'}),
+            dato({label:'Registrados', val:n(totalDrs), sub:'en total · '+_pieAltas,
+                  serie:_altasDrs, color:'#1a4a3a'}),
             dato({label:'Activos · 30 días', val:n(activeDrs30), sub:drFuente,
-                  p:pct(activeDrs30, totalDrs), color:'#15803d'}),
+                  p:pct(activeDrs30, totalDrs), color:'#15803d', serie:_accesosDrs}),
             dato({label:'En directorio', val:n(listedDrs), sub:'visibles al público',
                   p:pct(listedDrs, totalDrs), color:'#1a4a3a'}),
             dato({label:'Pendientes', val:n(pendingDrs), sub:'esperando aprobación',
@@ -8339,7 +8412,7 @@ function dmMetricasSiestas(entries){
 // con el mismo nombre, que es peor, porque las dos se leen como la misma.
 //
 // Devuelve null si la noche no tiene horarios o el dato es incoherente.
-function dmTIBNoche(e){
+function dmTIBNoche(e, opts){
   const aMin = function(t){
     if(!t) return null;
     const p = String(t).slice(0,5).split(':');
@@ -8348,6 +8421,15 @@ function dmTIBNoche(e){
   };
   const bed = aMin(e && e.bedtime), wake = aMin(e && e.wake_time);
   if(bed==null || wake==null) return null;
+  // `hasta:'despertar'` devuelve la ventana de acostarse a DESPERTARSE, que
+  // no es tiempo en cama: es la ventana dentro de la cual puede haber
+  // vigilia intrasueño. Se usa para derivar el WASO cuando el paciente no lo
+  // registro. Mezclarla con el TIB fue lo que invento 31 minutos de
+  // despertares en una paciente que anoto cero.
+  if(opts && opts.hasta === 'despertar'){
+    let w = wake - bed; if(w < 0) w += 1440;
+    return (w > 0 && w <= 24*60) ? w : null;
+  }
   let fin = wake;
   const up = aMin(e.get_up_time);
   if(up != null){
@@ -8383,13 +8465,23 @@ function dmFilasSiestas(entries, row, C, ageYears){
   // empuja a sacar una siesta que le corresponde tener. Hasta los 5 la
   // siesta se evalúa dentro del total de 24 h, no por su duración suelta.
   const _nene = (ageYears!=null && ageYears < 6);
+  // Cuanto detalle. En un chico la siesta es parte del sueño normal y lo que
+  // importa es su ARQUITECTURA: cuantas, cuanto duran, a que hora empiezan,
+  // y cuanto margen queda hasta la noche. En un adulto con insomnio la
+  // siesta es una sola cosa —algo que gasta presion de sueño— y tres cifras
+  // la describen: con que frecuencia, cuanto dura, y cuanto falta de ahi a
+  // la cama, que es lo unico que se modifica. Las otras tres llenaban la
+  // tarjeta sin cambiar ninguna conducta.
+  const _detalle = (ageYears == null) ? false : (ageYears < 13);
   let h = row('Días con siesta', S2.nConSiesta+' de '+S2.nDias+' · '+S2.pct+'%',
               (!_nene && S2.pct>=50) ? '#d97706' : null,
               _nene ? 'A esta edad la siesta es parte del sueño normal: entra en el total de 24 h y no se saca.'
                     : 'La siesta gasta presión de sueño y es un objetivo directo del tratamiento conductual.')
-        + row('Siestas por día', String(S2.porDia)+(S2.sdPorDia!=null?' (±'+S2.sdPorDia+')':''),
-              null, 'promedio de los días con siesta'+
-                    (S2.sdPorDia!=null && S2.sdPorDia>=0.6 ? ' · varía bastante de un día a otro' : ''))
+        + (_detalle
+            ? row('Siestas por día', String(S2.porDia)+(S2.sdPorDia!=null?' (±'+S2.sdPorDia+')':''),
+                  null, 'promedio de los días con siesta'+
+                        (S2.sdPorDia!=null && S2.sdPorDia>=0.6 ? ' · varía bastante de un día a otro' : ''))
+            : '')
         + row('Duración media', fmt(S2.durMedia)+(S2.sdDur!=null?' (±'+S2.sdDur+' min)':''),
               (!_nene && S2.durMedia>=45) ? '#d97706' : null,
               _nene ? 'Lo que importa a esta edad no es la duración suelta sino el total de 24 h y a qué hora termina.'
@@ -8399,7 +8491,7 @@ function dmFilasSiestas(entries, row, C, ageYears){
   // ── Regularidad de la siesta ──────────────────────────────────────
   // Misma unidad y mismo criterio que el horario nocturno, para que se
   // puedan leer en la misma escala.
-  if(S2.sdInicio != null){
+  if(_detalle && S2.sdInicio != null){
     const col = S2.sdInicio>=90 ? '#dc2626' : S2.sdInicio>=60 ? '#d97706' : null;
     h += row('Regularidad de la siesta', '±'+S2.sdInicio+' min', col,
              'Dispersión de la hora de inicio, sobre '+S2.nInicios+' días. '+
@@ -8429,7 +8521,7 @@ function dmFilasSiestas(entries, row, C, ageYears){
     if(!d.noche) return;
     (d.dur > 0 ? conN : sinN).push(d.noche);
   });
-  if(conN.length >= 4 && sinN.length >= 4){
+  if(_detalle && conN.length >= 4 && sinN.length >= 4){
     const md = function(a){ return a.reduce(function(x,y){ return x+y; },0)/a.length; };
     const d  = Math.round(md(conN) - md(sinN));
     const rel = Math.abs(d) >= 30;
@@ -8535,7 +8627,13 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
                : ((typeof S!=='undefined' && S.user) ? S.user.dob : null);
     _c24 = computeChildSleep24h(entries, _dob);
   }catch(_){}
-  const _diurno = _c24 ? _c24.avgNapMin
+  // Dos fuentes para lo mismo, y hasta ahora la primera ganaba AUNQUE
+  // dijera cero: computeChildSleep24h sale de S.viewData.dob y dmMetricasSiestas
+  // de las entradas. Con las dos cifras ahora en la MISMA tarjeta, el
+  // desacuerdo quedaba a la vista: el encabezado decia "no hay siestas
+  // registradas en el período" tres renglones arriba de "Días con siesta:
+  // 12 de 24". Si una de las dos ve siestas, hay siestas.
+  const _diurno = (_c24 && _c24.avgNapMin) ? _c24.avgNapMin
     : ((_sie0 && _sie0.nConSiesta && _sie0.durMedia)
         ? _sie0.durMedia * (_sie0.nConSiesta / _sie0.nDias) : 0);
   const _nocturno = _c24 ? _c24.avgNightMin : m.avgTotal;
@@ -8682,25 +8780,34 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
   // ausencia se informa en una línea, adentro del bloque de la noche, y
   // no se emite tarjeta: sin tarjeta, el panel no mueve nada y las
   // métricas se quedan donde estaban.
+  // ── Las siestas, ADENTRO de la misma tarjeta ─────────────────────
+  //
+  // Eran una tarjeta aparte que el panel mudaba al lado de la nocturna, en
+  // una fila de dos celdas. La idea era compararlas de un vistazo; el
+  // resultado es que dos tarjetas de alto distinto quedan desparejas y media
+  // columna en blanco, porque casi ningun adulto tiene suficientes datos de
+  // siesta para llenarla. Y la comparacion que se queria —noche contra
+  // dia— se hace mejor una debajo de la otra, en la misma caja, con la
+  // misma grilla de rotulo y valor, que es lo que el ojo ya sigue.
+  //
+  // Un separador, no una tarjeta nueva: el mismo recurso que ya separa
+  // "Noche" adentro de esta caja.
   let _abierto = false;          // ¿quedó algún contenedor sin cerrar?
   const _filasDia = dmFilasSiestas(entries, row, C, ageYears);
+  html += '<div class="dm-met-col-h" style="margin-top:14px">Día · siestas</div>';
   if(_filasDia){
-    html += '</div>'+
-      '<div class="dm-bloque-dia dm-metricas'+(_oscuro?'':' dm-metricas-claro')+'" style="margin-top:10px">'+
-      '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno <span>· siestas</span></div>'+
-      _filasDia+
-      '</div>';
+    html += _filasDia;
   }else{
     // Dos ausencias distintas, y la diferencia importa: "no durmió siesta
     // en 45 días con el dato cargado" es un hallazgo; "no cargó el dato"
     // no dice nada del paciente.
-    html += '<div class="dm-metricas-h" style="color:'+C.sub+'">Sueño diurno</div>'+
-      '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:2px 0 8px">'+
+    html += '<div style="font-size:12.5px;color:'+C.sub+';line-height:1.55;padding:2px 0 8px">'+
       ((_sie0 && _sie0.nDias)
         ? ('Ninguna siesta en los '+_sie0.nDias+' días con el dato cargado.')
         : 'Sin el dato de siestas cargado en al menos 3 días.')+
-      '</div></div>';
+      '</div>';
   }
+  html += '</div>';
 
   // Bloque técnico solo para el médico. Si no hay noches suficientes se
   // dice, en vez de no mostrar nada: el hueco se lee como "no se calculó
@@ -20467,70 +20574,26 @@ async function showDrPTab_(tab){
         const dme=document.getElementById('dr-clinical-metrics');
         if(dme){
           dme.innerHTML=renderClinicalMetricsHtml(subj, 'doctor', (function(){ const d=S.viewData&&S.viewData.dob; return d?Math.floor((Date.now()-new Date(d))/31557600000):null; })());
+          // El tecnico de regularidad va a la columna derecha, debajo del
+          // actograma. Se busca por CLASE y DENTRO de `dme`, no por id
+          // global: la MISMA funcion dibuja este bloque en el diario del
+          // propio paciente (#diary-clinical-metrics), que queda en el DOM
+          // aunque la pantalla este oculta, y getElementById devolvia el de
+          // la OTRA pantalla —pintado para fondo oscuro—, que es por lo que
+          // aparecia una tarjeta verde en medio de tarjetas blancas.
           const _regSlot=document.getElementById('dr-reg-slot');
-          // El bloque del DÍA (siestas) y el técnico de regularidad van los
-          // dos a la columna derecha. Dentro de la tarjeta de la izquierda
-          // quedaban en dos columnas de 180 px: ilegible.
-          // Primero el técnico de regularidad, después el día: así el
-          // bloque de siestas queda a la altura de las métricas nocturnas
-          // de la izquierda y los dos se comparan de un vistazo.
-          //
-          // Por CLASE y buscando DENTRO de `dme`, no por id global.
-          //
-          //   · No por `children[1]`: cuando se agregó el bloque del día
-          //     pasó a ser el segundo hijo, así que `children[1]` lo movía a
-          //     él dos veces y el técnico de regularidad se quedaba en la
-          //     columna izquierda.
-          //   · No por `getElementById`: la MISMA función dibuja el bloque
-          //     en el diario del propio paciente (#diary-clinical-metrics),
-          //     que queda en el DOM aunque la pantalla esté oculta. Con el
-          //     mismo id en los dos, getElementById devuelve el primero en
-          //     orden de documento — el del paciente, que está pintado para
-          //     fondo oscuro. Por eso en el celular la tarjeta de sueño
-          //     diurno aparecía verde en medio de tarjetas blancas: no era
-          //     un problema de CSS, era la tarjeta de OTRA pantalla.
-          const _dia=dme.querySelector('.dm-bloque-dia');
           const _reg=dme.querySelector('.dm-bloque-reg');
-          // El técnico de regularidad va debajo del actograma, en la derecha.
           if(_regSlot && _reg) _regSlot.appendChild(_reg);
           // Las tres cifras de 24 h (pediátrico) van a todo el ancho, encima.
           const _r24=dme.querySelector('.dm-bloque-resumen24');
           const _res=document.getElementById('dr-resumen24');
           if(_res && _r24) _res.appendChild(_r24);
-          // Las métricas de la NOCHE y las del DÍA pasan a una fila propia,
-          // a todo el ancho, con una celda cada una. Antes vivían en columnas
-          // distintas y sus bordes superiores nunca coincidían.
-          //
-          // Solo si HAY tarjeta de día. Sin siestas, la ausencia se informa
-          // en una línea adentro del bloque de la noche y no se emite
-          // tarjeta: mover las métricas a una fila nueva para emparejarlas
-          // con una celda vacía las empujaba media pantalla hacia abajo.
-          //
-          // Y solo si el bloque del día tiene SUFICIENTE para llenar su
-          // celda. Emparejar una tarjeta de 3 filas contra una de 10 no
-          // empareja nada: deja media columna en blanco y hace que las dos
-          // se lean como si a la derecha faltara algo. Es lo que pasa con
-          // casi todos los adultos, que duermen siesta uno o dos días de
-          // treinta: el bloque sale con las tres filas de base y nada más.
-          //
-          // Con 5 o más filas (las 3 de base más al menos dos de
-          // regularidad, margen hasta la noche o comparación de noches) el
-          // bloque tiene cuerpo propio y la comparación lado a lado es lo
-          // que se quiere. Con menos, el día va DEBAJO de la noche, en la
-          // columna de siempre, que es donde no desacomoda nada.
-          //
-          // Se cuentan hijos del bloque menos la cabecera: cada fila de
-          // `row()` es un div directo, así que el conteo es exacto y no
-          // depende de medir alturas, que en el celular y en escritorio dan
-          // distinto y cambian con el ancho de la ventana.
-          const _nd=document.getElementById('dr-noche-dia');
-          const _filasEnDia = _dia ? Math.max(0, _dia.children.length - 1) : 0;
-          if(_nd && _dia && _filasEnDia >= 5){
-            const _noche=dme.querySelector(
-              '.dm-metricas:not(.dm-bloque-dia):not(.dm-bloque-resumen24)');
-            if(_noche) _nd.appendChild(_noche);
-            _nd.appendChild(_dia);
-          }
+          // Ya NO se muda nada a #dr-noche-dia. Las siestas pasaron a ser un
+          // separador adentro de la misma tarjeta que la noche, asi que no
+          // hay dos cajas que emparejar: no hay anchos distintos, no hay
+          // media columna en blanco, y la comparacion noche/dia se lee en la
+          // misma grilla de rotulo y valor en vez de en diagonal.
+
           // Impacto de hábitos: solo aparece si el paciente REGISTRA el hábito
           // (la función devuelve '' si no hay datos suficientes o contraste).
           try{

@@ -216,11 +216,23 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
   }
 
   const conciliacion  = metrics.latenciaMedia > 30;
-  const mantenimiento = metrics.vigiliaIntrasueño > 30;
+  // El corte de WASO ≥31 min (Lichstein 2003) vale para WASO MEDIDO. Cuando
+  // la vigilia sale de una resta —ventana hasta despertarse menos latencia
+  // menos sueño—, el numero arrastra el error de las tres cifras que lo
+  // componen, y 31 contra 30 no distingue nada. Para etiquetar mantenimiento
+  // sobre un valor derivado se pide el doble del corte: por debajo de eso la
+  // lectura cae en "alteraciones leves", que es lo que de verdad se sabe.
+  const mantenimiento = metrics.wasoEsDerivado
+    ? metrics.vigiliaIntrasueño > 60
+    : metrics.vigiliaIntrasueño > 30;
   const nNoches = diarySlice.length;
   // "N noches registradas" se leía como el total del paciente y no coincidía
   // con la pestaña Diario. Se aclara que es la ventana de análisis.
-  const cifras = `Latencia ~${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ~${Math.round(metrics.vigiliaIntrasueño)} min, eficiencia ${Math.round(metrics.eficiencia)}%. Promedios de las últimas ${nNoches} noches.`;
+  // Si la vigilia sale de una resta y no de lo que el paciente anotó, se
+  // dice. Un número presentado igual que los demás se lee como medido.
+  const _vig = Math.round(metrics.vigiliaIntrasueño) +
+    (metrics.wasoEsDerivado ? ' min (estimada: no registró despertares)' : ' min');
+  const cifras = `Latencia ~${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ~${_vig}, eficiencia ${Math.round(metrics.eficiencia)}%. Promedios de las últimas ${nNoches} noches.`;
 
   if (conciliacion && mantenimiento) {
     orientacion.texto = 'Compatible con patrón de insomnio mixto';
@@ -568,7 +580,7 @@ function dmMetricasDiario(entries) {
     return h * 60 + m;
   };
 
-  const latencias = [], sueños = [], tibs = [], wasos = [], despertares = [];
+  const latencias = [], sueños = [], tibs = [], wasos = [], despertares = [], ventanas = [];
 
   valid.forEach(e => {
     const sleep = parseInt(e.sleep_minutes) || 0;
@@ -614,6 +626,18 @@ function dmMetricasDiario(entries) {
       if (!(tibM > 0 && tibM <= 24 * 60)) tibM = null;
     }
     if (tibM != null) tibs.push(tibM);
+    // Y la ventana hasta DESPERTARSE, que es otra cosa que el tiempo en cama:
+    // es el intervalo DENTRO del cual puede haber vigilia intrasueño. Ver el
+    // comentario del WASO derivado, mas abajo.
+    const dormM = (typeof dmTIBNoche === 'function')
+      ? dmTIBNoche(e, { hasta: 'despertar' })
+      : (function () {
+          let b = aMin(e.bedtime); const w = aMin(e.wake_time);
+          if (b == null || w == null) return null;
+          let d = w - b; if (d < 0) d += 1440;
+          return (d > 0 && d <= 24 * 60) ? d : null;
+        })();
+    if (dormM != null) ventanas.push(dormM);
   });
 
   const tst = prom(sueños);
@@ -625,12 +649,37 @@ function dmMetricasDiario(entries) {
 
   const eficiencia = base > 0 ? Math.round(tst / base * 100) : 0;
 
-  // Vigilia intrasueño: si el paciente registra despertares se usa ese dato.
-  // Si no los registra pero pasa mucho tiempo en cama sin dormir (caso típico:
-  // eficiencia baja sin despertares anotados), se deriva del TIB.
+  // ── Vigilia intrasueño ───────────────────────────────────────────────
+  // Si el paciente la registra, se usa ese dato. Si no, se deriva del resto
+  // aritmético. Esa derivación tenía dos defectos y los dos inventaban
+  // despertares que nadie tuvo.
+  //
+  // 1 · Se restaba del TIB, que desde mod261 va de acostarse a LEVANTARSE.
+  //     El resto pasó a incluir el rato que la persona se queda en la cama
+  //     DESPUÉS de despertarse, que no es vigilia intrasueño: es lo que se
+  //     corrige con restricción de tiempo en cama, no con nada del eje de
+  //     mantenimiento. En una paciente de 24 años con 0 despertares anotados
+  //     daba 31 min y el motor la etiquetaba "insomnio de mantenimiento" por
+  //     un minuto. Ahora se resta de la ventana hasta DESPERTARSE, que es el
+  //     intervalo donde el WASO puede existir.
+  //
+  // 2 · "Anoté 0 despertares" se trataba igual que "no contesté". No es lo
+  //     mismo, y la app ya hace esa distinción en el histograma noche a
+  //     noche. Si registró despertares y el promedio es 0, el WASO es 0: no
+  //     hay nada que derivar, y derivarlo es contradecir al paciente con una
+  //     resta.
   const wasoRegistrado = wasos.length ? prom(wasos) : 0;
-  const wasoDerivado = tib > 0 ? Math.max(0, tib - latenciaMedia - tst) : 0;
+  const ventana = ventanas.length ? prom(ventanas) : 0;
+  const dijoSinDespertares = despertares.length > 0 && prom(despertares) === 0;
+  const wasoDerivado = (dijoSinDespertares || ventana <= 0)
+    ? 0
+    : Math.max(0, ventana - latenciaMedia - tst);
   const vigiliaIntrasueño = Math.max(wasoRegistrado, wasoDerivado);
+  // Si la vigilia NO viene del paciente sino de una resta, quien lea la
+  // orientación tiene que poder saberlo: una etiqueta clínica apoyada en un
+  // residuo aritmético no es lo mismo que una apoyada en lo que la persona
+  // anotó todas las mañanas.
+  const wasoEsDerivado = wasos.length === 0 && wasoDerivado > 0;
 
   const despertaresMedia = despertares.length
     ? Math.round(prom(despertares) * 10) / 10
@@ -679,7 +728,7 @@ function dmMetricasDiario(entries) {
     ? Math.round(tst + conDato.reduce(function (a, e) { return a + _minSiesta(e); }, 0) / conDato.length)
     : null;
 
-  return { latenciaMedia, vigiliaIntrasueño, eficiencia, despertaresMedia, tst, tib,
+  return { latenciaMedia, vigiliaIntrasueño, wasoEsDerivado, eficiencia, despertaresMedia, tst, tib,
            nochesValidas: valid.length,
            siestaNoches, siestaDias, siestaFrecPct, siestaMediaMin, siestaCantMedia, tst24 };
 }
