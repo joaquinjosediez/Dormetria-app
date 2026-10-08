@@ -52,8 +52,15 @@ r.ok(/dmVuelvoATomar\(\)/.test(_bloqueEdicionAlc),
 
 r.seccion('Entran más de dos variables:');
 
-r.ok(/const DM_MAX_VARS = 5;/.test(html), 'el máximo es 5');
-r.ok(/for\(let i=0;i<n;i\+\+\)/.test(html.slice(
+// El tope bajó de 5 a 3 en mod261, por multiplicidad: cada variable propia
+// es una comparación más contra la calidad del sueño, encima de los ocho
+// hábitos que ya se analizan. El porqué completo y el tope de LECTURA —que
+// quedó en 5 para no esconderle el historial a quien ya tenía cinco— están
+// en pruebas/70.
+r.ok(/const DM_MAX_VARS = 3;/.test(html), 'se pueden crear hasta 3');
+r.ok(/const DM_MAX_VARS_LEE = 5;/.test(html),
+     'pero las que ya existen se siguen leyendo: bajar el tope no borra nada');
+r.ok(/for\(let i=0;i<n;i\+\+\) h\+=dmVarCampoHtml\(i, vars\[i\]\);/.test(html.slice(
        html.indexOf('function dmAbrirVarsPersonales'),
        html.indexOf('function dmAbrirVarsPersonales') + 2600)),
      'el formulario arma los campos que hagan falta, no dos fijos');

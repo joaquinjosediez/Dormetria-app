@@ -79,7 +79,13 @@ r.seccion('La eficiencia se recalcula POR NOCHE:');
 // se dibujara el promedio, las 30 barras tendrían la misma altura.
 const fn = app.slice(app.indexOf('function dmSerieNocheHtml(entries, dias){'),
                      app.indexOf('// PROGRESIÓN SEMANAL'));
-r.ok(/let tib = wake - bed/.test(fn), 'se calcula el tiempo en cama de esa noche');
+// En mod261 la cuenta se mudó a dmTIBNoche, que es la que usan también las
+// métricas clínicas y el motor. Acá contaba de acostarse a DESPERTARSE y
+// las otras dos de acostarse a LEVANTARSE: la misma noche daba dos
+// eficiencias y el histograma pintaba de verde noches con 61 %. El porqué
+// completo está en pruebas/71.
+r.ok(/const tib = dmTIBNoche\(e\);/.test(fn),
+     'se calcula el tiempo en cama de esa noche, con la cuenta común');
 r.ok(/tst\/tib\*100/.test(fn), 'y la eficiencia de esa noche');
 r.ok(/if\(ef > 100\) ef = 100/.test(fn), 'con tope en 100: un dato mal cargado no dibuja una barra imposible');
 

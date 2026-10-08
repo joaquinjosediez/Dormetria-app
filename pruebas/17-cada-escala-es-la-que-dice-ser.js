@@ -74,9 +74,16 @@ r.seccion('El orden de la ficha en el celular está completo:');
 const ordenes = (css.match(/#screen-doctor-patient\.active [^{]+\{ ?order:\d/g) || []);
 r.ok(ordenes.length >= 7, 'todas las tarjetas tienen su orden asignado',
      ordenes.length + ' con order');
-// El orden es clínico: de lo general a lo preciso, y lo interpretativo al
-// final. "Impacto subjetivo vs. variables específicas" es lectura, no medición: venía
-// tercera, antes de haber visto una sola métrica.
+// El orden es clínico: de lo general a lo preciso. "Impacto subjetivo vs.
+// variables específicas" venía TERCERA, antes de haber visto una sola
+// métrica, y se bajó al final.
+//
+// En mod261 subió un escalón, por encima de la regularidad técnica: es lo
+// que se lee junto al actograma —qué acompaña a que reporte mejor o peor
+// noche—, mientras que las métricas técnicas de regularidad son el detalle
+// fino que cierra. Lo que sigue valiendo es que no vaya antes de las
+// métricas; cuál de las dos últimas va primero es una decisión clínica, no
+// una regla.
 const _ord = function (sel) {
   const m = css.match(new RegExp('#screen-doctor-patient\\.active ' + sel + ' *\\{ *order:(\\d+)'));
   return m ? Number(m[1]) : null;
@@ -89,7 +96,7 @@ r.ok(oActo != null && oNd != null && oReg != null && oFac != null,
      'actograma, métricas, regularidad e interpretación tienen orden');
 r.ok(oActo < oNd, 'primero los horarios en crudo, después las métricas');
 r.ok(oNd < oReg, 'las métricas de sueño antes que la regularidad técnica');
-r.ok(oReg < oFac, 'y lo interpretativo al final, no antes de haber medido nada',
+r.ok(oNd < oFac, 'y la interpretación después de las métricas, no antes',
      'acto ' + oActo + ' · métricas ' + oNd + ' · regularidad ' + oReg + ' · lectura ' + oFac);
 
 // Sin order explícito caía en 0 y se ponía delante de todo, incluso del

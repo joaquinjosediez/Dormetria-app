@@ -585,24 +585,35 @@ function dmMetricasDiario(entries) {
     const desp = parseInt(e.awakenings);
     if (!isNaN(desp)) despertares.push(desp);
 
-    // TIB — misma regla que la pestaña Diario: de acostarse a LEVANTARSE.
-    // Si no cargó get_up_time, se usa wake_time.
-    let bedM = aMin(e.bedtime);
-    const wakeM = aMin(e.wake_time);
-    if (bedM == null || wakeM == null) return;
-    if (bedM < 12 * 60) bedM += 24 * 60;   // madrugada = continuación de la noche
-
-    let finM = wakeM;
-    const upM = aMin(e.get_up_time);
-    if (upM != null) {
-      const wAbs = (wakeM < bedM % 1440) ? wakeM + 1440 : wakeM;
-      const uAbs = (upM < bedM % 1440) ? upM + 1440 : upM;
-      if (uAbs >= wAbs) finM = upM;        // si es anterior, el dato está mal cargado
+    // TIB — de acostarse a LEVANTARSE. La regla vive en dmTIBNoche, en
+    // index.html, porque la comparten el histograma noche a noche, las
+    // metricas clinicas y este motor. Tenerla tres veces fue como el
+    // promedio y el histograma terminaron midiendo cosas distintas con el
+    // mismo nombre. Se la llama en tiempo de ejecucion, no al cargar, asi
+    // que el modulo puede seguir cargando antes que el bloque inline.
+    //
+    // El fallback de abajo es la version vieja, por si este modulo se usa
+    // en un contexto sin index.html (una prueba suelta, por ejemplo).
+    let tibM = null;
+    if (typeof dmTIBNoche === 'function') {
+      tibM = dmTIBNoche(e);
+    } else {
+      let bedM = aMin(e.bedtime);
+      const wakeM = aMin(e.wake_time);
+      if (bedM == null || wakeM == null) return;
+      if (bedM < 12 * 60) bedM += 24 * 60;
+      let finM = wakeM;
+      const upM = aMin(e.get_up_time);
+      if (upM != null) {
+        const wAbs = (wakeM < bedM % 1440) ? wakeM + 1440 : wakeM;
+        const uAbs = (upM < bedM % 1440) ? upM + 1440 : upM;
+        if (uAbs >= wAbs) finM = upM;
+      }
+      tibM = (finM < bedM % 1440 ? finM + 1440 : finM) - (bedM % 1440);
+      if (tibM < 0) tibM += 1440;
+      if (!(tibM > 0 && tibM <= 24 * 60)) tibM = null;
     }
-
-    let tibM = (finM < bedM % 1440 ? finM + 1440 : finM) - (bedM % 1440);
-    if (tibM < 0) tibM += 1440;
-    if (tibM > 0 && tibM <= 24 * 60) tibs.push(tibM);
+    if (tibM != null) tibs.push(tibM);
   });
 
   const tst = prom(sueños);

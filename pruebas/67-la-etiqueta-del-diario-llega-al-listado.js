@@ -55,7 +55,10 @@ r.seccion('Lo que persiste es lo que el listado lee:');
 const persist = app.slice(app.indexOf('async function persistResolvedTags'),
                           app.indexOf('async function toggleDrTag'));
 r.ok(/db\.patch\('patients\?email=eq\.'/.test(persist), 'escribe en patients');
-r.ok(/\{added:st\.added, dismissed:st\.dismissed, resolved:st\.resolved\}/.test(persist),
+// En mod261 se le sumó `v`: la versión con la que se calculó. Sin eso,
+// backgroundFillMissingTags no tenía cómo saber que lo guardado era viejo y
+// no volvía a calcularlo nunca. Está en pruebas/71.
+r.ok(/\{added:st\.added, dismissed:st\.dismissed, resolved:st\.resolved, v:DM_TAGS_V\}/.test(persist),
      'la terna entera: resolved sin added/dismissed perdería lo marcado a mano');
 r.ok(/JSON\.stringify\(st\.resolved\)!==cur/.test(persist),
      'y solo si cambió: no una escritura por cada visita a la ficha');

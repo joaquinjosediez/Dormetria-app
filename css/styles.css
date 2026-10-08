@@ -4923,6 +4923,30 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 .dm-est-sub{
   font-size:10px; color:var(--label-3); line-height:1.35; margin-top:3px;
 }
+/* ── Histograma por semanas, adentro de la tarjeta ──────────────────────
+   Un numero suelto no dice si sube o baja. "Registros · 7 dias: 412" se lee
+   igual viniendo de 300 que viniendo de 600, y son dos situaciones
+   opuestas. La serie va en la misma tarjeta para que el numero y su
+   tendencia no haya que buscarlos en dos lugares. */
+.dm-est-histo{
+  display:flex; align-items:flex-end; gap:2px;
+  height:30px; margin:7px 0 2px;
+}
+.dm-est-histo > span{
+  flex:1; min-width:2px; border-radius:2px 2px 0 0;
+  background:currentColor; opacity:.78;
+  transition:opacity .12s ease;
+}
+.dm-est-histo > span:hover{ opacity:1; }
+/* La semana en curso todavia no termino: dibujarla llena la hace parecer una
+   caida que no existe. Va rayada y fuera del calculo de la tendencia. */
+.dm-est-histo > span.dm-est-parcial{
+  opacity:.34;
+  background:repeating-linear-gradient(135deg, currentColor 0 2px, transparent 2px 4px);
+}
+.dm-est-tend{
+  font-size:10px; font-weight:600; line-height:1.3; margin-top:1px;
+}
 @media (max-width:560px){
   .dm-est-grid{ grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:7px; }
   .dm-est-val{ font-size:22px; }

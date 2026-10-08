@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg261-30911f2f">
+<link rel="stylesheet" href="css/styles.css?v=stg262-d51796b6">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg261-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg261-9363f7fe"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg261-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg261-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg261-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg262-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg262-0e166ec6"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg262-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg262-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg262-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg261';
+const APP_VERSION='stg262';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg261 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg262 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -4650,6 +4650,71 @@ function dmResponderSugerencia(mail, texto){
 }
 window.dmResponderSugerencia = dmResponderSugerencia;
 
+// ── Serie por semanas para el panel de administracion ────────────────
+// Agrupa filas con created_at en ventanas de 7 dias terminadas HOY.
+//
+// modo 'conteo'  → cuantas filas cayeron en cada semana.
+// modo 'unicos'  → cuantos correos DISTINTOS registraron algo esa semana.
+//
+// La ultima ventana es la semana EN CURSO y casi siempre esta incompleta:
+// dibujarla como una barra mas la hace parecer una caida que no existe.
+// Vuelve marcada, y queda afuera del calculo de la tendencia.
+function dmSerieSemanal(rows, nSem, modo, campoEmail){
+  const HOY = Date.now();
+  const SEM = 7*86400000;
+  const b = [];
+  for(let i=0;i<nSem;i++) b.push(modo==='unicos' ? new Set() : 0);
+  (rows||[]).forEach(function(r){
+    if(!r || !r.created_at) return;
+    const t = new Date(r.created_at).getTime();
+    if(isNaN(t)) return;
+    const atras = Math.floor((HOY - t)/SEM);          // 0 = semana en curso
+    if(atras < 0 || atras >= nSem) return;
+    const k = nSem - 1 - atras;                        // 0 = la mas vieja
+    if(modo==='unicos'){
+      const e = String(r[campoEmail||'patient_email']||'').toLowerCase();
+      if(e) b[k].add(e);
+    }else{
+      b[k] += 1;
+    }
+  });
+  return b.map(function(x){ return modo==='unicos' ? x.size : x; });
+}
+
+// Dibuja la serie y dice en palabras si sube, baja o se mantiene.
+// El veredicto compara el promedio de las ultimas 4 semanas CERRADAS contra
+// las 4 anteriores. Menos de eso es ruido: una semana con feriado alcanza
+// para dar vuelta la lectura de dos semanas sueltas.
+function dmHistoSemanalHtml(serie, color){
+  if(!serie || serie.length < 3) return '';
+  const max = Math.max.apply(null, serie.concat([1]));
+  const barras = serie.map(function(v, i){
+    const ultima = (i === serie.length-1);
+    const alto = Math.max(2, Math.round(v/max*100));
+    return '<span class="'+(ultima?'dm-est-parcial':'')+'" style="height:'+alto+'%" '+
+           'title="'+(ultima?'semana en curso · ':'')+'hace '+(serie.length-1-i)+' sem · '+v+'"></span>';
+  }).join('');
+  // Sin la semana en curso: esta a medias por definicion.
+  const cerr = serie.slice(0, -1);
+  let tend = '';
+  if(cerr.length >= 8){
+    const prom = function(a){ return a.reduce(function(x,y){ return x+y; },0)/a.length; };
+    const fin = prom(cerr.slice(-4)), ini = prom(cerr.slice(-8,-4));
+    if(ini > 0){
+      const d = Math.round((fin-ini)/ini*100);
+      // Por debajo del 15 % no se afirma nada: con estos volumenes esa
+      // diferencia la hace una semana con dos feriados.
+      tend = Math.abs(d) < 15
+        ? '<div class="dm-est-tend" style="color:var(--label-3)">→ se mantiene · últimas 4 sem vs las 4 previas</div>'
+        : '<div class="dm-est-tend" style="color:'+(d>0?'#15803d':'#b45309')+'">'+
+          (d>0?'↑ sube ':'↓ baja ')+Math.abs(d)+' % · últimas 4 sem vs las 4 previas</div>';
+    }
+  }else{
+    tend = '<div class="dm-est-tend" style="color:var(--label-3)">Hacen falta 9 semanas para decir si sube o baja</div>';
+  }
+  return '<div class="dm-est-histo" style="color:'+(color||'#1a4a3a')+'">'+barras+'</div>'+tend;
+}
+
 async function showAdminPanel(){
   try{ const _v=document.getElementById('admin-version'); if(_v) _v.textContent=APP_VERSION; }catch(_){}
   if(!checkAdminAccess()){ toast('Acceso no autorizado'); return; }
@@ -5417,6 +5482,7 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
               '<div class="dm-est-val" style="color:'+(o.color||'var(--label)')+'">'+o.val+
                 (o.unidad?'<span class="dm-est-un">'+o.unidad+'</span>':'')+'</div>'+
               (o.p!=null ? barra(o.p, o.color||'#1a4a3a') : '')+
+              (o.serie ? dmHistoSemanalHtml(o.serie, o.color||'#1a4a3a') : '')+
               '<div class="dm-est-sub">'+o.sub+'</div>'+
             '</div>';
 
@@ -5426,6 +5492,21 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
 
           const vinculados = (window._admSinProf!=null) ? (totalPts - window._admSinProf) : null;
 
+          // ── Las dos series por semana ───────────────────────────────
+          // SOLO si se pudo leer todo. Con la lectura recortada faltan las
+          // filas MAS VIEJAS (vienen ordenadas de nueva a vieja), asi que el
+          // histograma dibujaria una rampa perfecta hacia arriba que es puro
+          // artefacto del tope de filas. Un grafico asi es peor que ninguno:
+          // se lee como crecimiento.
+          const _SEMS = 13;   // 12 cerradas + la que esta en curso
+          const _serieOk = !window._admStatsRecorte && !window._admStatsSinPermiso;
+          const _todoRegistro = (diaryRows||[]).concat(evalRows||[]);
+          const _serieReg = _serieOk ? dmSerieSemanal(_todoRegistro, _SEMS, 'conteo') : null;
+          const _serieAct = _serieOk ? dmSerieSemanal(_todoRegistro, _SEMS, 'unicos', 'patient_email') : null;
+          const _pieSerie = _serieOk
+            ? '12 semanas · la última, en curso'
+            : 'sin histograma: la lectura vino recortada y faltarían las semanas viejas';
+
           const b1 = bloque('Pacientes', [
             dato({label:'Cuentas creadas', val:n(totalPts), sub:'en total'}),
             dato({label:'Vinculados', val:vinculados==null?'—':n(vinculados),
@@ -5433,15 +5514,22 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
                   p:pct(vinculados, totalPts), color:'#1a4a3a'}),
             dato({label:'Sin profesional', val:n(window._admSinProf), sub:'no llegaron a vincularse',
                   p:pct(window._admSinProf, totalPts), color:'#b45309'}),
-            dato({label:'Activos · 7 días', val:n(activePts7), sub:'registraron algo',
-                  p:pct(activePts7, totalPts), color:'#15803d', acento:true}),
+            // El pedido: saber si el VOLUMEN de pacientes activos se mantiene
+            // o cae. Un "47 activos" no lo dice; la serie de cuantos
+            // distintos registraron algo cada semana, si.
+            dato({label:'Activos · 7 días', val:n(activePts7),
+                  sub:'pacientes distintos que registraron algo · '+_pieSerie,
+                  p:pct(activePts7, totalPts), color:'#15803d', acento:true,
+                  serie:_serieAct}),
             dato({label:'Activos · 30 días', val:n(activePts30), sub:'registraron algo',
                   p:pct(activePts30, totalPts), color:'#15803d'}),
           ]);
 
           const b2 = bloque('Uso', [
             dato({label:'Registros · total', val:n(regTotal), sub:regTotalParcial ? 'diario + escalas · solo lo que se pudo leer, va corto' : 'diario + escalas, desde el inicio'}),
-            dato({label:'Registros · 7 días', val:n(ingresos7d), sub:'diario + escalas'}),
+            dato({label:'Registros · 7 días', val:n(ingresos7d),
+                  sub:'diario + escalas · '+_pieSerie, color:'#1a4a3a',
+                  serie:_serieReg}),
             // "Permanencia" se leía como si fuera de todos. No lo es: es el
             // promedio sobre los pacientes que engancharon —los que nunca
             // registraron nada quedan afuera, y también los que registraron
@@ -6622,22 +6710,11 @@ function computeDiaryMetrics(entries){
     if(isFree){ weTotal.push(e.sleep_minutes); weMid.push(mid); }
     else { wdTotal.push(e.sleep_minutes); wdMid.push(mid); }
     // TIB (Time in Bed) — de acostarse a LEVANTARSE, no a despertarse.
-    // Si no cargó la hora de levantarse, se usa la de despertarse como antes.
-    let finM = wakeM;
-    if(e.get_up_time){
-      const _g = String(e.get_up_time).slice(0,5).split(':');
-      const _gm = parseInt(_g[0],10)*60 + parseInt(_g[1],10);
-      if(!isNaN(_gm)){
-        // La hora de levantarse tiene que ser posterior a la de despertarse;
-        // si no lo es, es un dato mal cargado y se descarta.
-        const _wAbs = (wakeM < bedM%1440) ? wakeM+1440 : wakeM;
-        const _gAbs = (_gm  < bedM%1440) ? _gm+1440  : _gm;
-        if(_gAbs >= _wAbs && _gAbs - _wAbs <= 8*60) finM = _gm;
-      }
-    }
-    let tibM = (finM<bedM%1440?finM+1440:finM) - (bedM%1440);
-    if(tibM<0) tibM += 1440;
-    if(tibM>0 && tibM<=24*60) tibMinsArr.push(tibM);
+    // La regla entera vive en dmTIBNoche, que es la que usan tambien el
+    // histograma y el motor: tres copias de la misma cuenta fue como el
+    // promedio y el histograma terminaron diciendo cosas distintas.
+    const tibM = dmTIBNoche(e);
+    if(tibM != null) tibMinsArr.push(tibM);
   });
   const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
   const fmtClock=m=>{ if(m==null)return '—'; let mm=Math.round(m)%(24*60); if(mm<0)mm+=24*60; const h=Math.floor(mm/60), q=mm%60; return String(h).padStart(2,'0')+':'+String(q).padStart(2,'0'); };
@@ -8256,6 +8333,43 @@ function dmMetricasSiestas(entries){
     dias: dias
   };
 }
+
+// ── Tiempo en cama de UNA noche. Una sola definicion. ────────────────
+// Habia tres implementaciones: la de las metricas clinicas, la del motor de
+// orientacion y la del histograma noche a noche. Las dos primeras cuentan de
+// acostarse a LEVANTARSE; la tercera contaba de acostarse a DESPERTARSE.
+//
+// En una paciente que se despierta y se queda horas en la cama eso da dos
+// eficiencias distintas para la misma noche: la tarjeta decia 61 % de
+// promedio y el histograma marcaba solo el 23 % de las noches por debajo del
+// 85 %. Ninguna de las dos estaba "mal calculada" — median cosas distintas
+// con el mismo nombre, que es peor, porque las dos se leen como la misma.
+//
+// Devuelve null si la noche no tiene horarios o el dato es incoherente.
+function dmTIBNoche(e){
+  const aMin = function(t){
+    if(!t) return null;
+    const p = String(t).slice(0,5).split(':');
+    const h = parseInt(p[0],10), m = parseInt(p[1],10);
+    return (isNaN(h)||isNaN(m)) ? null : h*60+m;
+  };
+  const bed = aMin(e && e.bedtime), wake = aMin(e && e.wake_time);
+  if(bed==null || wake==null) return null;
+  let fin = wake;
+  const up = aMin(e.get_up_time);
+  if(up != null){
+    // Levantarse tiene que ser POSTERIOR a despertarse, y no ocho horas
+    // despues: mas que eso es un horario mal cargado, no una noche.
+    const wAbs = (wake < bed) ? wake+1440 : wake;
+    const uAbs = (up   < bed) ? up  +1440 : up;
+    if(uAbs >= wAbs && uAbs - wAbs <= 8*60) fin = up;
+  }
+  let tib = (fin < bed ? fin+1440 : fin) - bed;
+  if(tib < 0) tib += 1440;
+  if(tib <= 0 || tib > 24*60) return null;
+  return tib;
+}
+window.dmTIBNoche = dmTIBNoche;
 
 function dmFilasSiestas(entries, row, C, ageYears){
   const S2 = dmMetricasSiestas(entries);
@@ -18595,6 +18709,20 @@ const PATHOLOGY_TAGS = {
 //     ni preguntas de cataplejía). Marcarla desde un ESS alto sería
 //     etiquetar de narcolepsia a cualquiera que duerma poco. Queda manual.
 // ══════════════════════════════════════════════════════════════════════
+// Version de la logica de resolucion. Es lo que faltaba para que un arreglo
+// llegue a los pacientes que YA tienen etiquetas guardadas.
+//
+// backgroundFillMissingTags solo recalculaba cuando `resolved` no existia.
+// Una vez escrito —aunque fuera un [] calculado sin las senales del diario—
+// quedaba fijo para siempre: por eso una paciente con "Insomnio · auto —
+// patron de insomnio en el diario" en la ficha seguia sin la franja roja en
+// el listado, y no se arreglaba solo con el tiempo.
+//
+// Ahora cada etiqueta guardada lleva la version con la que se calculo. Si no
+// coincide con esta, se recalcula. Subir este numero es la forma de decir
+// "lo de antes ya no sirve, rehacelo".
+const DM_TAGS_V = 2;
+
 const DM_CORTES_TAG = {
   isi:      { min:11, tag:'insomnio',   por:'ISI ≥ 11 (Morin 2011)' },
   ais:      { min:10, tag:'insomnio',   por:'AIS ≥ 10 (Soldatos 2003)' },
@@ -18728,11 +18856,19 @@ async function refreshPatientTagsHeader(email){
 }
 async function persistResolvedTags(email, st){
   try{
-    const cur = JSON.stringify((S.viewData&&S.viewData.tags&&S.viewData.tags.resolved)||[]);
-    if(JSON.stringify(st.resolved)!==cur){
-      const patch = {added:st.added, dismissed:st.dismissed, resolved:st.resolved};
+    const _t = (S.viewData&&S.viewData.tags) || {};
+    const cur = JSON.stringify(_t.resolved||[]);
+    // Tambien se escribe si cambio la VERSION, aunque el resultado sea igual:
+    // sin eso el paciente queda marcado como pendiente y se recalcula entero
+    // cada vez que se abre el listado.
+    if(JSON.stringify(st.resolved)!==cur || Number(_t.v||0)!==DM_TAGS_V){
+      const patch = {added:st.added, dismissed:st.dismissed, resolved:st.resolved, v:DM_TAGS_V};
       if(S.viewData&&S.viewData.email===email) S.viewData.tags = patch;
       await db.patch('patients?email=eq.'+encodeURIComponent(email), {tags:patch});
+      // La fila del listado queda al lado en escritorio: si no se repinta, el
+      // profesional ve la etiqueta en la ficha y no en la lista, que es
+      // exactamente el sintoma que se vino reportando.
+      if(typeof dmPintarFranjaFila==='function') dmPintarFranjaFila(email, st.resolved);
     }
   }catch(_){}
 }
@@ -18750,9 +18886,13 @@ async function toggleDrTag(id){
   delete _tagRecsCache[u.email+'__stale']; // no-op guard, mantiene intención explícita
   const st2=resolvePatientTags(u, await fetchPatientTagRecs(u.email), u.email);
   u.tags.resolved=st2.resolved;
+  // Con el sello de version: sin el, marcar una etiqueta a mano dejaba al
+  // paciente como "pendiente de recalcular" y el fondo le pisaba el cambio.
+  u.tags.v=DM_TAGS_V;
   try{
     await db.patch('patients?email=eq.'+encodeURIComponent(u.email), {tags:u.tags});
     renderTagHeaderPills(u, st2);
+    if(typeof dmPintarFranjaFila==='function') dmPintarFranjaFila(u.email, st2.resolved);
     const cardBody=document.getElementById('drp-tags-card-body');
     if(cardBody) cardBody.innerHTML=renderTagsCardBody(st2);
   }catch(e){ toast('No se pudo guardar la etiqueta: '+e.message); }
@@ -18778,20 +18918,96 @@ function dmChipsFila(u){
 }
 window.dmChipsFila = dmChipsFila;
 
+// Publica el patron y las senales del diario de UN paciente.
+//
+// Hasta ahora las unicas dos cosas que los producian eran abrir el Resumen de
+// ese paciente. El listado lateral no abre el Resumen de nadie, asi que
+// resolvia las etiquetas a ciegas: solo con las escalas. Las dos etiquetas que
+// mas dependen del diario —insomnio por patron y cronodisrupcion— no podian
+// aparecer nunca en la lista.
+async function dmPublicarSenalesDiario(email, u, recs){
+  window._dmPatronDiario  = window._dmPatronDiario  || {};
+  window._dmSenalesDiario = window._dmSenalesDiario || {};
+  if(window._dmPatronDiario[email] !== undefined) return;   // ya las tiene
+  // Solo las columnas que el motor mira. La consulta se hace una vez por
+  // paciente y queda cacheada en los globales de arriba.
+  let diary = [];
+  try{
+    diary = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(email)+
+      '&order=diary_date.desc&limit=30&select=diary_date,bedtime,wake_time,get_up_time,'+
+      'sleep_minutes,sleep_latency_mins,awakenings,wake_in_bed_mins,nap_minutes,'+
+      'sleep_quality,day_type,notes') || [];
+  }catch(_){ diary = []; }
+  let texto = '';
+  try{
+    if(typeof dmMotorOrientacion === 'function'){
+      const m = dmMotorOrientacion(recs||[], diary, u||{email:email});
+      texto = String((m && m.orientacion && m.orientacion.texto) || '');
+    }
+  }catch(_){}
+  window._dmPatronDiario[email] = texto;
+  window._dmSenalesDiario[email] = {
+    jetLagMin: (function(){
+      try{ return typeof socialJetLagMin==='function' ? socialJetLagMin(diary) : null; }
+      catch(_){ return null; }
+    })(),
+    sdMidMin: (function(){
+      try{
+        const r = (typeof computeSleepRegularity==='function' && typeof dmNochesValidas==='function')
+          ? computeSleepRegularity(dmNochesValidas(diary)) : null;
+        return (r && r.sd_midpoint_min != null) ? Math.round(r.sd_midpoint_min) : null;
+      }catch(_){ return null; }
+    })(),
+    noches: diary.length
+  };
+}
+window.dmPublicarSenalesDiario = dmPublicarSenalesDiario;
+
+// Dibuja (o redibuja) la franja de colores de una fila del listado.
+// Antes solo se AGREGABA si no habia ninguna: una etiqueta que cambiaba o que
+// se descartaba dejaba la franja vieja puesta.
+function dmPintarFranjaFila(email, resolved){
+  try{
+    const row=document.querySelector('.pat-row[data-pemail="'+email+'"]');
+    if(!row) return;
+    const vieja=row.querySelector('.dm-patlist-stripe');
+    if(vieja) vieja.remove();
+    if(!resolved || !resolved.length) return;
+    row.insertAdjacentHTML('afterbegin',
+      '<div class="dm-patlist-stripe">'+resolved.map(function(t){
+        const m=PATHOLOGY_TAGS[t]||{color:'#888',label:t};
+        return '<span title="'+escHtml(m.label||t)+'" style="background:'+m.color+'"></span>';
+      }).join('')+'</div>');
+  }catch(_){}
+}
+
 async function backgroundFillMissingTags(patients){
-  const pending=(patients||[]).filter(u=>u&&u.email&&!(u.tags&&Array.isArray(u.tags.resolved)));
+  // Se recalcula si NO hay etiquetas guardadas o si las que hay se calcularon
+  // con una version anterior de la logica. Lo segundo es lo nuevo: sin eso,
+  // un [] escrito hace dos meses sin mirar el diario quedaba para siempre.
+  const pending=(patients||[]).filter(function(u){
+    if(!u || !u.email) return false;
+    const t=u.tags;
+    if(!(t && Array.isArray(t.resolved))) return true;
+    return Number(t.v||0) !== DM_TAGS_V;
+  });
   for(const u of pending){
     try{
       const recs=await fetchPatientTagRecs(u.email);
+      // Y ACA esta el arreglo de fondo: las senales del diario se calculan
+      // antes de resolver. Hasta ahora resolvePatientTags corria con
+      // _dmPatronDiario vacio para todo paciente cuyo Resumen no se hubiera
+      // abierto en esta sesion, o sea casi todos, asi que las etiquetas que
+      // salen del diario no llegaban nunca al listado.
+      await dmPublicarSenalesDiario(u.email, u, recs);
       const st=resolvePatientTags(u, recs, u&&u.email);
-      if(!st.resolved.length) { u.tags=Object.assign({},u.tags,{resolved:[]}); continue; }
-      u.tags=Object.assign({},u.tags,{resolved:st.resolved});
-      db.patch('patients?email=eq.'+encodeURIComponent(u.email), {tags:{added:(u.tags&&u.tags.added)||[],dismissed:(u.tags&&u.tags.dismissed)||[],resolved:st.resolved}}).catch(()=>{});
-      const row=document.querySelector('.pat-row[data-pemail="'+u.email+'"]');
-      if(row && !row.querySelector('.dm-patlist-stripe')){
-        const stripeHtml='<div class="dm-patlist-stripe">'+st.resolved.map(t=>{const m=PATHOLOGY_TAGS[t]||{color:'#888'};return '<span style="background:'+m.color+'"></span>';}).join('')+'</div>';
-        row.insertAdjacentHTML('afterbegin', stripeHtml);
-      }
+      const tags={added:(u.tags&&u.tags.added)||[], dismissed:(u.tags&&u.tags.dismissed)||[],
+                  resolved:st.resolved, v:DM_TAGS_V};
+      u.tags=tags;
+      // Se guarda SIEMPRE, tambien cuando queda vacio: si no, el paciente sin
+      // etiquetas se recalcula entero en cada apertura del listado, para nada.
+      db.patch('patients?email=eq.'+encodeURIComponent(u.email), {tags:tags}).catch(()=>{});
+      dmPintarFranjaFila(u.email, st.resolved);
       // Los chips de la fila se sacaron (mod247): la franja de color de la
       // izquierda ya dice lo mismo y no cuesta un renglón.
     }catch(_bgTagErr){ /* seguimos con el resto aunque uno falle */ }
@@ -23374,10 +23590,14 @@ function dmSerieNocheHtml(entries, dias){
     // Eficiencia = sueño / tiempo en cama. Se recalcula por noche: el
     // promedio del período no sirve para ver cuáles fueron las malas.
     let ef = null;
-    const bed = toMin(e.bedtime), wake = toMin(e.wake_time), tst = Number(e.sleep_minutes);
-    if(bed!=null && wake!=null && tst>0){
-      let tib = wake - bed; if(tib <= 0) tib += 1440;
-      if(tib > 0 && tib <= 20*60) ef = Math.round(tst/tib*100);
+    const tst = Number(e.sleep_minutes);
+    const tib = dmTIBNoche(e);
+    if(tib != null && tst > 0){
+      // Mas sueno que tiempo en cama es imposible: es un horario mal
+      // cargado. Pintarlo como 118 % de eficiencia lo esconde adentro de
+      // una barra verde; dejarlo sin dato lo deja a la vista como hueco,
+      // que es lo que es.
+      if(tst <= tib) ef = Math.round(tst/tib*100);
       if(ef > 100) ef = 100;
     }
     return { f:e.diary_date, lat:lat, ef:ef, awk:awk, waso:was, wasoExpl:wasExpl };
