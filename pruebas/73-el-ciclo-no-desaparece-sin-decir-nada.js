@@ -123,6 +123,40 @@ r.ok(/id:'premenstrual'/.test(app) && /DM_DIAS_PREMENSTRUAL/.test(app),
      'la menstruación y los días previos son dos factores del análisis');
 r.ok(/has_period/.test(app), 'y se guardan en su propia columna');
 
+r.seccion('Y no hay un segundo interruptor que lo tape después:');
+
+// Esta es la que de verdad le escondía el bloque a la paciente que lo
+// reportó, y la encontré recién cuando vino su ficha: sex='F', 45 años,
+// menopausia sin marcar... y track_menstrual=false.
+//
+// showPeriodSectionIfFemale corría 100 ms después de abrir el diario y hacía
+// display:none si track_menstrual era false. El formulario dibujaba la
+// sección y esto la tapaba. Desde afuera es idéntico a que no exista.
+//
+// Y track_menstrual no lo eligió nadie: sale de un checkbox con display:none
+// y `checked` de fábrica, leído como `(g('mp-menstrual') && ...checked) ||
+// false`. Si el perfil se guarda por un camino donde ese input no está en el
+// DOM, el `|| false` escribe false solo.
+const ver = app.slice(app.indexOf('function showPeriodSectionIfFemale(){'),
+                      app.indexOf('// Mi perfil: por default se muestra un resumen'));
+r.ok(!/track_menstrual/.test(codigo(ver)),
+     'ya no lee track_menstrual');
+r.ok(!/display = .*\? 'block' : 'none'/.test(ver) && !/: 'none'/.test(codigo(ver)),
+     'y no puede esconder nada: solo destapa');
+r.ok(/style\.display === 'none'\) campo\.style\.display = ''/.test(ver),
+     'destapa lo que haya quedado oculto en una app instalada con el DOM viejo');
+r.ok(/ERA EL INTERRUPTOR ESCONDIDO/.test(ver),
+     'y queda escrito qué era, para que nadie lo "restaure"');
+
+// Un ajuste visible que no hace nada es peor que no tenerlo: quien lo lee
+// cree que ahí está el problema.
+r.ok(!/_mpRow\('Seguimiento menstrual'/.test(app),
+     'y el renglón muerto del perfil se fue con él');
+
+// El único que puede esconder el bloque es la decisión de la persona.
+r.ok(/localStorage\.getItem\('dm_sin_ciclo'\)==='1'/.test(app),
+     'lo único que lo esconde es que ella haya dicho que no menstrúa');
+
 r.seccion('Una sola forma de leer el sexo en toda la app:');
 
 // Este campo ya costó dos bugs. El de "Tu ciclo", y otro que no deja rastro:

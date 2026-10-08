@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg265-d51796b6">
+<link rel="stylesheet" href="css/styles.css?v=stg266-d51796b6">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1368,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg265-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg265-0e166ec6"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg265-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg265-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg265-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg266-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg266-0e166ec6"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg266-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg266-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg266-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1391,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg265';
+const APP_VERSION='stg266';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg265 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg266 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -13714,7 +13714,10 @@ function renderMiPerfilView(card){
    +_mpRow('Actividad física',u.physical_activity)
    +_mpRow('Ocupación',_mpAct(u.activity_type))
    +_mpRow('Horario laboral',_mpWork(u.work_schedule))
-   +((u.sex==='F'||u.sex==='Femenino')?_mpRow('Seguimiento menstrual',u.track_menstrual?'Activado':'Desactivado'):'')
+   /* Se saca "Seguimiento menstrual". Mostraba el valor de track_menstrual,
+      que ya no decide nada y que ademas se escribia solo: un ajuste que no
+      hace nada es peor que no tener el ajuste, porque quien lo lee cree que
+      ahi esta el problema. El ciclo se prende y se apaga desde el diario. */
    +'<button onclick="renderMiPerfilEdit(this.closest(\'[data-mp]\'))" style="width:100%;margin-top:18px;padding:13px;border:none;border-radius:12px;background:#2D6B55;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Editar mis datos</button>';
 }
 
@@ -28694,21 +28697,31 @@ function togglePeriod(){
 }
 
 function showPeriodSectionIfFemale(){
-  const u = S.user || {};
-  const el = document.getElementById('period-section');
-  if(!el) return;
-  // Detección tolerante de sexo femenino: acepta 'F', 'Femenino', 'femenino',
-  // 'mujer', etc. Antes exigía coincidencia exacta y fallaba con variantes.
-  const rawSex = String(u.sex || u.gender || '').trim().toLowerCase();
-  const isFemale = rawSex === 'f' || rawSex.startsWith('femenin') || rawSex.startsWith('mujer');
-  // track_menstrual puede venir como boolean true o como string 'true' según cómo
-  // lo devuelva la BD; aceptamos ambos. Y si NUNCA respondió (null/undefined),
-  // en mujeres en edad fértil (menarca sí, menopausia no) lo mostramos igual:
-  // antes esas pacientes no veían la sección nunca, y el dato se perdía.
-  const explicitNo = u.track_menstrual === false || u.track_menstrual === 'false';
-  const tracks = u.track_menstrual === true || u.track_menstrual === 'true';
-  const fertileDefault = !explicitNo && u.track_menstrual == null && u.has_menarche !== false && u.has_menopause !== true;
-  el.style.display = (isFemale && (tracks || fertileDefault)) ? 'block' : 'none';
+  // ESTA FUNCION ERA EL INTERRUPTOR ESCONDIDO.
+  //
+  // Corria 100 ms despues de abrir el diario y hacia `display:none` sobre el
+  // bloque del ciclo si `track_menstrual` era false. O sea: el formulario
+  // dibujaba la seccion y despues esto la tapaba, sin dejar rastro. Desde
+  // afuera se ve exactamente igual que si el bloque no existiera.
+  //
+  // Y `track_menstrual` no es un dato que alguien haya elegido. Sale de un
+  // checkbox con display:none, `checked` de fabrica, que vive en el modal de
+  // Mi Perfil: `(g('mp-menstrual') && g('mp-menstrual').checked) || false`.
+  // Si el perfil se guarda por un camino donde ese input NO esta en el DOM,
+  // el `|| false` escribe false. Nadie dijo que no menstrua: el dato se
+  // fabrico solo. Es lo que le paso a una paciente de 45 anios con sex='F' y
+  // menopausia sin marcar, que es justamente a quien mas le importa.
+  //
+  // Ahora el bloque lo decide dmSigueCiclo —una vez, al armar el HTML— y lo
+  // unico que lo puede esconder es dmAplicarSinCiclo, que responde a que la
+  // persona haya tocado "No menstruo". Esto queda solo para destapar lo que
+  // haya quedado oculto de antes: hay apps instaladas con el DOM viejo.
+  try{
+    const campo = document.getElementById('dm-campo-ciclo');
+    const sec   = document.getElementById('period-section');
+    if(campo && campo.style.display === 'none') campo.style.display = '';
+    if(sec   && sec.style.display   === 'none') sec.style.display   = 'block';
+  }catch(_){}
 }
 
 // Mi perfil: por default se muestra un resumen de solo lectura; los campos
