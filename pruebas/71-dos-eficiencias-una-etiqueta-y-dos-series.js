@@ -35,8 +35,11 @@ const motor = fs.readFileSync(
 
 r.seccion('1 · Un solo tiempo en cama para toda la app:');
 
-r.ok(/function dmTIBNoche\(e\)\{/.test(app), 'existe una sola definición');
-const tib = app.slice(app.indexOf('function dmTIBNoche(e){'),
+// En mod266 pasó a aceptar un segundo argumento: dmTIBNoche(e, {hasta:
+// 'despertar'}) devuelve la ventana hasta despertarse, que es otra cosa que
+// el tiempo en cama. El porqué está en pruebas/74.
+r.ok(/function dmTIBNoche\(e, opts\)\{/.test(app), 'existe una sola definición');
+const tib = app.slice(app.indexOf('function dmTIBNoche(e, opts){'),
                       app.indexOf('window.dmTIBNoche = dmTIBNoche;'));
 r.ok(/aMin\(e\.get_up_time\)/.test(tib), 'cuenta hasta LEVANTARSE');
 r.ok(/uAbs - wAbs <= 8\*60/.test(tib),
@@ -64,7 +67,8 @@ r.seccion('Y la cuenta da bien:');
 // Reproducción del caso: se acuesta 21:48, se despierta 01:00, se levanta
 // 04:51, durmió 4 h 20. Con la regla vieja el denominador eran 3 h 12 y la
 // eficiencia daba 135 %; con la buena son 7 h 03 y da 61 %.
-const fn = new Function('return ' + tib.slice(tib.indexOf('function dmTIBNoche')))();
+const _crudo = new Function('return ' + tib.slice(tib.indexOf('function dmTIBNoche')))();
+const fn = function(e){ return _crudo(e); };
 const noche = { bedtime:'21:48', wake_time:'01:00', get_up_time:'04:51' };
 r.ok(fn(noche) === 423, 'de 21:48 a 04:51 son 7 h 03 (423 min)', String(fn(noche)));
 r.ok(Math.round(260 / fn(noche) * 100) === 61,

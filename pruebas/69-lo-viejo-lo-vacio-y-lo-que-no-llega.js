@@ -94,18 +94,28 @@ r.ok(/intentos > 40/.test(pedir),
 r.ok(/dispatchEvent\(new Event\('change'\)\)/.test(pedir),
      'y dispara change, que es lo que pinta el borde de seleccionado');
 
-r.seccion('3 · La tarjeta de siestas solo se empareja si tiene cuerpo:');
+r.seccion('3 · La tarjeta de siestas ya no se empareja con nada:');
 
-const mover = app.slice(app.indexOf("const _nd=document.getElementById('dr-noche-dia');"),
-                        app.indexOf("const _nd=document.getElementById('dr-noche-dia');") + 900);
-r.ok(/_filasEnDia = _dia \? Math\.max\(0, _dia\.children\.length - 1\) : 0/.test(mover),
-     'se cuentan las filas del bloque, no se miden alturas');
-r.ok(/_nd && _dia && _filasEnDia >= 5/.test(mover),
-     'y van lado a lado desde 5 filas');
-// Con menos, no se mueve nada: el bloque del día ya es hermano del de la
-// noche dentro de #dr-clinical-metrics, así que queda justo debajo.
+// Esto arreglaba a medias un problema que en mod266 se resolvió de raíz.
+//
+// La tarjeta de siestas se mudaba al lado de la nocturna, en una fila de dos
+// celdas. Acá se le puso un piso de 5 filas para no emparejar una de tres
+// contra una de diez. Pero el piso solo elige entre dos malas: o quedan
+// desparejas, o el día se va abajo y la comparación que motivaba todo el
+// reacomodo no existe.
+//
+// Ahora las siestas son un separador ADENTRO de la tarjeta de la noche. Sin
+// segunda caja no hay anchos que emparejar. El criterio y las dos
+// profundidades —detalle en chicos, tres cifras en adultos— están en
+// pruebas/74; acá solo se fija que el reacomodo no volvió.
+r.ok(!/dm-bloque-dia/.test(app),
+     'no hay tarjeta de día que mudar');
+r.ok(!/_filasEnDia/.test(app),
+     'ni el conteo de filas que decidía si emparejarlas');
+r.ok(/<div class="dm-met-col-h" style="margin-top:14px">Día · siestas<\/div>/.test(app),
+     'las siestas son un separador en la misma caja');
 r.ok(/#dr-noche-dia:empty/.test(css),
-     'y la fila vacía se esconde sola, sin dejar el hueco del gap');
+     'y la fila que las contenía se esconde sola al quedar vacía');
 
 r.seccion('4 · La interpretación va antes que el detalle fino:');
 
