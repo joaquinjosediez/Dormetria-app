@@ -258,6 +258,42 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
     orientacion.base = `Métricas: latencia ${Math.round(metrics.latenciaMedia)} min, vigilia ${Math.round(metrics.vigiliaIntrasueño)} min, eficiencia ${Math.round(metrics.eficiencia)}%.`;
   }
 
+  // ── El diario esta medido BAJO tratamiento ─────────────────────────
+  // Si la persona toma un sedante la mayoria de las noches, estas metricas
+  // describen su sueño TRATADO, no su sueño. Un diario en rango bajo
+  // zolpidem no es la ausencia del cuadro: es el cuadro bajo control
+  // farmacologico, y la lectura cambia por completo.
+  //
+  // El titulo se corrige solo cuando el diario dio normal o casi: ahi es
+  // donde el dato enmascarado cambia la conclusion. Si ya dice "insomnio de
+  // mantenimiento", decirlo igual no agrega nada — el patron esta ahi A
+  // PESAR del farmaco, que es un hallazgo todavia mas fuerte y ya se ve.
+  const _sed = dmSedantesEnDiario(diarySlice);
+  if (_sed) {
+    const _qs = _sed.lista.join(', ') + ' en ' + _sed.noches + ' de ' +
+                _sed.nConDato + ' noches con el dato cargado';
+    const _leve = /dentro de límites normales|alteraciones leves/i.test(orientacion.texto);
+    if (_leve) {
+      // La marca viaja en el objeto, no en el texto. dmCalcularConducta
+      // decidia leyendo `texto` con una expresion regular, asi que al
+      // reescribir el titulo aca dejaba de reconocer el caso justo en el
+      // unico en que importa. Un estado no se transmite por el string que
+      // se le muestra al usuario.
+      orientacion.enRangoBajoSedante = /dentro de límites normales/i.test(orientacion.texto);
+      orientacion.texto = 'Sueño en rango, pero medido bajo tratamiento farmacológico';
+      orientacion.base = `${_qs}. Estas cifras describen el sueño TRATADO, no el sueño ` +
+        `de base: un diario en rango con un hipnótico no descarta insomnio. ` +
+        `${orientacion.base}`;
+    }
+    orientacion.banderas.push({
+      icono: '💊',
+      texto: 'Las métricas están bajo tratamiento farmacológico',
+      detalles: `${_qs}. La app no puede saber para qué está indicado: ` +
+        `el mismo fármaco puede estar por insomnio o por otro cuadro. Es una ` +
+        `pregunta para la entrevista, no una conclusión del diario.`
+    });
+  }
+
   // Banderas de ORIENTACIÓN (no de severidad, sino de diagnósticos alternativos)
   if (stopbangScore >= 3) {
     orientacion.banderas.push({
@@ -284,7 +320,11 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
 function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficientes) {
   const texto = (orientacion && orientacion.texto) || '';
   const sinBase  = datosInsuficientes || /sin datos/i.test(texto);
-  const normal   = /dentro de límites normales/i.test(texto);
+  // Incluye el caso en que el titulo YA fue reescrito por el sedante: ahi
+  // el diario tambien dio en rango, y es el caso que esta rama tiene que
+  // tratar distinto.
+  const normal   = /dentro de límites normales/i.test(texto) ||
+                   !!(orientacion && orientacion.enRangoBajoSedante);
 
   // ── Sin base: NO se sugiere conducta ──────────────────────────────────
   // Antes se devolvía TCC-I siempre, así que un paciente con una sola noche
@@ -302,7 +342,16 @@ function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficien
   }
 
   // ── Sueño dentro de rango: tampoco corresponde tratar insomnio ────────
-  if (normal) {
+  //
+  // Con UNA excepcion, y es la que hacia que esta rama fuera peligrosa.
+  //
+  // Si el diario esta en rango porque la persona toma un sedante todas las
+  // noches, devolver "sin indicacion de tratamiento" es exactamente el
+  // consejo al reves: ese es, de todos los pacientes, el que con mas
+  // claridad tiene indicacion de TCC-I. La rama se evaluaba antes de mirar
+  // la medicacion y cerraba el tema.
+  const _sedC = dmSedantesEnDiario(diarySlice);
+  if (normal && !_sedC) {
     return {
       procede: false,
       motivo: 'sin_indicacion',
@@ -323,6 +372,28 @@ function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficien
   // más arriba en la matriz de riesgo y arrastra al producto completo a
   // Clase II. Lo que queda es lo que dice la guía publicada, con su cita, sin
   // indicar nada para esta persona en particular.
+  // El diario en rango BAJO sedante llega hasta aca. Lo que lo sostiene no
+  // es un patron en las cifras —no lo hay, el farmaco lo borro— sino el uso
+  // sostenido en si. Se dice con esas palabras: la base de la sugerencia
+  // tiene que poder revisarse, y no es la misma que la de un patron medido.
+  if (normal && _sedC) {
+    return {
+      procede: true,
+      primeraLinea: 'TCC-I (terapia cognitivo-conductual para el insomnio)',
+      referencia: 'AASM 2021 · ESRS 2023',
+      base: 'El diario está en rango, pero medido bajo ' + _sedC.lista.join(', ') +
+            ' en ' + _sedC.noches + ' de ' + _sedC.nConDato + ' noches. Un diario ' +
+            'normal con un hipnótico describe el cuadro tratado, no su ausencia, ' +
+            'así que no alcanza para descartar insomnio. Las guías de primera línea ' +
+            'para insomnio crónico recomiendan TCC-I, y describen además que el ' +
+            'tratamiento conductual es el que sostiene la mejoría cuando el uso de ' +
+            'hipnóticos se reduce. Qué hacer con la medicación de esta persona, y ' +
+            'si su indicación es el insomnio o es otra, es una decisión de la ' +
+            'entrevista: la app no la puede leer del diario.',
+      faltan: []
+    };
+  }
+
   return {
     procede: true,
     primeraLinea: 'TCC-I (terapia cognitivo-conductual para el insomnio)',
@@ -911,6 +982,87 @@ function dmCriteriosYFuentes() {
 /**
  * Detecta si hay benzodiacepina en uso actual (no asume "crónica" sin criterio temporal)
  */
+// ── Sedantes para dormir, tomados la mayoria de las noches ───────────
+//
+// Un diario que da normal BAJO un hipnotico no describe el sueño de la
+// persona: describe su sueño tratado. Y la app leia esas metricas al pie de
+// la letra, al punto de devolver "Sin indicacion de tratamiento para
+// insomnio" a alguien que toma zolpidem todas las noches — que es, de todos
+// los pacientes, justo el que mas claramente tiene indicacion.
+//
+// Lo que se detecta es DE QUE farmaco se trata y CON QUE frecuencia, no si
+// la persona es insomne. La app no puede saber la indicacion: la quetiapina
+// de alguien con trastorno bipolar y la quetiapina de alguien que no duerme
+// se escriben igual en el diario. Por eso lo que sale de aca es una
+// pregunta para la entrevista, no una etiqueta.
+//
+// Que entra:
+//   · Hipnoticos Z y benzodiacepinas — su efecto sobre latencia y
+//     despertares es el que directamente borra el patron del diario.
+//   · Sedantes que se usan fuera de indicacion para dormir: trazodona,
+//     mirtazapina, doxepina, quetiapina y fenotiazinas.
+//
+// Que NO entra, a proposito:
+//   · Melatonina y cronobioticos: su efecto es sobre la FASE, no sobre la
+//     continuidad del sueño, y no enmascaran un patron de insomnio del modo
+//     en que lo hace un hipnotico.
+//   · Suplementos (magnesio, valeriana, ashwagandha): sin efecto hipnotico
+//     establecido. Contarlos diria "esta medicado" de alguien que toma
+//     magnesio, y eso cambiaria la lectura clinica sobre nada.
+const DM_SEDANTES_SUENO = [
+  // Hipnoticos Z
+  'zolpidem', 'zopiclona', 'eszopiclona', 'zaleplon',
+  // Benzodiacepinas
+  'clonazepam', 'diazepam', 'alprazolam', 'lorazepam', 'bromazepam',
+  'midazolam', 'flunitrazepam', 'triazolam', 'temazepam',
+  // Sedantes usados para dormir
+  'trazodona', 'mirtazapina', 'doxepina', 'quetiapina',
+  'prometazina', 'levomepromazina', 'clorpromazina'
+];
+
+function dmSedantesEnDiario(diarySlice) {
+  let nConDato = 0;
+  const porNoche = [];
+  (diarySlice || []).forEach(function (e) {
+    let meds = e && e.medications;
+    if (typeof meds === 'string' && meds) {
+      try { meds = JSON.parse(meds); } catch (_) { meds = null; }
+    }
+    // La columna ausente es "no se pregunto"; el array vacio es "no tomo
+    // nada". La diferencia decide el denominador: sin ella, un paciente que
+    // nunca cargo medicacion parece tomar sedantes el 0 % de las noches y
+    // uno que cargo cinco noches parece tomarlos siempre.
+    if (!Array.isArray(meds)) return;
+    nConDato++;
+    const hay = [];
+    meds.forEach(function (m) {
+      const n = String((m && (m.name || m.nombre)) || m || '').toLowerCase();
+      DM_SEDANTES_SUENO.forEach(function (sed) {
+        if (n.indexOf(sed) >= 0 && hay.indexOf(sed) < 0) hay.push(sed);
+      });
+    });
+    porNoche.push(hay);
+  });
+
+  if (nConDato < 5) return null;        // sin base para hablar de frecuencia
+  const conSedante = porNoche.filter(function (h) { return h.length; }).length;
+  // La mitad de las noches. Por debajo de eso es uso ocasional o a demanda,
+  // que no borra el patron del diario: las noches sin farmaco siguen ahi y
+  // el promedio las refleja.
+  if (conSedante * 2 < nConDato) return null;
+
+  const cuenta = {};
+  porNoche.forEach(function (h) {
+    h.forEach(function (sed) { cuenta[sed] = (cuenta[sed] || 0) + 1; });
+  });
+  const lista = Object.keys(cuenta)
+    .sort(function (a, b) { return cuenta[b] - cuenta[a]; })
+    .map(function (k) { return k.charAt(0).toUpperCase() + k.slice(1); });
+
+  return { lista: lista, noches: conSedante, nConDato: nConDato,
+           pct: Math.round(conSedante / nConDato * 100) };
+}
+
 function dmDetectarBenzoDe8Semanas(diarySlice) {
   const benzoPattern = ['clonazepam', 'diazepam', 'alprazolam', 'lorazepam', 'bromazepam', 'flunitrazepam'];
   const medicaciones = {};
