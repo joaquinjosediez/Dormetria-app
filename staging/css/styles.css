@@ -747,6 +747,61 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 /* ── SCROLL ── */
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px));}
 
+/* ══════════════════════════════════════════════════════════════════════
+   TAMAÑO DE LETRA · para quien no llega a leer
+   ══════════════════════════════════════════════════════════════════════
+   La app tiene 2.100 declaraciones de font-size y ninguna en rem: subir el
+   tamaño base del documento no mueve nada, y convertirlas una por una es
+   tocar cada pantalla de una app clínica en producción para que un número
+   cambie. No vale el riesgo.
+
+   Se escala el CONTENIDO con `zoom`, que multiplica todo —texto, padding,
+   botones, iconos— manteniendo las proporciones. Un texto más grande con el
+   mismo botón alrededor se corta; esto no se puede cortar.
+
+   Va sobre el contenedor que YA scrollea, nunca sobre #app ni sobre html.
+   Ahí está todo el riesgo y por eso no se hace: #app mide 100dvh, y con zoom
+   pasaría a ocupar 120dvh de pantalla real. Adentro de un contenedor con
+   overflow, en cambio, que el contenido sea más alto es exactamente lo que
+   ese contenedor existe para resolver. No hay forma de que rompa el layout:
+   lo único que pasa es que entra menos por pantalla, que es el precio que
+   esta persona quiere pagar.
+
+   La barra de abajo y la de arriba quedan a tamaño normal, a propósito: son
+   iconos con una palabra, se reconocen por posición, y agrandarlas le comería
+   al contenido la pantalla que acabamos de ganar. */
+body.dm-esc-g  .screen.active .scroll,
+body.dm-esc-g  .screen.active > div[style*="overflow-y:auto"]{ zoom:1.22; }
+body.dm-esc-xg .screen.active .scroll,
+body.dm-esc-xg .screen.active > div[style*="overflow-y:auto"]{ zoom:1.45; }
+
+/* El PVT queda afuera: es una prueba de tiempo de reacción y el estímulo
+   tiene que medir siempre lo mismo. Agrandarlo cambia lo que se mide. */
+body.dm-esc-g  #screen-pvt .scroll,
+body.dm-esc-xg #screen-pvt .scroll{ zoom:1; }
+
+/* El panel del profesional tampoco: es una grilla de dos columnas pensada
+   para una pantalla grande, y ahí el problema no existe. */
+body.dr-desktop .screen.active .scroll,
+body.dr-desktop .screen.active > div[style*="overflow-y:auto"]{ zoom:1; }
+
+/* El selector, en Mi perfil. Botones grandes a propósito: lo toca alguien
+   que no ve bien, así que no puede ser una fila de chips de 11 px. */
+.dm-esc-sel{ display:flex; gap:8px; margin-top:10px; }
+.dm-esc-btn{
+  flex:1; padding:14px 8px; border-radius:12px; cursor:pointer;
+  background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.16);
+  color:#F4EFE5; font-family:var(--font); line-height:1.15; text-align:center;
+}
+.dm-esc-btn.on{ background:rgba(126,200,164,.22); border-color:#7EC8A4; }
+.dm-esc-btn b{ display:block; font-weight:700; }
+.dm-esc-btn span{ display:block; font-size:11px; opacity:.72; margin-top:4px; }
+/* La muestra se ve en su tamaño real: el que elige tiene que poder
+   comprobar con los ojos, no deducirlo de la palabra "grande". */
+.dm-esc-btn:nth-child(1) b{ font-size:15px; }
+.dm-esc-btn:nth-child(2) b{ font-size:18px; }
+.dm-esc-btn:nth-child(3) b{ font-size:22px; }
+
 /* ── PVT screens: light background so default dark text is readable ── */
 #screen-pvt-intro{background:#f4efe5;}
 #screen-pvt-intro .scroll, #screen-pvt-intro [class*="panel"]{background:#f4efe5;}

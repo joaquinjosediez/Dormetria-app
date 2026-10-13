@@ -5,7 +5,18 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<!-- Sin maximum-scale. Lo tenia en 1.0, que en Android le PROHIBE al usuario
+     agrandar la pagina con los dedos. Para un paciente de 75 anios con
+     presbicia eso no es un detalle: es el gesto que usa en todas las demas
+     apps y aca no funcionaba. En iOS Safari lo ignora desde iOS 10 por
+     accesibilidad, asi que el bloqueo solo afectaba a Android — que es
+     peor, porque el problema aparecia en la mitad de los telefonos y no en
+     el de quien lo probaba.
+
+     Tampoco se agrega text-size-adjust. En Android, fijarlo en 100% o en
+     none puede anular el ajuste de tamaño de letra del sistema, que es
+     justamente lo que esta persona ya configuro en su telefono. -->
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Dormetria">
@@ -21,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg269-d51796b6">
+<link rel="stylesheet" href="css/styles.css?v=stg270-f2c86620">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1368,11 +1379,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg269-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg269-081c5488"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg269-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg269-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg269-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg270-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg270-081c5488"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg270-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg270-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg270-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1391,11 +1402,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg269';
+const APP_VERSION='stg270';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg269 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg270 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -13590,6 +13601,8 @@ function renderProfileView(){
   cont.innerHTML=`
     <div style="display:flex;flex-direction:column;gap:10px">
 
+      ${dmEscalaCardHtml()}
+
       <!-- Info de perfil -->
       <div onclick="openMiPerfil()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
         <div style="width:46px;height:46px;border-radius:50%;background:#1a4a3a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -13672,7 +13685,67 @@ function renderProfileView(){
   // La tarjeta de hijos se pinta aparte porque puede necesitar ir a la
   // base a buscarlos: no se puede resolver dentro del template.
   try{ renderProfileChildren(); }catch(e){ console.warn('[perfil hijos]', e); }
+  try{ dmPintarEscalaSel(); }catch(e){ console.warn('[escala]', e); }
 }
+// ── Tamaño de letra ─────────────────────────────────────────────────
+// Tres niveles, guardados en el teléfono. Va en localStorage y no en la
+// ficha a propósito: esto depende de los ojos Y de la pantalla. La misma
+// persona puede necesitarlo grande en el teléfono y normal en la tablet, y
+// guardarlo en la base le pisaría uno con el otro.
+const DM_ESCALAS = ['', 'dm-esc-g', 'dm-esc-xg'];
+
+function dmEscalaActual(){
+  try{
+    const v = parseInt(localStorage.getItem('dm_escala_texto'), 10);
+    return (v === 1 || v === 2) ? v : 0;
+  }catch(_){ return 0; }
+}
+
+function dmAplicarEscala(){
+  try{
+    const n = dmEscalaActual();
+    DM_ESCALAS.forEach(function(c, i){
+      if(c) document.body.classList.toggle(c, i === n);
+    });
+  }catch(_){}
+}
+window.dmAplicarEscala = dmAplicarEscala;
+
+function dmSetEscala(n){
+  try{ localStorage.setItem('dm_escala_texto', String(n)); }catch(_){}
+  dmAplicarEscala();
+  dmPintarEscalaSel();
+  // Sin el aviso, en el nivel "Normal" el cambio no se nota en el propio
+  // selector y parece que el botón no hizo nada.
+  if(typeof toast==='function'){
+    toast(n === 0 ? 'Tamaño normal' : (n === 1 ? 'Texto más grande ✓' : 'Texto mucho más grande ✓'));
+  }
+}
+window.dmSetEscala = dmSetEscala;
+
+function dmPintarEscalaSel(){
+  const c = document.getElementById('dm-esc-sel');
+  if(!c) return;
+  const n = dmEscalaActual();
+  c.innerHTML =
+    ['Normal','Grande','Más grande'].map(function(rot, i){
+      return '<button type="button" class="dm-esc-btn'+(i===n?' on':'')+'" '+
+        'onclick="dmSetEscala('+i+')"><b>Aa</b><span>'+rot+'</span></button>';
+    }).join('');
+}
+window.dmPintarEscalaSel = dmPintarEscalaSel;
+
+// La tarjeta que se mete en Mi perfil.
+function dmEscalaCardHtml(){
+  return '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);'+
+      'border-radius:14px;padding:15px 16px;margin-bottom:12px">'+
+    '<div style="font-size:15px;font-weight:700;color:#F4EFE5;margin-bottom:3px">Tamaño del texto</div>'+
+    '<div style="font-size:13px;color:rgba(244,239,229,.78);line-height:1.5">'+
+      'Si te cuesta leer la pantalla, agrandalo. También podés agrandar con dos dedos, como en cualquier página.</div>'+
+    '<div id="dm-esc-sel" class="dm-esc-sel"></div>'+
+  '</div>';
+}
+
 function getPfPaths(){return Array.from(document.querySelectorAll('#pf-paths-tags .tag')).map(t=>t.textContent.replace('✕','').trim());}
 function addPath(){const s=document.getElementById('pf-path-sel');const v=s.value;if(!v)return;const cur=getPfPaths();if(!cur.includes(v)){cur.push(v);document.getElementById('pf-paths-tags').innerHTML=cur.map(p=>`<span class="tag">${p}<span class="tag-rm" onclick="removePath('${p}')">✕</span></span>`).join('');}s.value='';}
 function addPathOther(){const inp=document.getElementById('pf-path-other');const v=inp.value.trim();if(!v)return;const cur=getPfPaths();if(!cur.includes(v)){cur.push(v);document.getElementById('pf-paths-tags').innerHTML=cur.map(p=>`<span class="tag">${p}<span class="tag-rm" onclick="removePath('${p}')">✕</span></span>`).join('');}inp.value='';}
@@ -29342,6 +29415,14 @@ function scheduleLocalReminder(){
   }, 60000);
 }
 
+// El tamaño de letra elegido, apenas carga. Si se aplicara al abrir el
+// perfil, la persona que lo necesita veria todo chico hasta llegar ahi —
+// que es justo el recorrido que no puede hacer.
+(function(){ try{
+  if(document.body) dmAplicarEscala();
+  else document.addEventListener('DOMContentLoaded', dmAplicarEscala);
+}catch(_){} })();
+
 // Initialize reminders on app load
 (function initReminders(){
   // Esto corre durante el parseo del script, sin red alguna, y leia
@@ -30853,7 +30934,7 @@ function dmReplayTour(tourId){
     <div style="text-align:center;flex:1"><div style="font-size:17px;font-weight:700;color:#fff" id="profile-header-title">Yo</div></div>
     <button class="topbar-btn" id="profile-edit-btn" onclick="openMiPerfil()">Editar</button>
   </div>
-  <div style="background:#1a2e23;flex:1;overflow-y:auto;padding-bottom:80px;min-height:0"><div id="profile-content" style="padding:16px"></div></div>
+  <div class="scroll" style="background:#1a2e23;flex:1;overflow-y:auto;padding-bottom:80px;min-height:0"><div id="profile-content" style="padding:16px"></div></div>
 </div>
 
 <!-- HOW TO USE DORMETRIA — instructivo para pacientes -->
