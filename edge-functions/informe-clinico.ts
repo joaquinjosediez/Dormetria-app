@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  informe-clinico · Supabase Edge Function        (versión 5 · mod271)
+//  informe-clinico · Supabase Edge Function        (versión 6 · mod272)
 // ═══════════════════════════════════════════════════════════════════════
 //
 //  ESTE ARCHIVO NO SE PUBLICA CON git push.
@@ -17,8 +17,10 @@
 //
 //  QUÉ CAMBIÓ EN LA v5
 //
-//  · max_tokens 2000 → 8000. El 2000 estaba puesto a dedo y cortaba los
-//    informes al medio. No es un presupuesto: se paga por lo que se usa.
+//  · max_tokens 2000 → 32000 (v5 lo dejo en 8000 y tampoco alcanzo: el
+//    razonamiento adaptativo de sonnet-5 sale del mismo presupuesto).
+//    No es un presupuesto: se paga por lo que se usa.
+//  · Si el modelo rechaza ese max_tokens, se reintenta con 8000.
 //  · La consigna de interconsulta decía "Menos de 400 palabras en total".
 //    Por eso el informe "detallado" no tenía nada. Ahora pide el informe
 //    completo, con secciones explícitas y una CONCLUSIÓN SUGERIDA al final.
@@ -284,7 +286,7 @@ Deno.serve(async (req) => {
   const { modelo, disponibles } = await elegirModelo(clave);
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    let r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -293,13 +295,24 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: modelo,
-        // 2000 era arbitrario y cortaba informes al medio. El tope del
-        // modelo es mucho mas alto; esto no es un presupuesto, es un
-        // LIMITE DE SEGURIDAD para que una respuesta descontrolada no se
-        // cobre una fortuna. Se paga por lo que se usa, asi que subirlo no
-        // cuesta nada mientras no se use: una nota de evolucion de 250
-        // palabras sigue gastando lo mismo.
-        max_tokens: 8000,
+        // 2000 era arbitrario y cortaba informes al medio. 8000 TAMPOCO
+        // alcanzo, y el motivo no es el largo del informe:
+        //
+        //   claude-sonnet-5 trae razonamiento adaptativo activado por
+        //   defecto, y ese razonamiento SALE DEL MISMO PRESUPUESTO de
+        //   max_tokens. Con 8000, una parte se iba en razonar y quedaba
+        //   poco para escribir, asi que el informe se cortaba igual.
+        //
+        // 32000 deja lugar para las dos cosas con margen de sobra: un
+        // informe de interconsulta completo ronda las 2.500 palabras, que
+        // en JSON son unos 6.000 tokens. El tope del modelo es 128k, asi
+        // que 32000 esta holgadamente adentro.
+        //
+        // Y no es un presupuesto: a la API se le paga por lo que se USA.
+        // Una nota de evolucion de 250 palabras cuesta lo mismo con el tope
+        // en 2000 que en 32000. Esto es un limite de seguridad contra una
+        // respuesta descontrolada, nada mas.
+        max_tokens: 32000,
         messages: [
           { role: 'user', content: prompt }
           // NO va ningún { role: 'assistant' } acá. Eso es prefill y los
@@ -309,7 +322,29 @@ Deno.serve(async (req) => {
       })
     });
 
-    const resp = await r.json();
+    let resp = await r.json();
+
+    // Si el modelo rechazara ese max_tokens —porque cambio el modelo o el
+    // tope—, el error es un 400 que para el profesional no significa nada.
+    // Se reintenta una vez con un valor conservador: mejor un informe que
+    // puede quedar corto que ninguno.
+    if (!r.ok && r.status === 400 && /max_tokens/i.test(JSON.stringify(resp || {}))) {
+      console.warn('max_tokens rechazado, reintento con 8000');
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': clave,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: modelo,
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      resp = await r.json();
+    }
 
     if (!r.ok) {
       const detalle = (resp?.error?.message || JSON.stringify(resp).slice(0, 300)) +

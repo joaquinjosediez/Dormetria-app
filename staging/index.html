@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg272-c88b1dac">
+<link rel="stylesheet" href="css/styles.css?v=stg273-c88b1dac">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1370,12 +1370,21 @@
     <div style="width:70px"></div>
   </div>
   <div class="tab-bar" style="background:#fff;border-bottom:2px solid #e8f0eb">
-    <button class="tab active" id="admin-tab-patients" onclick="loadAdminTab('patients')" style="color:#1a4a3a">Pacientes</button>
+    <!-- El orden es el de la pregunta que uno se hace al entrar, de la mas
+         general a la mas puntual: ¿como viene todo? → ¿quienes son? →
+         ¿quienes atienden? → ¿como va el programa? → ¿que estan diciendo?
+         Vista previa es una herramienta, no un tablero, y por eso cierra.
+
+         "Pendientes" dejo de ser pestaña: era una cola de aprobacion con
+         cero elementos casi siempre, ocupando el mismo lugar que las
+         estadisticas. Ahora vive adentro de Directorio, que es de lo que
+         se trata: quien esta publicado y quien pidio estarlo. -->
+    <button class="tab active" id="admin-tab-stats" onclick="loadAdminTab('stats')" style="color:#1a4a3a">Estadísticas</button>
+    <button class="tab" id="admin-tab-patients" onclick="loadAdminTab('patients')" style="color:#1a4a3a">Pacientes</button>
     <button class="tab" id="admin-tab-doctors" onclick="loadAdminTab('doctors')" style="color:#1a4a3a">Profesionales</button>
-    <button class="tab" id="admin-tab-pending" onclick="loadAdminTab('pending')" style="color:#1a4a3a">Pendientes</button>
-    <button class="tab" id="admin-tab-escuchar" onclick="loadAdminTab('escuchar')" style="color:#1a4a3a">Lo que dicen</button>
-    <button class="tab" id="admin-tab-stats" onclick="loadAdminTab('stats')" style="color:#1a4a3a">Estadísticas</button>
+    <button class="tab" id="admin-tab-pending" onclick="loadAdminTab('pending')" style="color:#1a4a3a">Directorio</button>
     <button class="tab" id="admin-tab-tcci" onclick="loadAdminTab('tcci')" style="color:#1a4a3a">TCC-I</button>
+    <button class="tab" id="admin-tab-escuchar" onclick="loadAdminTab('escuchar')" style="color:#1a4a3a">Lo que dicen</button>
     <button class="tab" id="admin-tab-preview" onclick="loadAdminTab('preview')" style="color:#1a4a3a">Vista previa</button>
     <span style="margin-left:auto;align-self:center;font-size:11px;color:#8a8a8a;padding-right:12px" id="admin-version"></span>
   </div>
@@ -1384,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg272-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg272-081c5488"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg272-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg272-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg272-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg273-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg273-081c5488"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg273-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg273-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg273-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1407,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg272';
+const APP_VERSION='stg273';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg272 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg273 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -4737,9 +4746,11 @@ async function showAdminPanel(){
   const _mn=document.getElementById('main-nav');if(_mn)_mn.style.display='none';
   showScreen('admin');
   document.getElementById('admin-content').innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Cargando...</div>';
-  // Abre en Pacientes, no en Pendientes: lo que se mira todos los días es
-  // quién está usando la app, no la cola de aprobación del directorio.
-  loadAdminTab('patients');
+  // Abre en Estadísticas: es la pregunta que uno trae al entrar acá —cómo
+  // viene todo— y la unica pantalla que contesta algo sin que haya que
+  // buscar a nadie. Antes abria en Pacientes, que es una lista de 154
+  // nombres sin un numero arriba.
+  loadAdminTab('stats');
 }
 
 // ── Lo que dicen los usuarios ─────────────────────────────────────────
@@ -4854,7 +4865,7 @@ async function loadAdminTab(tab){
     if(tab==='tcci'){ await dmAdminTcci(); return; }
     if(tab==='pending'){
       // Solo los que solicitaron entrar al directorio (listed='pending') o tienen CV subido
-      const pending=await db.get("doctors?select=name,lname,email,specialty,mat,city,country,bio,cv_url,listed,phone,email_public,created_at&order=created_at.desc");
+      const pending=await db.get("doctors?select=name,lname,email,specialty,mat,city,country,bio,cv_url,listed,public_profile,phone,email_public,created_at&order=created_at.desc");
       const _approvedList=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
       const _rejectedList=JSON.parse(localStorage.getItem('dm_rejected_doctors')||'{}');
       // Aplicaron: listed='pending' (string) o tienen cv_url; y no fueron ya aprobados/rechazados
@@ -4862,8 +4873,41 @@ async function loadAdminTab(tab){
         const applied = d.listed==='pending' || d.listed===true || d.cv_url;
         return applied && !_approvedList[d.email] && !_rejectedList[d.email];
       });
+      // La pestaña pasó a llamarse Directorio, y un directorio sin
+      // solicitudes pendientes no está vacío: tiene gente publicada. Antes
+      // mostraba "no hay solicitudes" y nada más, que es lo que uno NO vino
+      // a ver. Se lista quién está visible al público, que es la pregunta
+      // que uno trae al abrir esta pantalla.
+      const _ap=JSON.parse(localStorage.getItem('dm_approved_doctors')||'{}');
+      const publicados=(pending||[]).filter(function(d){
+        return d.public_profile===true || d.listed===true || d.listed==='true' || _ap[d.email];
+      });
+      const _listaPublicados = function(){
+        if(!publicados.length){
+          return '<div style="font-size:13px;color:var(--label-2);line-height:1.6">'+
+            'Todavía no hay ningún profesional publicado en el directorio. '+
+            'De los '+((pending||[]).length)+' registrados, ninguno pidió entrar.</div>';
+        }
+        return '<div class="sec-title" style="margin-top:18px">En el directorio ('+publicados.length+')</div>'+
+          '<div style="font-size:12.5px;color:var(--label-2);margin:-4px 0 10px">Visibles para cualquiera que busque un profesional.</div>'+
+          publicados.map(function(d){
+            return '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;'+
+              'padding:11px 0;border-bottom:1px solid var(--sep-opaque)">'+
+              '<div style="min-width:0"><div style="font-size:14px;font-weight:600;color:var(--label)">'+
+                escHtml((d.name||'')+' '+(d.lname||''))+'</div>'+
+              '<div style="font-size:12px;color:var(--label-3)">'+
+                escHtml(d.specialty||'Sin especialidad')+(d.city?' · '+escHtml(d.city):'')+'</div></div>'+
+            '</div>';
+          }).join('');
+      };
       if(!pendingFiltered.length){
-        cont.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No hay solicitudes pendientes de aprobación.<br><div style="font-size:11px;color:var(--label-3);margin-top:8px">Total médicos en DB: '+(pending||[]).length+'</div></div>';
+        cont.innerHTML=
+          '<div class="sec-title" style="margin-top:10px">Solicitudes al directorio</div>'+
+          '<div style="font-size:13px;color:var(--label-2);line-height:1.6;margin-bottom:4px">'+
+            'Ninguna pendiente de aprobación.</div>'+
+          _listaPublicados()+
+          '<div style="font-size:11px;color:var(--label-3);margin-top:14px">'+
+            ((pending||[]).length)+' profesionales registrados en total.</div>';
         return;
       }
       const _spL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neumonología',ent:'ORL',pediatrics:'Pediatría',cardiology:'Cardiología',psychology:'Psicología',speech:'Fonoaudiología',dentistry:'Odontología',ot:'Ter.Ocupacional',kinesiology:'Kinesiología',general:'Clínica Gral',physician:'Médico'};

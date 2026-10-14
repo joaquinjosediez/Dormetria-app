@@ -51,11 +51,23 @@ r.ok(/fila\.remove\(\)/.test(borrar),
 
 r.seccion('2 · El límite de 2000 era un número a dedo:');
 
-r.ok(/max_tokens: 8000/.test(edge), 'sube a 8000');
+r.ok(/max_tokens: 32000/.test(edge), 'sube a 32000');
 r.ok(!/max_tokens: 2000/.test(edge), 'y no queda el viejo');
+// 8000 tampoco alcanzó, y el motivo no era el largo del informe:
+// claude-sonnet-5 trae razonamiento adaptativo por defecto y ese
+// razonamiento sale del MISMO presupuesto de max_tokens.
+const edgePlano = edge.replace(/^\s*\/\/ ?/gm, '').replace(/\s+/g, ' ');
+r.ok(/razonamiento adaptativo activado por defecto/.test(edgePlano),
+     'con el motivo real escrito, que no es obvio');
+r.ok(/SALE DEL MISMO PRESUPUESTO de max_tokens/.test(edgePlano),
+     'y que por eso 8000 no alcanzaba');
+// Si el modelo cambia y rechaza ese valor, el profesional recibe un 400
+// que no significa nada. Mejor un informe que puede quedar corto.
+r.ok(/max_tokens rechazado, reintento con 8000/.test(edge),
+     'y hay una red si el modelo lo rechaza');
 // No es un presupuesto: se paga por lo que se usa. Una nota de evolución de
 // 250 palabras gasta lo mismo con el tope en 2000 que en 8000.
-r.ok(/LIMITE DE SEGURIDAD/.test(edge),
+r.ok(/limite de seguridad contra una respuesta descontrolada/.test(edgePlano),
      'y queda escrito que es un tope de seguridad, no un presupuesto');
 
 const inter = edge.slice(edge.indexOf('interconsulta: `'), edge.indexOf('paciente: `'));
@@ -130,5 +142,31 @@ r.ok(/window\._admConProf = _con;/.test(app),
 r.ok(/const _hayPart = \(window\._admSinProf != null\)/.test(app),
      'y si no se pudo leer la vinculación, no se inventa el desglose');
 r.ok(/no se pudo leer la vinculación/.test(app), 'se dice');
+
+r.seccion('4 · El admin abre por donde se pregunta:');
+
+// Las siete pestañas estaban en el orden en que se fueron agregando.
+// "Pendientes" —una cola con cero elementos casi siempre— ocupaba el mismo
+// lugar que las estadísticas, y el panel abría en una lista de 154 nombres
+// sin un número arriba.
+const tabs = (app.match(/id="admin-tab-[a-z]+"[^>]*>([^<]+)</g) || [])
+  .map(function (t) { return (t.match(/>([^<]+)<$/) || [])[1]; });
+r.ok(tabs[0] === 'Estadísticas', 'Estadísticas primero', tabs.join(' · '));
+r.ok(tabs[1] === 'Pacientes' && tabs[2] === 'Profesionales',
+     'después pacientes y profesionales');
+r.ok(tabs.indexOf('Pendientes') < 0, 'y "Pendientes" dejó de ser pestaña');
+r.ok(tabs[3] === 'Directorio', 'en su lugar está Directorio');
+r.ok(tabs[tabs.length - 1] === 'Vista previa',
+     'y Vista previa cierra: es una herramienta, no un tablero');
+r.ok(/loadAdminTab\('stats'\);/.test(app.slice(app.indexOf('showScreen(\'admin\')'),
+                                               app.indexOf('showScreen(\'admin\')') + 700)),
+     'y el panel abre ahí');
+
+// Un directorio sin solicitudes pendientes no está vacío: tiene gente
+// publicada. Antes decía "no hay solicitudes" y nada más.
+r.ok(/En el directorio \('\+publicados\.length\+'\)/.test(app),
+     'sin solicitudes, se lista quién está publicado');
+r.ok(/select=.*public_profile/.test(app),
+     'leyendo la columna que de verdad dice si está publicado');
 
 r.cerrar('Un informe al que le falta la conclusión y no lo dice es peor que uno que falla.');
