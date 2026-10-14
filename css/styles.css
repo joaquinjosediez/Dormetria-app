@@ -748,59 +748,37 @@ body:not(.dr-panel-collapsed) .dm-panel-chevron{ transform:rotate(180deg); }
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px));}
 
 /* ══════════════════════════════════════════════════════════════════════
-   TAMAÑO DE LETRA · para quien no llega a leer
+   TAMAÑO DE LETRA · por qué acá no hay nada
    ══════════════════════════════════════════════════════════════════════
-   La app tiene 2.100 declaraciones de font-size y ninguna en rem: subir el
-   tamaño base del documento no mueve nada, y convertirlas una por una es
-   tocar cada pantalla de una app clínica en producción para que un número
-   cambie. No vale el riesgo.
+   En mod269 hubo un control de tres niveles que escalaba el contenido con
+   `zoom`. Se saca en mod270, y conviene que quede escrito por qué, para que
+   no vuelva por el mismo camino.
 
-   Se escala el CONTENIDO con `zoom`, que multiplica todo —texto, padding,
-   botones, iconos— manteniendo las proporciones. Un texto más grande con el
-   mismo botón alrededor se corta; esto no se puede cortar.
+   `zoom` no es una lupa sobre un lienzo fijo, y los motores no se ponen de
+   acuerdo en qué hace con el ancho disponible:
 
-   Va sobre el contenedor que YA scrollea, nunca sobre #app ni sobre html.
-   Ahí está todo el riesgo y por eso no se hace: #app mide 100dvh, y con zoom
-   pasaría a ocupar 120dvh de pantalla real. Adentro de un contenedor con
-   overflow, en cambio, que el contenido sea más alto es exactamente lo que
-   ese contenedor existe para resolver. No hay forma de que rompa el layout:
-   lo único que pasa es que entra menos por pantalla, que es el precio que
-   esta persona quiere pagar.
+     · Safari en el iPhone maqueta al ancho del padre y escala DESPUÉS, así
+       que el contenido termina midiendo 390 × 1,45 = 566 px reales y lo que
+       sobra se corta. Se vio con "8 semanas con datos" cortado al medio.
+     · El motor con el que se probó acá divide el ancho disponible por la
+       escala, así que la misma regla deja una franja muerta a la derecha.
 
-   La barra de abajo y la de arriba quedan a tamaño normal, a propósito: son
-   iconos con una palabra, se reconocen por posición, y agrandarlas le comería
-   al contenido la pantalla que acabamos de ganar. */
-body.dm-esc-g  .screen.active .scroll,
-body.dm-esc-g  .screen.active > div[style*="overflow-y:auto"]{ zoom:1.22; }
-body.dm-esc-xg .screen.active .scroll,
-body.dm-esc-xg .screen.active > div[style*="overflow-y:auto"]{ zoom:1.45; }
+   La misma línea de CSS da dos resultados opuestos. Compensar uno rompe el
+   otro, y no hay forma de saber cuál le toca a cada paciente.
 
-/* El PVT queda afuera: es una prueba de tiempo de reacción y el estímulo
-   tiene que medir siempre lo mismo. Agrandarlo cambia lo que se mide. */
-body.dm-esc-g  #screen-pvt .scroll,
-body.dm-esc-xg #screen-pvt .scroll{ zoom:1; }
+   Lo que SÍ quedó, y era la mitad del problema: el viewport ya no lleva
+   `maximum-scale=1.0`, así que el pellizco de dos dedos funciona. Es el
+   gesto que la persona ya usa en todas las demás apps, lo resuelve el
+   sistema operativo, y no puede romper ningún layout porque no reflowa:
+   amplía y deja desplazar.
 
-/* El panel del profesional tampoco: es una grilla de dos columnas pensada
-   para una pantalla grande, y ahí el problema no existe. */
-body.dr-desktop .screen.active .scroll,
-body.dr-desktop .screen.active > div[style*="overflow-y:auto"]{ zoom:1; }
+   La solución de fondo —que el tamaño escale sin reflowar a un ancho falso—
+   es migrar las 2.100 declaraciones de font-size a unidades relativas. Eso
+   es trabajo de varias versiones, por partes y por staging, empezando por
+   las pantallas del paciente.
 
-/* El selector, en Mi perfil. Botones grandes a propósito: lo toca alguien
-   que no ve bien, así que no puede ser una fila de chips de 11 px. */
-.dm-esc-sel{ display:flex; gap:8px; margin-top:10px; }
-.dm-esc-btn{
-  flex:1; padding:14px 8px; border-radius:12px; cursor:pointer;
-  background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.16);
-  color:#F4EFE5; font-family:var(--font); line-height:1.15; text-align:center;
-}
-.dm-esc-btn.on{ background:rgba(126,200,164,.22); border-color:#7EC8A4; }
-.dm-esc-btn b{ display:block; font-weight:700; }
-.dm-esc-btn span{ display:block; font-size:11px; opacity:.72; margin-top:4px; }
-/* La muestra se ve en su tamaño real: el que elige tiene que poder
-   comprobar con los ojos, no deducirlo de la palabra "grande". */
-.dm-esc-btn:nth-child(1) b{ font-size:15px; }
-.dm-esc-btn:nth-child(2) b{ font-size:18px; }
-.dm-esc-btn:nth-child(3) b{ font-size:22px; }
+   Lo que NO hay que hacer es volver a poner una perilla propia encima de un
+   mecanismo que se comporta distinto en cada teléfono. */
 
 /* ── PVT screens: light background so default dark text is readable ── */
 #screen-pvt-intro{background:#f4efe5;}
@@ -4817,7 +4795,11 @@ body.dr-desktop #drp-content[data-tab="cuestionarios"]{
 .dm-pil-card{
   min-width:0; border-radius:15px; padding:13px 12px;
   display:flex; flex-direction:column;
-  overflow-wrap:break-word; hyphens:none;
+  /* hyphens:auto, no none. "FRAGMENTACIÓN" no entra en una columna de
+     104 px y con `none` se iba por encima del borde de la tarjeta, pisando
+     la de al lado. Con guion por silaba corta donde corresponde. El
+     documento declara lang="es", que es lo que el separador necesita. */
+  overflow-wrap:break-word; hyphens:auto; -webkit-hyphens:auto;
 }
 .dm-pil-rot{
   font-size:11px; font-weight:700; text-transform:uppercase;

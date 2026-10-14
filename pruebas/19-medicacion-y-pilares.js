@@ -54,13 +54,22 @@ r.ok(/\.dm-pil-rot\{[^}]*min-height:2\.5em/.test(plano),
 r.ok(/\.dm-pil-pie\{[^}]*margin-top:auto/.test(plano),
      'y el pie se apoya abajo, así queda a la misma altura en las tres');
 
-r.seccion('Y ninguna palabra se corta por la mitad:');
+r.seccion('Y ninguna palabra se corta en cualquier letra:');
 
 const bloquePillar = css.slice(css.indexOf('#diary-pillar-bars > div > div'),
                                css.indexOf('#diary-pillar-bars > div > div') + 300);
 r.ok(!/overflow-wrap:anywhere/.test(bloquePillar),
      'el contenedor viejo ya no usa anywhere');
-r.ok(/hyphens:none/.test(plano.replace(/;/g,';')) || /hyphens:none/.test(css),
-     'y las tarjetas nuevas no guionan');
+// En mod270 pasó de `none` a `auto`, y es mejor. Con `none`,
+// "FRAGMENTACIÓN" no entraba en una columna de 104 px y se iba POR ENCIMA
+// del borde de la tarjeta, pisando la de al lado — se vio al armar el banco
+// de tipografía. Un guion por sílaba es feo; una palabra montada sobre la
+// tarjeta vecina es un error. Lo que no puede volver es `break-all` o
+// `anywhere`, que cortan en cualquier letra: eso daba "FRAGMENTACIÓ / N".
+const pil = css.slice(css.indexOf('.dm-pil-card{'), css.indexOf('.dm-pil-rot{'));
+r.ok(/hyphens:auto/.test(pil),
+     'las tarjetas nuevas cortan por sílaba, no desbordan');
+r.ok(!/word-break:break-all/.test(pil) && !/overflow-wrap:anywhere/.test(pil),
+     'y nunca en cualquier letra');
 
 r.cerrar('Una lista cerrada de medicamentos hace desaparecer lo que el paciente toma.');

@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod269-f2c86620">
+<link rel="stylesheet" href="css/styles.css?v=mod270-c88b1dac">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -564,6 +564,11 @@
 
     <!-- 3) La noche de ayer. Dos estados: pendiente y cargada. -->
     <div id="home-noche-slot"></div>
+    <!-- DEBAJO de la tarjeta de cargar la noche, nunca encima. Esa tarjeta
+         es el motivo por el que el paciente abre la app; un aviso de
+         accesibilidad que la empuja hacia abajo le cuesta un scroll a todo
+         el mundo todos los días para ayudar a algunos una vez. -->
+    <div id="dm-leer-home" style="display:none;margin-top:11px"></div>
 
     <!-- Plan del día 1. Solo mientras no haya ninguna noche cargada. -->
     <div id="home-plan1" style="display:none"></div>
@@ -1379,11 +1384,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod269-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod269-081c5488"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod269-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod269-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod269-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod270-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod270-081c5488"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod270-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod270-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod270-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1402,7 +1407,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod269';
+const APP_VERSION='mod270';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -11753,6 +11758,9 @@ async function showHome(){
   // pregunta acá, en su primera entrada.
   try{ dmConsentimientoSincronizar(); }catch(_){}
   try{ dmAvisoSomnolencia(); }catch(_){}
+  // El tamaño del texto, una sola vez y arriba de todo. Quien no lee la
+  // pantalla no va a ir a buscar el ajuste a un perfil que tampoco lee.
+  try{ dmPintarLeerHome(); }catch(_){}
   // La noche de ayer: se consulta y se pinta apenas entra, sin esperar al
   // resto de la pantalla. Es lo primero que la persona vino a ver.
   (async function(){
@@ -13594,7 +13602,7 @@ function renderProfileView(){
   cont.innerHTML=`
     <div style="display:flex;flex-direction:column;gap:10px">
 
-      ${dmEscalaCardHtml()}
+      ${dmLeerCardHtml(false)}
 
       <!-- Info de perfil -->
       <div onclick="openMiPerfil()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -13678,66 +13686,82 @@ function renderProfileView(){
   // La tarjeta de hijos se pinta aparte porque puede necesitar ir a la
   // base a buscarlos: no se puede resolver dentro del template.
   try{ renderProfileChildren(); }catch(e){ console.warn('[perfil hijos]', e); }
-  try{ dmPintarEscalaSel(); }catch(e){ console.warn('[escala]', e); }
 }
-// ── Tamaño de letra ─────────────────────────────────────────────────
-// Tres niveles, guardados en el teléfono. Va en localStorage y no en la
-// ficha a propósito: esto depende de los ojos Y de la pantalla. La misma
-// persona puede necesitarlo grande en el teléfono y normal en la tablet, y
-// guardarlo en la base le pisaría uno con el otro.
-const DM_ESCALAS = ['', 'dm-esc-g', 'dm-esc-xg'];
-
-function dmEscalaActual(){
-  try{
-    const v = parseInt(localStorage.getItem('dm_escala_texto'), 10);
-    return (v === 1 || v === 2) ? v : 0;
-  }catch(_){ return 0; }
-}
-
-function dmAplicarEscala(){
-  try{
-    const n = dmEscalaActual();
-    DM_ESCALAS.forEach(function(c, i){
-      if(c) document.body.classList.toggle(c, i === n);
-    });
-  }catch(_){}
-}
-window.dmAplicarEscala = dmAplicarEscala;
-
-function dmSetEscala(n){
-  try{ localStorage.setItem('dm_escala_texto', String(n)); }catch(_){}
-  dmAplicarEscala();
-  dmPintarEscalaSel();
-  // Sin el aviso, en el nivel "Normal" el cambio no se nota en el propio
-  // selector y parece que el botón no hizo nada.
-  if(typeof toast==='function'){
-    toast(n === 0 ? 'Tamaño normal' : (n === 1 ? 'Texto más grande ✓' : 'Texto mucho más grande ✓'));
-  }
-}
-window.dmSetEscala = dmSetEscala;
-
-function dmPintarEscalaSel(){
-  const c = document.getElementById('dm-esc-sel');
-  if(!c) return;
-  const n = dmEscalaActual();
-  c.innerHTML =
-    ['Normal','Grande','Más grande'].map(function(rot, i){
-      return '<button type="button" class="dm-esc-btn'+(i===n?' on':'')+'" '+
-        'onclick="dmSetEscala('+i+')"><b>Aa</b><span>'+rot+'</span></button>';
-    }).join('');
-}
-window.dmPintarEscalaSel = dmPintarEscalaSel;
-
-// La tarjeta que se mete en Mi perfil.
-function dmEscalaCardHtml(){
-  return '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);'+
-      'border-radius:14px;padding:15px 16px;margin-bottom:12px">'+
-    '<div style="font-size:15px;font-weight:700;color:#F4EFE5;margin-bottom:3px">Tamaño del texto</div>'+
-    '<div style="font-size:13px;color:rgba(244,239,229,.78);line-height:1.5">'+
-      'Si te cuesta leer la pantalla, agrandalo. También podés agrandar con dos dedos, como en cualquier página.</div>'+
-    '<div id="dm-esc-sel" class="dm-esc-sel"></div>'+
+// ── Si te cuesta leer ───────────────────────────────────────────────
+// Esto reemplaza al control de tres niveles de mod269. Aquel escalaba el
+// contenido con `zoom`, y `zoom` se comporta distinto en cada motor: en
+// Safari del iPhone el contenido se iba de la pantalla, en otro quedaba
+// angosto con una franja muerta. La misma regla, dos resultados opuestos.
+// El porqué completo está en el CSS, donde estaban las reglas.
+//
+// Lo que queda es lo que de verdad funciona y no depende de nosotros: el
+// pellizco de dos dedos —que hasta mod269 la app PROHIBÍA, con
+// maximum-scale=1.0 en el viewport— y el ajuste de tamaño de letra del
+// sistema, que la persona que lo necesita casi siempre ya tiene puesto.
+//
+// Una tarjeta que enseña el gesto no es un premio de consuelo: es más
+// accesible que una perilla propia. Funciona en todas las pantallas de la
+// app, incluidas las que todavía no existen, y no puede romper ningún
+// layout porque no reflowa nada: amplía y deja desplazar.
+function dmLeerCardHtml(conCruz){
+  const iOS = (function(){ try{ return /iPad|iPhone|iPod/.test(navigator.userAgent); }catch(_){ return false; } })();
+  const ruta = iOS ? 'Ajustes → Pantalla y brillo → Tamaño del texto'
+                   : 'Ajustes → Pantalla → Tamaño de la letra';
+  // Tres decisiones de diseño, por si alguien quiere "mejorarla":
+  //
+  // 1 · Es CHICA. La primera versión tenía cuatro párrafos y pesaba más que
+  //     la tarjeta de cargar la noche. Un aviso de accesibilidad con más
+  //     texto que el resto de la pantalla es contraproducente: justo quien
+  //     no lee bien es el que no lo va a leer.
+  // 2 · Una línea para el gesto y una para el sistema. El gesto es la
+  //     acción; el ajuste del sistema es la alternativa permanente. Nada más.
+  // 3 · El ícono a la izquierda permite reconocerla sin leerla.
+  return '<div style="position:relative;display:flex;gap:12px;align-items:flex-start;'+
+      'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);'+
+      'border-radius:14px;padding:13px 14px">'+
+    '<div style="font-size:19px;line-height:1.25;flex-shrink:0">👓</div>'+
+    '<div style="flex:1;min-width:0;padding-right:'+(conCruz?'26px':'0')+'">'+
+      '<div style="font-size:14.5px;font-weight:700;color:#F4EFE5;line-height:1.3">'+
+        '¿Te cuesta leer la pantalla?</div>'+
+      '<div style="font-size:13.5px;color:rgba(244,239,229,.84);line-height:1.5;margin-top:4px">'+
+        'Agrandá apoyando dos dedos y separándolos, como con una foto.</div>'+
+      '<div style="font-size:12.5px;color:rgba(244,239,229,.62);line-height:1.5;margin-top:6px">'+
+        'Para todo el teléfono: <span style="color:#7EC8A4">'+ruta+'</span>'+
+        (conCruz ? ' · Esto queda en <b style="color:rgba(244,239,229,.8)">Yo</b>.' : '')+'</div>'+
+    '</div>'+
+    // 44 px de área de toque, que es el mínimo de Apple. La cruz de 22 px
+    // con padding de 6 daba 34: chica para cualquiera, y más para la mano
+    // de la persona a la que está dirigida esta tarjeta.
+    (conCruz
+      ? '<button type="button" onclick="dmCerrarLeerHome()" aria-label="No mostrar más" '+
+        'style="position:absolute;top:2px;right:2px;width:44px;height:44px;background:none;'+
+        'border:none;color:rgba(244,239,229,.7);font-size:19px;line-height:1;cursor:pointer;'+
+        'font-family:var(--font)">×</button>'
+      : '')+
   '</div>';
 }
+
+function dmCerrarLeerHome(){
+  try{ localStorage.setItem('dm_leer_visto','1'); }catch(_){}
+  const c = document.getElementById('dm-leer-home');
+  if(c){ c.style.display='none'; c.innerHTML=''; }
+}
+window.dmCerrarLeerHome = dmCerrarLeerHome;
+
+// En el inicio, una sola vez: quien no lee la pantalla no va a ir a buscar
+// la ayuda a un perfil que tampoco lee. Quien no la necesita la cierra.
+function dmPintarLeerHome(){
+  try{
+    const c = document.getElementById('dm-leer-home');
+    if(!c) return;
+    let visto = false;
+    try{ visto = localStorage.getItem('dm_leer_visto') === '1'; }catch(_){}
+    if(visto){ c.style.display='none'; c.innerHTML=''; return; }
+    c.innerHTML = dmLeerCardHtml(true);
+    c.style.display = 'block';
+  }catch(e){ console.warn('[leer]', e); }
+}
+window.dmPintarLeerHome = dmPintarLeerHome;
 
 function getPfPaths(){return Array.from(document.querySelectorAll('#pf-paths-tags .tag')).map(t=>t.textContent.replace('✕','').trim());}
 function addPath(){const s=document.getElementById('pf-path-sel');const v=s.value;if(!v)return;const cur=getPfPaths();if(!cur.includes(v)){cur.push(v);document.getElementById('pf-paths-tags').innerHTML=cur.map(p=>`<span class="tag">${p}<span class="tag-rm" onclick="removePath('${p}')">✕</span></span>`).join('');}s.value='';}
@@ -23991,7 +24015,16 @@ function renderWeeklyProgressionHtml(allDiary, oscuro){
         // da menos de 44 px por barra.
         '<div style="width:100%;height:'+h+'px;background:'+cB+';border-radius:7px 7px 0 0;'+
           (isLast?'box-shadow:inset 0 0 0 2px #C8A96E;':'')+'"></div>'+
-        '<div style="font-size:11px;color:'+_cLbl+';white-space:nowrap">'+weekLbl+'</div>'+
+        // La etiqueta se parte en dos: el número ubica, " sem." solo ocupa. Con
+        // el texto más grande, ocho columnas de 25 px con nowrap se encimaban
+        // unas con otras; el CSS esconde el sufijo y deja el número.
+        '<div class="dm-prog-lbl" style="font-size:11px;color:'+_cLbl+';white-space:nowrap">'+
+          // Solo el numero. Con ocho columnas, "−7 sem." mide 45 px y la
+          // columna 44: las etiquetas se tocaban entre si YA EN TAMAÑO
+          // NORMAL, y a escala se encimaban del todo. La unidad la da el
+          // titulo de la seccion, que dice "Progresion semanal".
+          (isLast ? 'Hoy' : ('−'+(blocks.length-1-i)))+
+        '</div>'+
       '</div>';
     }).join('');
     const bestBlock = blocks.reduce((a,b)=>(!a||b.score>a.score)?b:a, null);
@@ -29407,14 +29440,6 @@ function scheduleLocalReminder(){
     }
   }, 60000);
 }
-
-// El tamaño de letra elegido, apenas carga. Si se aplicara al abrir el
-// perfil, la persona que lo necesita veria todo chico hasta llegar ahi —
-// que es justo el recorrido que no puede hacer.
-(function(){ try{
-  if(document.body) dmAplicarEscala();
-  else document.addEventListener('DOMContentLoaded', dmAplicarEscala);
-}catch(_){} })();
 
 // Initialize reminders on app load
 (function initReminders(){
