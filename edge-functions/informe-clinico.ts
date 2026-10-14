@@ -1,5 +1,30 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  informe-clinico · Supabase Edge Function        (versión 4)
+//  informe-clinico · Supabase Edge Function        (versión 5 · mod271)
+// ═══════════════════════════════════════════════════════════════════════
+//
+//  ESTE ARCHIVO NO SE PUBLICA CON git push.
+//
+//  Vive en Supabase, no en GitHub Pages. Para que un cambio de acá tenga
+//  efecto hay que pegarlo a mano:
+//
+//      ./herramientas/copiar-edge.sh          ← lo deja en el portapapeles
+//
+//      supabase.com → proyecto Dormetria → Edge Functions
+//      → informe-clinico → Code → seleccionar todo → pegar → Deploy
+//
+//  Se sabe que quedó desplegada porque el encabezado del panel de Supabase
+//  muestra una versión nueva y la fecha de hoy.
+//
+//  QUÉ CAMBIÓ EN LA v5
+//
+//  · max_tokens 2000 → 8000. El 2000 estaba puesto a dedo y cortaba los
+//    informes al medio. No es un presupuesto: se paga por lo que se usa.
+//  · La consigna de interconsulta decía "Menos de 400 palabras en total".
+//    Por eso el informe "detallado" no tenía nada. Ahora pide el informe
+//    completo, con secciones explícitas y una CONCLUSIÓN SUGERIDA al final.
+//  · Se devuelve `cortado: true` cuando stop_reason es max_tokens, para que
+//    la app pueda avisar que el informe está incompleto en vez de mostrarlo
+//    como si estuviera terminado.
 // ═══════════════════════════════════════════════════════════════════════
 //
 //  QUÉ CAMBIÓ RESPECTO DE LA VERSIÓN 3

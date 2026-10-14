@@ -1,20 +1,63 @@
-# El informe no se genera · qué cambiar en la Edge Function
+# La Edge Function `informe-clinico` · cómo se actualiza
 
-El error que le sale a Ruffa viene tal cual de la API de Anthropic:
+**Esta función NO se publica con `git push`.** Vive en Supabase, no en
+GitHub Pages. El archivo del repo —`edge-functions/informe-clinico.ts`— es
+la copia de referencia; la que corre es la que está pegada en el panel.
 
-> This model does not support assistant message prefill.
-> The conversation must end with a user message.
+Por eso, cada vez que cambia hay que hacer esto a mano.
 
-No es un problema de la app ni de los datos del paciente. **Es la Edge
-Function `informe-clinico`**, que vive en Supabase y no está en el repo, así
-que hay que editarla desde el panel.
+## Los pasos
 
----
+```bash
+cd ~/Documents/Dormetria-app && ./herramientas/copiar-edge.sh
+```
 
-## Qué está haciendo mal
+Eso la deja en el portapapeles y te imprime los pasos. Son estos:
 
-La función arma la conversación terminándola con un mensaje del asistente,
-para forzar el arranque de la respuesta. Se llama *prefill* y se ve así:
+1. Entrá a **supabase.com** y abrí el proyecto **Dormetria**
+2. Menú de la izquierda → **Edge Functions**
+3. Tocá **informe-clinico**
+4. Pestaña **Code**
+5. Clic adentro del editor · **Cmd+A** (selecciona todo lo que hay)
+6. **Cmd+V** (pega lo nuevo encima)
+7. Botón **Deploy**, arriba a la derecha
+
+Quedó desplegada cuando el panel muestra una versión nueva con la fecha de
+hoy.
+
+## Cómo saber si anduvo
+
+Abrí un paciente con diario cargado → pestaña **Informe** → **Interconsulta**.
+
+- Si sale completo y termina con una sección **Conclusión sugerida**, anduvo.
+- Si sale el cartel naranja de "este informe está incompleto", la función
+  vieja sigue corriendo: la v5 sube el tope de longitud justamente para que
+  eso no pase.
+- Si sale un error de la API, el detalle técnico está abajo del mensaje y
+  también en **Edge Functions → informe-clinico → Logs**.
+
+## Qué cambió en la v5 (mod271)
+
+- `max_tokens` de 2000 a 8000. El 2000 estaba puesto a dedo y cortaba los
+  informes al medio. No es un presupuesto: a la API se le paga por lo que se
+  usa, así que subirlo no cuesta nada mientras no se use.
+- La consigna de **interconsulta** decía, literal, *"Menos de 400 palabras en
+  total"*. Por eso el informe detallado no tenía nada: el modelo hacía lo que
+  se le pedía. Ahora pide el informe completo —arquitectura del sueño, ritmo
+  y regularidad, sueño diurno, todas las escalas con su fecha, los factores
+  evaluados incluidos los que dieron negativo, lo que no se puede afirmar— y
+  cierra con una **conclusión sugerida** redactada como la de una
+  polisomnografía.
+- Devuelve `cortado: true` cuando la respuesta llegó al tope. Antes, un
+  informe truncado se mostraba y se guardaba como si estuviera terminado, y
+  lo que faltaba era justo la conclusión.
+
+## Historial
+
+### v4 · el error de prefill
+
+La v3 terminaba la conversación con un mensaje del asistente, para forzar el
+arranque de la respuesta. Se llama *prefill*:
 
 ```js
 messages: [
@@ -23,63 +66,10 @@ messages: [
 ]
 ```
 
-Era una técnica válida con los modelos anteriores. **`claude-sonnet-5` no la
-soporta**: exige que el último mensaje sea del usuario.
+Era válido con los modelos anteriores. `claude-sonnet-5` lo rechaza:
 
-## El arreglo
+> This model does not support assistant message prefill.
+> The conversation must end with a user message.
 
-Borrar ese último mensaje. Lo que el prefill intentaba conseguir —que la
-respuesta empiece con un formato determinado— se pide en el texto:
-
-```js
-const resp = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: {
-    'x-api-key': Deno.env.get('ANTHROPIC_API_KEY'),
-    'anthropic-version': '2023-06-01',
-    'content-type': 'application/json'
-  },
-  body: JSON.stringify({
-    model: 'claude-sonnet-5',
-    max_tokens: 1500,
-    // Las reglas duras van acá, no mezcladas con los datos.
-    system: PROMPT_SISTEMA,
-    messages: [
-      {
-        role: 'user',
-        content:
-          FORMATO + '\n\n' +
-          'Datos del paciente:\n' + JSON.stringify(paquete, null, 2) + '\n\n' +
-          // Lo que antes hacía el prefill:
-          'Empezá directamente con el texto del informe. Sin encabezado, ' +
-          'sin saludo y sin decir que sos un asistente.'
-      }
-    ]
-    // ← sin ningún { role: 'assistant' } al final
-  })
-});
-```
-
-**Dónde editarla:** Supabase → Edge Functions → `informe-clinico` → editar y
-desplegar. Los logs de esa misma pantalla son los que menciona el cartel de
-error de la app.
-
-## Mientras tanto
-
-Si querés destrabarlo hoy mismo sin tocar el prompt, alcanza con sacar el
-mensaje del asistente. El informe va a salir igual; puede que arranque con una
-línea de presentación que antes el prefill cortaba, y eso se corrige después
-con la instrucción de arriba.
-
-## Dos cosas para revisar de paso
-
-1. **El modelo está escrito a mano en la función.** Conviene que salga de una
-   variable de entorno: el día que cambie, se cambia en un lugar y no hay que
-   volver a desplegar la función. Lo mismo vale para no quedar atado a una
-   versión que mañana se deprecia.
-
-2. **El error le llegó al profesional en inglés y con jerga de API.** Está bien
-   que el detalle técnico se muestre —sirve para esto mismo—, pero conviene
-   que arriba diga algo que un médico pueda accionar: *"No se pudo generar el
-   informe. Es un problema de configuración, no de los datos del paciente.
-   Avisale a Joaquín."* Si querés lo agrego a la app.
+El arreglo fue borrar ese último mensaje y pedir el formato en el texto del
+prompt. Ya está en el archivo del repo.
