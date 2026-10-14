@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg271-c88b1dac">
+<link rel="stylesheet" href="css/styles.css?v=stg272-c88b1dac">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1384,11 +1384,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg271-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg271-081c5488"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg271-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg271-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg271-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg272-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg272-081c5488"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg272-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg272-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg272-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1407,11 +1407,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg271';
+const APP_VERSION='stg272';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA · stg271 — <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA · stg272 — <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -5373,6 +5373,22 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
       };
       let activePts7 = activeIn(D7);
       let activePts30 = activeIn(D30);
+      // Los mismos activos, partidos en los dos grupos del embudo. Es la
+      // pregunta que el numero solo no contesta: de los que usan la app,
+      // ¿cuantos llegaron por un profesional?
+      const activosPartidos = function(ms){
+        const set = new Set();
+        (diaryRows||[]).forEach(function(r){ if(r.created_at && new Date(r.created_at).getTime()>=ms) set.add((r.patient_email||'').toLowerCase()); });
+        (evalRows||[]).forEach(function(r){ if(r.created_at && new Date(r.created_at).getTime()>=ms) set.add((r.patient_email||'').toLowerCase()); });
+        set.delete('');
+        const con = window._admConProf;
+        if(!con) return null;
+        let v=0, sp=0;
+        set.forEach(function(e){ if(con[e]) v++; else sp++; });
+        return { vinc:v, sin:sp, total:set.size };
+      };
+      const part7  = activosPartidos(D7);
+      const part30 = activosPartidos(D30);
       // Médicos activos: emails de doctores que hicieron sugerencias en 30d
       // "Profesionales activos" salía de doctor_suggestions: contaba a quien
       // SUGIRIÓ UNA ESCALA, no a quien usó la app. Es el mismo error que ya
@@ -5485,8 +5501,13 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
         const _vp = await db.get('doctor_patients?select=patient_email');
         const _con = {};
         (_vp||[]).forEach(function(r){ if(r && r.patient_email) _con[String(r.patient_email).toLowerCase()]=1; });
+        // El SET, no solo el conteo: hace falta para saber cuantos de los
+        // ACTIVOS estan vinculados y cuantos no. Sin eso, "60 activos" no
+        // dice si son pacientes de un profesional o gente suelta, que son
+        // dos negocios distintos.
+        window._admConProf = _con;
         window._admSinProf = (allPts||[]).filter(function(p){ return !_con[String(p.email||'').toLowerCase()]; }).length;
-      }catch(_){ window._admSinProf = null; }
+      }catch(_){ window._admConProf = null; window._admSinProf = null; }
       cont.innerHTML=`<div class="sec-title" style="margin-top:10px">Estadísticas de uso</div>
         <div style="font-size:11px;color:var(--label-3);margin:2px 0 10px">Computado en vivo desde diario y evaluaciones</div>
         ${window._admStatsSinPermiso
@@ -5579,27 +5600,81 @@ const _specL={psychiatry:'Psiquiatría',neurology:'Neurología',pneumology:'Neum
             ? '12 semanas · la última, en curso'
             : 'sin histograma: la lectura vino recortada y faltarían las semanas viejas';
 
-          const b1 = bloque('Pacientes', [
-            dato({label:'Cuentas creadas', val:n(totalPts), sub:'en total · '+_pieAltas,
-                  serie:_altasPts, color:'#1a4a3a'}),
-            dato({label:'Vinculados', val:vinculados==null?'—':n(vinculados),
-                  sub:vinculados==null?'sin dato':'a algún profesional',
-                  p:pct(vinculados, totalPts), color:'#1a4a3a'}),
-            dato({label:'Sin profesional', val:n(window._admSinProf), sub:'no llegaron a vincularse',
-                  p:pct(window._admSinProf, totalPts), color:'#b45309'}),
-            // El pedido: saber si el VOLUMEN de pacientes activos se mantiene
-            // o cae. Un "47 activos" no lo dice; la serie de cuantos
-            // distintos registraron algo cada semana, si.
-            dato({label:'Activos · 7 días', val:n(activePts7),
+          // ── Tres tarjetas, un solo codigo de color ───────────────
+          //
+          // Antes eran cinco tarjetas sueltas y el color no significaba
+          // nada: verde para "activos", ambar para "sin profesional",
+          // elegidos uno por uno. Con eso, "60 activos" al lado de "112
+          // vinculados" no se pueden cruzar de un vistazo.
+          //
+          // Ahora el color ES la categoria y se repite en las tres:
+          //   menta  = vinculado a un profesional
+          //   oro    = sin profesional
+          // Asi "de los 60 activos de esta semana, 44 son de un colega y 16
+          // entraron solos" se lee sin hacer ninguna cuenta.
+          const C_VINC = '#7EC8A4', C_SOLO = '#C8A96E';
+
+          // La barra partida. Reemplaza a la barra de un color: dos tramos
+          // proporcionales, en el mismo orden siempre, para que las tres
+          // tarjetas se comparen por la FORMA y no por el numero.
+          const barraDoble = function(a, b){
+            const t = (a||0) + (b||0);
+            if(!t) return '';
+            return '<div class="dm-est-barra" style="display:flex">'+
+              '<span style="width:'+(a/t*100)+'%;background:'+C_VINC+'"></span>'+
+              '<span style="width:'+(b/t*100)+'%;background:'+C_SOLO+'"></span>'+
+            '</div>';
+          };
+          const leyenda = function(a, b, rotA, rotB){
+            const pin = function(c, v, rot){
+              return '<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap">'+
+                '<span style="width:8px;height:8px;border-radius:2px;background:'+c+';flex-shrink:0"></span>'+
+                '<b style="color:'+c+';font-variant-numeric:tabular-nums">'+n(v)+'</b>'+
+                '<span style="opacity:.75">'+rot+'</span></span>';
+            };
+            return '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;'+
+              'color:var(--label-2);margin-top:6px;line-height:1.4">'+
+              pin(C_VINC, a, rotA)+pin(C_SOLO, b, rotB)+'</div>';
+          };
+
+          // dato() no sabe de barras partidas ni de leyendas: se arma la
+          // tarjeta a mano y se le pasa el extra ya maquetado.
+          const datoPartido = function(o){
+            return '<div class="dm-est-card'+(o.acento?' dm-est-card-on':'')+'">'+
+              '<div class="dm-est-rot">'+o.label+'</div>'+
+              '<div class="dm-est-val">'+o.val+'</div>'+
+              barraDoble(o.a, o.b)+
+              leyenda(o.a, o.b, o.rotA || 'con profesional', o.rotB || 'solos')+
+              (o.serie ? dmHistoSemanalHtml(o.serie, C_VINC) : '')+
+              '<div class="dm-est-sub">'+o.sub+'</div>'+
+            '</div>';
+          };
+
+          const _hayPart = (window._admSinProf != null);
+          const b1 = bloque('Pacientes', _hayPart ? [
+            datoPartido({label:'Cuentas creadas', val:n(totalPts),
+                  a:vinculados, b:window._admSinProf,
+                  sub:'en total, desde el inicio · '+_pieAltas, serie:_altasPts}),
+            datoPartido({label:'Activos · 7 días', val:n(activePts7), acento:true,
+                  a:part7?part7.vinc:0, b:part7?part7.sin:0,
                   sub:'pacientes distintos que registraron algo · '+_pieSerie,
-                  p:pct(activePts7, totalPts), color:'#15803d', acento:true,
                   serie:_serieAct}),
-            // Ventana movil de 30 dias, medida una vez por semana. Es la
-            // que mejor contesta "¿se mantiene el volumen?": no la mueve
-            // una semana floja, como si pasa con la de 7 dias.
-            dato({label:'Activos · 30 días', val:n(activePts30),
-                  sub:'registraron algo · '+(_serieAct30?'ventana móvil de 30 d, medida cada semana':_pieSerie),
-                  p:pct(activePts30, totalPts), color:'#15803d', serie:_serieAct30}),
+            // Ventana movil de 30 dias, medida una vez por semana: no la
+            // mueve una semana floja, como si pasa con la de 7 dias.
+            datoPartido({label:'Activos · 30 días', val:n(activePts30),
+                  a:part30?part30.vinc:0, b:part30?part30.sin:0,
+                  sub:'registraron algo · ventana móvil de 30 d, medida cada semana',
+                  serie:_serieAct30})
+          ] : [
+            // Sin el dato de vinculacion no se puede partir nada. Se
+            // muestran los totales y se dice por que falta el desglose, en
+            // vez de pintar tres barras de un color inventado.
+            dato({label:'Cuentas creadas', val:n(totalPts),
+                  sub:'en total · no se pudo leer la vinculación', serie:_altasPts, color:'#1a4a3a'}),
+            dato({label:'Activos · 7 días', val:n(activePts7), sub:'registraron algo',
+                  p:pct(activePts7, totalPts), color:'#15803d', acento:true, serie:_serieAct}),
+            dato({label:'Activos · 30 días', val:n(activePts30), sub:'registraron algo',
+                  p:pct(activePts30, totalPts), color:'#15803d', serie:_serieAct30})
           ]);
 
           const b2 = bloque('Uso', [
@@ -13711,18 +13786,21 @@ function renderProfileView(){
 // app, incluidas las que todavía no existen, y no puede romper ningún
 // layout porque no reflowa nada: amplía y deja desplazar.
 function dmLeerCardHtml(conCruz){
-  const iOS = (function(){ try{ return /iPad|iPhone|iPod/.test(navigator.userAgent); }catch(_){ return false; } })();
-  const ruta = iOS ? 'Ajustes → Pantalla y brillo → Tamaño del texto'
-                   : 'Ajustes → Pantalla → Tamaño de la letra';
-  // Tres decisiones de diseño, por si alguien quiere "mejorarla":
+  // Dice SOLO el pellizco, y esa omisión es deliberada.
   //
-  // 1 · Es CHICA. La primera versión tenía cuatro párrafos y pesaba más que
-  //     la tarjeta de cargar la noche. Un aviso de accesibilidad con más
-  //     texto que el resto de la pantalla es contraproducente: justo quien
-  //     no lee bien es el que no lo va a leer.
-  // 2 · Una línea para el gesto y una para el sistema. El gesto es la
-  //     acción; el ajuste del sistema es la alternativa permanente. Nada más.
-  // 3 · El ícono a la izquierda permite reconocerla sin leerla.
+  // La primera versión mandaba a "Ajustes → Pantalla → Tamaño de la letra".
+  // Se probó: no cambia nada en la app. El ajuste del sistema escala el
+  // texto declarado en unidades relativas, y acá hay 2.100 font-size en
+  // píxeles fijos, que el sistema no puede tocar. Mandar a una pantalla de
+  // Ajustes que no va a hacer nada es peor que no decir nada: la persona
+  // hace el esfuerzo, no pasa nada, y concluye que la app está rota.
+  //
+  // El pellizco sí funciona —desde mod269, que sacó maximum-scale=1.0 del
+  // viewport— y es lo único que hoy se puede prometer sin mentir.
+  //
+  // Para que el ajuste del sistema funcione hay que migrar esos 2.100
+  // font-size a unidades relativas. Cuando eso esté, esta tarjeta cambia y
+  // vuelve a nombrar Ajustes.
   return '<div style="position:relative;display:flex;gap:12px;align-items:flex-start;'+
       'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);'+
       'border-radius:14px;padding:13px 14px">'+
@@ -13731,14 +13809,14 @@ function dmLeerCardHtml(conCruz){
       '<div style="font-size:14.5px;font-weight:700;color:#F4EFE5;line-height:1.3">'+
         '¿Te cuesta leer la pantalla?</div>'+
       '<div style="font-size:13.5px;color:rgba(244,239,229,.84);line-height:1.5;margin-top:4px">'+
-        'Agrandá apoyando dos dedos y separándolos, como con una foto.</div>'+
-      '<div style="font-size:12.5px;color:rgba(244,239,229,.62);line-height:1.5;margin-top:6px">'+
-        'Para todo el teléfono: <span style="color:#7EC8A4">'+ruta+'</span>'+
-        (conCruz ? ' · Esto queda en <b style="color:rgba(244,239,229,.8)">Yo</b>.' : '')+'</div>'+
+        'Agrandá apoyando dos dedos sobre la pantalla y separándolos, como con una foto. '+
+        'Después podés moverte arrastrando.</div>'+
+      (conCruz
+        ? '<div style="font-size:12px;color:rgba(244,239,229,.55);line-height:1.5;margin-top:6px">'+
+          'Esto queda en <b style="color:rgba(244,239,229,.78)">Yo</b>.</div>'
+        : '')+
     '</div>'+
-    // 44 px de área de toque, que es el mínimo de Apple. La cruz de 22 px
-    // con padding de 6 daba 34: chica para cualquiera, y más para la mano
-    // de la persona a la que está dirigida esta tarjeta.
+    // 44 px de área de toque, el mínimo de Apple.
     (conCruz
       ? '<button type="button" onclick="dmCerrarLeerHome()" aria-label="No mostrar más" '+
         'style="position:absolute;top:2px;right:2px;width:44px;height:44px;background:none;'+
@@ -20016,9 +20094,50 @@ function dmInformesGuardadosHtml(filas){
         '<div style="flex:1;min-width:0">'+
           '<div style="font-size:15px;font-weight:600;color:#F4EFE5">'+(f.titulo || NOM[f.tipo] || 'Informe')+'</div>'+
           '<div style="font-size:12.5px;color:rgba(244,239,229,.72);margin-top:2px">'+fecha+' · '+hora+'</div>'+
-        '</div><span style="color:#7EC8A4;font-size:18px">›</span></div>';
+        '</div>'+
+        // El tachito. Va ANTES del chevron y con stopPropagation: la fila
+        // entera abre el informe, asi que sin eso tocar la papelera lo
+        // abriria en vez de borrarlo.
+        '<button type="button" aria-label="Borrar este informe" '+
+          'onclick="event.stopPropagation();dmBorrarInforme(\''+f.id+'\')" '+
+          'style="flex-shrink:0;width:40px;height:40px;background:none;border:none;'+
+          'color:rgba(244,239,229,.45);font-size:17px;line-height:1;cursor:pointer;'+
+          'font-family:var(--font)">🗑</button>'+
+        '<span style="color:#7EC8A4;font-size:18px">›</span></div>';
     }).join('');
 }
+
+// Borrar un informe guardado.
+//
+// Se pregunta antes, y no por formalidad: un informe de interconsulta puede
+// haber sido editado y usado, y la lista no distingue a simple vista uno de
+// otro —todos se llaman "Nota de evolucion" y se diferencian por la hora—.
+// El costo de un clic de mas es nulo; el de borrar el equivocado, no.
+async function dmBorrarInforme(id){
+  if(!confirm('¿Borrar este informe?\n\nNo se puede deshacer. El diario y las escalas del paciente no se tocan.')) return;
+  try{
+    await fetch(SU+'/rest/v1/ai_reports?id=eq.'+encodeURIComponent(id), {
+      method:'DELETE',
+      headers:{ 'apikey':SK, 'Authorization': await db._getAuthHeader() }
+    });
+    // Se saca de la pantalla sin recargar la ficha entera: recargar pierde
+    // el informe que el profesional pueda tener abierto al lado.
+    const fila = document.querySelector('.dm-inf-guardado[data-id="'+id+'"]');
+    if(fila) fila.remove();
+    const quedan = document.querySelectorAll('.dm-inf-guardado').length;
+    if(!quedan){
+      // El contenedor se llama dm-inf-previos. Lo agarró pruebas/44, que
+      // busca ids referenciados desde el código y que no existen en el HTML.
+      const lista = document.getElementById('dm-inf-previos');
+      if(lista) lista.innerHTML = '';
+    }
+    if(typeof toast==='function') toast('Informe borrado');
+  }catch(e){
+    console.error('[IA] borrar', e);
+    if(typeof toast==='function') toast('No se pudo borrar: '+(e && e.message || 'error'));
+  }
+}
+window.dmBorrarInforme = dmBorrarInforme;
 
 async function dmAbrirInformeGuardado(id){
   const salida = document.getElementById('dm-inf-salida');
@@ -20080,6 +20199,11 @@ async function dmGenerarInforme(tipo){
     });
 
     const texto = resp.texto || '';
+    // La funcion avisa cuando el modelo se quedo sin tokens. Un informe
+    // cortado que PARECE completo —porque la reparacion del JSON se quedo
+    // con las secciones enteras y tiro la ultima— es peor que uno que
+    // falla: le falta la conclusion y nada lo dice.
+    const _cortado = resp.cortado === true;
     // La función de Supabase manda `estructura` cuando pudo parsear. Cuando no
     // pudo, el JSON viene igual adentro de `texto`: se intenta acá, que es
     // donde vive la reparación.
@@ -20098,7 +20222,11 @@ async function dmGenerarInforme(tipo){
     const NOMBRES = { evolucion:'Nota de evolución', interconsulta:'Interconsulta', paciente:'Resumen para el paciente' };
     // Se guarda la ESTRUCTURA, así el PDF de un informe viejo sale con el
     // diseño de hoy en lugar de quedar congelado.
-    dmGuardarSalidaIA({
+    // Un informe cortado no entra en "Generados antes". Guardarlo lo deja
+    // indistinguible de uno completo en una lista donde todos se llaman
+    // igual y se diferencian por la hora: dentro de un mes nadie va a saber
+    // que a ese le falta la conclusión.
+    if(!_cortado) dmGuardarSalidaIA({
       patient_email: email,
       doctor_email: S.user ? S.user.email : null,
       tipo: tipo,
@@ -20106,6 +20234,17 @@ async function dmGenerarInforme(tipo){
       texto: estructura ? JSON.stringify(estructura) : texto
     });
     salida.innerHTML =
+      // Un informe cortado se avisa ARRIBA, no al pie: si va abajo, quien
+      // lo lee ya lo dio por bueno. Y no se esconde el contenido: lo que
+      // alcanzó a generar sirve, siempre que se sepa que esta incompleto.
+      (_cortado
+        ? '<div style="background:rgba(200,169,110,.14);border:1px solid rgba(200,169,110,.4);'+
+          'border-radius:14px;padding:13px 15px;margin-bottom:13px;font-size:13.5px;'+
+          'color:rgba(244,239,229,.95);line-height:1.55">'+
+          '<b>Este informe está incompleto.</b> La respuesta llegó al tope de longitud y se '+
+          'cortó, así que le falta el final — probablemente la conclusión. Lo que ves es '+
+          'válido, pero no lo uses como informe cerrado: tocá <b>Rehacer</b>.</div>'
+        : '')+
       dmRenderIA(estructura, texto)+
       '<div style="display:flex;gap:9px;margin-top:13px;flex-wrap:wrap">'+
         '<button class="dm-inf-pdf" style="flex:1;min-width:130px;background:#7EC8A4;color:#0F2820;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font)">↓ Descargar PDF</button>'+

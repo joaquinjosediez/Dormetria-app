@@ -135,14 +135,40 @@ Secciones sugeridas:
 · "texto" con la impresión y la conducta sugerida.
 Menos de 250 palabras en total.`,
 
-  interconsulta: `Redactá un INFORME DE INTERCONSULTA para un profesional que no
-conoce al paciente. Tiene que ser autosuficiente: quien lo lee no ve la app.
-Secciones sugeridas:
-· "texto" con el motivo y la metodología (diario autoadministrado, N noches).
-· "datos" con los hallazgos por dominio: cantidad, continuidad, regularidad.
-· "lista" con los factores evaluados y su resultado.
-· "texto" con la conclusión y la sugerencia.
-Menos de 400 palabras en total.`,
+  interconsulta: `Redactá un INFORME DE INTERCONSULTA, completo, para un
+profesional que no conoce al paciente y que NO ve la app. Es el informe más
+extenso de los tres: tiene que ser autosuficiente y usar TODO lo que haya en
+los datos. Si un dato está, va; si no está, se dice que no está.
+
+Estructura, en este orden:
+
+· "texto" · Motivo y metodología. Qué se registró, durante cuántas noches,
+  cuántas resultaron válidas y por qué se descartaron las otras. Qué escalas
+  se administraron. Que todo es autorreportado.
+· "datos" · Arquitectura del sueño: hora de acostarse, hora de levantarse,
+  tiempo total, latencia, vigilia intrasueño, despertares, tiempo en cama y
+  eficiencia. Cada uno con su estado respecto del corte publicado.
+· "datos" · Ritmo y regularidad: desvío del punto medio, jet lag social,
+  deuda de sueño, laborables contra libres, y el índice de regularidad si
+  está.
+· "datos" · Sueño diurno: frecuencia y duración de siestas, y margen hasta
+  la noche.
+· "lista" · Escalas administradas, TODAS: nombre, puntaje sobre su máximo,
+  interpretación y fecha. Marcá las que tengan más de dos meses.
+· "lista" · Factores evaluados del diario (cafeína, alcohol, ejercicio,
+  pantallas, medicación, ciclo) con su resultado: cuáles alcanzaron
+  significación y cuáles se evaluaron y no. Que se haya evaluado y dado
+  negativo ES información para quien recibe el informe.
+· "descartado" · Lo que NO se puede afirmar con este registro y por qué.
+· "texto" · CONCLUSIÓN SUGERIDA. Titulala así, literal.
+
+La conclusión se escribe como la de un informe de polisomnografía: un párrafo
+de síntesis que integra los hallazgos, el patrón compatible con nombre, y qué
+queda por definir en la entrevista. Es una sugerencia dirigida a un colega que
+decide, no un diagnóstico: usá "compatible con", "sugiere", "no permite
+descartar".
+
+Sin límite de palabras: lo que haga falta para que no quede nada afuera.`,
 
   paciente: `Redactá un RESUMEN PARA EL PACIENTE, para que se lo lleve de la consulta.
 Registro: segunda persona, vos. Cotidiano. Sin siglas sin explicar.
@@ -242,7 +268,13 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: modelo,
-        max_tokens: 2000,
+        // 2000 era arbitrario y cortaba informes al medio. El tope del
+        // modelo es mucho mas alto; esto no es un presupuesto, es un
+        // LIMITE DE SEGURIDAD para que una respuesta descontrolada no se
+        // cobre una fortuna. Se paga por lo que se usa, asi que subirlo no
+        // cuesta nada mientras no se use: una nota de evolucion de 250
+        // palabras sigue gastando lo mismo.
+        max_tokens: 8000,
         messages: [
           { role: 'user', content: prompt }
           // NO va ningún { role: 'assistant' } acá. Eso es prefill y los
@@ -281,13 +313,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Si el modelo se quedo sin tokens, el JSON viene cortado al medio y
+    // sacarJSON puede llegar a "repararlo" quedandose con las secciones
+    // completas. Eso es lo peligroso: devuelve un informe que PARECE
+    // terminado y le falta la conclusion. Se avisa siempre, haya podido
+    // parsear o no.
+    const cortado = resp?.stop_reason === 'max_tokens';
+
     const estructura = sacarJSON(crudo);
     if (!estructura) {
       console.error('No se pudo parsear el JSON:', crudo.slice(0, 300));
-      return responder({ texto: crudo, estructura: null });
+      return responder({ texto: crudo, estructura: null, cortado });
     }
 
-    return responder({ estructura, texto: crudo });
+    return responder({ estructura, texto: crudo, cortado });
 
   } catch (e) {
     console.error('Excepción:', e);

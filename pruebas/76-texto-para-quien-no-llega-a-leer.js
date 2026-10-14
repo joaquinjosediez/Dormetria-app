@@ -65,7 +65,8 @@ r.seccion('Lo que queda es el gesto, que no puede romper nada:');
 
 const card = app.slice(app.indexOf('function dmLeerCardHtml(conCruz){'),
                        app.indexOf('function dmCerrarLeerHome'));
-r.ok(/Agrandá apoyando dos dedos y separándolos/.test(card), 'enseña el pellizco');
+r.ok(/Agrandá apoyando dos dedos sobre la pantalla y separándolos/.test(card),
+     'enseña el pellizco');
 // La tarjeta se reescribió entera después de una auditoría de diseño: la
 // primera versión tenía cuatro párrafos, pesaba más que la tarjeta de
 // cargar la noche —la acción principal— y encima iba ARRIBA de ella. Un
@@ -75,11 +76,19 @@ r.ok(/como con una foto/.test(card),
      'con una comparación que no hace falta explicar');
 r.ok(card.length < 2600,
      'y es corta: tres líneas, no cuatro párrafos', card.length + ' caracteres');
-// La ruta del ajuste del sistema no es la misma en iPhone que en Android, y
-// mandar a la pantalla equivocada es peor que no mandar a ninguna.
-r.ok(/iPad\|iPhone\|iPod/.test(card) && /Pantalla y brillo/.test(card) &&
-     /Tamaño de la letra/.test(card),
-     'y la ruta del ajuste del sistema, distinta según el teléfono');
+// Y NO nombra el ajuste de tamaño de letra del sistema. Se probó en un
+// iPhone: no cambia nada, porque el sistema solo puede escalar texto
+// declarado en unidades relativas y acá hay 2.100 font-size en píxeles.
+// Mandar a una pantalla de Ajustes que no hace nada es peor que no decir
+// nada: la persona hace el esfuerzo, no pasa nada, y concluye que la app
+// está rota. Vuelve cuando esté hecha la migración a rem.
+const cardCodigo = card.split('\n').filter(function (l) {
+  return !/^\s*\/\//.test(l);
+}).join('\n');
+r.ok(!/Ajustes/.test(cardCodigo),
+     'y NO manda a Ajustes, porque hoy eso no cambia nada');
+r.ok(/no cambia nada en la app/.test(app),
+     'con el motivo escrito, que es lo que evita que alguien lo "complete"');
 
 r.seccion('Dos lugares, dos comportamientos:');
 
