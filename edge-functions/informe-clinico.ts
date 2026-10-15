@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  informe-clinico · Supabase Edge Function        (versión 6 · mod272)
+//  informe-clinico · Supabase Edge Function        (versión 7 · mod273)
 // ═══════════════════════════════════════════════════════════════════════
 //
 //  ESTE ARCHIVO NO SE PUBLICA CON git push.
@@ -21,6 +21,10 @@
 //    razonamiento adaptativo de sonnet-5 sale del mismo presupuesto).
 //    No es un presupuesto: se paga por lo que se usa.
 //  · Si el modelo rechaza ese max_tokens, se reintenta con 8000.
+//  · v7: la conclusion deja de ser un bloque de 400 palabras y pasa a
+//    "bloques" con subtitulo tematico, como una PSG. Y se separa "limites"
+//    de "descartado": poner una limitacion como descarte le pone un tilde
+//    verde a algo que no se sabe.
 //  · La consigna de interconsulta decía "Menos de 400 palabras en total".
 //    Por eso el informe "detallado" no tenía nada. Ahora pide el informe
 //    completo, con secciones explícitas y una CONCLUSIÓN SUGERIDA al final.
@@ -134,14 +138,46 @@ sin bloques de código. Esta es la forma exacta:
       "titulo": "Factores asociados",
       "items": [ { "texto": "...", "estado": "atencion" } ]
     },
-    { "tipo": "texto", "titulo": "Impresión", "cuerpo": "Párrafo corrido." }
+    { "tipo": "texto", "titulo": "Impresión", "cuerpo": "Párrafo corrido." },
+    {
+      "tipo": "limites",
+      "titulo": "Lo que este registro no permite afirmar",
+      "items": [ { "texto": "..." } ]
+    },
+    {
+      "tipo": "conclusion",
+      "titulo": "Conclusión sugerida",
+      "bloques": [
+        { "titulo": "Continuidad y arquitectura", "cuerpo": "Un párrafo." },
+        { "titulo": "Ritmo y regularidad",        "cuerpo": "Otro párrafo." }
+      ]
+    }
   ]
 }
 
 "estado" solo puede ser: "normal", "atencion" o "alterado". Es opcional.
 "valor" es opcional.
-Los tipos posibles son: "datos", "lista", "texto", "descartado", "hallazgos".
-Máximo 8 ítems por sección. Máximo 5 secciones.
+
+Los tipos posibles son: "datos", "lista", "texto", "hallazgos",
+"descartado", "limites" y "conclusion".
+
+OJO con la diferencia entre "descartado" y "limites", porque no son lo
+mismo y se maquetan distinto:
+
+· "descartado" es lo que el registro SÍ permite descartar. Tranquiliza. Se
+  dibuja con un tilde verde. Ej: "STOP-BANG 2/8: riesgo bajo de apnea".
+· "limites" es lo que NO se puede afirmar con este registro, en ninguna
+  dirección. No tranquiliza: acota. Se dibuja aparte y sin tilde. Ej: "no
+  hay polisomnografía, así que un trastorno respiratorio no se confirma ni
+  se descarta".
+
+Poner una limitación como "descartado" le pone un tilde verde a algo que no
+se sabe, que es exactamente lo contrario de lo que dice.
+
+El tipo "conclusion" lleva "bloques" en vez de "items" o "cuerpo". Cada
+bloque es un párrafo con su propio subtítulo temático.
+
+Máximo 8 ítems por sección. Máximo 7 secciones.
 `;
 
 // Esto reemplaza al prefill. Antes la respuesta venía empezada a la fuerza
@@ -187,13 +223,34 @@ Estructura, en este orden:
   significación y cuáles se evaluaron y no. Que se haya evaluado y dado
   negativo ES información para quien recibe el informe.
 · "descartado" · Lo que NO se puede afirmar con este registro y por qué.
-· "texto" · CONCLUSIÓN SUGERIDA. Titulala así, literal.
+· "limites" · Lo que NO se puede afirmar con este registro y por qué.
+· "conclusion" · Titulala "Conclusión sugerida".
 
-La conclusión se escribe como la de un informe de polisomnografía: un párrafo
-de síntesis que integra los hallazgos, el patrón compatible con nombre, y qué
-queda por definir en la entrevista. Es una sugerencia dirigida a un colega que
-decide, no un diagnóstico: usá "compatible con", "sugiere", "no permite
-descartar".
+LA CONCLUSIÓN ES LO ÚNICO QUE ALGUNOS VAN A LEER, así que no puede ser un
+bloque de cuatrocientas palabras. Va en "bloques": párrafos cortos, cada uno
+con su subtítulo temático, igual que un informe de polisomnografía separa lo
+respiratorio de los movimientos y del ánimo.
+
+Los subtítulos salen de lo que haya en ESTE paciente. Usá solo los que
+apliquen, en este orden:
+
+  · Continuidad y arquitectura del sueño
+  · Ritmo circadiano y regularidad
+  · Sueño diurno
+  · Respiratorio
+  · Movimientos y parasomnias
+  · Esfera anímica y cognitiva
+  · Qué queda por definir
+
+Cada bloque, entre 2 y 5 oraciones. Si un dominio no tiene nada que decir en
+este paciente, no inventes el bloque: se omite.
+
+El último, "Qué queda por definir", es el que le sirve a quien recibe la
+interconsulta: qué pregunta de la entrevista o qué estudio resolvería lo que
+hoy queda abierto.
+
+Es una sugerencia dirigida a un colega que decide, no un diagnóstico: usá
+"compatible con", "sugiere", "no permite descartar".
 
 Sin límite de palabras: lo que haga falta para que no quede nada afuera.`,
 

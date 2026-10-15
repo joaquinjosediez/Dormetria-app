@@ -18,6 +18,7 @@ const C = require('./comun');
 const r = C.crearReporte('Informes y estadísticas');
 
 const app = C.leerApp();
+const css = C.leerCss();
 const fs = require('fs');
 const path = require('path');
 const edge = fs.readFileSync(
@@ -71,12 +72,15 @@ r.ok(/limite de seguridad contra una respuesta descontrolada/.test(edgePlano),
      'y queda escrito que es un tope de seguridad, no un presupuesto');
 
 const inter = edge.slice(edge.indexOf('interconsulta: `'), edge.indexOf('paciente: `'));
+const interPlano = inter.replace(/\s+/g, ' ');
 r.ok(!/Menos de 400 palabras/.test(inter),
      'la interconsulta ya no se limita a 400 palabras');
 r.ok(/Sin límite de palabras/.test(inter), 'y lo dice explícitamente');
-r.ok(/CONCLUSIÓN SUGERIDA/.test(inter), 'pide una conclusión, con ese título');
-r.ok(/como la de un informe de polisomnografía/.test(inter),
+r.ok(/Titulala "Conclusión sugerida"/.test(inter), 'pide una conclusión, con ese título');
+r.ok(/igual que un informe de polisomnografía separa lo/.test(interPlano),
      'con el modelo de referencia que se pidió');
+r.ok(/LA CONCLUSIÓN ES LO ÚNICO QUE ALGUNOS VAN A LEER/.test(inter),
+     'y con el motivo por el que no puede ser un bloque');
 // Una conclusión sugerida no es un diagnóstico: el informe lo lee un colega
 // que decide.
 r.ok(/"compatible con", "sugiere", "no permite\s*descartar"/.test(inter.replace(/\s+/g, ' ')),
@@ -87,7 +91,6 @@ r.ok(/"compatible con", "sugiere", "no permite\s*descartar"/.test(inter.replace(
 });
 // Que un factor se haya evaluado y dado negativo ES información para quien
 // recibe el informe y no vio al paciente.
-const interPlano = inter.replace(/\s+/g, ' ');
 r.ok(/dado negativo ES información/.test(interPlano),
      'incluido lo que se evaluó y no dio nada');
 r.ok(/"descartado"/.test(inter), 'y lo que NO se puede afirmar con este registro');
@@ -168,5 +171,57 @@ r.ok(/En el directorio \('\+publicados\.length\+'\)/.test(app),
      'sin solicitudes, se lista quién está publicado');
 r.ok(/select=.*public_profile/.test(app),
      'leyendo la columna que de verdad dice si está publicado');
+
+r.seccion('5 · La conclusión del informe, partida por dominio:');
+
+// Era un bloque de 400 palabras. Es lo único que algunos van a leer.
+r.ok(/"tipo": "conclusion"/.test(edge), 'hay un tipo propio para la conclusión');
+r.ok(/"bloques":/.test(edge), 'que lleva bloques, no un cuerpo corrido');
+r.ok(/Continuidad y arquitectura del sueño/.test(edge) &&
+     /Ritmo circadiano y regularidad/.test(edge) &&
+     /Esfera anímica y cognitiva/.test(edge),
+     'con los dominios de un informe de polisomnografía');
+r.ok(/Qué queda por definir/.test(edge),
+     'y el que le sirve a quien recibe la interconsulta');
+// Si un dominio no aplica, inventar el bloque es peor que omitirlo.
+r.ok(/no inventes el bloque: se omite/.test(edgePlano),
+     'sin inventar los dominios que no apliquen');
+r.ok(/tipo === 'conclusion'/.test(app), 'la app lo renderiza');
+r.ok(/\.dm-ia-concl-t\{/.test(css), 'con subtítulos que permiten saltar al dominio');
+
+r.seccion('Y "lo que no se puede afirmar" dejó de llevar un tilde verde:');
+
+// El bug: el prompt usaba el tipo "descartado" —que dibuja un ✓ verde,
+// porque está pensado para lo que el estudio SÍ descarta— para listar
+// limitaciones. "✓ No hay polisomnografía" dice que eso está resuelto.
+r.ok(/"tipo": "limites"/.test(edge), 'hay un tipo aparte para las limitaciones');
+r.ok(/Poner una limitación como "descartado" le pone un tilde verde/.test(edgePlano),
+     'con la diferencia explicada en el prompt');
+r.ok(/tipo === 'limites'/.test(app), 'la app lo renderiza distinto');
+const lim = app.slice(app.indexOf("}else if(tipo === 'limites'){"),
+                      app.indexOf("}else if(tipo === 'conclusion'){"));
+r.ok(!/✓/.test(lim), 'sin tilde');
+r.ok(/sec\.tipo === 'limites'/.test(app), 'y el PDF también');
+r.ok(/\.dm-ia-limites\{/.test(css), 'con su CSS');
+// Una línea larga se salía de la hoja por la derecha: texto perdido en un
+// informe clínico.
+r.ok(/doc\.splitTextToSize\(String\(it\.texto\|\|''\), cw - 11\)/.test(app),
+     'y en el PDF el texto se parte en vez de salirse de la hoja');
+
+r.seccion('6 · El botón al directorio vuelve, con sus condiciones:');
+
+const consulta = app.slice(app.indexOf('// ── El orden importa más que el botón'),
+                           app.indexOf("'<span style=\"opacity:.6;flex-shrink:0\">›</span>'"));
+r.ok(/showConsultDir\(true\)/.test(consulta), 'el botón existe');
+// El orden es la salvaguarda: el camino sin conflicto de interés va primero.
+r.ok(consulta.indexOf('médico de cabecera') < consulta.indexOf('Buscar un profesional'),
+     'pero DESPUÉS del médico de cabecera');
+r.ok(/Los que usan Dormetria/.test(consulta),
+     'y dice qué es esa lista, para que nadie la lea como los mejores');
+// El plan de cobros ya tiene el directorio como función de plan pago, con
+// "destacado" en el más caro. Hoy es gratis; el día que no lo sea, este
+// botón manda a alguien asustado a una lista que paga por estar ahí.
+r.ok(/EL DÍA QUE EL DIRECTORIO SEA PAGO, ESTE BOTÓN SE REVISA/.test(app),
+     'y queda escrita la condición que lo haría volver a sacarse');
 
 r.cerrar('Un informe al que le falta la conclusión y no lo dice es peor que uno que falla.');
