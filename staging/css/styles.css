@@ -3129,7 +3129,38 @@ input, select, textarea{ color: inherit; }
   #dm-btn{width:100%;height:54px;border-radius:27px;background:linear-gradient(135deg,#2d6b4a 0%,#1a4a3a 100%);border:1px solid rgba(126,200,164,0.2);display:flex;align-items:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;pointer-events:auto;}
   #dm-btn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;}
   #dm-btn-label{flex:1;text-align:center;font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:white;padding-right:48px;}
-  #dm-login{font-family:'Instrument Sans',sans-serif;font-size:12px;color:rgba(255,255,255,0.28);cursor:pointer;}
+  /* ── Entrar no es menos importante que registrarse ────────────────────
+   "Ya tengo cuenta — Ingresar" era texto de 12 px con opacity .28 sobre
+   fondo verde oscuro. Eso no es jerarquía: es un enlace que no se ve. El
+   contraste queda cerca de 2:1, muy por debajo del 4,5:1 que pide WCAG
+   para texto chico, y el objetivo táctil medía 16 px de alto.
+
+   Y es el camino que usa TODOS LOS DÍAS la gente que ya está adentro.
+   Registrarse se hace una vez; entrar, cada mañana.
+
+   Mismo tamaño que "Empezar", y la jerarquía la hace el estilo: el
+   primario es sólido, este es de contorno. Es la convención de cualquier
+   par de acciones primaria/secundaria, y no le cuesta visibilidad a
+   ninguna de las dos. */
+#dm-login{
+  width:100%; height:54px; border-radius:27px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(126,200,164,0.42);
+  font-family:'Instrument Sans',sans-serif; font-size:15px; font-weight:600;
+  color:rgba(244,239,229,0.92); cursor:pointer; margin-bottom:12px;
+  -webkit-tap-highlight-color:transparent;
+}
+#dm-login span{ color:#7EC8A4; }
+#dm-login:active{ background:rgba(255,255,255,0.1); }
+
+/* El tercero sí es terciario: lo usa un profesional, una sola vez, y no
+   compite con los dos de arriba. Pero legible. */
+#dm-soy-pro{
+  font-family:'Instrument Sans',sans-serif; font-size:13px;
+  color:rgba(244,239,229,0.6); cursor:pointer; padding:8px 4px;
+}
+#dm-soy-pro span{ color:#7EC8A4; font-weight:600; }
   #dm-login span{color:#7ec8a4;}
   @keyframes dmFadeIn{from{opacity:0}to{opacity:1}}
   /* ── Animación de entrada ──
