@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod277-ed97f2ce">
+<link rel="stylesheet" href="css/styles.css?v=mod278-ed97f2ce">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod277-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod277-8b40f5d3"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod277-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod277-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod277-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod278-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod278-8b40f5d3"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod278-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod278-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod278-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod277';
+const APP_VERSION='mod278';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -3084,8 +3084,36 @@ function computePillarScore(e, ageYears){
     else qty=0;
   }
   qty=Math.max(0,Math.min(50,qty));
+  // Misma corrección que en la otra copia de este cálculo: la
+  // fragmentación mira cuántas veces Y cuánto tiempo. Ver el comentario
+  // largo allá; el corte de WASO ≥30 min es Lichstein 2003.
+  //
+  // (Que esto exista dos veces es el problema de fondo. Mientras sean
+  // dos, las dos tienen que decir lo mismo: una tarjeta que puntúa
+  // distinto del lado del paciente que del profesional es peor que
+  // cualquiera de las dos versiones.)
   const awk=e.awakenings||0;
-  const frag=Math.max(0,20-awk*5);
+  const fragCant=Math.max(0,20-awk*5);
+  const _w=Number(e.wake_in_bed_mins);
+  let frag=fragCant;
+  if(e.wake_in_bed_mins!=null && e.wake_in_bed_mins!=='' && !isNaN(_w)){
+    const w=Math.max(0,_w);
+    let fragWaso;
+    if(w<=10)       fragWaso=20;
+    else if(w<=30)  fragWaso=20-(w-10)*(6/20);
+    else if(w<=60)  fragWaso=14-(w-30)*(6/30);
+    else if(w<=120) fragWaso=8-(w-60)*(8/60);
+    else            fragWaso=0;
+    // Manda el WASO, no el conteo. Con `min` de los dos, un solo
+    // despertar breve —que es fisiologico— bajaba el pilar a 75 %,
+    // porque el conteo resta 5 puntos por despertar sin mirar si
+    // duro ocho minutos o una hora.
+    //
+    // El numero sigue pesando, pero solo cuando es alto: desde el
+    // tercer despertar resta 2 puntos cada uno. Seis despertares de
+    // dos minutos son pocos minutos y aun asi son una noche rota.
+    frag=Math.max(0, fragWaso - Math.max(0, awk-2)*2);
+  }
   return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
 }
 function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
@@ -6469,8 +6497,47 @@ function updatePillarBars(entries){
       else qty=0;
     }
     qty=Math.max(0,Math.min(50,qty));
+    // ── Fragmentación: cuántas veces Y cuánto tiempo ──────────────
+    //
+    // Era `20 - despertares*5`: contaba los despertares e ignoraba su
+    // duración. La propia app argumenta lo contrario tres tarjetas más
+    // abajo, en el pie del histograma de WASO: "tres despertares de un
+    // minuto y uno de una hora no son lo mismo".
+    //
+    // El resultado se veía en pacientes reales: FRAGMENTACIÓN 100 % ·
+    // "Muy bien" en alguien con 0,3 despertares por noche de una hora
+    // cada uno. El número era correcto y la lectura, falsa.
+    //
+    // Ahora se calculan los dos y se toma EL PEOR. Si cualquiera de los
+    // dos dice que la noche está fragmentada, lo está: ni muchos
+    // despertares cortos ni uno solo larguísimo pueden pasar por buenos.
+    //
+    // Los cortes del WASO son los que la app ya usa en todo lo demás:
+    // ≥30 min es el criterio cuantitativo de insomnio de mantenimiento
+    // (Lichstein et al. 2003, Behav Res Ther). Por debajo de 10 min no
+    // se penaliza: despertarse un momento y volver a dormirse es normal.
     const awk=e.awakenings||0;
-    const frag=Math.max(0,20-awk*5);
+    const fragCant=Math.max(0,20-awk*5);
+    const _w=Number(e.wake_in_bed_mins);
+    let frag=fragCant;
+    if(e.wake_in_bed_mins!=null && e.wake_in_bed_mins!=='' && !isNaN(_w)){
+      const w=Math.max(0,_w);
+      let fragWaso;
+      if(w<=10)      fragWaso=20;                       // normal
+      else if(w<=30) fragWaso=20-(w-10)*(6/20);         // 20 → 14 en el corte
+      else if(w<=60) fragWaso=14-(w-30)*(6/30);         // 14 → 8
+      else if(w<=120)fragWaso=8-(w-60)*(8/60);          // 8  → 0
+      else           fragWaso=0;
+      // Manda el WASO, no el conteo. Con `min` de los dos, un solo
+      // despertar breve —que es fisiologico— bajaba el pilar a 75 %,
+      // porque el conteo resta 5 puntos por despertar sin mirar si
+      // duro ocho minutos o una hora.
+      //
+      // El numero sigue pesando, pero solo cuando es alto: desde el
+      // tercer despertar resta 2 puntos cada uno. Seis despertares de
+      // dos minutos son pocos minutos y aun asi son una noche rota.
+      frag=Math.max(0, fragWaso - Math.max(0, awk-2)*2);
+    }
     return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
   }
   const _edadPil=(function(){ const d=(S.viewData&&S.viewData.dob)||(S.user&&S.user.dob); return d?Math.floor((Date.now()-new Date(d))/31557600000):null; })();
