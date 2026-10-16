@@ -56,7 +56,7 @@ r.ok(/dmEsDemo\(u\)\?' <span[^>]*>EJEMPLO<\/span>'/.test(app.replace(/\s+/g, ' '
 r.seccion('Los ocho que se siembran al entrar por primera vez:');
 
 const cods = (app.match(/const DM_CODIGOS_DEMO = \[([^\]]+)\]/) || [])[1] || '';
-['JUANA1', 'QUIJAN', 'KAHLO1', 'FRANK1', 'PETER1', 'WINKLE', 'ELENA1', 'TOMAS1'].forEach(function (c) {
+['JUANA1', 'QUIJAN', 'KAHLO1', 'FRANK1', 'PETER1', 'AURORA', 'ELENA1', 'TOMAS1'].forEach(function (c) {
   r.ok(cods.indexOf("'" + c + "'") >= 0, '  ' + c);
 });
 // Seis mecanismos distintos sin repetir ninguno: es lo máximo que se

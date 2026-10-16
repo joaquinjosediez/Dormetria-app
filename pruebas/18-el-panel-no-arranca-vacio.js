@@ -24,7 +24,7 @@ r.seccion('Los ocho ejemplos, uno por etiqueta:');
 // (narcolepsia: el motor no la auto-marca a propósito, así que su ficha
 // no enseñaba nada que el diario pudiera mostrar).
 // El criterio de cada uno está escrito arriba de DM_CODIGOS_DEMO.
-['JUANA1','QUIJAN','KAHLO1','FRANK1','PETER1','WINKLE','ELENA1','TOMAS1'].forEach(function(cod){
+['JUANA1','QUIJAN','KAHLO1','FRANK1','PETER1','AURORA','ELENA1','TOMAS1'].forEach(function(cod){
   r.ok(html.indexOf("'" + cod + "'") >= 0, 'está el código ' + cod);
 });
 

@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod276-ed97f2ce">
+<link rel="stylesheet" href="css/styles.css?v=mod277-ed97f2ce">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod276-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod276-8b40f5d3"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod276-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod276-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod276-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod277-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod277-8b40f5d3"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod277-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod277-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod277-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod276';
+const APP_VERSION='mod277';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -17193,7 +17193,8 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
 //   KAHLO1  SPI              IRLS 24 · la siesta larga le come la noche
 //   FRANK1  PARASOMNIA       RBD-SQ 10 · alcohol frecuente
 //   PETER1  CRONODISRUPCIÓN  jet lag 189 min · duerme bien pero a destiempo
-//   WINKLE  NARCOLEPSIA      marcada A MANO: no hay instrumento que la
+//   AURORA  NARCOLEPSIA      Aurora Bosque · marcada A MANO: no hay
+//                            instrumento cargado que la
 //                            tamice, y marcarla desde un Epworth alto
 //                            sería etiquetar a cualquiera que duerma poco
 //   ELENA1  (ninguna)        el control, el que muestra que la app NO
@@ -17202,7 +17203,7 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
 //
 // Los seis tienen 8 semanas de diario cargadas (SQL-demos-8-semanas.sql) y
 // todos llevan el cartel EJEMPLO en el listado.
-const DM_CODIGOS_DEMO = ['JUANA1','QUIJAN','KAHLO1','FRANK1','PETER1','WINKLE','ELENA1','TOMAS1'];
+const DM_CODIGOS_DEMO = ['JUANA1','QUIJAN','KAHLO1','FRANK1','PETER1','AURORA','ELENA1','TOMAS1'];
 
 function showDrTab(tab,el){
   // Update bottom nav (uses original tab name for active state)
