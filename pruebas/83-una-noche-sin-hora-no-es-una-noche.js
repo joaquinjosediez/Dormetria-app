@@ -130,3 +130,29 @@ if (ctx) {
     r.cerrar('Avisar sin frenar deja entrar el dato igual, y después nadie sabe que esa noche no existió.');
   })();
 }
+
+// ── Lo que apareció de paso en la consola ─────────────────────────────
+//
+//     Failed to load resource: 400
+//     doctor_patients?patient_email=eq...&select=doctor_email,rating,created_at
+//
+// Dos veces por carga, en rojo, y nadie lo miraba porque la llamada tenía
+// .catch(()=>[]). `doctor_patients` no tiene columna `created_at`: la
+// consulta siempre falla, siempre devuelve lista vacía, y el aviso de
+// "¿querés calificar la atención?" NUNCA se mostró a ningún paciente.
+//
+// Un .catch que devuelve el valor neutro convierte un error en una
+// función que no existe. Es el mismo problema que una prueba que no
+// puede fallar.
+const rc = C.crearReporte('La calificación que nunca se pedía');
+rc.seccion('La consulta ya no muere en el 400:');
+rc.ok(/\[CALIFICAR\] doctor_patients sin created_at/.test(app),
+      'si falla, queda dicho en la consola');
+rc.ok(/'&select=doctor_email,rating'\)\.catch/.test(app),
+      'y se reintenta sin la columna que no existe');
+rc.ok(/if\(vinculos === null\)\{/.test(app),
+      'el primer intento distingue "fallo" de "no hay vínculos"');
+// Esa diferencia es todo el arreglo: antes las dos cosas eran [].
+rc.ok(/return null; \}\);\n    if\(vinculos === null\)/.test(app),
+      'que antes eran lo mismo, y por eso no se notaba');
+rc.cerrar('Un catch que devuelve el valor neutro convierte un error en una función que no existe.');

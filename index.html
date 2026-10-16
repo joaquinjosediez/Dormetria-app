@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod282-35dbce94">
+<link rel="stylesheet" href="css/styles.css?v=mod283-35dbce94">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod282-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod282-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod282-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod282-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod282-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod283-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod283-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod283-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod283-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod283-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod282';
+const APP_VERSION='mod283';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -11706,8 +11706,25 @@ async function dmInvitarACalificar(){
     try{ postergado = parseInt(localStorage.getItem('dm_calif_postergada')||'0',10)||0; }catch(_){}
     if(postergado && Date.now() < postergado) return;
 
-    const vinculos = await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+
-                                  '&select=doctor_email,rating,created_at').catch(function(){ return []; });
+    // ── Esta consulta devolvía 400 en TODAS las sesiones ────────────
+    //
+    // `doctor_patients` no tiene la columna `created_at`. PostgREST
+    // contesta 400, el .catch devuelve [], y el aviso de "¿querés
+    // calificar la atención?" NUNCA se mostró a nadie. Dos errores rojos
+    // por carga en la consola y una función entera muerta en silencio.
+    //
+    // Se pide la columna igual y, si falla, se reintenta sin ella: así el
+    // día que exista vuelve a aplicarse la espera de dos semanas, y
+    // mientras tanto el aviso aparece en vez de no existir. El fallback
+    // mira CUALQUIER fallo, no el nombre de la columna: si mañana falta
+    // otra, esto sigue funcionando.
+    let vinculos = await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+
+                                '&select=doctor_email,rating,created_at').catch(function(){ return null; });
+    if(vinculos === null){
+      console.warn('[CALIFICAR] doctor_patients sin created_at: se pide sin esa columna');
+      vinculos = await db.get('doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+
+                              '&select=doctor_email,rating').catch(function(){ return []; });
+    }
     // El primero sin calificar y con al menos dos semanas de vínculo
     const DOS_SEMANAS = 14*24*3600*1000;
     const v = (vinculos||[]).filter(function(x){
