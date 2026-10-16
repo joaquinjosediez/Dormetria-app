@@ -39,29 +39,67 @@
 -- ═══════════════════════════════════════════════════════════════════
 
 -- ── 1 · Elena y Tomás necesitan código y perfil ────────────────────
+-- El `not exists` es por la misma razón que abajo: si otra fila ya tiene
+-- ese código, el update choca contra patients_code_key.
 update public.patients set code = 'ELENA1'
- where lower(name) = 'elena' and email like '%demo%' and code is distinct from 'ELENA1';
+ where lower(name) = 'elena'
+   and email like '%demo%'
+   and code is distinct from 'ELENA1'
+   and not exists (select 1 from public.patients where code = 'ELENA1');
 
 -- Tomás es HIJO de Elena, no un paciente suelto: lleva parent_email y el
 -- auth_id de la madre, que es lo que la RLS de sleep_diary mira para
 -- dejar leer y escribir sus noches. Sin auth_id la ficha nace huérfana y
 -- no la puede ver nadie, ni siquiera quien la creó.
+--
+-- Va en dos pasos y no con `on conflict`, porque hay DOS restricciones
+-- únicas en juego —email y code— y `on conflict` sólo puede atender una.
+-- La corrida anterior dejó un TOMAS1 asignado, así que el insert chocaba
+-- contra patients_code_key en vez de actualizarlo.
+
+-- 1 · Si ya hay alguien con ese código, se lo convierte en hijo de Elena.
+update public.patients t
+   set parent_email       = e.email,
+       auth_id            = e.auth_id,
+       name               = 'Tomás',
+       lname              = 'Ferrante',
+       dob                = date '2022-05-10',
+       sex                = 'M',
+       caregiver_relation = 'madre',
+       schooled           = false,
+       is_demo            = true
+  from public.patients e
+ where t.code = 'TOMAS1'
+   and e.code = 'ELENA1';
+
+-- 2 · Y si no había ninguno, se crea. El `not exists` es lo que evita
+--     volver a chocar contra el código único.
 insert into public.patients (email, name, lname, dob, sex, code, parent_email,
                              caregiver_relation, auth_id, schooled, is_demo)
 select e.email || '+tomas@child', 'Tomás', 'Ferrante', date '2022-05-10', 'M',
        'TOMAS1', e.email, 'madre', e.auth_id, false, true
   from public.patients e
  where e.code = 'ELENA1'
- on conflict (email) do update
-    set parent_email = excluded.parent_email,
-        auth_id      = excluded.auth_id,
-        code         = excluded.code,
-        is_demo      = true;
+   and not exists (select 1 from public.patients where code = 'TOMAS1')
+   and not exists (select 1 from public.patients
+                    where email = e.email || '+tomas@child');
 
 -- ── 2 · Fuera los demás pacientes de ejemplo ───────────────────────
--- Son ficticios: se borran de verdad, con sus registros. El filtro mira
--- SOLO el dominio demo y excluye a los ocho que se quedan, así que no
--- puede tocar a un paciente real.
+--
+-- Son ficticios: se borran de verdad, con todos sus registros. El filtro
+-- mira SOLO el dominio demo o la marca is_demo, y excluye a los ocho que
+-- se quedan, así que no puede alcanzar a un paciente real.
+--
+-- Se limpia tabla por tabla ANTES de borrar la ficha. Si alguna tiene una
+-- clave foránea contra patients, el delete de la ficha falla y el script
+-- se corta a la mitad, que es peor que no correrlo. Son las doce tablas
+-- que la propia app enumera cuando borra una cuenta.
+--
+-- `cbti_progress` y `consultation_notes` pueden no tener la columna
+-- patient_email según cómo se hayan creado: si alguna no existe o no la
+-- tiene, Postgres corta con un error claro y alcanza con comentar esa
+-- línea. No se usa un bloque DO para que se vea cuál falló.
+
 with sobran as (
   select email from public.patients
    where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
@@ -89,11 +127,92 @@ with sobran as (
 )
 delete from public.doctor_patients where patient_email in (select email from sobran);
 
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.doctor_alerts where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.doctor_suggestions where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.cbti_patients where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.cbti_progress where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.ai_reports where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.patient_documents where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.patient_education where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.pvt_tests where patient_email in (select email from sobran);
+
+with sobran as (
+  select email from public.patients
+   where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1')
+)
+delete from public.consultation_notes where patient_email in (select email from sobran);
+
 delete from public.patients
  where (email like '%@demo.dormetria.com' or email like '%.demo@dormetria.com'
-        or is_demo = true)
-   and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
-                                 'PETER1','WINKLE','ELENA1','TOMAS1');
+          or is_demo = true)
+     and coalesce(code,'') not in ('JUANA1','QUIJAN','KAHLO1','FRANK1',
+                                   'PETER1','WINKLE','ELENA1','TOMAS1');
 
 -- Los ocho quedan marcados como ejemplo en la BASE, no sólo por el
 -- correo: is_demo es lo que mira dmEsDemo primero y es más confiable.
