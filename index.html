@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod273-ed97f2ce">
+<link rel="stylesheet" href="css/styles.css?v=mod274-ed97f2ce">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod273-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod273-081c5488"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod273-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod273-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod273-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod274-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod274-081c5488"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod274-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod274-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod274-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod273';
+const APP_VERSION='mod274';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -17184,7 +17184,21 @@ async function showDoctorHome(){const _mn=document.getElementById('main-nav');if
 // se llama desde otros caminos, el `const` todavía no se había inicializado
 // y tiraba un TDZ que se tragaba el catch. La siembra no corría nunca salvo
 // que el profesional hubiera abierto antes la pestaña Pacientes.
-const DM_CODIGOS_DEMO = ['KAFKA1','CURIE1','PETER1','KAHLO1','WINKLE'];
+// Los seis que se le vinculan a un profesional la primera vez que entra.
+// Cubren seis mecanismos distintos sin repetir ninguno, que es lo máximo
+// que se aprende de una lista de ejemplo:
+//
+//   CURIE1  insomnio mixto · apnea · clonazepam irregular
+//   JUANA1  insomnio de conciliación · estudiante
+//   KAHLO1  piernas inquietas · dolor crónico · ferritina baja
+//   PETER1  cronodisrupción: duerme BIEN pero a destiempo
+//   ELENA1  buen dormidor — el control, y el que muestra que la app
+//           NO sobrediagnostica
+//   TOMAS1  insomnio de mantenimiento
+//
+// Los seis tienen 8 semanas de diario cargadas (SQL-demos-8-semanas.sql) y
+// todos llevan el cartel EJEMPLO en el listado.
+const DM_CODIGOS_DEMO = ['CURIE1','JUANA1','KAHLO1','PETER1','ELENA1','TOMAS1'];
 
 function showDrTab(tab,el){
   // Update bottom nav (uses original tab name for active state)
@@ -17729,7 +17743,20 @@ window.dmQuitarDemos = dmQuitarDemos;
 function dmEsDemo(u){
   if(!u) return false;
   if(u.is_demo === true) return true;
-  return /\.demo@dormetria\.com$/i.test(String(u.email||''));
+  // Dos familias de cuentas demo, y este patrón solo reconocía una:
+  //
+  //   marta.demo@dormetria.com     ← los cinco viejos · SÍ reconocía
+  //   marie.curie@demo.dormetria.com ← los trece reales · NO reconocía
+  //
+  // El patrón pedía ".demo@" y los trece tienen "@demo.". Resultado: Marie
+  // Curie, Peter Pan y Frida Kahlo aparecían en el panel de un profesional
+  // nuevo SIN el cartel de EJEMPLO, indistinguibles de un paciente real.
+  // En una app clínica eso no es un detalle de etiquetado.
+  //
+  // Mismo criterio que dmEsCuentaDemo, que ya se había arreglado para las
+  // estadísticas: cualquier subdominio de dormetria.com.
+  const e = String((u && u.email) || u || '').toLowerCase();
+  return /\.demo@dormetria\.com$/.test(e) || /@([a-z0-9-]+\.)*demo\.dormetria\.com$/.test(e);
 }
 
 function formatPatientName(u){

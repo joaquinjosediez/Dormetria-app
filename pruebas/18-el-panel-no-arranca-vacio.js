@@ -15,9 +15,16 @@ const r = C.crearReporte('El panel no arranca vacío');
 
 const html = C.leerHtml();
 
-r.seccion('Los cinco ejemplos:');
+r.seccion('Los seis ejemplos:');
 
-['KAFKA1','CURIE1','PETER1','KAHLO1','WINKLE'].forEach(function(cod){
+// La lista cambió en mod274, para grabar los videos. Los seis que quedaron
+// cubren seis mecanismos distintos y TODOS tienen 8 semanas de diario
+// cargadas: un ejemplo con tres noches no muestra ninguna funcionalidad.
+// Salieron Kafka (insomnio, repetía con Juana) y Rip Van Winkle
+// (narcolepsia: el motor no la auto-marca a propósito, así que su ficha
+// no enseñaba nada que el diario pudiera mostrar).
+// El criterio de cada uno está escrito arriba de DM_CODIGOS_DEMO.
+['CURIE1','JUANA1','KAHLO1','PETER1','ELENA1','TOMAS1'].forEach(function(cod){
   r.ok(html.indexOf("'" + cod + "'") >= 0, 'está el código ' + cod);
 });
 
