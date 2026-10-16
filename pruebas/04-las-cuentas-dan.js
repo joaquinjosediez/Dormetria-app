@@ -61,7 +61,28 @@ ctx.__reg = noches;
 const reg = corr('computeSleepRegularity(__reg)');
 r.ok(reg && reg.score >= 90, 'horarios idénticos dan regularidad máxima',
      reg ? reg.score + ' · ' + reg.label : 'sin resultado');
-r.ok(reg && reg.label === 'Excelente', 'y la palabra acompaña', reg && reg.label);
+// La palabra sale del puntaje, con el mismo vocabulario que los otros dos
+// pilares. Antes computeSleepRegularity tenía su propia escala
+// ("Excelente/Muy buena/Buena/..."), atada a los cortes de SD y no al
+// puntaje, y eso ponía REGULARIDAD 66 % · "Buena" en verde al lado de
+// FRAGMENTACIÓN 96 % · "Muy bien".
+r.ok(reg && reg.label === 'Muy bien', 'y la palabra acompaña', reg && reg.label);
+r.ok(reg && reg.label === corr('dmRotuloPilar(' + reg.score + ')'),
+     'y sale del puntaje, no de una segunda escala de palabras');
+// El caso que lo hizo visible: SD del punto medio de 54 min.
+const irreg = [];
+for (let i = 0; i < 14; i++) {
+  const d = new Date(2026, 6, 1 + i);
+  // ±54 min alrededor de medianoche, alternando.
+  const h = (i % 2) ? '23:06' : '00:54';
+  irreg.push({ diary_date: d.toISOString().slice(0, 10),
+               bedtime: h, wake_time: (i % 2) ? '07:06' : '08:54', sleep_minutes: 460 });
+}
+ctx.__irreg = irreg;
+const ri = corr('computeSleepRegularity(__irreg)');
+r.ok(ri && ri.label !== 'Buena',
+     'y una SD del punto medio de casi una hora ya no se llama "Buena"',
+     ri ? ri.score + ' % · ' + ri.label + ' · SD ' + ri.sd_midpoint_min + ' min' : 'sin resultado');
 
 const caos = [];
 for (let i = 0; i < 14; i++) {

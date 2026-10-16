@@ -226,16 +226,26 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
     return orientacion;
   }
 
-  const conciliacion  = metrics.latenciaMedia > 30;
+  // Promedio O frecuencia. Ver el comentario de MIN_FREC en calcularMetricas:
+  // el promedio esconde al paciente que tiene cuatro noches malas y tres
+  // buenas, que es justamente el que cumple el criterio.
+  const _frecLat  = metrics.frecLatAlta;
+  const _frecWaso = metrics.frecWasoAlto;
+  const _UMBRAL   = 3 / 7;
+  const conciliacion  = metrics.latenciaMedia > 30 ||
+                        (_frecLat != null && _frecLat >= _UMBRAL);
   // El corte de WASO ≥31 min (Lichstein 2003) vale para WASO MEDIDO. Cuando
   // la vigilia sale de una resta —ventana hasta despertarse menos latencia
   // menos sueño—, el numero arrastra el error de las tres cifras que lo
   // componen, y 31 contra 30 no distingue nada. Para etiquetar mantenimiento
   // sobre un valor derivado se pide el doble del corte: por debajo de eso la
   // lectura cae en "alteraciones leves", que es lo que de verdad se sabe.
+  // La frecuencia sólo cuenta cuando el WASO está REGISTRADO: sobre un valor
+  // derivado de una resta, contar noches es contar errores de redondeo.
   const mantenimiento = metrics.wasoEsDerivado
     ? metrics.vigiliaIntrasueño > 60
-    : metrics.vigiliaIntrasueño > 30;
+    : (metrics.vigiliaIntrasueño > 30 ||
+       (_frecWaso != null && _frecWaso >= _UMBRAL));
   const nNoches = diarySlice.length;
   // "N noches registradas" se leía como el total del paciente y no coincidía
   // con la pestaña Diario. Se aclara que es la ventana de análisis.
@@ -243,7 +253,20 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
   // dice. Un número presentado igual que los demás se lee como medido.
   const _vig = Math.round(metrics.vigiliaIntrasueño) +
     (metrics.wasoEsDerivado ? ' min (estimada: no registró despertares)' : ' min');
-  const cifras = `Latencia ~${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ~${_vig}, eficiencia ${Math.round(metrics.eficiencia)}%. Promedios de las últimas ${nNoches} noches.`;
+  // Cuando lo que dispara la lectura es la FRECUENCIA y no el promedio, hay
+  // que decirlo: si no, quien lee ve "vigilia ~28 min" debajo de un título
+  // que dice insomnio de mantenimiento y concluye que la app se equivocó.
+  const _porFrec = [];
+  if (_frecLat != null && _frecLat >= _UMBRAL && metrics.latenciaMedia <= 30) {
+    _porFrec.push(`${metrics.nLatAlta} de ${metrics.nLat} noches con latencia mayor a 30 min`);
+  }
+  if (_frecWaso != null && _frecWaso >= _UMBRAL && metrics.vigiliaIntrasueño <= 30) {
+    _porFrec.push(`${metrics.nWasoAlto} de ${metrics.nWaso} noches con más de 30 min despierta`);
+  }
+  const _frase = _porFrec.length
+    ? ` El promedio queda bajo el umbral, pero el criterio también es de frecuencia (≥3 noches por semana, Lichstein 2003): ${_porFrec.join(' y ')}.`
+    : '';
+  const cifras = `Latencia ~${Math.round(metrics.latenciaMedia)} min, vigilia intrasueño ~${_vig}, eficiencia ${Math.round(metrics.eficiencia)}%. Promedios de las últimas ${nNoches} noches.${_frase}`;
 
   if (conciliacion && mantenimiento) {
     orientacion.texto = 'Compatible con patrón de insomnio mixto';
@@ -689,6 +712,22 @@ function dmMetricasDiario(entries) {
   };
 
   const latencias = [], sueños = [], tibs = [], wasos = [], despertares = [], ventanas = [];
+  // ── El criterio de FRECUENCIA, que faltaba ───────────────────────────
+  //
+  // El comentario de más arriba cita Lichstein 2003 completo —"latencia o
+  // WASO ≥31 min, ≥3 noches por semana"— y el código usaba sólo la primera
+  // mitad: comparaba el PROMEDIO contra el umbral. Un promedio esconde
+  // exactamente el caso que importa.
+  //
+  // Catorce noches: diez de 10 min de vigilia y cuatro de 75. El promedio
+  // da 28,6 y el motor contesta "dentro de límites normales". Pero cuatro
+  // noches de 75 minutos despierto por semana ES el cuadro, y el actograma
+  // al lado lo muestra. De ahí la discordancia entre lo que se ve y lo que
+  // se lee.
+  //
+  // La frecuencia no reemplaza al promedio: se suman. Cualquiera de los dos
+  // que dé positivo alcanza para no llamar normal a la noche.
+  let nLat = 0, nLatAlta = 0, nWaso = 0, nWasoAlto = 0;
 
   valid.forEach(e => {
     const sleep = parseInt(e.sleep_minutes) || 0;
@@ -696,11 +735,17 @@ function dmMetricasDiario(entries) {
 
     if (e.sleep_latency_mins != null && e.sleep_latency_mins !== '') {
       const lat = parseInt(e.sleep_latency_mins);
-      if (!isNaN(lat)) latencias.push(lat);
+      if (!isNaN(lat)) { latencias.push(lat); nLat++; if (lat > 30) nLatAlta++; }
     }
 
     const waso = parseInt(e.wake_in_bed_mins);
     if (!isNaN(waso) && waso > 0) wasos.push(waso);
+    // Para la frecuencia cuenta TODA noche con el dato cargado, también las
+    // de cero: si no, el denominador son sólo las malas y la proporción da
+    // siempre 100 %.
+    if (e.wake_in_bed_mins != null && e.wake_in_bed_mins !== '' && !isNaN(waso)) {
+      nWaso++; if (waso > 30) nWasoAlto++;
+    }
 
     const desp = parseInt(e.awakenings);
     if (!isNaN(desp)) despertares.push(desp);
@@ -788,6 +833,13 @@ function dmMetricasDiario(entries) {
   // residuo aritmético no es lo mismo que una apoyada en lo que la persona
   // anotó todas las mañanas.
   const wasoEsDerivado = wasos.length === 0 && wasoDerivado > 0;
+  // ≥3 de cada 7 noches es el criterio de frecuencia (Lichstein 2003; la
+  // ICSD-3 y el DSM-5 usan el mismo umbral de 3 noches por semana). Se pide
+  // un mínimo de 5 noches con el dato: con tres, una sola mala noche ya da
+  // 33 % y eso no es una frecuencia, es una noche.
+  const MIN_FREC = 5, UMBRAL_FREC = 3 / 7;
+  const frecLatAlta  = nLat  >= MIN_FREC ? nLatAlta  / nLat  : null;
+  const frecWasoAlto = nWaso >= MIN_FREC ? nWasoAlto / nWaso : null;
 
   const despertaresMedia = despertares.length
     ? Math.round(prom(despertares) * 10) / 10
@@ -838,6 +890,7 @@ function dmMetricasDiario(entries) {
 
   return { latenciaMedia, vigiliaIntrasueño, wasoEsDerivado, eficiencia, despertaresMedia, tst, tib,
            nochesValidas: valid.length,
+           frecLatAlta, frecWasoAlto, nLatAlta, nLat, nWasoAlto, nWaso,
            siestaNoches, siestaDias, siestaFrecPct, siestaMediaMin, siestaCantMedia, tst24 };
 }
 

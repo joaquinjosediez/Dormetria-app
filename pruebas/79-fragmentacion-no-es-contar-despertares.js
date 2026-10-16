@@ -15,22 +15,51 @@
 // la lectura, falsa. Y ese pilar entra en el score compuesto, así que
 // el error se propagaba al número grande de la pantalla.
 //
-// Y estaba DUPLICADO: una copia para el paciente y otra para el
-// profesional. Mientras sean dos, las dos tienen que decir lo mismo.
+// Y estaba TRIPLICADO. mod278 arregló dos copias —la global y la anidada
+// del panel del paciente— y dejó la tercera, la de la vista del
+// profesional, que seguía siendo `20 - despertares*5` pelado. Por eso la
+// pestaña "Diario sueño" mostraba FRAGMENTACIÓN 96 % en una paciente cuyo
+// actograma estaba lleno de cortes: el mismo paciente puntuaba distinto
+// según la pestaña. mod280 lo deja en UNA función.
 
 const C = require('./comun');
+const vm = require('vm');
 const r = C.crearReporte('Fragmentación no es contar despertares');
 
 const app = C.leerApp();
 
-r.seccion('Las dos copias del cálculo están corregidas:');
+r.seccion('El cálculo existe UNA vez:');
 
 r.ok(!/const frag=Math\.max\(0,20-awk\*5\);/.test(app),
-     'no queda ninguna que cuente solo despertares');
-r.ok((app.match(/fragWaso - Math\.max\(0, awk-2\)\*2/g) || []).length === 2,
-     'y las dos usan la misma fórmula');
-r.ok((app.match(/const fragCant=Math\.max\(0,20-awk\*5\);/g) || []).length === 2,
-     'el conteo sigue existiendo, como una de las dos piezas');
+     'no queda ninguna copia que cuente solo despertares');
+r.ok(!/const frag=Math\.max\(0,20-\(e\.awakenings\|\|0\)\*5\)/.test(app),
+     'ni la de la vista del profesional, que fue la última en caer');
+r.ok((app.match(/fragWaso - Math\.max\(0, awk-2\)\*2/g) || []).length === 1,
+     'la fórmula está escrita una sola vez');
+r.ok((app.match(/function dmFragPuntos\(/g) || []).length === 1,
+     'en dmFragPuntos');
+// Tres lugares la consumen: las dos computePillarScore y el panel del
+// profesional. Si aparece un cuarto, que la llame a ella.
+r.ok((app.match(/dmFragPuntos\(e\)/g) || []).length >= 3,
+     'y los tres lugares que la necesitan la llaman', 
+     (app.match(/dmFragPuntos\(e\)/g) || []).length + ' llamadas');
+
+r.seccion('El dibujo y el puntaje salen de los mismos despertares:');
+
+// El actograma dibuja los cortes naranjas desde awakening_detail; el pilar
+// puntuaba desde las columnas awakenings / wake_in_bed_mins. Cuando las dos
+// fuentes no coinciden —importados, registros viejos, carga a mano— se veía
+// una noche rota y la tarjeta decía 96 %.
+r.ok(/function dmFragDatos\(/.test(app), 'hay una reconciliación de las dos fuentes');
+r.ok(/awk = Math\.max\(awk, det\.length\)/.test(app),
+     'y se toma el PEOR de los dos conteos, no el de la columna');
+r.ok(/_awakeningsByRow/.test(app) && /awakening_detail/.test(app),
+     'que es la misma fuente de la que el actograma dibuja los cortes');
+// El subtítulo de la tarjeta tiene que salir de esos mismos números.
+r.ok(/const _fd=dmFragDatos\(e\); _awakSum\+=_fd\.awk/.test(app),
+     'y el promedio que se muestra debajo del pilar también');
+r.ok(/min despierto/.test(app),
+     'con los minutos despierto a la vista, que son los que mandan el puntaje');
 
 r.seccion('El corte es el que la app ya usa en todo lo demás:');
 
@@ -79,6 +108,39 @@ r.ok(frag(3, 20) > frag(6, 12),
 // Sin el dato no se inventa una penalización: se cae al conteo, como antes.
 r.ok(frag(0, null) === 100 && frag(2, null) === 50,
      'sin dato de WASO se usa el conteo, como antes');
+
+r.seccion('Y corriendo la función de verdad, no una copia de la prueba:');
+
+// Reimplementar la fórmula acá arriba sirve para leerla, pero una prueba que
+// solo se compara consigo misma no agarra nada. Se evalúa la app y se le
+// pregunta a dmFragPuntos.
+const ctx = C.appEvaluada();
+r.ok(!!ctx, 'la app se evalúa entera');
+if (ctx) {
+  const real = function (e) {
+    ctx.__e = e;
+    return Math.round(vm.runInContext('dmFragPuntos(__e)', ctx) / 20 * 100);
+  };
+  [[0, 0], [1, 8], [1, 60], [1, 29], [1, 120], [6, 12], [3, 20]].forEach(function (c) {
+    const mio = frag(c[0], c[1]);
+    const suyo = real({ awakenings: c[0], wake_in_bed_mins: c[1] });
+    r.ok(mio === suyo, '  ' + c[0] + ' despertares / ' + c[1] + ' min → ' + suyo + ' %',
+         mio === suyo ? '' : 'la prueba dice ' + mio);
+  });
+  // La reconciliación, con la función de verdad.
+  const soloColumnas = real({ awakenings: 0, wake_in_bed_mins: 0 });
+  const conDetalle = real({ awakenings: 0, wake_in_bed_mins: 0,
+    awakening_detail: JSON.stringify([{ time: '02:10', duration: 35 },
+                                      { time: '04:30', duration: 28 }]) });
+  r.ok(soloColumnas === 100, 'columnas en cero: 100 %', soloColumnas + '%');
+  r.ok(conDetalle < 60,
+       'pero con dos despertares largos en awakening_detail ya no', conDetalle + '%');
+  // Y al revés: el detalle no puede MEJORAR una noche mala.
+  const peorGana = real({ awakenings: 4, wake_in_bed_mins: 90,
+                          awakening_detail: JSON.stringify([{ time: '03:00', duration: 2 }]) });
+  r.ok(peorGana <= real({ awakenings: 4, wake_in_bed_mins: 90 }),
+       'y un detalle pobre no puede blanquear lo que dicen las columnas');
+}
 
 r.seccion('Lo que esto arregla aguas abajo:');
 

@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod279-e5a3b0cb">
+<link rel="stylesheet" href="css/styles.css?v=mod280-57ecf716">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -88,7 +88,7 @@
       </div>
       <div id="dm-btn-label">Empezar</div>
     </div>
-    <div id="dm-login" onclick="showConsentOrLogin()" role="button" tabindex="0">Ya tengo cuenta · <span>Ingresar</span></div>
+    <div id="dm-login" onclick="showConsentOrLogin()" role="button" tabindex="0">Ya tengo cuenta <span class="dm-sep">·</span> <span>Ingresar</span></div>
     <div id="dm-soy-pro">Soy profesional de la salud — <span onclick="dmEmpezar('doctor')">Crear cuenta</span></div>
   </div>
 </div>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod279-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod279-8b40f5d3"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod279-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod279-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod279-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod280-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod280-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod280-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=mod280-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=mod280-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod279';
+const APP_VERSION='mod280';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -3062,6 +3062,62 @@ function toggleActoLayer(name, btnEl){
 }
 function timeToOffset(t){if(!t)return null;const p=t.split(':').map(Number);const h=p[0],m=p[1]||0;return(h>=12?h-12:h+12)+m/60;}
 function meanStd(arr){if(!arr||!arr.length)return{mean:0,std:0};const mean=arr.reduce((a,b)=>a+b,0)/arr.length;const variance=arr.reduce((a,b)=>a+(b-mean)*(b-mean),0)/arr.length;return{mean:mean,std:Math.sqrt(variance)};}
+// ── Fragmentación: un solo cálculo, en un solo lugar ──────────────────
+//
+// Esto existía TRES veces: dos dentro de computePillarScore (la global y la
+// anidada del panel) y una tercera suelta en la vista del profesional, que
+// era `20 - despertares*5` a secas. mod278 arregló las dos primeras y la
+// tercera quedó atrás, así que el mismo paciente puntuaba distinto según la
+// pestaña que mirabas. Es el mismo patrón que ya pasó con el TIB (tres
+// copias) — mientras el cálculo esté escrito más de una vez, la próxima
+// corrección va a dejar una afuera.
+//
+// Devuelve 0–20. Mide cuántas veces Y cuánto tiempo:
+//   · Los cortes del WASO son los que la app usa en todo lo demás. ≥30 min
+//     es el criterio cuantitativo de insomnio de mantenimiento (Lichstein
+//     et al. 2003, Behav Res Ther). Por debajo de 10 min no se penaliza:
+//     despertarse un momento y volver a dormirse es fisiológico.
+//   · Manda el WASO, no el conteo: un despertar breve no puede bajar el
+//     pilar a 75 %. El número pesa recién desde el tercero, 2 puntos cada
+//     uno, porque seis despertares de dos minutos son pocos minutos y aun
+//     así son una noche rota.
+//
+// Y antes de nada reconcilia las DOS fuentes que la app guarda por separado:
+// las columnas `awakenings` / `wake_in_bed_mins` y el JSON
+// `awakening_detail`, que es de donde el actograma dibuja los cortes
+// naranjas. Cuando no coinciden —datos importados, registros viejos, una
+// carga a mano— el actograma mostraba una noche rota y la tarjeta decía
+// 96 %. Se toma el peor de los dos: si el dibujo muestra cuatro despertares,
+// el puntaje no puede estar calculado sobre cero.
+function dmFragDatos(e){
+  let awk = Number(e && e.awakenings) || 0;
+  const _w = Number(e && e.wake_in_bed_mins);
+  let waso = (e && e.wake_in_bed_mins!=null && e.wake_in_bed_mins!=='' && !isNaN(_w))
+               ? Math.max(0,_w) : null;
+  try{
+    let det = e && e.awakening_detail;
+    if(typeof det === 'string' && det) det = JSON.parse(det);
+    if(Array.isArray(det) && det.length){
+      awk = Math.max(awk, det.length);
+      const suma = det.reduce(function(a,x){ return a + (parseFloat(x && x.duration) || 0); }, 0);
+      if(suma > 0) waso = (waso==null) ? suma : Math.max(waso, suma);
+    }
+  }catch(_){}
+  return { awk: awk, waso: waso };
+}
+function dmFragPuntos(e){
+  const d = dmFragDatos(e);
+  const awk = d.awk, w = d.waso;
+  const fragCant = Math.max(0, 20 - awk*5);
+  if(w == null) return fragCant;          // sin el dato de duración, solo el conteo
+  let fragWaso;
+  if(w<=10)       fragWaso=20;
+  else if(w<=30)  fragWaso=20-(w-10)*(6/20);   // 20 → 14 en el corte de Lichstein
+  else if(w<=60)  fragWaso=14-(w-30)*(6/30);   // 14 → 8
+  else if(w<=120) fragWaso=8-(w-60)*(8/60);    // 8  → 0
+  else            fragWaso=0;
+  return Math.max(0, fragWaso - Math.max(0, awk-2)*2);
+}
 function computePillarScore(e, ageYears){
   // Misma corrección que la versión de la vista del profesional: banda por
   // edad y siestas incluidas en los menores de 6.
@@ -3084,36 +3140,7 @@ function computePillarScore(e, ageYears){
     else qty=0;
   }
   qty=Math.max(0,Math.min(50,qty));
-  // Misma corrección que en la otra copia de este cálculo: la
-  // fragmentación mira cuántas veces Y cuánto tiempo. Ver el comentario
-  // largo allá; el corte de WASO ≥30 min es Lichstein 2003.
-  //
-  // (Que esto exista dos veces es el problema de fondo. Mientras sean
-  // dos, las dos tienen que decir lo mismo: una tarjeta que puntúa
-  // distinto del lado del paciente que del profesional es peor que
-  // cualquiera de las dos versiones.)
-  const awk=e.awakenings||0;
-  const fragCant=Math.max(0,20-awk*5);
-  const _w=Number(e.wake_in_bed_mins);
-  let frag=fragCant;
-  if(e.wake_in_bed_mins!=null && e.wake_in_bed_mins!=='' && !isNaN(_w)){
-    const w=Math.max(0,_w);
-    let fragWaso;
-    if(w<=10)       fragWaso=20;
-    else if(w<=30)  fragWaso=20-(w-10)*(6/20);
-    else if(w<=60)  fragWaso=14-(w-30)*(6/30);
-    else if(w<=120) fragWaso=8-(w-60)*(8/60);
-    else            fragWaso=0;
-    // Manda el WASO, no el conteo. Con `min` de los dos, un solo
-    // despertar breve —que es fisiologico— bajaba el pilar a 75 %,
-    // porque el conteo resta 5 puntos por despertar sin mirar si
-    // duro ocho minutos o una hora.
-    //
-    // El numero sigue pesando, pero solo cuando es alto: desde el
-    // tercer despertar resta 2 puntos cada uno. Seis despertares de
-    // dos minutos son pocos minutos y aun asi son una noche rota.
-    frag=Math.max(0, fragWaso - Math.max(0, awk-2)*2);
-  }
+  const frag = dmFragPuntos(e);
   return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
 }
 function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
@@ -3144,6 +3171,31 @@ window.dmClaro = dmClaro;
 // naranja de advertencia y al lado escribia "Buena". Dos mensajes opuestos en
 // la misma tarjeta. Ahora el color se deduce de la palabra que se va a
 // mostrar, asi que no pueden discrepar nunca mas.
+// ── La palabra que acompaña a un puntaje de pilar ─────────────────────
+//
+// Había DOS escalas de palabras. Los pilares de cantidad y fragmentación
+// usaban ésta; la regularidad traía la suya desde computeSleepRegularity
+// ("Excelente / Muy buena / Buena / Regular / Baja / Muy baja"), con los
+// cortes puestos sobre la SD del punto medio en vez de sobre el puntaje.
+// Resultado visible en pantalla: REGULARIDAD 66 % · "Buena", en verde, al
+// lado de FRAGMENTACIÓN 96 % · "Muy bien". Dos números que se diferencian
+// en treinta puntos y dos palabras que se parecen.
+//
+// Y el 66 % no es una buena regularidad: sale de una SD del punto medio de
+// 54 min. El umbral que se usa para irregularidad clínicamente relevante
+// está en 60 min, y la mediana poblacional ronda los 30–40 (Liang 2023,
+// NHANES n=9.981). 54 min es la zona intermedia, no la buena.
+//
+// Una sola función, un solo vocabulario: la palabra no puede volver a
+// discrepar del número porque sale del número.
+function dmRotuloPilar(v){
+  if(v==null || isNaN(v)) return 'Sin datos';
+  return v>=90 ? 'Muy bien'
+       : v>=80 ? 'Bien'
+       : v>=70 ? 'Mejorable'
+       : v>=60 ? 'Regular'
+       : 'Requiere atención';
+}
 var DM_ESTADOS = {
   'excelente':'#14532d','muy bien':'#14532d','muy buena':'#14532d',
   'bien':'#2d9e6b','buena':'#2d9e6b',
@@ -3331,28 +3383,20 @@ function computeSleepRegularity(entries){
   // Cortes recalibrados para POBLACIÓN CLÍNICA (gente que consulta por sueño, no
   // muestra sana). Corrido +10–15 min respecto a los percentiles NHANES puros.
   // Mantenemos las etiquetas originales (Excelente/Muy buena/Buena/Regular/Baja/Muy baja).
-  let score, label;
+  let score;
   const sdM = sdMidpointMin;
-  if(sdM < 30){
-    score = 90 + (30 - sdM) * (10/30);    // 90–100
-    label = 'Excelente';
-  } else if(sdM < 45){
-    score = 75 + (45 - sdM) * 1.0;        // 75–90
-    label = 'Muy buena';
-  } else if(sdM < 60){
-    score = 60 + (60 - sdM) * 1.0;        // 60–75
-    label = 'Buena';
-  } else if(sdM < 90){
-    score = 40 + (90 - sdM) * (20/30);    // 40–60
-    label = 'Regular';
-  } else if(sdM < 120){
-    score = 20 + (120 - sdM) * (20/30);   // 20–40
-    label = 'Baja';
-  } else {
-    score = Math.max(0, 20 - (sdM - 120) / 6);  // 0-20
-    label = 'Muy baja';
-  }
+  if(sdM < 30)        score = 90 + (30 - sdM) * (10/30);    // 90–100
+  else if(sdM < 45)   score = 75 + (45 - sdM) * 1.0;        // 75–90
+  else if(sdM < 60)   score = 60 + (60 - sdM) * 1.0;        // 60–75
+  else if(sdM < 90)   score = 40 + (90 - sdM) * (20/30);    // 40–60
+  else if(sdM < 120)  score = 20 + (120 - sdM) * (20/30);   // 20–40
+  else                score = Math.max(0, 20 - (sdM - 120) / 6);
   score = Math.max(0, Math.min(100, Math.round(score)));
+  // La palabra sale del puntaje, con el mismo vocabulario que los otros dos
+  // pilares. Antes esta función tenía su propia escala de palabras atada a
+  // los cortes de SD, y por eso 66 % salía "Buena" en verde al lado de un
+  // 96 % "Muy bien". Ver dmRotuloPilar.
+  const label = dmRotuloPilar(score);
 
   return {
     score: score,
@@ -6497,47 +6541,9 @@ function updatePillarBars(entries){
       else qty=0;
     }
     qty=Math.max(0,Math.min(50,qty));
-    // ── Fragmentación: cuántas veces Y cuánto tiempo ──────────────
-    //
-    // Era `20 - despertares*5`: contaba los despertares e ignoraba su
-    // duración. La propia app argumenta lo contrario tres tarjetas más
-    // abajo, en el pie del histograma de WASO: "tres despertares de un
-    // minuto y uno de una hora no son lo mismo".
-    //
-    // El resultado se veía en pacientes reales: FRAGMENTACIÓN 100 % ·
-    // "Muy bien" en alguien con 0,3 despertares por noche de una hora
-    // cada uno. El número era correcto y la lectura, falsa.
-    //
-    // Ahora se calculan los dos y se toma EL PEOR. Si cualquiera de los
-    // dos dice que la noche está fragmentada, lo está: ni muchos
-    // despertares cortos ni uno solo larguísimo pueden pasar por buenos.
-    //
-    // Los cortes del WASO son los que la app ya usa en todo lo demás:
-    // ≥30 min es el criterio cuantitativo de insomnio de mantenimiento
-    // (Lichstein et al. 2003, Behav Res Ther). Por debajo de 10 min no
-    // se penaliza: despertarse un momento y volver a dormirse es normal.
-    const awk=e.awakenings||0;
-    const fragCant=Math.max(0,20-awk*5);
-    const _w=Number(e.wake_in_bed_mins);
-    let frag=fragCant;
-    if(e.wake_in_bed_mins!=null && e.wake_in_bed_mins!=='' && !isNaN(_w)){
-      const w=Math.max(0,_w);
-      let fragWaso;
-      if(w<=10)      fragWaso=20;                       // normal
-      else if(w<=30) fragWaso=20-(w-10)*(6/20);         // 20 → 14 en el corte
-      else if(w<=60) fragWaso=14-(w-30)*(6/30);         // 14 → 8
-      else if(w<=120)fragWaso=8-(w-60)*(8/60);          // 8  → 0
-      else           fragWaso=0;
-      // Manda el WASO, no el conteo. Con `min` de los dos, un solo
-      // despertar breve —que es fisiologico— bajaba el pilar a 75 %,
-      // porque el conteo resta 5 puntos por despertar sin mirar si
-      // duro ocho minutos o una hora.
-      //
-      // El numero sigue pesando, pero solo cuando es alto: desde el
-      // tercer despertar resta 2 puntos cada uno. Seis despertares de
-      // dos minutos son pocos minutos y aun asi son una noche rota.
-      frag=Math.max(0, fragWaso - Math.max(0, awk-2)*2);
-    }
+    // Fragmentacion: ver dmFragPuntos, que es el unico lugar donde
+    // esto se calcula.
+    const frag = dmFragPuntos(e);
     return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
   }
   const _edadPil=(function(){ const d=(S.viewData&&S.viewData.dob)||(S.user&&S.user.dob); return d?Math.floor((Date.now()-new Date(d))/31557600000):null; })();
@@ -6668,7 +6674,7 @@ function updatePillarBars(entries){
     cardsOwn=[{label:'Cantidad',val:avgQtyP,color:'#2d9e6b',sub:_optOwn.lo+'–'+_optOwn.hi+'h recomendado'},
      {label:'Fragmentación',val:avgFragP,color:'#0e7490',sub:'Despertares'},
      {label:'Regularidad',val:avgRegP,color:'#e67e22',statusOverride:(_localRegResult&&_localRegResult.label)||null,sub:_localRegResult.sd_midpoint_min!==null?('Variación: ±'+_localRegResult.sd_midpoint_min+' min'):'Variabilidad del horario'}
-    ].map(p=>{const status=p.statusOverride||(p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
+    ].map(p=>{const status=p.statusOverride||dmRotuloPilar(p.val);
       const c=dmClaro(dmColorEstado(status,pillarColor(p.val)));
       const pc=dmClaro(p.color);
       return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.16);border-radius:12px;padding:10px 12px;border-top:3px solid '+pc+'">'+
@@ -15066,7 +15072,7 @@ async function showDiaryTab_(tab){
               // palabras distintas en la misma pantalla. Manda la clínica.
               {label:'Regularidad',val:avgRegP,icon:'',color:'#e67e22',sub: regResult.sd_midpoint_min!==null ? ('Variación: ±'+regResult.sd_midpoint_min+' min') : 'Horario', statusOverride: (regResult && regResult.label) || null},
             ].map(p=>{
-              const status = p.statusOverride || (p.val>=90?'Muy bien':p.val>=80?'Bien':p.val>=70?'Mejorable':p.val>=60?'Regular':'Requiere atención');
+              const status = p.statusOverride || dmRotuloPilar(p.val);
               // Estas tarjetas van SIEMPRE sobre el verde oscuro del paciente:
               // los colores clinicos estan pensados para papel blanco y hay que
               // aclararlos, o el texto queda en 2:1 contra el fondo.
@@ -21639,7 +21645,7 @@ async function showDrPTab_(tab){
           }
           return m;
         };
-        let _awakSum=0, _awakN=0;
+        let _awakSum=0, _awakN=0, _wasoSum=0, _wasoN=0;
         const _hrs24=[];
         const pillarData=sorted.map((e,i)=>{
           const hrs=_minutos24(e)/60;
@@ -21647,14 +21653,22 @@ async function showDrPTab_(tab){
           const qty=(typeof qtyScoreForMeses==='function' && _mesesPil!=null)
                       ? qtyScoreForMeses(hrs, _mesesPil)
                       : qtyScoreForAge(hrs, _ageForPillar);
-          const frag=Math.max(0,20-(e.awakenings||0)*5);
-          if(e.sleep_minutes){ _awakSum+=(e.awakenings||0); _awakN++; }
+          // Esta linea era `20 - despertares*5`: el unico de los tres
+          // lugares que se quedo sin el WASO. Ver dmFragPuntos.
+          const frag=dmFragPuntos(e);
+          // El promedio que se muestra debajo del pilar tiene que salir de
+          // los MISMOS numeros que lo puntuan, incluida la reconciliacion
+          // con awakening_detail. Si no, la tarjeta dice 0,6 despertares y
+          // el actograma de al lado dibuja cuatro.
+          if(e.sleep_minutes){ const _fd=dmFragDatos(e); _awakSum+=_fd.awk; _awakN++;
+            if(_fd.waso!=null){ _wasoSum+=_fd.waso; _wasoN++; } }
           const groupReg = regResult.score !== null ? regResult.score : 0;
           const nightReg = (regResult.cpd_per_night && regResult.cpd_per_night[i] !== undefined)
                            ? regResult.cpd_per_night[i] : groupReg;
           return{qty:Math.round(qty/50*100),frag:Math.round(frag/20*100),reg: groupReg, regNight: nightReg};
         });
         const _awakAvg = _awakN?(_awakSum/_awakN):0;
+        const _wasoAvg = _wasoN?(_wasoSum/_wasoN):null;
         const lastN=Math.min(pillarData.length,7);const rec=pillarData.slice(-lastN);
         const avgQtyP=Math.round(rec.reduce((a,p)=>a+p.qty,0)/lastN);
         const avgFragP=Math.round(rec.reduce((a,p)=>a+p.frag,0)/lastN);
@@ -21799,8 +21813,8 @@ async function showDrPTab_(tab){
               // "Buena" abajo.
               const st = (p.l==='Regularidad' && regResult && regResult.label)
                 ? regResult.label
-                : (p.v>=90?'Muy bien':p.v>=80?'Bien':p.v>=70?'Mejorable':p.v>=60?'Regular':'Requiere atención');
-              const sub=({Cantidad:_optH.lo+'–'+_optH.hi+'h recomendado',Fragmentación:(_awakAvg>0?_awakAvg.toFixed(1)+' despertares/noche':'Sin despertares registrados'),Regularidad:(regResult.sd_midpoint_min!==null?('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')):'Variabilidad del horario')})[p.l]||'';
+                : dmRotuloPilar(p.v);
+              const sub=({Cantidad:_optH.lo+'–'+_optH.hi+'h recomendado',Fragmentación:((_awakAvg>0?_awakAvg.toFixed(1)+' desp/noche':'Sin despertares registrados')+(_wasoAvg!=null?' · '+Math.round(_wasoAvg)+' min despierto':'')),Regularidad:(regResult.sd_midpoint_min!==null?('SD pto medio: '+regResult.sd_midpoint_min+' min'+(regResult.sri!==null?' · SRI Phillips: '+regResult.sri:'')):'Variabilidad del horario')})[p.l]||'';
               // El color lo manda la palabra, no una segunda escala paralela.
               return pillarCard(p.l, p.v+'<span style="font-size:15px;font-weight:400;opacity:.55">%</span>', dmColorEstado(st, c), st, sub, p.pillarC);
             }).join('');

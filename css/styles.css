@@ -3150,8 +3150,13 @@ input, select, textarea{ color: inherit; }
   font-family:'Instrument Sans',sans-serif; font-size:15px; font-weight:600;
   color:rgba(244,239,229,0.92); cursor:pointer; margin-bottom:12px;
   -webkit-tap-highlight-color:transparent;
+  /* "Ya tengo cuenta" y "Ingresar" son dos cosas distintas: la primera es la
+     condicion, la segunda es la accion. Pegadas se leen como una frase sola y
+     el ojo no encuentra donde esta el verbo. */
+  gap:9px;
 }
-#dm-login span{ color:#7EC8A4; }
+#dm-login span{ color:#7EC8A4; letter-spacing:0.01em; }
+#dm-login .dm-sep{ color:rgba(244,239,229,0.38); font-weight:400; }
 #dm-login:active{ background:rgba(255,255,255,0.1); }
 
 /* El tercero sí es terciario: lo usa un profesional, una sola vez, y no
