@@ -1203,7 +1203,48 @@ input, select, textarea{ color: inherit; }
 
 /* ── LOADING ── */
 .spinner-wrap{text-align:center;padding:48px 20px;color:var(--label-2);font-size:15px;}
-.spinner{width:24px;height:24px;border:2.5px solid var(--fill-3);border-top-color:var(--ios-blue);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;}
+/* ── La espera es una luna que crece ──────────────────────────
+   Era un aro girando: el mismo de cualquier app. La marca ya tiene una
+   media luna —la "o" del wordmark— y esperar es el momento en que la
+   persona mira la pantalla sin nada que hacer, así que es donde más
+   barato sale poner algo propio.
+
+   El truco es una sola sombra INTERIOR corrida: con el desplazamiento
+   chico queda una luna fina, y al crecer el desplazamiento la sombra
+   termina cubriendo el círculo entero —luna llena—. Un elemento, dos
+   fotogramas, sin JS y sin imágenes.
+
+   El relleno va en menta y el contorno en verde noche translucido. El
+   contorno no es decorativo: sobre el crema de las pantallas claras la
+   menta sola queda cerca de 1,9:1, y un elemento de interfaz necesita
+   3:1 (WCAG 1.4.11). La línea es la que sostiene el contraste en los
+   dos fondos. */
+.spinner{
+  width:26px; height:26px; margin:0 auto 14px;
+  border-radius:50%;
+  box-shadow: inset -3px 0 0 0 #7EC8A4;
+  outline:1px solid rgba(15,40,32,0.45);
+  outline-offset:-1px;
+  animation: dmLunaCrece 1.9s ease-in-out infinite;
+}
+@keyframes dmLunaCrece{
+  0%        { box-shadow: inset -3px  0 0 0 #7EC8A4; }   /* luna fina */
+  50%       { box-shadow: inset -30px 0 0 0 #7EC8A4; }   /* llena */
+  100%      { box-shadow: inset -3px  0 0 0 #7EC8A4; }
+}
+/* Quien pidió no ver animaciones no las ve: queda la luna a medio llenar,
+   que sigue diciendo "esto está trabajando". */
+@media (prefers-reduced-motion: reduce){
+  .spinner{ animation:none; box-shadow: inset -13px 0 0 0 #7EC8A4; }
+}
+
+/* En la revisión previa a guardar, lo que falta y es OBLIGATORIO no se
+   pinta igual que lo que falta y es opcional. Sin estas dos horas la
+   noche no tiene tiempo en cama, ni eficiencia, ni barra en el
+   actograma: el ámbar de "sin completar" le quedaba corto. */
+.dm-rev-falta{
+  color:#ff8b8b; font-weight:700; font-style:normal; font-size:13.5px;
+}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes loginSlideUp{from{transform:translateY(100%);opacity:0.5}to{transform:translateY(0);opacity:1}}
 

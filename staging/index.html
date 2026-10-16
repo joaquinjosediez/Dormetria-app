@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg282-57ecf716">
+<link rel="stylesheet" href="css/styles.css?v=stg283-35dbce94">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg282-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg282-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg282-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg282-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg282-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg283-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg283-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg283-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg283-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg283-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg282';
+const APP_VERSION='stg283';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg282 \u2014 <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg283 \u2014 <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -11349,10 +11349,13 @@ function dmPintarRevision(){
     return '';
   };
   const filas=[
-    { p:1, r:'Hora de acostarte',      v:hhmm(V('d-bed')) },
+    // `obl` marca lo que sin cargar deja la noche inservible: sin estas
+    // dos horas no hay tiempo en cama, ni eficiencia, ni barra en el
+    // actograma. Se pintan en rojo, no en ámbar como lo opcional.
+    { p:1, r:'Hora de acostarte',      v:hhmm(V('d-bed')), obl:true },
     { p:1, r:'Cuánto tardaste en dormirte', v:sel('d-latency') },
     { p:2, r:'Despertares en la noche', v:desp() },
-    { p:2, r:'Hora en que te despertaste', v:hhmm(V('d-wake')) },
+    { p:2, r:'Hora en que te despertaste', v:hhmm(V('d-wake')), obl:true },
     { p:2, r:'Hora en que te levantaste',  v:hhmm(V('d-getup')) },
     { p:3, r:'Qué tan reparador fue',   v:sel('d-qual') },
     { p:3, r:'Ánimo al despertar',      v:sel('d-mood') },
@@ -11364,8 +11367,8 @@ function dmPintarRevision(){
     if(f.r==='Nota para tu profesional' && !f.v) return;   // opcional de verdad
     h+='<div class="dm-rev-fila" onclick="dmCorregirDesdeRevision('+f.p+')">'+
          '<span class="dm-rev-rot">'+f.r+'</span>'+
-         '<span class="dm-rev-val'+(f.v?'':' dm-rev-vacio')+'">'+
-           (f.v ? escHtml(f.v) : 'sin completar')+'</span>'+
+         '<span class="dm-rev-val'+(f.v?'':(f.obl?' dm-rev-falta':' dm-rev-vacio'))+'">'+
+           (f.v ? escHtml(f.v) : (f.obl ? 'falta — tocá acá' : 'sin completar'))+'</span>'+
          '<span class="dm-rev-chev">›</span>'+
        '</div>';
   });
@@ -16225,6 +16228,37 @@ async function saveDiary(){
   const _sinDormir = (String(document.getElementById('d-latency')?.value||'')==='-1');
   if(_sinDormir){
     if(!bed || !getup){ toast('Poné a qué hora te acostaste y a qué hora te levantaste'); return; }
+  }
+  // ── Sin hora de acostarse no hay noche ─────────────────────────
+  //
+  // Esto se guardaba igual. El payload salía con bedtime null, sleep_minutes
+  // null, y la noche quedaba en la serie como 00 h de sueño: sin TIB, sin
+  // eficiencia, sin barra en el actograma, y arrastrando el promedio del
+  // paciente hacia abajo. Un registro así no es un registro incompleto, es
+  // un dato falso.
+  //
+  // La pantalla de revisión ya decía "sin completar" en ámbar, pero avisar
+  // sin frenar no alcanza: quien está cargando a las siete de la mañana
+  // aprieta Guardar igual. Y en Safari de escritorio el campo de hora es
+  // difícil de completar, así que esto pasa sin que la persona lo note.
+  //
+  // Se frena, se dice qué falta, y se vuelve al paso donde se carga.
+  if(!_sinDormir){
+    const _faltan = [];
+    if(!bed)  _faltan.push({ r:'la hora en que te acostaste', id:'d-bed',  paso:1 });
+    if(!wake) _faltan.push({ r:'la hora en que te despertaste', id:'d-wake', paso:2 });
+    if(_faltan.length){
+      toast('Falta '+_faltan.map(function(f){ return f.r; }).join(' y '));
+      try{ if(typeof dmCorregirDesdeRevision==='function') dmCorregirDesdeRevision(_faltan[0].paso); }catch(_){}
+      setTimeout(function(){
+        const el=document.getElementById(_faltan[0].id);
+        if(el){ try{ el.focus(); }catch(_){}
+          el.style.boxShadow='0 0 0 2px #e11d48';
+          setTimeout(function(){ el.style.boxShadow=''; }, 2600); }
+      }, 90);
+      const _b=document.getElementById('save-diary-btn'); if(_b) _b.disabled=false;
+      return;
+    }
   }
   if(!_sinDormir && bed && wake && bed.slice(0,5)===wake.slice(0,5)){
     // Es lo que le paso a varios registros: la hora de despertar quedo igual
@@ -26091,8 +26125,8 @@ function dmPintarRevisionNino(){
     if(f.r==='Notas' && !f.v) return;
     h+='<div class="dm-rev-fila" onclick="dmCorregirDesdeRevision('+f.p+')">'+
          '<span class="dm-rev-rot">'+f.r+'</span>'+
-         '<span class="dm-rev-val'+(f.v?'':' dm-rev-vacio')+'">'+
-           (f.v ? escHtml(f.v) : 'sin completar')+'</span>'+
+         '<span class="dm-rev-val'+(f.v?'':(f.obl?' dm-rev-falta':' dm-rev-vacio'))+'">'+
+           (f.v ? escHtml(f.v) : (f.obl ? 'falta — tocá acá' : 'sin completar'))+'</span>'+
          '<span class="dm-rev-chev">›</span>'+
        '</div>';
   });

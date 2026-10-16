@@ -85,3 +85,25 @@ if (ctx) {
 }
 
 r.cerrar('Un hecho guardado dos veces es un hecho que dos partes de la app van a leer distinto.');
+
+// ── Y la espera, que ya no es un aro girando ──────────────────────────
+// Va acá y no en una prueba propia porque es una sola regla de CSS.
+const css = C.leerCss();
+const rl = C.crearReporte('La espera es una luna que crece');
+rl.seccion('Una regla, sin JS y sin imágenes:');
+rl.ok(/@keyframes dmLunaCrece\{/.test(css), 'la animación existe');
+rl.ok(/box-shadow: inset -3px  0 0 0 #7EC8A4/.test(css), 'arranca en luna fina');
+rl.ok(/box-shadow: inset -30px 0 0 0 #7EC8A4/.test(css), 'y llega a llena');
+rl.ok(!/animation:spin 0\.7s linear infinite/.test(css), 'y el aro girando se fue');
+// La regla la comparten los 21 lugares que muestran "Cargando...": si
+// alguien agrega uno nuevo, queda cubierto sin tocar nada.
+rl.ok(/\.spinner\{/.test(css), 'sigue llamándose .spinner, así que la heredan todos');
+rl.seccion('Y se ve sobre los dos fondos:');
+// Menta sobre el crema de las pantallas claras queda en ~1,9:1 y un
+// elemento de interfaz necesita 3:1 (WCAG 1.4.11). El contorno es lo que
+// sostiene el contraste; no es decorativo.
+rl.ok(/outline:1px solid rgba\(15,40,32,0\.45\)/.test(css),
+      'con el contorno que sostiene el contraste sobre el crema');
+rl.ok(/prefers-reduced-motion: reduce/.test(css),
+      'y quien pidió no ver animaciones ve la luna quieta, no nada');
+rl.cerrar('Esperar es el momento en que la persona mira la pantalla sin nada que hacer.');
