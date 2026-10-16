@@ -15,7 +15,7 @@ const r = C.crearReporte('El panel no arranca vacío');
 
 const html = C.leerHtml();
 
-r.seccion('Los seis ejemplos:');
+r.seccion('Los ocho ejemplos, uno por etiqueta:');
 
 // La lista cambió en mod274, para grabar los videos. Los seis que quedaron
 // cubren seis mecanismos distintos y TODOS tienen 8 semanas de diario
@@ -24,7 +24,7 @@ r.seccion('Los seis ejemplos:');
 // (narcolepsia: el motor no la auto-marca a propósito, así que su ficha
 // no enseñaba nada que el diario pudiera mostrar).
 // El criterio de cada uno está escrito arriba de DM_CODIGOS_DEMO.
-['CURIE1','JUANA1','KAHLO1','PETER1','ELENA1','TOMAS1'].forEach(function(cod){
+['JUANA1','QUIJAN','KAHLO1','FRANK1','PETER1','WINKLE','ELENA1','TOMAS1'].forEach(function(cod){
   r.ok(html.indexOf("'" + cod + "'") >= 0, 'está el código ' + cod);
 });
 

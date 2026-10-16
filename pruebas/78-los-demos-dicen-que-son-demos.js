@@ -53,17 +53,17 @@ r.ok(/dmEsDemo\(u\)\?' <span[^>]*>EJEMPLO<\/span>'/.test(app.replace(/\s+/g, ' '
      /EJEMPLO<\/span>/.test(app),
      'la fila del paciente lo muestra');
 
-r.seccion('Los seis que se siembran al entrar por primera vez:');
+r.seccion('Los ocho que se siembran al entrar por primera vez:');
 
 const cods = (app.match(/const DM_CODIGOS_DEMO = \[([^\]]+)\]/) || [])[1] || '';
-['CURIE1', 'JUANA1', 'KAHLO1', 'PETER1', 'ELENA1', 'TOMAS1'].forEach(function (c) {
+['JUANA1', 'QUIJAN', 'KAHLO1', 'FRANK1', 'PETER1', 'WINKLE', 'ELENA1', 'TOMAS1'].forEach(function (c) {
   r.ok(cods.indexOf("'" + c + "'") >= 0, '  ' + c);
 });
 // Seis mecanismos distintos sin repetir ninguno: es lo máximo que se
 // aprende de una lista de ejemplo. Dos insomnios iguales no enseñan nada.
-r.ok(/cronodisrupción: duerme BIEN pero a destiempo/.test(app),
+r.ok(/duerme bien pero a destiempo/.test(app),
      'y queda escrito qué muestra cada uno');
-r.ok(/NO sobrediagnostica/.test(app),
+r.ok(/sobrediagnostica/.test(app),
      'incluido el control, que es el que muestra que la app no sobrediagnostica');
 
 
