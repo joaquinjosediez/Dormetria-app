@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg281-57ecf716">
+<link rel="stylesheet" href="css/styles.css?v=stg282-57ecf716">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg281-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg281-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg281-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=stg281-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=stg281-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg282-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg282-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg282-3c064e87"></script>
+<script src="js/dormetria-render-resumen.js?v=stg282-6416850a"></script>
+<script src="js/dormetria-tcci.js?v=stg282-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg281';
+const APP_VERSION='stg282';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg281 \u2014 <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg282 \u2014 <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -3149,6 +3149,31 @@ function computePillarScore(e, ageYears){
   qty=Math.max(0,Math.min(50,qty));
   const frag = dmFragPuntos(e);
   return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
+}
+// ── ¿Esa noche estaba menstruando? Una sola pregunta ──────────────────
+//
+// El dato está guardado DOS veces: en la columna `has_period` y como el
+// texto "🩸Período" dentro de `notes`. El diario escribe las dos, así que
+// mientras el registro venga del formulario parecen lo mismo.
+//
+// No lo son, y la app leía una u otra según el lugar:
+//
+//   · el análisis de hábitos y el bloque del ciclo  → columna O notas
+//   · el ACTOGRAMA (las dos vistas, paciente y pro) → sólo las notas
+//
+// Resultado: la tabla de factores mostraba la fila "Días de menstruación"
+// con su diferencia calculada, y el actograma de al lado no pintaba una
+// sola barra. Cualquier registro cuyo `has_period` no venga acompañado del
+// emoji —datos importados, una carga directa, los diarios de ejemplo— es
+// invisible en el dibujo y visible en el análisis.
+//
+// Es el mismo patrón que la fragmentación: un hecho con dos fuentes y
+// distintas partes de la app leyendo fuentes distintas. La columna es la
+// fuente estructurada; el texto en notes es el resto de una versión
+// anterior y se sigue aceptando para no perder los registros viejos.
+function dmEsPeriodo(e){
+  if(!e) return false;
+  return e.has_period === true || /🩸Período/.test(String(e.notes || ''));
 }
 function pillarColor(v){return v>=90?'#14532d':v>=80?'#1a4a3a':v>=70?'#2d9e6b':v>=60?'#d97706':'#dc2626';}
 
@@ -7518,7 +7543,7 @@ function computeHabitsImpact(entries){
     // tarjeta lo rotula aparte para no sugerir que sea algo "modificable".
     { id:'period', label:'Días de menstruación', icon:'🩸', fisiologico:true,
       has:e=>e.has_period!=null || /Período/.test(String(e.notes||'')),
-      on:e=>e.has_period===true || /🩸Período/.test(String(e.notes||'')),
+      on:dmEsPeriodo,
       onTxt:'con menstruación', offTxt:'resto del ciclo' }
   ];
 
@@ -7531,7 +7556,7 @@ function computeHabitsImpact(entries){
   // Ventana de 5 días: es la que usa el DSM-5 para el trastorno disfórico
   // premenstrual ("la semana previa al inicio de la menstruación").
   var DM_DIAS_PREMENSTRUAL = 5;
-  var _esPeriodo = function(e){ return e.has_period===true || /🩸Período/.test(String(e.notes||'')); };
+  var _esPeriodo = dmEsPeriodo;
   var _preSet = new Set();
   try{
     var _ord = E.filter(function(e){ return e.diary_date; })
@@ -14610,11 +14635,11 @@ async function showDiaryTab_(tab){
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const weekendRows=sorted.map((e,i)=>{const d=new Date(e.diary_date+'T12:00:00');const isFreeDay=e.day_type==='free';const isWeekend=d.getDay()===0||d.getDay()===6;return(isFreeDay||isWeekend)?i:null;}).filter(i=>i!==null);
         // Noches con período menstrual (marcador en notes)
-        const periodNights=sorted.map((e,i)=>/🩸Período/.test(e.notes||'')?i:null).filter(i=>i!==null);
+        const periodNights=sorted.map((e,i)=>dmEsPeriodo(e)?i:null).filter(i=>i!==null);
         const hasPeriodData=periodNights.length>0;
         // Color por noche: rosa sutil si hay período, verde noche normal si no
-        const sleepBarColors=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc');
-        const sleepBarBorders=sorted.map(e=>/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a');
+        const sleepBarColors=sorted.map(e=>dmEsPeriodo(e)?'#c2547dcc':'#1a4a3acc');
+        const sleepBarBorders=sorted.map(e=>dmEsPeriodo(e)?'#c2547d':'#1a4a3a');
         
         // Barra = acostarse → despertar final (unificado con el panel del
         // profesional; los tramos de latencia y de cama-despierto se dibujan
@@ -15494,7 +15519,10 @@ async function editDiaryEntry(id){
       if(e.energy){const btns=document.querySelectorAll('.emoji-row .emoji-btn[onclick*="d-energy"]');btns.forEach(b=>{if(parseInt(b.dataset.val)===e.energy)b.classList.add('sel');});const hid=document.getElementById('d-energy');if(hid)hid.value=e.energy;}
       // Período menstrual: detectar marcador y precargar el toggle
       let cleanNotes = e.notes||'';
-      if(/🩸Período/.test(cleanNotes)){
+      // Se pregunta por dmEsPeriodo y no por el marcador: un registro
+      // con has_period=true y sin el emoji en notes abria la edicion
+      // con el toggle apagado, y al guardar se perdia el dato.
+      if(dmEsPeriodo(e)){
         _periodActive = true;
         cleanNotes = cleanNotes.replace(/\s*\|\s*🩸Período/,'').replace(/🩸Período\s*\|?\s*/,'').trim();
         setTimeout(()=>{ if(_periodActive){ const pb=document.getElementById('period-btn'),pl=document.getElementById('period-btn-label'),pc=document.getElementById('period-check'); if(pb){pb.style.borderColor='#e11d48';pb.style.background='#fff1f2';} if(pl){pl.style.color='#e11d48';pl.textContent='Período menstrual';} if(pc)pc.textContent='🔴'; } },120);
@@ -21169,13 +21197,13 @@ async function showDrPTab_(tab){
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
         const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));if(w===s) return[0,0];const fin=(w>s?w:w+24);if(fin-s>16) return[0,0];return[s,fin];});
-        const drPeriodNights=sorted.filter(e=>/🩸Período/.test(e.notes||'')).length;
+        const drPeriodNights=sorted.filter(dmEsPeriodo).length;
         const drFueraProm=sorted.map(e=>!!dmMotivoDescarte(e));
         const drSinDormir=sorted.map(e=>e.no_sleep===true);
         // Sin dormir: el bloque existe (estuvo en la cama) pero va tenue y con
         // borde, para que no se lea como sueño.
-        const drSleepColors=sorted.map((e,i)=>drSinDormir[i]?'rgba(26,74,58,0.14)':(drFueraProm[i]?'rgba(217,119,6,0.13)':(/🩸Período/.test(e.notes||'')?'#c2547dcc':'#1a4a3acc')));
-        const drSleepBorders=sorted.map((e,i)=>drSinDormir[i]?'#1a4a3a':(drFueraProm[i]?'#d97706':(/🩸Período/.test(e.notes||'')?'#c2547d':'#1a4a3a')));
+        const drSleepColors=sorted.map((e,i)=>drSinDormir[i]?'rgba(26,74,58,0.14)':(drFueraProm[i]?'rgba(217,119,6,0.13)':(dmEsPeriodo(e)?'#c2547dcc':'#1a4a3acc')));
+        const drSleepBorders=sorted.map((e,i)=>drSinDormir[i]?'#1a4a3a':(drFueraProm[i]?'#d97706':(dmEsPeriodo(e)?'#c2547d':'#1a4a3a')));
         const drSleepDash=sorted.map((e,i)=>drFueraProm[i]?[4,3]:[]);
         const ctxA=document.getElementById('dr-acto-chart');
         if(ctxA){
