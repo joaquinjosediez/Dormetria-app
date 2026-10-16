@@ -66,7 +66,18 @@ function dmMotorOrientacion(recs, diaryEntries, doctorData) {
   result.orientacion = dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore);
 
   // ─── 5. CONDUCTA SUGERIDA (solo si hay con qué sostenerla) ───
-  result.conducta = dmCalcularConducta(result.orientacion, lastScales, diarySlice, result.datosInsuficientes);
+  // La edad entra en la conducta. Sin esto, el motor le sugeria TCC-I a un
+  // chico de 4 años: el algoritmo de adultos corriendo sobre un preescolar.
+  const _edad = (function () {
+    try {
+      const d = doctorData && doctorData.dob;
+      if (!d) return null;
+      const t = new Date(d);
+      if (isNaN(t)) return null;
+      return Math.floor((Date.now() - t.getTime()) / 31557600000);
+    } catch (_) { return null; }
+  })();
+  result.conducta = dmCalcularConducta(result.orientacion, lastScales, diarySlice, result.datosInsuficientes, _edad);
 
   // ─── 5. BANDERAS DE SEGURIDAD (siempre) ───
   result.banderas = dmCalcularBanderas(essScore, stopbangScore, phq9Score, lastScales, diarySlice);
@@ -317,7 +328,7 @@ function dmCalcularOrientacion(isiScore, diarySlice, phq9Score, stopbangScore) {
 /**
  * Calcula la conducta sugerida
  */
-function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficientes) {
+function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficientes, edadAnios) {
   const texto = (orientacion && orientacion.texto) || '';
   const sinBase  = datosInsuficientes || /sin datos/i.test(texto);
   // Incluye el caso en que el titulo YA fue reescrito por el sedante: ahi
@@ -360,6 +371,32 @@ function dmCalcularConducta(orientacion, lastScales, diarySlice, datosInsuficien
             'insomnio: no corresponde indicarla si no hay un patrón que lo sostenga. ' +
             'Si la persona igual refiere malestar con su sueño, conviene revisar el ' +
             'motivo de consulta antes que iniciar un tratamiento.',
+      faltan: []
+    };
+  }
+
+  // ── Menores de 13: la TCC-I no es la conducta ─────────────────────────
+  //
+  // El motor venia devolviendo "TCC-I" para cualquier cosa que no fuera
+  // normal, sin mirar la edad. A un chico de 4 años con resistencia a
+  // acostarse eso es el algoritmo de adultos corriendo sobre un
+  // preescolar: la TCC-I esta validada en adultos, y lo que tiene
+  // evidencia en esa edad son las intervenciones conductuales del sueño
+  // infantil, que son otra cosa y las indica quien lo atiende.
+  //
+  // No se reemplaza una sugerencia por otra: se dice que ACA la app no
+  // sugiere conducta y por que. Inventar una recomendacion pediatrica
+  // seria repetir el error con otro texto.
+  if (edadAnios != null && edadAnios < 13) {
+    return {
+      procede: false,
+      motivo: 'pediatrico',
+      titulo: 'Sin sugerencia de conducta: es un perfil pediátrico',
+      base: 'Lo que el diario muestra está arriba, con sus números. La TCC-I ' +
+            'que la app sugiere para adultos está validada en adultos: en menores ' +
+            'de 13 las intervenciones con evidencia son las conductuales del sueño ' +
+            'infantil, que dependen de la edad, del motivo y del contexto familiar, ' +
+            'y las indica quien atiende al chico. La app no las sugiere.',
       faltan: []
     };
   }
