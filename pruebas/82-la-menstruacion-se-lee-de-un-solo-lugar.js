@@ -92,18 +92,25 @@ const css = C.leerCss();
 const rl = C.crearReporte('La espera es una luna que crece');
 rl.seccion('Una regla, sin JS y sin imágenes:');
 rl.ok(/@keyframes dmLunaCrece\{/.test(css), 'la animación existe');
-rl.ok(/box-shadow: inset -3px  0 0 0 #7EC8A4/.test(css), 'arranca en luna fina');
-rl.ok(/box-shadow: inset -30px 0 0 0 #7EC8A4/.test(css), 'y llega a llena');
+rl.ok(/box-shadow: inset -3px  0 0 0 var\(--dm-luna\)/.test(css), 'arranca en luna fina');
+rl.ok(/box-shadow: inset -30px 0 0 0 var\(--dm-luna\)/.test(css), 'y llega a llena');
 rl.ok(!/animation:spin 0\.7s linear infinite/.test(css), 'y el aro girando se fue');
 // La regla la comparten los 21 lugares que muestran "Cargando...": si
 // alguien agrega uno nuevo, queda cubierto sin tocar nada.
-rl.ok(/\.spinner\{/.test(css), 'sigue llamándose .spinner, así que la heredan todos');
-rl.seccion('Y se ve sobre los dos fondos:');
-// Menta sobre el crema de las pantallas claras queda en ~1,9:1 y un
-// elemento de interfaz necesita 3:1 (WCAG 1.4.11). El contorno es lo que
-// sostiene el contraste; no es decorativo.
-rl.ok(/outline:1px solid rgba\(15,40,32,0\.45\)/.test(css),
-      'con el contorno que sostiene el contraste sobre el crema');
+rl.ok(/\.spinner\{/.test(css), 'sigue llam\u00e1ndose .spinner, as\u00ed que la heredan todos');
+rl.seccion('El color se da vuelta con el fondo:');
+// La app es oscura casi entera, asi que la luna es blanca por defecto: el
+// mismo #f2f2ec del wordmark. Sobre el crema de las cajas claras, blanco
+// da 1,05:1 y la luna llena y la nueva se verian iguales.
+rl.ok(/--dm-luna:#f2f2ec/.test(css), 'blanca por defecto, el blanco del wordmark');
+rl.ok(/\.caja-clara \.spinner, \.sobre-claro \.spinner[\s\S]{0,120}--dm-luna:#0F2820/.test(css),
+      'y verde noche sobre las superficies claras');
+// Por variable y no por una regla por lugar: cualquier caja que ya marque
+// "aca el texto va oscuro" hereda la luna correcta sin acordarse de nada.
+rl.ok(/var\(--dm-luna\)/.test(css) && (css.match(/var\(--dm-luna\)/g) || []).length >= 4,
+      'la inversi\u00f3n va por variable, as\u00ed se hereda sola');
+// Y NINGUN borde dibujado: la forma la hace el contraste, no una linea.
+rl.ok(!/\.spinner\{[^}]*outline:/.test(css), 'sin borde dibujado alrededor');
 rl.ok(/prefers-reduced-motion: reduce/.test(css),
-      'y quien pidió no ver animaciones ve la luna quieta, no nada');
+      'y quien pidi\u00f3 no ver animaciones ve la luna quieta, no nada');
 rl.cerrar('Esperar es el momento en que la persona mira la pantalla sin nada que hacer.');

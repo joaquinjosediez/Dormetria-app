@@ -1212,30 +1212,41 @@ input, select, textarea{ color: inherit; }
    El truco es una sola sombra INTERIOR corrida: con el desplazamiento
    chico queda una luna fina, y al crecer el desplazamiento la sombra
    termina cubriendo el círculo entero —luna llena—. Un elemento, dos
-   fotogramas, sin JS y sin imágenes.
+   fotogramas, sin JS, sin imágenes y sin un borde dibujado.
 
-   El relleno va en menta y el contorno en verde noche translucido. El
-   contorno no es decorativo: sobre el crema de las pantallas claras la
-   menta sola queda cerca de 1,9:1, y un elemento de interfaz necesita
-   3:1 (WCAG 1.4.11). La línea es la que sostiene el contraste en los
-   dos fondos. */
+   EL COLOR SE INVIERTE CON EL FONDO. La app es oscura casi entera (#app
+   tiene fondo verde noche), así que la luna es blanca —el mismo #f2f2ec
+   del wordmark— y el disco de atrás es transparente: se ve la luna sola
+   contra la pantalla, como corresponde de noche.
+
+   En las superficies claras eso no sirve: blanco sobre crema da 1,05:1 y
+   la luna llena y la nueva se verían iguales. Ahí la luna se da vuelta y
+   es verde noche sobre el crema, que es la misma relación al revés.
+
+   La inversión va por variable y no por una regla por lugar: cualquier
+   caja clara que ya marque `.caja-clara` o `.sobre-claro` —que son las
+   que la app usa para decir "acá el texto va oscuro"— hereda la luna
+   correcta sin que haya que acordarse. */
 .spinner{
+  --dm-luna:#f2f2ec;
   width:26px; height:26px; margin:0 auto 14px;
   border-radius:50%;
-  box-shadow: inset -3px 0 0 0 #7EC8A4;
-  outline:1px solid rgba(15,40,32,0.45);
-  outline-offset:-1px;
+  box-shadow: inset -3px 0 0 0 var(--dm-luna);
   animation: dmLunaCrece 1.9s ease-in-out infinite;
 }
+.caja-clara .spinner, .sobre-claro .spinner,
+.caja-clara.spinner, .sobre-claro.spinner{ --dm-luna:#0F2820; }
+
 @keyframes dmLunaCrece{
-  0%        { box-shadow: inset -3px  0 0 0 #7EC8A4; }   /* luna fina */
-  50%       { box-shadow: inset -30px 0 0 0 #7EC8A4; }   /* llena */
-  100%      { box-shadow: inset -3px  0 0 0 #7EC8A4; }
+  0%        { box-shadow: inset -3px  0 0 0 var(--dm-luna); }   /* luna fina */
+  50%       { box-shadow: inset -30px 0 0 0 var(--dm-luna); }   /* llena */
+  100%      { box-shadow: inset -3px  0 0 0 var(--dm-luna); }
 }
 /* Quien pidió no ver animaciones no las ve: queda la luna a medio llenar,
    que sigue diciendo "esto está trabajando". */
 @media (prefers-reduced-motion: reduce){
-  .spinner{ animation:none; box-shadow: inset -13px 0 0 0 #7EC8A4; }
+  .spinner{ animation:none; box-shadow: inset -13px 0 0 0 var(--dm-luna); }
+}
 }
 
 /* En la revisión previa a guardar, lo que falta y es OBLIGATORIO no se
