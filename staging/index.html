@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg286-a3fc0ad8">
+<link rel="stylesheet" href="css/styles.css?v=stg287-0e3cb8a9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg286-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg286-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg286-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=stg286-87bd02e3"></script>
-<script src="js/dormetria-tcci.js?v=stg286-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg287-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg287-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg287-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=stg287-87bd02e3"></script>
+<script src="js/dormetria-tcci.js?v=stg287-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg286';
+const APP_VERSION='stg287';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg286 \u2014 <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg287 \u2014 <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -3586,6 +3586,57 @@ function showScreen(id){
 // el formato de 24 h desde la pagina, pero SI se puede devolverle a la
 // persona lo que acaba de elegir, escrito de las dos maneras. Un "18:00 h ·
 // 6 de la tarde" debajo del campo hace visible el error en el acto.
+// ── Una hora a medio escribir vale lo mismo que ninguna ────────────
+//
+// Caso real, Safari de escritorio: la pantalla de revisión mostraba "Hora
+// de acostarte — sin completar" mientras despertarse y levantarse estaban
+// las dos cargadas, y la noche se guardaba con 00 h de sueño.
+//
+// `<input type="time">` no es un campo de texto: son casilleros separados
+// —hora, minutos, y en locales de 12 h también AM/PM—. Si la persona
+// completa uno y no los otros, la pantalla MUESTRA algo escrito y `.value`
+// devuelve cadena vacía. Está en la especificación: un control de hora sin
+// valor completo no tiene valor. O sea que el campo se ve lleno y la app lo
+// lee vacío, y nadie se entera hasta el final.
+//
+// El navegador sí lo sabe: `validity.badInput` queda en true exactamente en
+// ese caso. Nunca se le había preguntado.
+//
+// Se avisa EN EL CAMPO y en el momento, no cuatro pasos después en la
+// revisión: ahí la persona ya no se acuerda de qué escribió.
+function dmHoraIncompleta(el){
+  if(!el || el.tagName !== 'INPUT' || el.type !== 'time') return false;
+  try{ return !el.value && !!(el.validity && el.validity.badInput); }
+  catch(_){ return false; }
+}
+function dmAvisarHora(el){
+  if(!el || !el.parentNode) return;
+  const mal = dmHoraIncompleta(el);
+  let av = el.parentNode.querySelector('.dm-hora-mal');
+  if(!mal){
+    if(av) av.remove();
+    el.style.boxShadow='';
+    return;
+  }
+  if(!av){
+    av = document.createElement('div');
+    av.className = 'dm-hora-mal';
+    el.parentNode.appendChild(av);
+  }
+  av.textContent = 'Esa hora quedó a medio escribir. Completá la hora Y los minutos: '+
+                   'así como está, no se guarda.';
+  el.style.boxShadow='0 0 0 2px #e11d48';
+}
+// Devuelve el primer campo de hora incompleto del paso que se está viendo.
+function dmHoraMalDelPaso(n){
+  const c = document.querySelector('.dm-paso[data-paso="'+n+'"]');
+  if(!c) return null;
+  const els = c.querySelectorAll('input[type="time"]');
+  for(let i=0;i<els.length;i++){ if(dmHoraIncompleta(els[i])) return els[i]; }
+  return null;
+}
+window.dmHoraIncompleta = dmHoraIncompleta;
+window.dmAvisarHora = dmAvisarHora;
 function dmEcoHora(el){
   if(!el || !el.parentNode) return;
   let eco=el.parentNode.querySelector('.dm-eco-hora');
@@ -3613,7 +3664,13 @@ document.addEventListener('input', function(ev){
 }, true);
 document.addEventListener('change', function(ev){
   const el=ev.target;
-  if(el && el.tagName==='INPUT' && el.type==='time') dmEcoHora(el);
+  if(el && el.tagName==='INPUT' && el.type==='time'){ dmEcoHora(el); dmAvisarHora(el); }
+}, true);
+// blur además de change: un campo de hora a medio escribir NO dispara
+// change —no llegó a tener valor—, así que sin esto el aviso no sale nunca.
+document.addEventListener('blur', function(ev){
+  const el=ev.target;
+  if(el && el.tagName==='INPUT' && el.type==='time') dmAvisarHora(el);
 }, true);
 function dmRefrescarEcosHora(){
   try{ document.querySelectorAll('#screen-diary-new input[type="time"]').forEach(dmEcoHora); }catch(_){}
@@ -11406,6 +11463,16 @@ function dmPasoIr(n){
       }
     }
   }catch(_){}
+  // Antes de avanzar: si quedó una hora a medio escribir en este paso,
+  // se frena acá. Dejarla pasar es lo que terminaba en "sin completar"
+  // cuatro pantallas después, cuando ya no se sabe qué se había escrito.
+  try{
+    if(n > (window._dmPaso||1)){
+      const mal = dmHoraMalDelPaso(window._dmPaso||1);
+      if(mal){ dmAvisarHora(mal); try{ mal.focus(); }catch(_){}
+        toast('Esa hora qued\u00f3 incompleta'); return; }
+    }
+  }catch(_){}
   window._dmPaso=n; dmPintarPaso();
 }
 // Abre y cierra una seccion. El contenido se dibuja igual aunque este
@@ -16262,8 +16329,11 @@ async function saveDiary(){
   // Se frena, se dice qué falta, y se vuelve al paso donde se carga.
   if(!_sinDormir){
     const _faltan = [];
-    if(!bed)  _faltan.push({ r:'la hora en que te acostaste', id:'d-bed',  paso:1 });
-    if(!wake) _faltan.push({ r:'la hora en que te despertaste', id:'d-wake', paso:2 });
+    const _med = function(id){ return dmHoraIncompleta(document.getElementById(id)); };
+    if(!bed)  _faltan.push({ r:(_med('d-bed')  ? 'completar la hora en que te acostaste'
+                                              : 'la hora en que te acostaste'), id:'d-bed',  paso:1 });
+    if(!wake) _faltan.push({ r:(_med('d-wake') ? 'completar la hora en que te despertaste'
+                                              : 'la hora en que te despertaste'), id:'d-wake', paso:2 });
     if(_faltan.length){
       toast('Falta '+_faltan.map(function(f){ return f.r; }).join(' y '));
       try{ if(typeof dmCorregirDesdeRevision==='function') dmCorregirDesdeRevision(_faltan[0].paso); }catch(_){}

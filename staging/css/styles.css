@@ -1275,6 +1275,11 @@ input, select, textarea{ color: inherit; }
    pinta igual que lo que falta y es opcional. Sin estas dos horas la
    noche no tiene tiempo en cama, ni eficiencia, ni barra en el
    actograma: el ámbar de "sin completar" le quedaba corto. */
+/* El aviso de la hora a medio escribir, pegado al campo. */
+.dm-hora-mal{
+  font-size:12.5px; line-height:1.45; color:#ff8b8b;
+  margin-top:6px; font-weight:600;
+}
 .dm-rev-falta{
   color:#ff8b8b; font-weight:700; font-style:normal; font-size:13.5px;
 }

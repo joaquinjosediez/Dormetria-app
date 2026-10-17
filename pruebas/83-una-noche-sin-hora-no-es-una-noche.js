@@ -156,3 +156,56 @@ rc.ok(/if\(vinculos === null\)\{/.test(app),
 rc.ok(/return null; \}\);\n    if\(vinculos === null\)/.test(app),
       'que antes eran lo mismo, y por eso no se notaba');
 rc.cerrar('Un catch que devuelve el valor neutro convierte un error en una función que no existe.');
+
+// ── La CAUSA, no la consecuencia ──────────────────────────────────────
+//
+// Lo de arriba impide guardar la noche rota. No explica por qué el campo
+// quedó vacío teniendo al lado dos horas bien cargadas.
+//
+// `<input type="time">` no es un campo de texto: son casilleros separados
+// —hora, minutos, y en locales de 12 h también AM/PM—. Si se completa uno
+// y no los otros, la pantalla MUESTRA algo escrito y `.value` devuelve
+// cadena vacía. Está en la especificación: un control de hora sin valor
+// completo no tiene valor.
+//
+// O sea que el campo se ve lleno y la app lo lee vacío. En Safari de
+// escritorio, que es donde pasó, los casilleros se completan tecleando y
+// es fácil dejar uno a medio escribir sin notarlo.
+//
+// El navegador sí lo sabe: validity.badInput queda en true exactamente en
+// ese caso. Nunca se le había preguntado.
+const rb = C.crearReporte('Una hora a medio escribir');
+rb.seccion('Ahora se le pregunta al navegador:');
+rb.ok(/function dmHoraIncompleta\(el\)\{/.test(app), 'dmHoraIncompleta existe');
+rb.ok(/!el\.value && !!\(el\.validity && el\.validity\.badInput\)/.test(app),
+      'y mira badInput, que es la señal estándar para esto');
+// Sin valor Y sin badInput es un campo que nunca se tocó: eso no es un error.
+rb.ok(/!el\.value &&/.test(app),
+      'un campo vacío sin tocar no cuenta como incompleto');
+
+rb.seccion('Y se avisa en el campo, no cuatro pantallas después:');
+rb.ok(/function dmAvisarHora\(el\)\{/.test(app), 'el aviso va pegado al campo');
+rb.ok(/a medio escribir/.test(app), 'y dice qué pasó');
+rb.ok(/\.dm-hora-mal\{/.test(css), 'con su regla');
+// Un campo de hora incompleto NO dispara change —nunca llegó a tener
+// valor—, así que engancharse sólo a change deja el aviso sin salir nunca.
+rb.ok(/addEventListener\('blur'[\s\S]{0,220}dmAvisarHora/.test(app),
+      'escuchando blur además de change, que es lo que lo hace aparecer');
+rb.ok(/dmEcoHora\(el\); dmAvisarHora\(el\);/.test(app), 'y también en change');
+
+rb.seccion('Y no se avanza de paso con una hora a medio escribir:');
+rb.ok(/function dmHoraMalDelPaso\(n\)\{/.test(app), 'se busca en el paso que se está viendo');
+rb.ok(/if\(mal\)\{ dmAvisarHora\(mal\);[\s\S]{0,120}return; \}/.test(app),
+      'y si la hay, dmPasoIr frena');
+// Volver ATRÁS a corregir no puede estar bloqueado por el mismo error.
+rb.ok(/if\(n > \(window\._dmPaso\|\|1\)\)\{/.test(app),
+      'pero sólo hacia adelante: volver a corregir nunca se bloquea');
+
+rb.seccion('Y al guardar, "incompleta" no es lo mismo que "falta":');
+rb.ok(/completar la hora en que te acostaste/.test(app),
+      'si el campo tiene algo escrito, se dice "completar"');
+// "Falta la hora" frente a un campo que muestra algo escrito suena a que
+// la app está equivocada, y la persona la vuelve a escribir igual.
+rb.ok(/_med\('d-bed'\)/.test(app) && /_med\('d-wake'\)/.test(app),
+      'en los dos campos');
+rb.cerrar('El campo se veía lleno y el valor era vacío: el navegador lo sabía y nadie le preguntó.');
