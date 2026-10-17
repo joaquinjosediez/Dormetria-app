@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod284-ac3599ce">
+<link rel="stylesheet" href="css/styles.css?v=mod285-a3fc0ad8">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod284-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod284-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod284-3c064e87"></script>
-<script src="js/dormetria-render-resumen.js?v=mod284-6416850a"></script>
-<script src="js/dormetria-tcci.js?v=mod284-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod285-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod285-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod285-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=mod285-87bd02e3"></script>
+<script src="js/dormetria-tcci.js?v=mod285-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod284';
+const APP_VERSION='mod285';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -10471,7 +10471,7 @@ async function copyPatientSummaryToClipboard(encodedEmail){
   const btnOrig = btn ? btn.innerHTML : '';
   try {
     const email = decodeURIComponent(encodedEmail);
-    if(btn) btn.innerHTML = '<span>⏳</span> Componiendo resumen…';
+    if(btn) btn.innerHTML = '<span class="spinner-mini"></span>Componiendo resumen…';
     const u = S.viewData;
     if(!u){ throw new Error('No hay datos del paciente cargados'); }
     const recs = S.viewRecs || [];
@@ -13148,7 +13148,7 @@ async function showPatientCode(){
   // Load child profiles and show their codes
   const childList=document.getElementById('child-codes-list');
   if(!childList) return;
-  childList.innerHTML='<div style="font-size:12px;color:var(--label-3)">Cargando...</div>';
+  childList.innerHTML='<div style="font-size:12px;color:var(--label-3)"><span class="spinner-mini"></span>Cargando…</div>';
   // Render linked doctors in code screen
   const codeDrEl=document.getElementById('code-linked-drs');
   if(codeDrEl){
@@ -13260,7 +13260,7 @@ async function deleteChildProfile(encEmail, encName){
 async function loadCodeConsultDirectory(){
   const list = document.getElementById('code-consult-list');
   if(!list) return;
-  list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,.72)">Cargando profesionales…</div>';
+  list.innerHTML = '<div style="padding:8px 0;color:rgba(255,255,255,.72)"><span class="spinner-mini"></span>Cargando profesionales…</div>';
   try{
     // Traer profesionales aprobados (listed=true OR public_profile=true)
     // `listed` es una columna de TEXTO ('none' | 'pending' | 'true'), no booleana.
@@ -13862,7 +13862,7 @@ function renderProfileView(){
   const cont=document.getElementById('profile-content');
   if(!cont) return;
   if(!S.user){
-    cont.innerHTML='<div style="padding:40px 16px;text-align:center;color:rgba(255,255,255,.82)"><div style="font-size:14px">Cargando tu perfil…</div></div>';
+    cont.innerHTML='<div style="padding:40px 16px;text-align:center;color:rgba(255,255,255,.82)"><div class="spinner"></div><div style="font-size:14px">Cargando tu perfil…</div></div>';
     return;
   }
   const u=S.user;
@@ -16711,7 +16711,7 @@ function pvtScheduleStim(){if(S.pvtState==='done')return;const remaining=pvtEndT
 async function loadPVTHistoryInline(){
   const container=document.getElementById('pvt-hist-list');
   if(!container||!S.user) return;
-  container.innerHTML='<div style="text-align:center;padding:12px;color:var(--label-2);font-size:13px">Cargando...</div>';
+  container.innerHTML='<div style="text-align:center;padding:12px;color:var(--label-2);font-size:13px"><span class="spinner-mini"></span>Cargando…</div>';
   try{
     // duration_min puede no existir todavia (SQL-pvt-lapsos): si se pide una
     // columna inexistente PostgREST devuelve 400 y la lista queda VACIA.
@@ -17734,7 +17734,7 @@ async function showDrTab_(tab){
       // nada, y no va a esperar dos semanas de diario para poder juzgar.
       if(!cachedEmails.length){
         try{
-          cont.innerHTML='<div class="empty-state"><div class="empty-icon">⏳</div>Preparando pacientes de ejemplo…</div>';
+          cont.innerHTML='<div class="empty-state"><div class="spinner"></div>Preparando pacientes de ejemplo…</div>';
           const _demos = await dmSembrarDemos(false);
           if(_demos && _demos.length){
             cachedEmails = cachedEmails.concat(_demos);
@@ -20827,7 +20827,7 @@ async function showDrPTab_(tab){
       // ─── Card de Cronotipo: comparar MEQ (preferencial) vs MCTQ biológico ───
       let cronotipoBody = await dmCronotipoBody(u, email);
       // ─── Etiquetas clínicas: tarjeta editable (el pill del encabezado es solo lectura) ───
-      let tagsCardBody = '<div style="color:rgba(244,239,229,.9);font-style:italic;font-size:12px">Cargando…</div>';
+      let tagsCardBody = '<div style="color:rgba(244,239,229,.9);font-style:italic;font-size:12px"><span class="spinner-mini"></span>Cargando…</div>';
       try{
         const _tagState = await computePatientTagState(u.email);
         tagsCardBody = renderTagsCardBody(_tagState);
@@ -21066,7 +21066,7 @@ async function showDrPTab_(tab){
             <span class="dm-layer-btn on" id="dr-layer-alcohol" data-layer="alcohol" onclick="toggleActoLayer('alcohol',this)">🍷 Alcohol</span>
             <span class="dm-layer-btn on" data-layer="screens" onclick="toggleActoLayer('screens',this)">📱 Pantallas</span>
           </div>
-          <div id="dr-habit-summary" style="font-size:11px;color:#6b6b76;margin-bottom:6px">Cargando hábitos…</div>
+          <div id="dr-habit-summary" style="font-size:11px;color:#6b6b76;margin-bottom:6px"><span class="spinner-mini"></span>Cargando hábitos…</div>
           <div id="dr-acto-scroll" style="max-height:66vh;overflow:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch">
             <div id="dr-acto-inner"><canvas id="dr-acto-chart" aria-label="Actograma" style="min-width:340px"></canvas></div>
           </div>
@@ -23649,7 +23649,7 @@ function previewDocFile(input){
   if(!input.files||!input.files[0])return;
   const file = input.files[0];
   if(file.size > 8*1024*1024){ toast('El archivo debe ser menor a 8MB'); input.value=''; return; }
-  document.getElementById('doc-file-name').textContent = '⏳ Procesando '+file.name+'...';
+  document.getElementById('doc-file-name').innerHTML = '<span class="spinner-mini"></span>Procesando '+escHtml(file.name)+'…';
   document.getElementById('doc-type').value = file.type;
   const reader = new FileReader();
   reader.onload = function(e){

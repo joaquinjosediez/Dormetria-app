@@ -74,13 +74,13 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
   // ── Punto 6: etiquetas clínicas (se rellena async desde el motor) ───
   const tarjetaTags = dmCardResumen('🏷️', 'Etiquetas clínicas',
     '<div id="drp-tags-card-body">' +
-      '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px">Cargando…</div>' +
+      '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px"><span class="spinner-mini"></span>Cargando…</div>' +
     '</div>');
 
   // ── Cronotipo (se rellena async: el MCTQ sale del diario) ──────────
   const tarjetaCrono = dmCardResumen('🌙', 'Cronotipo',
     '<div id="drp-crono-card-body">' +
-      '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px">Cargando…</div>' +
+      '<div style="color:rgba(244,239,229,.72);font-style:italic;font-size:12px"><span class="spinner-mini"></span>Cargando…</div>' +
     '</div>');
 
   // ── Datos rápidos ──────────────────────────────────────────────────

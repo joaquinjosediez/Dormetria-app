@@ -8,7 +8,7 @@ let dmCurrentEmail = null;
 let dmCurrentDiarioCompleto = [];
 
 async function dmShowSummaryNuevo(email, cont) {
-  cont.innerHTML = '<div style="padding:40px; text-align:center; color:#a09080;"><div style="font-size:14px;">⏳ Cargando resumen...</div></div>';
+  cont.innerHTML = '<div style="padding:40px; text-align:center; color:#a09080;"><div style="font-size:14px;"><span class="spinner-mini"></span>Cargando resumen…</div></div>';
 
   try {
     // Escalas: SIEMPRE se piden frescas para ESTE paciente.

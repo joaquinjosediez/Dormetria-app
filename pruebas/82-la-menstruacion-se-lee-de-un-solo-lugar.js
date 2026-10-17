@@ -114,3 +114,31 @@ rl.ok(!/\.spinner\{[^}]*outline:/.test(css), 'sin borde dibujado alrededor');
 rl.ok(/prefers-reduced-motion: reduce/.test(css),
       'y quien pidi\u00f3 no ver animaciones ve la luna quieta, no nada');
 rl.cerrar('Esperar es el momento en que la persona mira la pantalla sin nada que hacer.');
+
+// ── Y la misma luna en las esperas que no eran un spinner ─────────────
+// Quedaban doce lugares con un reloj de arena ⏳ —un emoji que cada
+// sistema dibuja distinto y que no se mueve— o directamente con el texto
+// "Cargando…" pelado. El informe, el resumen, los hábitos, el directorio.
+const app82 = C.leerApp();
+const rm = C.crearReporte('La luna chica, en línea con el texto');
+rm.seccion('Existe una variante para texto corrido:');
+rm.ok(/\.spinner-mini\{/.test(css), '.spinner-mini');
+rm.ok(/display:inline-block; vertical-align:-2px;/.test(css), 'que va en la línea');
+rm.ok(/@keyframes dmLunaMini\{/.test(css),
+      'con su propio recorrido: con el de la grande, 14 px quedan llenos media vuelta');
+rm.ok(/\.caja-clara \.spinner-mini, \.sobre-claro \.spinner-mini\{ --dm-luna:#0F2820; \}/.test(css),
+      'y se da vuelta con el fondo igual que la grande');
+rm.seccion('Y ya no quedan relojes de arena en las esperas:');
+rm.ok(!/⏳ Cargando/.test(app82), 'ni en el resumen');
+rm.ok(!/⏳<\/div>Preparando/.test(app82) && !/empty-icon">⏳/.test(app82),
+      'ni al preparar los pacientes de ejemplo');
+rm.ok(!/<span>⏳<\/span> Componiendo/.test(app82), 'ni al componer el resumen');
+rm.ok(!/⏳ Procesando/.test(app82), 'ni al procesar un archivo');
+// Los ⏳ que SÍ quedan son estados, no esperas: "Pendiente de aprobación",
+// "Asignado — aún sin leer". Ahí el reloj significa algo y se queda.
+rm.ok(/⏳ Pendiente/.test(app82),
+      'pero los que marcan un ESTADO —"Pendiente"— siguen, porque ahí significan algo');
+rm.ok((app82.match(/class="spinner-mini"/g) || []).length >= 7,
+      'la luna chica está en los lugares que esperaban sin decirlo',
+      (app82.match(/class="spinner-mini"/g) || []).length + ' lugares');
+rm.cerrar('Un reloj de arena que no se mueve no dice "esperá": dice "se colgó".');
