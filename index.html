@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod286-0e3cb8a9">
+<link rel="stylesheet" href="css/styles.css?v=mod287-0e3cb8a9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod286-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod286-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod286-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=mod286-87bd02e3"></script>
-<script src="js/dormetria-tcci.js?v=mod286-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod287-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod287-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod287-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=mod287-87bd02e3"></script>
+<script src="js/dormetria-tcci.js?v=mod287-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod286';
+const APP_VERSION='mod287';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -6299,13 +6299,45 @@ async function submitRating(email, btn){
   }catch(e){ toast('Error al guardar'); btn.disabled=false; btn.textContent='Guardar calificación'; }
 }
 
+// ── Desvincularse de un profesional ────────────────────────
+//
+// "No me deja revocar profesionales desde el usuario paciente."
+//
+// Esto decía "Profesional desvinculado" SIEMPRE, hiciera lo que hiciera.
+// Dos motivos encadenados:
+//
+//   1 · `fetch` solo rechaza si no hay red. Un 401, un 403 o un 404
+//       resuelven normalmente, así que el `catch` no se ejecutaba nunca y
+//       el toast de éxito salía igual.
+//   2 · Y aunque se mirara el estado: si la RLS de `doctor_patients` no
+//       tiene una política de DELETE para el paciente, PostgREST contesta
+//       **204 sin borrar nada**. Es un éxito que no hizo nada. Mirar el
+//       código de estado tampoco alcanza.
+//
+// La única comprobación que vale es volver a leer. Si la fila sigue ahí,
+// no se desvinculó, y hay que decirlo en vez de festejar.
 async function unlinkDoctor(email){
-  if(!confirm('¿Desvincularte de este profesional?')) return;
+  if(!confirm('¿Desvincularte de este profesional? Deja de ver tus registros.')) return;
+  const _f = 'doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+
+             '&doctor_email=eq.'+encodeURIComponent(email);
   try{
-    await fetch(SU+'/rest/v1/doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+'&doctor_email=eq.'+encodeURIComponent(email),{method:'DELETE',headers:{'apikey':SK,'Authorization':await db._getAuthHeader()}});
-    toast('Profesional desvinculado');
-    renderLinkedDoctors();
-  }catch(e){ toast('Error al desvincular'); }
+    await db.del(_f);
+  }catch(e){
+    console.error('[DESVINCULAR] el DELETE falló:', (e&&e.message)||e);
+    toast('No se pudo desvincular: '+((e&&e.message)||'error de conexión'));
+    return;
+  }
+  // La verificación, que es lo que faltaba.
+  let quedan = null;
+  try{ quedan = await db.get(_f+'&select=doctor_email&limit=1'); }catch(_){}
+  if(quedan && quedan.length){
+    console.error('[DESVINCULAR] el servidor aceptó el DELETE y la fila sigue: '+
+                  'falta una política de DELETE en doctor_patients para el paciente');
+    toast('El servidor no permitió revocar el acceso. Está reportado — escribinos.');
+    return;
+  }
+  toast('Profesional desvinculado');
+  renderLinkedDoctors();
 }
 
 // submitSuggestion se eliminó: era código muerto (nada la llamaba y el
@@ -17243,7 +17275,38 @@ async function pvtFinish(){
         if(pvtResp.ok||pvtResp.status===201) console.warn('PVT guardado SIN duracion ni umbral: falta correr SQL-pvt-lapsos.md');
       }
       if(!pvtResp.ok&&pvtResp.status!==201){const ed=await pvtResp.json().catch(()=>({}));console.error('PVT save FAILED:',pvtResp.status,JSON.stringify(ed));toast('El test NO quedó registrado ('+pvtResp.status+')'+(ed.message?' — '+ed.message:''));}
-      else{console.log('PVT saved OK');showSuccessBanner('Test guardado ✓ — TR: '+meanRT+'ms');}
+      else{
+        // ── Un INSERT aceptado no prueba que el dato se pueda leer ───
+        //
+        // "Un paciente me dijo que no le está guardando los test de
+        // alerta." El POST contesta 201 y la pantalla decía "Test
+        // guardado ✓", pero en Registros no aparecía nada.
+        //
+        // Con RLS, INSERT y SELECT son políticas separadas. Si la de
+        // INSERT es más amplia que la de SELECT, la fila entra y después
+        // el dueño del dato no la ve: para la persona, el test se
+        // perdió. No hay ningún error en el camino.
+        //
+        // Se relee lo que se acaba de escribir. Es una consulta más, una
+        // vez por test, y es la diferencia entre decir la verdad y no.
+        let _vuelta = null;
+        try{
+          _vuelta = await db.get('pvt_tests?patient_email=eq.'+
+            encodeURIComponent(S.user.email)+'&order=created_at.desc&limit=1&select=id,mean_rt');
+        }catch(_rl){ console.warn('[PVT] no se pudo releer:', (_rl&&_rl.message)||_rl); }
+        if(_vuelta && _vuelta.length){
+          console.log('PVT saved OK');
+          showSuccessBanner('Test guardado ✓ — TR: '+meanRT+'ms');
+        } else if(_vuelta){
+          console.error('[PVT] el INSERT fue aceptado y la fila no se puede leer: '+
+                        'la política de SELECT de pvt_tests no cubre al paciente');
+          toast('El test se envió pero no aparece en tus registros. Está reportado.');
+        } else {
+          // No se pudo releer por un problema de red: no se afirma ni una
+          // cosa ni la otra.
+          showSuccessBanner('Test enviado — TR: '+meanRT+'ms');
+        }
+      }
     }catch(e1){
       console.error('PVT fetch error:',e1.message);
       toast('El resultado NO se guardó: '+(e1.message||'error de conexión'));
@@ -17252,6 +17315,14 @@ async function pvtFinish(){
     // Sin sesion no hay adonde guardarlo. Antes se mostraba el resultado igual,
     // asi que la persona hacia el test creyendo que quedaba registrado.
     toast('Este resultado no se guarda: no hay sesión iniciada.');
+  } else {
+    // dur<3 con sesión abierta. Hoy no debería pasar —selectPVTDur y
+    // startPVT fuerzan un mínimo de 3— pero era la única rama del
+    // guardado que no decía nada: el test se mostraba completo y no se
+    // guardaba, sin una línea en ningún lado. Si alguien baja ese
+    // mínimo, que se entere acá y no por un paciente.
+    console.warn('[PVT] no se guarda: duración de '+dur+' min, el mínimo son 3');
+    toast('Un test de menos de 3 minutos no se registra: es muy corto para interpretarlo.');
   }
   const timeStr=now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});const dateStr=now.toLocaleDateString('es-AR',{day:'2-digit',month:'short'});
   const cont=document.getElementById('pvt-result-content');
