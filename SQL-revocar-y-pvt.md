@@ -89,6 +89,44 @@ y una sola alcanza para impedirlo.
 
 ---
 
+## 2 bis · Antes de culpar a la RLS: cómo están guardados los correos
+
+Segunda vuelta del mismo reporte, y apareció algo que no era un permiso.
+
+La lista de profesionales del paciente se arma con `patient_email=ilike.` y
+el borrado usaba `patient_email=eq.`. **En Postgres `eq` distingue
+mayúsculas.** Si el correo quedó guardado con otra capitalización —y se
+tipea a mano al vincular— la pantalla lo muestra y el DELETE no lo
+encuentra: cero filas, 204, silencio. mod288 usa `ilike` en los dos lados y
+cuenta antes y después, así que la app ahora distingue los dos casos sola.
+Pero conviene mirar si hay correos desparejos, porque afectan a más cosas
+que a este botón:
+
+```sql
+-- Filas donde el correo no está en minúsculas. Si aparece alguna, cualquier
+-- consulta con `eq.` sobre esta tabla se la saltea.
+select patient_email, doctor_email
+  from public.doctor_patients
+ where patient_email <> lower(patient_email)
+    or doctor_email  <> lower(doctor_email);
+```
+
+Si hay, normalizarlas es un `update` chico y de bajo riesgo —la RLS ya
+compara con `lower()` en todos lados, así que esto la acerca, no la aleja:
+
+```sql
+update public.doctor_patients
+   set patient_email = lower(patient_email),
+       doctor_email  = lower(doctor_email)
+ where patient_email <> lower(patient_email)
+    or doctor_email  <> lower(doctor_email);
+```
+
+> Correr primero el `select`. Si devuelve 0 filas, el problema **no** es
+> este y es el permiso del punto 2.
+
+---
+
 ## 3 · PVT: el INSERT entra y el SELECT no lo ve
 
 **Qué pasaba.** El `POST` a `pvt_tests` devolvía 201 y la pantalla decía

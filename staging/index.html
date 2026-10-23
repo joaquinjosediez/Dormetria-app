@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg288-0e3cb8a9">
+<link rel="stylesheet" href="css/styles.css?v=stg289-0e3cb8a9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg288-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg288-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg288-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=stg288-87bd02e3"></script>
-<script src="js/dormetria-tcci.js?v=stg288-7543a90c"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg289-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg289-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg289-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=stg289-87bd02e3"></script>
+<script src="js/dormetria-tcci.js?v=stg289-7543a90c"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg288';
+const APP_VERSION='stg289';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg288 \u2014 <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg289 \u2014 <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -6266,7 +6266,7 @@ function showDoctorActions(email, name){
     <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px">${name}</div>
     <div style="font-size:13px;color:rgba(255,255,255,.72);margin-bottom:20px">¿Qué querés hacer?</div>
     <button onclick="showRateDoctorModal('${email.replace(/'/g,"\'")}','${name.replace(/'/g,"\'")}');this.closest('[style*=fixed]').remove()" style="width:100%;background:rgba(255,255,255,0.1);border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;margin-bottom:8px">⭐ Calificar y comentar</button>
-    <button onclick="unlinkDoctor('${email.replace(/'/g,"\'")}');this.closest('[style*=fixed]').remove()" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;color:#fca5a5;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;margin-bottom:8px">🔗 Desvincular profesional</button>
+    <button onclick="dmRevocarDesde(this, '${email.replace(/'/g,"\'")}', '[style*=fixed]')" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;color:#fca5a5;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-align:left;margin-bottom:8px">🔗 Desvincular profesional</button>
     <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;background:none;border:none;color:rgba(255,255,255,.72);font-size:14px;cursor:pointer;font-family:var(--font);padding:8px">Cancelar</button>
   </div>`;
   document.body.appendChild(modal);
@@ -6310,41 +6310,93 @@ async function submitRating(email, btn){
 //
 // "No me deja revocar profesionales desde el usuario paciente."
 //
-// Esto decía "Profesional desvinculado" SIEMPRE, hiciera lo que hiciera.
-// Dos motivos encadenados:
+// Tres defectos encadenados, y ninguno avisaba:
 //
-//   1 · `fetch` solo rechaza si no hay red. Un 401, un 403 o un 404
-//       resuelven normalmente, así que el `catch` no se ejecutaba nunca y
-//       el toast de éxito salía igual.
-//   2 · Y aunque se mirara el estado: si la RLS de `doctor_patients` no
-//       tiene una política de DELETE para el paciente, PostgREST contesta
-//       **204 sin borrar nada**. Es un éxito que no hizo nada. Mirar el
-//       código de estado tampoco alcanza.
+//   1 · `fetch` sin mirar la respuesta. Un 401 o un 403 resuelven
+//       normalmente, así que el catch no corría nunca.
+//   2 · Y aunque se mirara el estado: con RLS, un DELETE que no matchea
+//       ninguna fila devuelve **204**. Un éxito que no borró nada.
+//   3 · EL FILTRO NO ERA EL MISMO QUE EL DEL LISTADO. La lista de
+//       profesionales se arma con `patient_email=ilike.` y el borrado usaba
+//       `patient_email=eq.`. En Postgres `eq` distingue mayúsculas: si el
+//       correo quedó guardado con otra capitalización —y los correos se
+//       tipean a mano al vincular— la lista lo MUESTRA y el DELETE no lo
+//       encuentra. Cero filas, 204, y nadie se entera.
 //
-// La única comprobación que vale es volver a leer. Si la fila sigue ahí,
-// no se desvinculó, y hay que decirlo en vez de festejar.
+// El 3 además rompía la verificación que agregó mod287: si el filtro está
+// mal, la relectura usa el MISMO filtro malo, vuelve vacía, y la app
+// informa éxito. Comprobar con la misma pregunta equivocada no comprueba
+// nada — el mismo error que una prueba que no puede fallar.
+//
+// Por eso ahora se cuenta ANTES y DESPUÉS, y los tres resultados posibles
+// son tres mensajes distintos:
+//
+//     antes = 0   → el filtro no encuentra el vínculo (problema de la app)
+//     después > 0 → el servidor no dejó borrar (falta policy de DELETE)
+//     después = 0 → revocado de verdad
+// Envoltorio para los tres botones de revocar. Existe por una sola cosa:
+// los tres hacían `unlinkDoctor(...)` y acto seguido, EN LA MISMA LÍNEA,
+// `.remove()` sobre la fila o el modal. unlinkDoctor es async, así que la
+// pantalla se limpiaba siempre —saliera bien o mal— y la revocación
+// parecía haber funcionado hasta la próxima recarga.
+async function dmRevocarDesde(btn, email, selectorAQuitar){
+  if(btn){ btn.disabled = true; }
+  let ok = false;
+  try{ ok = await unlinkDoctor(email); }
+  finally{ if(btn) btn.disabled = false; }
+  if(ok && btn && selectorAQuitar){
+    const caja = btn.closest(selectorAQuitar);
+    if(caja) caja.remove();
+  }
+  return ok;
+}
+window.dmRevocarDesde = dmRevocarDesde;
+
 async function unlinkDoctor(email){
-  if(!confirm('¿Desvincularte de este profesional? Deja de ver tus registros.')) return;
-  const _f = 'doctor_patients?patient_email=eq.'+encodeURIComponent(S.user.email)+
-             '&doctor_email=eq.'+encodeURIComponent(email);
+  if(!email){ toast('No pude identificar a ese profesional'); return false; }
+  if(!confirm('¿Desvincularte de este profesional? Deja de ver tus registros.')) return false;
+  // ilike en los dos lados, igual que el listado: un filtro que no
+  // encuentra lo que la pantalla muestra es peor que un error.
+  const _f = 'doctor_patients?patient_email=ilike.'+encodeURIComponent(S.user.email)+
+             '&doctor_email=ilike.'+encodeURIComponent(email);
+  const _contar = async function(){
+    try{ const r = await db.get(_f+'&select=doctor_email'); return (r||[]).length; }
+    catch(e){ console.warn('[DESVINCULAR] no se pudo contar:', (e&&e.message)||e); return null; }
+  };
+
+  const antes = await _contar();
+  if(antes === 0){
+    console.error('[DESVINCULAR] el listado muestra a '+email+' y el filtro no lo encuentra: '+
+                  'revisar cómo está guardado patient_email/doctor_email en doctor_patients');
+    toast('No encontré ese vínculo para borrar. Está reportado — escribinos.');
+    return false;
+  }
+
   try{
     await db.del(_f);
   }catch(e){
     console.error('[DESVINCULAR] el DELETE falló:', (e&&e.message)||e);
     toast('No se pudo desvincular: '+((e&&e.message)||'error de conexión'));
-    return;
+    return false;
   }
-  // La verificación, que es lo que faltaba.
-  let quedan = null;
-  try{ quedan = await db.get(_f+'&select=doctor_email&limit=1'); }catch(_){}
-  if(quedan && quedan.length){
+
+  const despues = await _contar();
+  if(despues === null){
+    // Sin red para verificar no se afirma nada en ninguna dirección.
+    toast('Se envió el pedido, pero no pude confirmarlo. Revisá la lista.');
+    renderLinkedDoctors();
+    return false;
+  }
+  if(despues > 0){
     console.error('[DESVINCULAR] el servidor aceptó el DELETE y la fila sigue: '+
-                  'falta una política de DELETE en doctor_patients para el paciente');
+                  'falta una política de DELETE en doctor_patients para el paciente '+
+                  '(ver SQL-revocar-y-pvt.md)');
     toast('El servidor no permitió revocar el acceso. Está reportado — escribinos.');
-    return;
+    return false;
   }
   toast('Profesional desvinculado');
   renderLinkedDoctors();
+  return true;
 }
 
 // submitSuggestion se eliminó: era código muerto (nada la llamaba y el
@@ -13282,7 +13334,11 @@ async function showPatientCode(){
         codeDrEl.querySelectorAll('.code-rate-btn').forEach(function(b){
           b.addEventListener('click', function(){ dmCalificarProfesional(b.dataset.cal, b.dataset.nom); });
         });
-        codeDrEl.querySelectorAll('.code-unlink-btn').forEach(b=>b.addEventListener('click',()=>{if(confirm('¿Revocar acceso a '+b.closest('div').querySelector('div>div').textContent+'?')){unlinkDoctor(b.dataset.eml);b.closest('div[style]').remove();}}));
+        codeDrEl.querySelectorAll('.code-unlink-btn').forEach(function(b){
+          // Un solo confirm —el de unlinkDoctor— y la fila se saca de la
+          // pantalla DESPUÉS de saber si se borró, no antes.
+          b.addEventListener('click', function(){ dmRevocarDesde(b, b.dataset.eml, 'div[style]'); });
+        });
       });
     }
   }
@@ -24912,7 +24968,7 @@ async function loadLinkedDoctors(){
       const shortEmail = l.doctor_email.length > 28 ? l.doctor_email.slice(0,25)+'...' : l.doctor_email;
       return '<div style="background:var(--bg-secondary);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'+
         '<div><div style="font-size:14px;font-weight:500">Dr/a.</div><div style="font-size:12px;color:var(--label-2);margin-top:2px">'+shortEmail+'</div></div>'+
-        '<button data-email="'+l.doctor_email+'" onclick="unlinkDoctor(this.dataset.email)" style="border:none;background:#FFF5F5;color:#FF3B30;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:var(--font);font-weight:500">Desvincular</button>'+
+        '<button data-email="'+l.doctor_email+'" onclick="dmRevocarDesde(this, this.dataset.email)" style="border:none;background:#FFF5F5;color:#FF3B30;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:var(--font);font-weight:500">Desvincular</button>'+
         '</div>';
     }).join('');
   }catch(e){ el.innerHTML = '<div style="font-size:13px;color:var(--label-3);padding:8px 4px">Error al cargar.</div>'; }

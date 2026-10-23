@@ -34,12 +34,12 @@ const un = app.slice(app.indexOf('async function unlinkDoctor(email){'),
 r.ok(!/fetch\(SU\+'\/rest\/v1\/doctor_patients/.test(un),
      'se fue el fetch pelado que no miraba la respuesta');
 r.ok(/await db\.del\(_f\)/.test(un), 'va por db.del, que sí tira si falla');
-r.ok(/quedan = await db\.get\(_f\+'&select=doctor_email&limit=1'\)/.test(un),
-     'y después se relee el mismo filtro');
-r.ok(/if\(quedan && quedan\.length\)\{/.test(un), 'si la fila sigue ahí');
+r.ok(/const _contar = async function\(\)/.test(un),
+     'y se cuentan las filas con el mismo filtro, antes y después');
+r.ok(/if\(despues > 0\)\{/.test(un), 'si la fila sigue ahí');
 r.ok(/No se pudo desvincular|no permiti/.test(un), '  se dice que no se pudo');
 // Lo importante: el toast de éxito NO puede estar antes de la verificación.
-const iVerif = un.indexOf('quedan && quedan.length');
+const iVerif = un.indexOf('const despues = await _contar()');
 const iExito = un.indexOf("toast('Profesional desvinculado')");
 r.ok(iVerif > 0 && iExito > iVerif,
      'y el "desvinculado" va DESPUÉS de comprobar, que era todo el problema');
@@ -95,3 +95,78 @@ r.ok(/las permisivas se combinan con OR/i.test(sql) || /PERMISSIVE/.test(sql),
 r.ok(/Ley 25\.326/.test(sql), 'con el marco legal de por qué esto no es cosmético');
 
 r.cerrar('Con RLS, un DELETE que no matchea nada devuelve 204: el éxito no prueba que haya pasado algo.');
+
+// ── Segunda vuelta: seguía sin revocar ────────────────────────────────
+//
+// mod287 dejó de mentir pero no arregló nada, y además no decía nada.
+// Revisando el camino entero aparecieron tres defectos más:
+//
+//   · El filtro del borrado NO era el del listado. La lista se arma con
+//     `patient_email=ilike.` y el DELETE usaba `=eq.`. En Postgres `eq`
+//     distingue mayúsculas: si el correo quedó guardado con otra
+//     capitalización —y se tipean a mano al vincular— la pantalla lo
+//     MUESTRA y el borrado no lo encuentra. Cero filas, 204, silencio.
+//   · Eso ADEMÁS rompía la verificación de mod287: la relectura usaba el
+//     mismo filtro malo, volvía vacía, y la app informaba éxito.
+//     Comprobar con la misma pregunta equivocada no comprueba nada.
+//   · Y los tres botones hacían `unlinkDoctor(...)` y en la misma línea
+//     `.remove()` sobre la fila. unlinkDoctor es async: la pantalla se
+//     limpiaba siempre, saliera bien o mal.
+const r2 = C.crearReporte('Revocar, segunda vuelta');
+const un2 = app.slice(app.indexOf('async function unlinkDoctor(email){'),
+                      app.indexOf('// submitSuggestion se eliminó'));
+
+r2.seccion('El filtro del borrado es el mismo que el del listado:');
+r2.ok(/patient_email=ilike\.'\+encodeURIComponent\(S\.user\.email\)/.test(un2),
+      'ilike en patient_email');
+r2.ok(/doctor_email=ilike\.'\+encodeURIComponent\(email\)/.test(un2),
+      'y en doctor_email');
+r2.ok(!/patient_email=eq\./.test(un2), 'ya no queda ningún eq en este camino');
+r2.ok(/eq. distingue may/.test(app) || /distingue mayúsculas/.test(app),
+      'con el motivo escrito');
+
+r2.seccion('Se cuenta ANTES y DESPUÉS, y son tres resultados distintos:');
+r2.ok(/const antes = await _contar\(\)/.test(un2), 'antes');
+r2.ok(/const despues = await _contar\(\)/.test(un2), 'y después');
+// Este es el que faltaba: distingue "la app pregunta mal" de "el servidor
+// no deja". Son arreglos completamente distintos.
+r2.ok(/if\(antes === 0\)\{/.test(un2),
+      'si antes ya no hay nada, el problema es el filtro, no el permiso');
+r2.ok(/No encontré ese vínculo para borrar/.test(un2), '  y lo dice así');
+r2.ok(/if\(despues > 0\)\{/.test(un2), 'si después sigue, es el permiso');
+r2.ok(/falta una política de DELETE/.test(un2), '  y lo dice así');
+r2.ok(/SQL-revocar-y-pvt\.md/.test(un2), '  con dónde está el arreglo');
+// Sin red para verificar no se afirma nada.
+r2.ok(/if\(despues === null\)\{/.test(un2) && /no pude confirmarlo/.test(un2),
+      'y si no se pudo verificar, no se afirma ni una cosa ni la otra');
+
+r2.seccion('Y la pantalla se limpia después de saber, no antes:');
+r2.ok(/async function dmRevocarDesde\(btn, email, selectorAQuitar\)\{/.test(app),
+      'hay un envoltorio único para los tres botones');
+r2.ok(/ok = await unlinkDoctor\(email\)/.test(app), 'que espera el resultado');
+r2.ok(/if\(ok && btn && selectorAQuitar\)\{/.test(app),
+      'y sólo entonces saca la fila');
+// Si alguno vuelve a encadenar remove() en el onclick, vuelve el bug.
+r2.ok(!/unlinkDoctor\([^)]*\);this\.closest/.test(app),
+      'ningún botón encadena unlinkDoctor con un remove() sincrónico');
+r2.ok((app.match(/dmRevocarDesde\(/g) || []).length >= 4,
+      'los tres botones pasan por el envoltorio',
+      (app.match(/dmRevocarDesde\(/g) || []).length + ' usos');
+// Doble confirm: el de la lista preguntaba y unlinkDoctor volvía a preguntar.
+r2.ok(!/confirm\('¿Revocar acceso a '/.test(app),
+      'y se fue el segundo confirm, que preguntaba dos veces lo mismo');
+r2.ok(/btn\.disabled = true/.test(app),
+      'con el botón deshabilitado mientras tanto, para no mandarlo dos veces');
+
+r2.cerrar('Comprobar con la misma pregunta equivocada no comprueba nada.');
+
+r2.seccion('Y el SQL distingue las dos causas:');
+const sql2 = fs.readFileSync(path.join(__dirname, '..', 'SQL-revocar-y-pvt.md'), 'utf8');
+r2.ok(/patient_email <> lower\(patient_email\)/.test(sql2),
+      'hay una consulta para ver si los correos están desparejos');
+r2.ok(/Si devuelve 0 filas, el problema \*\*no\*\* es\s*\n?> este/.test(sql2) ||
+      /no\*\* es[\s\S]{0,40}este/.test(sql2),
+      'y dice qué significa que dé cero: entonces es el permiso');
+// El update de normalización ACERCA el dato a lo que la RLS ya compara.
+r2.ok(/la RLS ya\s*\n?compara con `lower\(\)`/.test(sql2),
+      'y por qué normalizar no debilita ninguna policy');
