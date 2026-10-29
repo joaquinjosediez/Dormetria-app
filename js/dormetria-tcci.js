@@ -1626,6 +1626,31 @@ function dmTcciLecturasHtml(s){
 // fue: la checklist clínica del profesional, de su lado.
 // ══════════════════════════════════════════════════════════════════════
 
+// ── FASE PILOTO: el programa entero abierto ───────────────────
+//
+// "Una paciente me dice que no puede pasar a la semana 2. En esta
+//  instancia inicial dejalo desbloqueado para todos, estamos en fase de
+//  prueba."
+//
+// No estaba roto: en modo guiado la semana 2 se abre cuando el profesional
+// la habilita desde su panel, y nadie la había habilitado. La paciente
+// quedó esperando un clic que no sabía que existía.
+//
+// Durante el piloto eso cuesta más de lo que protege: cada semana trabada
+// es una persona que abandona y un diario que deja de existir.
+//
+// LO QUE ESTO **NO** TOCA, y es la parte que importa: el cálculo de la
+// ventana de sueño sigue pidiendo un mínimo de 5 noches de diario. Abrir
+// el contenido de una semana no es lo mismo que recalcular la restricción
+// de tiempo en cama sobre datos que no existen. La titulación de la
+// restricción es semanal y se apoya en la eficiencia de las noches
+// anteriores (Edinger et al., AASM CPG 2021); eso sigue igual.
+//
+// Es UN interruptor, no un borrado de la compuerta: apagarlo vuelve al
+// comportamiento normal con una línea, y la lógica de apertura sigue
+// escrita y cubierta por las pruebas.
+const DM_TCCI_PILOTO = true;
+
 // Modo actual del paciente. Se resuelve una vez y queda cacheado en S.
 function dmTcciModo(){
   return (S && S._tcciGuiadoPor) ? 'guiado' : 'auto';
@@ -1640,6 +1665,8 @@ function dmTcciCerrada(n){
 }
 // ¿Puede entrar a esta semana?
 function dmTcciSemanaAbierta(n){
+  // Durante el piloto, todas. Ver DM_TCCI_PILOTO.
+  if(DM_TCCI_PILOTO) return true;
   if(dmTcciModo()==='guiado'){
     // La primera va sola: si el profesional activó el programa, algo tiene
     // que poder leer mientras espera la consulta.
@@ -1684,7 +1711,7 @@ function dmTcciAbrirSemana(n){
   }
   // El cobro no corre para quien viene acompañado por un profesional: ahí
   // el programa es parte del tratamiento, no un producto aparte.
-  if(dmTcciModo()!=='guiado' && !s.libre && !dmTcciTieneAcceso()){
+  if(!DM_TCCI_PILOTO && dmTcciModo()!=='guiado' && !s.libre && !dmTcciTieneAcceso()){
     window._dmTcciSemanaIntento=n; dmTcciMostrarSuscripcion(); return;
   }
   const old=document.getElementById('dm-tcci-sem'); if(old) old.remove();
@@ -1926,6 +1953,15 @@ function dmTcciRenderPrograma(){
   // Progreso general, arriba de todo: es lo primero que uno quiere ver al
   // volver a un programa de seis semanas.
   if(dmTcciProgresoTotal().total) html+=dmTcciProgresoHtml();
+  // Decirlo. Si está abierto todo y nadie avisa, la persona hace la
+  // semana 4 antes que la 2 sin saber que el orden importa —y en este
+  // protocolo cada semana se apoya en la anterior.
+  if(DM_TCCI_PILOTO) html+='<div style="background:rgba(126,200,164,.1);'+
+    'border:1px solid rgba(126,200,164,.28);border-radius:12px;padding:12px 14px;'+
+    'margin-bottom:12px;font-size:12.5px;color:rgba(244,239,229,.92);line-height:1.55">'+
+    '<b>Durante la prueba están abiertas las siete semanas.</b> Podés mirar lo que '+
+    'quieras, pero conviene hacerlas en orden: cada una se apoya en la anterior, y '+
+    'tu horario de sueño se calcula con las noches que vayas registrando.</div>';
   const _guiado = dmTcciModo()==='guiado';
   DM_TCCI_PROGRAMA.forEach(function(s){
     const _q0 = dmTcciProgresoSemana(s);
@@ -1935,7 +1971,9 @@ function dmTcciRenderPrograma(){
     // ya hubiera terminado la anterior, y al revés.
     const abierta = dmTcciSemanaAbierta(s.n);
     // El cobro no corre para quien viene acompañado por un profesional.
-    const bloqueadaPorPago = !_guiado && !s.libre && !acceso && !empezado;
+    // El cobro tampoco corre en el piloto: dejar la mitad del programa
+    // detrás de un pago mientras se está probando no deja medir nada.
+    const bloqueadaPorPago = !DM_TCCI_PILOTO && !_guiado && !s.libre && !acceso && !empezado;
     const activa = abierta && !bloqueadaPorPago;
     const borde = activa ? 'rgba(126,200,164,.35)' : 'rgba(255,255,255,.1)';
     let estado='';
