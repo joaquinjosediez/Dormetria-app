@@ -2022,7 +2022,12 @@ async function openPatientCbtiView(){
         const _d = await db.get('sleep_diary?patient_email=eq.'+encodeURIComponent(patEmail)+'&order=diary_date.desc&limit=30&select=bedtime,wake_time,sleep_minutes,notes,diary_date').catch(()=>[]);
         let _anchor;
         try{ const _o=await dmGetWindowOverride(patEmail,null); if(_o&&_o.window_anchor!=null) _anchor=_o.window_anchor; }catch(_){}
-        sw = computeSleepWindow(_d||[], _anchor);
+        // dmVentanaPrescripta y no computeSleepWindow: la segunda es una
+        // media móvil de 14 noches y se movía todos los días. Ver el
+        // comentario largo en index.html.
+        sw = (typeof dmVentanaPrescripta==='function')
+               ? dmVentanaPrescripta(_d||[], _anchor)
+               : computeSleepWindow(_d||[], _anchor);
       }catch(_){}
       let html='<div style="background:linear-gradient(135deg,rgba(126,200,164,0.14),rgba(200,169,110,0.08));border:1px solid rgba(200,169,110,0.4);border-radius:16px;padding:18px;margin-bottom:16px">'+
         '<div style="font-size:34px;margin-bottom:6px">🌿</div>'+
@@ -2040,6 +2045,25 @@ async function openPatientCbtiView(){
             '<div style="flex:1;background:rgba(126,200,164,0.1);border-radius:12px;padding:11px;text-align:center"><div style="font-size:9px;color:rgba(255,255,255,.72);letter-spacing:.06em">ACOSTARSE</div><div style="font-size:22px;font-weight:700;color:#fff">'+sw.fmt(sw.bedTarget)+'</div></div>'+
             '<div style="flex:1;background:rgba(126,200,164,0.1);border-radius:12px;padding:11px;text-align:center"><div style="font-size:9px;color:rgba(255,255,255,.72);letter-spacing:.06em">LEVANTARSE</div><div style="font-size:22px;font-weight:700;color:#fff">'+sw.fmt(sw.wakeTarget)+'</div></div>'+
           '</div>'+
+          (function(){
+            // Lo más importante de la tarjeta no es el horario: es que NO
+            // va a cambiar. Si eso no se dice, el próximo render que lo
+            // mueva por cualquier motivo vuelve a confundir.
+            if(sw.diasRestantes==null) return '';
+            const d = sw.diasRestantes;
+            const txt = d>0
+              ? '<b>Este horario se mantiene igual '+d+(d===1?' noche':' noches')+' más.</b> '+
+                'No cambia día a día: sostenerlo es lo que hace el tratamiento.'
+              : (sw.ajuste==='sin_datos'
+                  ? '<b>Toca revisarlo.</b> Faltan noches registradas de esta semana para '+
+                    'ajustarlo: seguí cargando el diario y se recalcula solo.'
+                  : '<b>Se ajustó hoy</b> con la eficiencia de la semana que pasó'+
+                    (sw.effSemana!=null? ' ('+sw.effSemana+' %)':'')+'.');
+            return '<div style="background:rgba(126,200,164,.1);border:1px solid '+
+              'rgba(126,200,164,.26);border-radius:11px;padding:10px 12px;margin-bottom:11px;'+
+              'font-size:12px;color:rgba(244,239,229,.92);line-height:1.5">'+txt+
+              (sw.ciclo>1?' · Semana '+sw.ciclo+' del ajuste':'')+'</div>';
+          })()+
           '<div style="display:flex;gap:10px;font-size:11.5px;color:rgba(255,255,255,.9)">'+
             '<div style="flex:1">Dormís en promedio <b style="color:#fff">'+sw.fmtDur(sw.avgTST)+'</b></div>'+
             '<div style="flex:1">Eficiencia <b style="color:'+effCol+'">'+sw.eff+'%</b></div>'+
