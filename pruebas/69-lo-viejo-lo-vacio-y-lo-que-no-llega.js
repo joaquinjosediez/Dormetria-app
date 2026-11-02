@@ -69,8 +69,13 @@ r.ok(/f\.severidad !== 'ok'/.test(resumen),
 const cuest = resumen.slice(resumen.indexOf('filas = alteradas.map(function (x) {'),
                             resumen.indexOf("}).join('');",
                               resumen.indexOf('filas = alteradas.map(function (x) {')));
-r.ok(/const vieja = dias != null && dias >= 60/.test(cuest),
-     'la tarjeta de cuestionarios usa el mismo corte');
+// mod291: el corte dejó de ser 60 para todas. Lo que decide el intervalo
+// es la ventana de recuerdo de cada instrumento — ver DM_REPETIR_DIAS y
+// pruebas/87. Lo que esta prueba sigue fijando es que la tarjeta use EL
+// MISMO criterio que el resto de la app, que era el punto original.
+r.ok(/dmRepetirCada\(x\.scaleId\)/.test(cuest),
+     'la tarjeta de cuestionarios usa el intervalo de cada escala');
+r.ok(!/dias >= 60/.test(cuest), 'y ya no un 60 fijo para todas');
 r.ok(/conviene repetirla/.test(cuest),
      'y lo dice con todas las letras');
 r.ok(/dmPedirEscala\(/.test(cuest),

@@ -476,7 +476,11 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
         // (STOP-BANG, Epworth, PHQ-9). Un ISI o un GASQ alterado de hace
         // cuatro meses no lo decia nadie.
         const dias = x.fecha ? Math.floor((Date.now() - new Date(x.fecha)) / 86400000) : null;
-        const vieja = dias != null && dias >= 60;
+        // 60 días para todas era el mismo error que el 30 del lado del
+        // paciente: lo que decide el intervalo es la ventana de recuerdo
+        // de cada instrumento. Ver DM_REPETIR_DIAS.
+        const _cada = (typeof dmRepetirCada === 'function') ? dmRepetirCada(x.scaleId) : 60;
+        const vieja = dias != null && _cada !== null && dias >= _cada;
         const cuanto = dias == null ? ''
           : dias < 365 ? ('hace ' + Math.round(dias / 30) + ' meses')
           : ('hace ' + Math.floor(dias / 365) + ' a\u00f1o' + (dias >= 730 ? 's' : ''));
@@ -503,6 +507,24 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
             : '') +
         '</div>';
       }).join('');
+
+      // Un boton para todas. Pedirlas de a una era tres viajes a otra
+      // pestana, y cada paso es gente que lo deja a la mitad. Solo aparece
+      // si hay mas de una: con una sola, el boton de la fila alcanza.
+      const _repetibles = alteradas.filter(function (x) {
+        if (typeof dmRepetirCada !== 'function') return false;
+        const cada = dmRepetirCada(x.scaleId);
+        if (cada === null) return false;
+        const d = x.fecha ? Math.floor((Date.now() - new Date(x.fecha)) / 86400000) : null;
+        return d != null && d >= cada;
+      });
+      if (_repetibles.length > 1) {
+        filas += '<button onclick="event.stopPropagation();dmSugerirRepeticiones(this)" ' +
+          'style="width:100%;margin-top:10px;background:rgba(200,169,110,0.16);' +
+          'border:0.5px solid rgba(200,169,110,0.42);border-radius:10px;padding:9px;' +
+          'font-size:12px;font-weight:700;color:#C8A96E;cursor:pointer;font-family:inherit">' +
+          '\u{1F501} Ped\u00edrle las ' + _repetibles.length + ' que convienen repetir</button>';
+      }
 
       if (normales.length) {
         filas += '<div style="font-size:12px;color:rgba(244,239,229,.78);line-height:1.5;padding-top:9px;' +

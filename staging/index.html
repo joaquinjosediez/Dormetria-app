@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg291-0e3cb8a9">
+<link rel="stylesheet" href="css/styles.css?v=stg292-0e3cb8a9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg291-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg291-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg291-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=stg291-87bd02e3"></script>
-<script src="js/dormetria-tcci.js?v=stg291-03c874bc"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg292-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg292-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg292-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=stg292-b66c55a7"></script>
+<script src="js/dormetria-tcci.js?v=stg292-03c874bc"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg291';
+const APP_VERSION='stg292';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg291 \u2014 <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg292 \u2014 <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -10272,7 +10272,8 @@ function pickScaleOfDay(user, records){
     const last = latest[sc.id];
     if(!last) return false;
     const interp = sc.interp ? sc.interp(last.score) : null;
-    return !!(interp && interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg));
+    // Misma pregunta, un solo lugar: ver dmEscalaAlterada.
+    return dmEscalaAlterada(interp);
   };
   const pathoDue = eligible.filter(sc => latest[sc.id] && isPatho(sc))
     .sort((a,b)=> new Date(latest[a.id].created_at) - new Date(latest[b.id].created_at));
@@ -10673,7 +10674,9 @@ async function copyPatientSummaryToClipboard(encodedEmail){
       const sc = SCALES.find(s => s.id === r.scale_id);
       if(!sc) return false;
       const i = sc.interp(r.score);
-      return i && i.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(i.bg);
+      // Este resumen es el que se le manda al profesional: con el
+      // olfateo del fondo, una depresion severa no figuraba.
+      return dmEscalaAlterada(i);
     });
     if(pathologicalRecs.length){
       L.push('');
@@ -10758,64 +10761,195 @@ async function copyPatientSummaryToClipboard(encodedEmail){
   }
 }
 
-async function maybePromptReevalScales(){  if(!S.user || !S.user.email || S.role !== 'patient') return;
+// ── Cada cosa se repite cada cuanto tiene sentido repetirla ───────
+//
+// El aviso de reevaluación usaba 30 días para todo. Un número único para
+// veinticinco instrumentos distintos no puede estar bien para todos, y lo
+// que decide el intervalo es la VENTANA DE RECUERDO de cada escala: dos
+// tomas que se pisan dentro de la misma ventana no son dos medidas
+// independientes, son la misma pregunta hecha dos veces.
+//
+//   · ISI, PHQ-9, GAD-7, PCL-5 preguntan por las últimas 2 semanas. Se
+//     pueden repetir a los 14 días, y en seguimiento de TCC-I es lo
+//     habitual (Morin; Kroenke).
+//   · PSQI pregunta por el último MES. Antes de 30 días las dos tomas se
+//     superponen; 30 es el mínimo, no una preferencia.
+//   · Epworth y FOSQ miden un estado más estable: 30 días.
+//   · STOP-BANG se arma con IMC, perímetro cervical, edad y sexo. No se
+//     mueve en un mes. Volver a pedirlo cada cuatro semanas es ruido que
+//     enseña a ignorar los avisos: 180 días.
+//   · MEQ y MCTQ son cronotipo, que es un rasgo. No se reevaluan solos.
+//
+// null = no se vuelve a pedir automáticamente nunca.
+var DM_REPETIR_DIAS = {
+  isi:14, phq9:14, gad7:14, pcl5:14, hamd:14, hama:14, gds5:14,
+  psqi:30, ess:30, fosq10:30, ais:30, fss:30, jss:30, psas:30, dbas:30,
+  irls:30, gases:30, gses:30, sassv:30, pdss:30, higiene:30,
+  promis_pi8a:30, promis_f8a:30, promis_gh10:30,
+  stopbang:180, rbdq:180, flep:180, moca_sleep:180, bears:180, gasq:90,
+  meq:null, mctq:null, iief:90, fsfi:90, mrs:90, psst:60, eedsi:90
+};
+var DM_REPETIR_DEFECTO = 30;
+function dmRepetirCada(scaleId){
+  const v = DM_REPETIR_DIAS[String(scaleId)];
+  if(v === null) return null;                 // rasgo: no se repite sola
+  return (typeof v === 'number') ? v : DM_REPETIR_DEFECTO;
+}
+// ¿Esa interpretación está fuera de rango?
+//
+// El aviso del paciente lo decidía olfateando el hex del FONDO:
+//
+//     /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg)
+//
+// Y ya estaba fallando. La banda más grave del PHQ-9 —"Depresión severa",
+// a partir de 20 sobre 27— tiene bg #fecaca, que no entra en ese patrón:
+// el aviso de reevaluación NUNCA se mostró para la depresión severa.
+// Justamente la que más conviene volver a medir.
+//
+// Adivinar la severidad desde un pastel de fondo es frágil por
+// construcción: cada banda nueva que alguien agregue con otro tono se
+// clasifica mal y nadie se entera. El COLOR DE TEXTO, en cambio, es la
+// señal semántica y usa una paleta chica y estable, la misma que el resto
+// de la app (ver DM_ESTADOS).
+//
+// Los azules y violetas no son severidad: los usan las escalas
+// descriptivas —cronotipo, por ejemplo— donde no hay "peor".
+var DM_COLOR_NORMAL = ['#14532d','#15803d','#166534','#3f6212','#3b6b52','#065f46','#0f2820'];
+var DM_COLOR_ALTERADO = ['#991b1b','#9b1c1c','#92400e','#854d0e','#c2410c','#a16207',
+                         '#9a3412','#b45309','#7f1d1d','#b91c1c','#dc2626','#d97706'];
+// Descriptivas: no hay "peor". Cronotipo, preferencias, perfiles. Van
+// listadas para que el aviso de abajo signifique algo: si todo lo que no
+// es verde ni rojo avisara, el aviso sería ruido permanente y nadie lo
+// miraría el día que aparezca un tono de verdad nuevo.
+var DM_COLOR_DESCRIPTIVO = ['#7c3aed','#4338ca','#185fa5','#1d4ed8','#2563eb','#374151'];
+function dmEscalaAlterada(interp){
+  if(!interp) return false;
+  const c = String(interp.c||'').toLowerCase();
+  if(DM_COLOR_ALTERADO.indexOf(c) >= 0) return true;
+  if(DM_COLOR_NORMAL.indexOf(c) >= 0) return false;
+  if(DM_COLOR_DESCRIPTIVO.indexOf(c) >= 0) return false;
+  // Un tono que no está en ninguna de las tres listas. No se afirma que esté alterada —no se molesta a nadie por
+  // un color que no sabemos leer— pero queda constancia, que es lo que
+  // faltó la vez anterior.
+  if(c) { try{ console.warn('[REEVAL] color sin clasificar: '+c+' — revisar DM_COLOR_*'); }catch(_){} }
+  return false;
+}
+// Las escalas que convendría repetir, a partir de los registros crudos de
+// `evaluations`. Una sola función para los dos lados: lo que ve el paciente
+// en su inicio y lo que el profesional manda con un botón tienen que ser la
+// misma lista, o el paciente recibe algo que su profesional no pidió.
+function dmEscalasARepetir(recs){
+  const ultima = {};
+  (recs||[]).forEach(function(r){
+    if(!r || !r.scale_id) return;
+    if(!ultima[r.scale_id] || new Date(r.created_at) > new Date(ultima[r.scale_id].created_at)){
+      ultima[r.scale_id] = r;
+    }
+  });
+  const out = [];
+  Object.keys(ultima).forEach(function(k){
+    const r = ultima[k];
+    const sc = (typeof SCALES!=='undefined') ? SCALES.find(function(x){ return x.id===r.scale_id; }) : null;
+    if(!sc || typeof sc.interp !== 'function') return;
+    let interp = null;
+    try{ interp = sc.interp(r.score); }catch(_){ return; }
+    if(!dmEscalaAlterada(interp)) return;
+    const cada = dmRepetirCada(r.scale_id);
+    if(cada === null) return;
+    const dias = Math.floor((Date.now() - new Date(r.created_at).getTime())/86400000);
+    if(dias < cada) return;
+    out.push({ scaleId:r.scale_id, nombre:sc.name, dias:dias, cada:cada,
+               etiqueta:(interp && interp.l) || '', score:r.score, fecha:r.created_at });
+  });
+  // Primero la más vieja: es la que peor se lee como "el estado de hoy".
+  out.sort(function(a,b){ return b.dias - a.dias; });
+  return out;
+}
+// "Hace un mes", "hace tres semanas": en palabras, que es como lo dice una
+// persona. "Hace 47 días" obliga a hacer la cuenta.
+function dmHaceCuanto(dias){
+  if(dias < 21) return 'hace ' + dias + ' días';
+  const meses = Math.round(dias/30);
+  if(meses <= 1) return 'hace un mes';
+  if(meses < 12) return 'hace ' + meses + ' meses';
+  const a = Math.floor(dias/365);
+  return 'hace ' + a + ' año' + (a>1?'s':'');
+}
+window.dmEscalasARepetir = dmEscalasARepetir;
+window.dmRepetirCada = dmRepetirCada;
+window.dmHaceCuanto = dmHaceCuanto;
+
+async function maybePromptReevalScales(){
+  if(!S.user || !S.user.email || S.role !== 'patient') return;
   try{
-    const recs = S.records && S.records.length 
-      ? S.records 
+    const recs = S.records && S.records.length
+      ? S.records
       : await db.get('evaluations?patient_email=eq.'+encodeURIComponent(S.user.email)+'&order=created_at.desc&select=*').catch(()=>[]);
     if(!recs || !recs.length) return;
-    // Agrupar por scale_id, quedarnos con la última de cada una
-    const latest = {};
-    recs.forEach(r=>{
-      if(!latest[r.scale_id] || new Date(r.created_at) > new Date(latest[r.scale_id].created_at)){
-        latest[r.scale_id] = r;
-      }
-    });
-    // Filtrar las patológicas (i.bg en rojos/ámbares) con ≥30 días desde la toma
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+    // El intervalo lo decide cada escala y no un 30 para todas: ver
+    // DM_REPETIR_DIAS. Y la lista sale de la MISMA funcion que usa el
+    // boton del profesional, asi el paciente nunca recibe algo distinto
+    // de lo que su profesional le pidio.
     const dismissedKey = 'dm_reeval_dismissed_'+S.user.email;
-    const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}');
-    const candidates = [];
-    Object.values(latest).forEach(r=>{
-      const sc = SCALES.find(s=>s.id===r.scale_id);
-      if(!sc) return;
-      const interp = sc.interp(r.score);
-      if(!interp) return;
-      // Patológico: bg rojo (#fee2e2/#fef2f2) o ámbar (#fef3c7/#fffbeb)
-      const isPath = interp.bg && /^(#fee|#fef[23]|#fff[a-f0-9]b)/i.test(interp.bg);
-      if(!isPath) return;
-      const taken = new Date(r.created_at);
-      if(taken > cutoff) return; // muy reciente, no insistir
-      // Chequear si el paciente ya cerró este recordatorio en los últimos 7 días
-      const dKey = r.scale_id;
-      if(dismissed[dKey] && (Date.now() - dismissed[dKey]) < 7*86400000) return;
-      candidates.push({ sc, r, interp, taken });
-    });
+    let dismissed = {};
+    try{ dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}'); }catch(_){}
+    const candidates = dmEscalasARepetir(recs).filter(function(x){
+      // Si la cerro hace menos de 7 dias, no insistir.
+      return !(dismissed[x.scaleId] && (Date.now() - dismissed[x.scaleId]) < 7*86400000);
+    }).map(function(x){
+      return { x:x, sc:SCALES.find(function(z){ return z.id===x.scaleId; }) };
+    }).filter(function(c){ return !!c.sc; });
     if(!candidates.length) return;
-    // Mostrar el primer recordatorio (uno por vez para no abrumar)
+    // Uno por vez: tres avisos juntos se cierran los tres sin leer ninguno.
     const c = candidates[0];
     const homeScroll = document.querySelector('#screen-home .scroll');
     if(!homeScroll) return;
     if(document.getElementById('reeval-banner-'+c.sc.id)) return;
     const banner = document.createElement('div');
     banner.id = 'reeval-banner-'+c.sc.id;
-    const daysAgo = Math.floor((Date.now() - c.taken.getTime()) / 86400000);
     banner.style.cssText = 'background:linear-gradient(135deg,rgba(200,169,110,0.18),rgba(200,169,110,0.08));border:1px solid rgba(200,169,110,0.4);border-radius:14px;padding:14px 16px;margin:10px 16px;cursor:pointer';
+    // El texto dice TRES cosas y las tres hacen falta: cuando lo contesto,
+    // que dio fuera de rango, y PARA QUE sirve repetirlo. Sin la tercera es
+    // una tarea mas; con ella es ver si lo que esta haciendo sirvio, que es
+    // lo unico que a la persona le importa.
+    const _cerrar = "event.stopPropagation();dmCerrarReeval('"+c.sc.id+"');";
     banner.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px">'+
-      '<div style="font-size:22px;flex-shrink:0">🔁</div>'+
+      '<div style="font-size:22px;flex-shrink:0">\u{1F501}</div>'+
       '<div style="flex:1">'+
-        '<div style="font-size:14px;font-weight:600;color:#C8A96E;margin-bottom:3px">Repetir '+c.sc.name+'</div>'+
-        '<div style="font-size:12px;color:rgba(244,239,229,.92);line-height:1.4">Hace '+daysAgo+' días te dio "'+c.interp.l+'". Repetirla ayuda a ver si hubo mejoría.</div>'+
+        '<div style="font-size:14px;font-weight:600;color:#C8A96E;margin-bottom:3px">Repetir '+escHtml(c.sc.name)+'</div>'+
+        '<div style="font-size:12px;color:rgba(244,239,229,.92);line-height:1.45">'+
+          dmHaceCuanto(c.x.dias)+' completaste este cuestionario y dio <b>'+escHtml(c.x.etiqueta)+'</b>. '+
+          'Volver a contestarlo nos sirve para comparar como estas ahora y ver tu progreso. '+
+          'Son unos minutos.</div>'+
+        (candidates.length>1
+          ? '<div style="font-size:11px;color:rgba(244,239,229,.7);margin-top:5px">Y hay '+
+            (candidates.length-1)+' mas para repetir cuando puedas.</div>'
+          : '')+
       '</div>'+
-      '<button onclick="event.stopPropagation();document.getElementById(\'reeval-banner-'+c.sc.id+'\').remove();var d=JSON.parse(localStorage.getItem(\''+dismissedKey+'\')||\'{}\');d[\''+c.sc.id+'\']=Date.now();localStorage.setItem(\''+dismissedKey+'\',JSON.stringify(d));" style="background:none;border:none;color:rgba(244,239,229,.9);font-size:18px;cursor:pointer;padding:0 4px;flex-shrink:0" aria-label="Cerrar">×</button>'+
+      '<button onclick="'+_cerrar+'" style="background:none;border:none;color:rgba(244,239,229,.9);font-size:18px;cursor:pointer;padding:0 4px;flex-shrink:0" aria-label="Cerrar">\u00d7</button>'+
       '</div>';
-    banner.onclick = ()=>{
+    banner.onclick = function(){
       if(typeof showScaleQuestionnaire === 'function') showScaleQuestionnaire(c.sc.id);
       else if(typeof startScale === 'function') startScale(c.sc.id);
     };
     homeScroll.insertBefore(banner, homeScroll.firstChild);
   }catch(e){ console.warn('[reeval] error', e); }
 }
+// Cerrar el aviso vivia en un onclick con cuatro niveles de comillas
+// escapadas dentro de un template. Una funcion con nombre no se rompe la
+// proxima vez que alguien toque esa linea.
+function dmCerrarReeval(scaleId){
+  try{
+    const el = document.getElementById('reeval-banner-'+scaleId);
+    if(el) el.remove();
+    const k = 'dm_reeval_dismissed_'+(S.user&&S.user.email||'');
+    let d = {};
+    try{ d = JSON.parse(localStorage.getItem(k)||'{}'); }catch(_){}
+    d[scaleId] = Date.now();
+    localStorage.setItem(k, JSON.stringify(d));
+  }catch(_){}
+}
+window.dmCerrarReeval = dmCerrarReeval;
 
 // ─── Render del lado paciente: "Tu profesional te acerca este material" ─
 async function loadPatientEducation(){
@@ -19987,6 +20121,72 @@ function drArchiveFromProfile(email){
   }catch(_){ toast('No se pudo cambiar el estado'); }
 }
 // ─── Del Resumen a "Sugerir escalas", con la escala ya tildada ───────
+// ── Un botón, cero pasos ────────────────────────────────
+//
+// dmPedirEscala llevaba a la pestaña "Sugerir escalas" y TILDABA la
+// casilla — después había que apretar Enviar. Con tres escalas viejas eran
+// tres viajes de ida y vuelta, y cada paso es gente que lo deja a la mitad.
+//
+// Esto manda las que correspondan, de una. La lista sale de
+// dmEscalasARepetir, la misma que ve el paciente en su inicio: lo que le
+// llega es exactamente lo que acá se decidió pedir.
+async function dmSugerirRepeticiones(btn){
+  const pat = S.viewData && S.viewData.email;
+  if(!pat){ toast('No hay paciente abierto'); return; }
+  const _orig = btn ? btn.innerHTML : null;
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner-mini"></span>Pidiendo…'; }
+  try{
+    const recs = await db.get('evaluations?patient_email=ilike.'+encodeURIComponent(pat)+
+                              '&order=created_at.desc&select=*').catch(function(){ return []; });
+    const lista = dmEscalasARepetir(recs||[]);
+    if(!lista.length){ toast('No hay cuestionarios para repetir'); return; }
+    const patNorm = String(pat).trim().toLowerCase();
+    // Las que ya tiene pendientes no se mandan de nuevo: al paciente le
+    // aparecía la misma escala repetida, que es la forma más rápida de que
+    // deje de mirar los avisos.
+    const pendientes = new Set();
+    try{
+      const prev = await db.get('doctor_suggestions?patient_email=ilike.'+encodeURIComponent(patNorm)+
+                                '&completed=eq.false&select=scale_id');
+      (prev||[]).forEach(function(r){ pendientes.add(String(r.scale_id)); });
+    }catch(_){}
+    let enviadas = 0, yaEstaban = 0, fallaron = 0;
+    const nombres = [];
+    for(const it of lista){
+      if(pendientes.has(String(it.scaleId))){ yaEstaban++; continue; }
+      try{
+        const r = await fetch(SU+'/rest/v1/doctor_suggestions', {
+          method:'POST',
+          headers:{'apikey':SK,'Authorization':await db._getAuthHeader(),
+                   'Content-Type':'application/json','Prefer':'return=minimal'},
+          body: JSON.stringify({
+            doctor_email: S.user.email.trim().toLowerCase(),
+            doctor_name: ((S.user.gender==='Masculino')?'Dr. ':(S.user.gender==='Femenino')?'Dra. ':'Dr/a. ')+S.user.name+' '+(S.user.lname||''),
+            patient_email: patNorm,
+            scale_id: it.scaleId,
+            scale_name: it.nombre,
+            // El mensaje viaja con el pedido: el paciente ve POR QUÉ se lo
+            // piden, no una tarea suelta.
+            message: 'La completaste '+dmHaceCuanto(it.dias)+' y dio "'+it.etiqueta+'". '+
+                     'Repetirla nos deja comparar cómo estás ahora.',
+            seen:false, completed:false
+          })
+        });
+        if(r.ok || r.status===201){ enviadas++; nombres.push(it.nombre); }
+        else { fallaron++; console.error('[REPETIR] '+it.scaleId+' → '+r.status); }
+      }catch(e){ fallaron++; console.error('[REPETIR] '+it.scaleId, (e&&e.message)||e); }
+    }
+    if(enviadas) toast('Pedidas: '+nombres.join(', ')+
+      (yaEstaban?' · '+yaEstaban+' ya estaban pendientes':''));
+    else if(yaEstaban) toast('Ya las tenía pendientes todas');
+    if(fallaron) toast('No se pudieron pedir '+fallaron+'. Quedó en la consola.');
+    try{ if(typeof renderDrPatientSummary==='function') renderDrPatientSummary(); }catch(_){}
+  } finally {
+    if(btn){ btn.disabled = false; if(_orig!=null) btn.innerHTML = _orig; }
+  }
+}
+window.dmSugerirRepeticiones = dmSugerirRepeticiones;
+
 // El aviso "conviene repetirla" sin un camino de un clic no sirve: hay que
 // acordarse del nombre, cambiar de pestana, encontrarla entre veinticinco y
 // tildarla. Eso es lo que hace que no se repita nunca.
