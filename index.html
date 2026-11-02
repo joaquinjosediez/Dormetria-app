@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod292-0e3cb8a9">
+<link rel="stylesheet" href="css/styles.css?v=mod293-0e3cb8a9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod292-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod292-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod292-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=mod292-b66c55a7"></script>
-<script src="js/dormetria-tcci.js?v=mod292-03c874bc"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod293-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod293-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod293-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=mod293-b66c55a7"></script>
+<script src="js/dormetria-tcci.js?v=mod293-03c874bc"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod292';
+const APP_VERSION='mod293';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -6461,6 +6461,9 @@ async function analyzeDocWithAI(docId, docTitle, docCategory, isDoctor=false){
         Elegí el tipo de análisis y tocá el botón para comenzar.
       </div>
     </div>
+    ${(doc.file_type||'').startsWith('image/') ? `<div style="margin-top:12px;padding:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;line-height:1.5">
+      📷 Este estudio es una <b>foto</b>, no un PDF. Lo que se pueda leer depende de la foto: si hay reflejos, sombra o está en diagonal, van a faltar valores. Compará siempre contra el informe original.
+    </div>` : ''}
     <div style="margin-top:12px;padding:10px;background:#fef3c7;border-radius:8px;font-size:11px;color:#92400e;line-height:1.5">
       ⚠️ Este análisis es una herramienta de apoyo generada por IA. No reemplaza el criterio clínico profesional.
     </div>
@@ -6532,12 +6535,27 @@ Sé preciso, clínico y conciso.`
     : `Sos un especialista en medicina del sueño. Analizá este ${catContext} y explicalo en lenguaje clínico claro para un médico, destacando los aspectos más relevantes para el manejo del paciente. ${patientContext}. Sé directo y práctico.`;
   
   try{
-    // Sacar la cabecera "data:...;base64," antes de mandarlo.
+    // Sacar la cabecera "data:...;base64," antes de mandarlo, y quedarse
+    // con el tipo que venia ahi: es mas confiable que file_type, que en
+    // registros viejos puede no coincidir con el dato.
+    const _cab = /^data:([^;]*);base64,/.exec(String(doc.file_data || ''));
     const _b64 = String(doc.file_data || '').replace(/^data:[^;]*;base64,/, '');
+    const _tipo = (_cab && _cab[1]) || doc.file_type || 'application/pdf';
+    const _esImagen = _tipo.startsWith('image/');
+    // `pdf` se sigue mandando tal cual para no romper la funcion que ya
+    // esta desplegada: con un PDF, todo sigue andando aunque nadie pegue
+    // la version nueva. `archivo` es lo que la nueva necesita para armar
+    // un bloque de imagen en vez de uno de documento.
     const data = await dmInvocarFuncion('analizar-estudio', {
       pdf: _b64,
+      archivo: { datos: _b64, tipo: _tipo },
       audiencia: (S.role === 'doctor') ? 'profesional' : 'paciente',
-      contexto: prompt
+      contexto: prompt + (_esImagen
+        ? '\n\nEste estudio llega como FOTOGRAF\u00cDA de un informe en papel, no ' +
+          'como PDF. Si alg\u00fan valor no se lee con certeza, dec\u00edlo expl\u00edcitamente ' +
+          'en vez de estimarlo: un n\u00famero mal le\u00eddo en una polisomnograf\u00eda es ' +
+          'peor que un dato faltante.'
+        : '')
     });
     try{ clearInterval(window._aiReloj); }catch(_){}
     const text = data.texto || '';
@@ -23972,7 +23990,7 @@ async function loadDocs(cat){
         '</div>' +
         '<div style="display:flex;gap:8px;flex-shrink:0">' +
         (d.file_data ? '<button data-did="'+d.id+'" onclick="viewDoc(this.dataset.did)" style="border:1px solid rgba(126,200,164,.3);background:rgba(126,200,164,.14);color:#7EC8A4;border-radius:10px;padding:8px 13px;font-size:13px;cursor:pointer;font-weight:600">Ver</button>' : '') +
-        (d.file_data && (d.file_type||'').includes('pdf') ? '<button data-did="'+d.id+'" data-title="'+d.title+'" data-cat="'+d.category+'" onclick="analyzeDocWithAI(this.dataset.did,this.dataset.title,this.dataset.cat)" style="border:none;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600">🤖 IA</button>' : '') +
+        (d.file_data ? '<button data-did="'+d.id+'" data-title="'+d.title+'" data-cat="'+d.category+'" onclick="analyzeDocWithAI(this.dataset.did,this.dataset.title,this.dataset.cat)" style="border:none;background:linear-gradient(135deg,#1a4a3a,#2d6b56);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600">🤖 IA</button>' : '') +
         '<button data-did="'+d.id+'" onclick="deleteDoc(this.dataset.did)" style="border:none;background:none;color:rgba(244,239,229,.72);cursor:pointer;font-size:18px;padding:4px">🗑</button>'
       + '</div></div>';
     }).join('');
