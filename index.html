@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=mod291-0e3cb8a9">
+<link rel="stylesheet" href="css/styles.css?v=mod292-0e3cb8a9">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=mod291-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=mod291-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=mod291-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=mod291-b66c55a7"></script>
-<script src="js/dormetria-tcci.js?v=mod291-03c874bc"></script>
+<script src="js/dormetria-sleep-metrics.js?v=mod292-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=mod292-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=mod292-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=mod292-b66c55a7"></script>
+<script src="js/dormetria-tcci.js?v=mod292-03c874bc"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,7 +1416,7 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='mod291';
+const APP_VERSION='mod292';
 
 // ─── PWA: registro del service worker e instalación ───
 // ─── PUSH TERCIARIZADO (OneSignal) ────────────────────────────────────────
@@ -24009,14 +24009,21 @@ function showDocsNew(){
       <textarea class="form-input" id="doc-desc" rows="2" placeholder="Notas o contexto relevante..."></textarea>
     </div>
     <div class="form-group">
-      <label class="form-label">Archivo (imagen o PDF, máx. 8MB)</label>
+      <label class="form-label">Archivo (foto o PDF, máx. 8MB)</label>
       <div style="background:var(--bg-secondary);border-radius:12px;border:1.5px dashed var(--sep-opaque);padding:24px;text-align:center;cursor:pointer" onclick="document.getElementById('doc-file').click()">
         <div style="font-size:32px;margin-bottom:8px">📎</div>
         <div style="font-size:15px;font-weight:500;color:#1a4a3a">Seleccionar archivo</div>
-        <div style="font-size:13px;color:var(--label-2);margin-top:4px">JPG, PNG, PDF</div>
+        <div style="font-size:13px;color:var(--label-2);margin-top:4px">Foto (JPG, PNG, HEIC), PDF o captura de pantalla</div>
         <div id="doc-file-name" style="font-size:13px;color:#1a4a3a;margin-top:8px;font-weight:500"></div>
       </div>
-      <input type="file" id="doc-file" accept="image/*,application/pdf,.pdf" style="display:none" onchange="previewDocFile(this)">
+      <div class="sobre-claro" style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-top:9px;font-size:12px;color:#92400e;line-height:1.5">
+        <b>Si le sacás una foto, que se lea.</b> Apoyá la hoja en una superficie
+        plana con buena luz, sin sombra encima, y sacá la foto desde arriba y
+        derecho — no en diagonal. Si el estudio tiene varias hojas, cargá una
+        por una. Antes de guardar, fijate que puedas leer los números chicos:
+        si vos no los leés en el teléfono, tu profesional tampoco.
+      </div>
+      <input type="file" id="doc-file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,application/pdf,.pdf" style="display:none" onchange="previewDocFile(this)">
       <input type="hidden" id="doc-data" value="">
       <input type="hidden" id="doc-type" value="">
     </div>
@@ -24042,45 +24049,120 @@ function showDocsNew(){
   });
 }
 
+// ── Cargar un estudio: foto o PDF ─────────────────────────
+//
+// "¿Solo se cargan PDF o permite formato imagen? Hay pacientes que tienen
+//  fotos de los estudios."
+//
+// Las imágenes YA estaban aceptadas. Lo que fallaba era otra cosa, y hacía
+// que una foto de iPhone se colgara sin decir nada:
+//
+//   1 · `img.onload` no tenía `onerror`. Si el navegador no puede decodificar
+//       la imagen —HEIC, que es el formato POR DEFECTO de la cámara de
+//       iPhone— onload no se dispara nunca: el campo oculto queda vacío, la
+//       tarjeta se queda en "Procesando…" para siempre, y la persona
+//       concluye que la app no acepta fotos. No había ni un error en la
+//       consola.
+//   2 · El `accept` no nombraba .heic/.heif, así que en varios selectores el
+//       archivo aparecía en gris y ni se podía elegir.
+//   3 · Se reducía a 1200 px de ancho con calidad 0,75. Para una foto eso
+//       alcanza; para la foto de un INFORME, no: lo que importa de una
+//       polisomnografía es la letra chica, y a 1200 px la letra chica no se
+//       lee. Se guardaba un archivo liviano e inútil.
+//   4 · `doc-type` guardaba el tipo ORIGINAL (image/png) aunque el dato
+//       almacenado fuera un JPEG: el visor decía una cosa y el contenido era
+//       otra.
+const DM_DOC_MAX_PX = 2000;     // la letra chica de un informe se tiene que leer
+const DM_DOC_CALIDAD = [0.82, 0.72, 0.62];
+const DM_DOC_MAX_KB = 4300;
+
+function dmDocMensaje(html, color){
+  const el = document.getElementById('doc-file-name');
+  if(el){ el.innerHTML = html; el.style.color = color || '#1a4a3a'; }
+}
+
 function previewDocFile(input){
   if(!input.files||!input.files[0])return;
   const file = input.files[0];
-  if(file.size > 8*1024*1024){ toast('El archivo debe ser menor a 8MB'); input.value=''; return; }
-  document.getElementById('doc-file-name').innerHTML = '<span class="spinner-mini"></span>Procesando '+escHtml(file.name)+'…';
-  document.getElementById('doc-type').value = file.type;
+  document.getElementById('doc-data').value = '';
+  if(file.size > 8*1024*1024){
+    toast('El archivo debe ser menor a 8MB');
+    dmDocMensaje('❌ Son '+Math.round(file.size/1024/1024)+' MB. El máximo es 8.', '#9b1c1c');
+    input.value='';
+    return;
+  }
+  dmDocMensaje('<span class="spinner-mini"></span>Procesando '+escHtml(file.name)+'…');
+  const esImagen = (file.type||'').startsWith('image/') ||
+                   /\.(jpe?g|png|webp|heic|heif|gif|bmp|tiff?)$/i.test(file.name||'');
   const reader = new FileReader();
+  reader.onerror = function(){
+    dmDocMensaje('❌ No se pudo leer el archivo. Probá con otro.', '#9b1c1c');
+  };
   reader.onload = function(e){
-    // Compress images, keep PDFs as-is
-    if(file.type.startsWith('image/')){
-      const img = new Image();
-      img.onload = function(){
-        const canvas = document.createElement('canvas');
-        const MAX = 1200;
-        let w = img.width, h = img.height;
-        if(w > MAX){ h = Math.round(h*MAX/w); w = MAX; }
-        if(h > MAX){ w = Math.round(w*MAX/h); h = MAX; }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const compressed = canvas.toDataURL('image/jpeg', 0.75);
-        const kb = Math.round(compressed.length * 0.75 / 1024);
-        document.getElementById('doc-data').value = compressed;
-        document.getElementById('doc-file-name').textContent = file.name + ' (comprimido: ' + kb + ' KB)';
-      };
-      img.src = e.target.result;
-    } else {
-      // PDF or other file
+    if(!esImagen){
       const base64 = e.target.result;
       const kb = Math.round(base64.length * 0.75 / 1024);
-      if(kb > 4500){ 
-        toast('El archivo es muy grande ('+kb+'KB). Máximo ~4MB.');
-        document.getElementById('doc-file-name').textContent = '❌ Archivo demasiado grande';
+      if(kb > DM_DOC_MAX_KB){
+        toast('El archivo es muy grande ('+kb+' KB). Máximo ~4 MB.');
+        dmDocMensaje('❌ Archivo demasiado grande ('+kb+' KB)', '#9b1c1c');
         return;
       }
       document.getElementById('doc-data').value = base64;
       document.getElementById('doc-type').value = file.type || 'application/pdf';
-      document.getElementById('doc-file-name').textContent = '✓ ' + file.name + ' (' + kb + ' KB)';
-      console.log('PDF loaded, type:', file.type, 'size:', kb, 'KB', 'data starts:', base64.slice(0,30));
+      dmDocMensaje('✓ ' + escHtml(file.name) + ' (' + kb + ' KB)');
+      return;
     }
+    const img = new Image();
+    // Esto era lo que faltaba. Un HEIC entra acá, no decodifica, y sin este
+    // handler la tarjeta se queda procesando para siempre.
+    img.onerror = function(){
+      console.warn('[ESTUDIOS] no se pudo decodificar', file.name, file.type);
+      dmDocMensaje(
+        '❌ Este navegador no puede abrir <b>'+escHtml(file.name)+'</b>.<br>'+
+        '<span style="font-weight:400">Suele pasar con las fotos de iPhone en formato HEIC. '+
+        'Dos salidas: compartir la foto por WhatsApp o mail y guardar la copia '+
+        '(llega convertida en JPG), o en el iPhone ir a <b>Ajustes › Cámara › '+
+        'Formatos</b> y elegir <b>Más compatible</b> antes de sacarla.</span>',
+        '#9b1c1c');
+    };
+    img.onload = function(){
+      try{
+        let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        if(!w || !h){ img.onerror(); return; }
+        const esc = Math.min(1, DM_DOC_MAX_PX/Math.max(w,h));
+        w = Math.round(w*esc); h = Math.round(h*esc);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const cx = canvas.getContext('2d');
+        // Fondo blanco: un PNG con transparencia sobre JPEG sale negro, y la
+        // foto de un informe escaneado en PNG es un caso común.
+        cx.fillStyle = '#ffffff'; cx.fillRect(0,0,w,h);
+        cx.drawImage(img, 0, 0, w, h);
+        // Se baja la calidad por pasos en vez de recortar el tamaño: antes
+        // que achicar la imagen —y perder la letra— conviene comprimir más.
+        let dato = null, kb = 0;
+        for(const q of DM_DOC_CALIDAD){
+          dato = canvas.toDataURL('image/jpeg', q);
+          kb = Math.round(dato.length * 0.75 / 1024);
+          if(kb <= DM_DOC_MAX_KB) break;
+        }
+        if(kb > DM_DOC_MAX_KB){
+          dmDocMensaje('❌ La imagen sigue siendo muy grande ('+kb+' KB). '+
+                       'Probá sacarla de nuevo con menos resolución.', '#9b1c1c');
+          return;
+        }
+        document.getElementById('doc-data').value = dato;
+        // El tipo que se guarda es el del DATO, no el del archivo original.
+        document.getElementById('doc-type').value = 'image/jpeg';
+        dmDocMensaje('✓ ' + escHtml(file.name) + ' · ' + w + '×' + h + ' px, ' + kb + ' KB' +
+          '<div style="font-weight:400;color:var(--label-2);margin-top:4px">'+
+          'Abrí la vista previa y confirmá que se lean los números chicos antes de guardar.</div>');
+      }catch(err){
+        console.error('[ESTUDIOS]', err);
+        dmDocMensaje('❌ No se pudo procesar la imagen: '+((err&&err.message)||err), '#9b1c1c');
+      }
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
