@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg294-0e3cb8a9">
+<link rel="stylesheet" href="css/styles.css?v=stg295-c23f663e">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg294-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg294-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg294-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=stg294-b66c55a7"></script>
-<script src="js/dormetria-tcci.js?v=stg294-03c874bc"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg295-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg295-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg295-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=stg295-b66c55a7"></script>
+<script src="js/dormetria-tcci.js?v=stg295-03c874bc"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg294';
+const APP_VERSION='stg295';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg294 \u2014 <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg295 \u2014 <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -3189,7 +3189,11 @@ var DM_CLAROS = {
   // Los colores de los tres pilares. Faltaban dos y por eso el rótulo de
   // Fragmentación quedaba en 2,33:1 sobre la tarjeta: ilegible.
   '#0e7490':'#67d5e8','#e67e22':'#fbbf24','#44403c':'rgba(244,239,229,.7)',
-  '#3f3f46':'rgba(244,239,229,.85)','#4b5563':'rgba(244,239,229,.7)'
+  '#3f3f46':'rgba(244,239,229,.85)','#4b5563':'rgba(244,239,229,.7)',
+  // Los del score de sueño. Sin éstos, la tarjeta del paciente tenía que
+  // pintarse de blanco para que el número se viera, y quedaba un
+  // recuadro claro en medio de una pantalla oscura.
+  '#34c759':'#5ee08a','#ff9500':'#fbbf24','#ff6b00':'#fdba74','#ff3b30':'#ff9d9d'
 };
 function dmClaro(c){
   if(!c) return c;
@@ -24690,16 +24694,29 @@ function calcSleepScore(entries, ageYears){
       qty = Math.max(0, Math.min(50, qty));
     }
     
-    // ── FRAGMENTATION (0-20 pts) ── replaces quality component
-    // Based on awakenings and sleep quality rating
-    let frag = 20;
-    const awakPenalty = Math.min(15, (e.awakenings||0)*4);
-    frag = Math.max(0, 20 - awakPenalty);
-    // Bonus from quality rating
-    if(e.sleep_quality && e.sleep_quality >= 4) frag = Math.min(20, frag+2);
-    if(e.sleep_quality && e.sleep_quality <= 2) frag = Math.max(0, frag-3);
-    
-    scores.push({date: e.diary_date, qty, frag, hrs, quality: e.sleep_quality, awakenings: e.awakenings});
+    // ── FRAGMENTACIÓN (0-15 pts) ───────────────────────────
+    //
+    // Acá había una CUARTA copia del cálculo de fragmentación, distinta de
+    // las otras tres: `20 - despertares*4`, ignorando el WASO por
+    // completo. mod280 unificó las tres de las tarjetas y dejó ésta, que
+    // es la del número grande. O sea que el score y la tarjeta de
+    // FRAGMENTACIÓN podían no estar hablando de lo mismo.
+    //
+    // Y tenía metido un `+2` si la calidad era ≥4 y un `-3` si era ≤2,
+    // sin documentar: la calidad subjetiva ya estaba adentro del score,
+    // escondida dentro de la fragmentación y sin justificación. Eso ahora
+    // es un componente propio, con su peso a la vista.
+    const frag = (typeof dmFragPuntos === 'function')
+      ? (dmFragPuntos(e) * 15 / 20)
+      : Math.max(0, 15 - Math.min(15, (e.awakenings||0)*4));
+
+    // ── CALIDAD PERCIBIDA (0-20 pts) ───────────────────────
+    // 1→0, 2→5, 3→10, 4→15, 5→20. null si esa mañana no la contestó:
+    // no se rellena con un neutro, porque un neutro mueve el puntaje igual.
+    const _q = Number(e.sleep_quality);
+    const qual = (_q >= 1 && _q <= 5) ? (_q - 1) * 5 : null;
+
+    scores.push({date: e.diary_date, qty, frag, qual, hrs, quality: e.sleep_quality, awakenings: e.awakenings});
   });
   
   if(scores.length === 0) return null;
@@ -24730,23 +24747,97 @@ function calcSleepScore(entries, ageYears){
   // y sin cortes validados) → el componente de 0-20 pts pasa a apoyarse en la
   // CALIDAD reportada por el cuidador, que sí es un dato significativo.
   if(_ped){
-    scores.forEach(s=>{
-      const q=s.quality;
-      s.frag = q ? Math.max(0,Math.min(20, q*4)) : 12; // 5→20 … 1→4 ; neutral 12 sin dato
-    });
+    // En menores la fragmentación por diario se sobreestima y no tiene
+    // cortes validados, así que no puntuúa: su peso se reparte en los
+    // otros componentes al renormalizar (ver abajo). Antes se la
+    // reemplazaba por la calidad reportada, lo que contaba la calidad DOS
+    // veces ahora que tiene componente propio.
+    scores.forEach(s=>{ s.frag = null; });
   }
   
-  // Per-night scores
-  const nightScores = scores.map(s=>({
-    date: s.date,
-    total: Math.round(s.qty + s.qual),
-    qty: s.qty, qual: s.qual, hrs: s.hrs
-  }));
-  
-  // Overall composite
-  const avgQty  = scores.reduce((a,b)=>a+b.qty,  0) / scores.length;
-  const avgFrag = scores.reduce((a,b)=>a+b.frag, 0) / scores.length;
-  const total   = Math.round(avgQty + avgFrag + regularity);
+  // ── El compuesto ───────────────────────────────────
+  //
+  //     Cantidad 40 · Calidad percibida 20 · Regularidad 25 · Fragm. 15
+  //
+  // Antes era 50/20/30 sin calidad. Por qué entra la calidad y con ese peso:
+  //
+  //   · El insomnio se define por la QUEJA. Ni la ICSD-3 ni el DSM-5
+  //     tienen criterio objetivo: lo que define el trastorno es lo que la
+  //     persona reporta más la repercusión diurna. En el cuadro del que
+  //     más se ocupa esta app, lo subjetivo no es un adorno.
+  //   · Las medidas de resultado del campo son autoinforme. El ISI y el
+  //     PSQI —con los que se juzga si un tratamiento sirvió— son
+  //     enteramente subjetivos (AASM CPG 2021).
+  //   · Pero una carita por mañana es UN ítem, con mucho menos respaldo
+  //     que un promedio de siete noches de TST medido. Por eso 20 y no 30:
+  //     con 30, una mañana de mal humor mueve el score semanal más que
+  //     todo el componente de fragmentación.
+  //   · Y 20 y no 10 porque con 10 el paciente sigue sin reconocerse en el
+  //     número, que es exactamente el problema que se quiso resolver.
+  //
+  // De referencia: el PSQI le da a "calidad subjetiva" 1 de 7 componentes
+  // (≈14 %) sobre una toma única; acá es diaria, por eso pesa algo más.
+  //
+  // LO QUE SE PIERDE, dicho para que no se olvide: al promediar, una
+  // percepción muy mala sobre un sueño medido normal —insomnio
+  // paradójico— deja de distinguirse de un sueño intermedio. La
+  // discordancia sigue detectándose y se informa APARTE, en la ficha del
+  // profesional; lo que ya no hace es mover el número.
+  const PESOS = { qty:40, qual:20, reg:25, frag:15 };
+
+  const prom = function(campo){
+    const v = scores.map(function(s){ return s[campo]; })
+                    .filter(function(x){ return x != null && !isNaN(x); });
+    return v.length ? v.reduce(function(a,b){ return a+b; },0) / v.length : null;
+  };
+  // qty y frag vienen en su escala vieja (0-50 y 0-15); se normalizan a 0-1.
+  const _n01 = {
+    qty:  prom('qty')  != null ? prom('qty')/50  : null,
+    qual: prom('qual') != null ? prom('qual')/20 : null,
+    frag: prom('frag') != null ? prom('frag')/15 : null,
+    reg:  regularity != null ? regularity/30 : null
+  };
+  // Renormalización: si un componente no tiene dato —la calidad sin
+  // contestar, la fragmentación en pedíatricos— su peso se reparte entre
+  // los que sí. Rellenarlo con un neutro movería el puntaje igual y nadie
+  // sabría que la mitad del número salió de un relleno.
+  let _num = 0, _den = 0;
+  Object.keys(PESOS).forEach(function(k){
+    if(_n01[k] == null) return;
+    _num += _n01[k] * PESOS[k];
+    _den += PESOS[k];
+  });
+  const total = _den > 0 ? Math.round(_num / _den * 100) : 0;
+
+  // Por noche, con los mismos pesos. (Antes decía `s.qty + s.qual` y
+  // `s.qual` no existía: daba NaN en todas las noches. No se usaba en
+  // ningún lado, pero devolver NaN es invitar a que alguien lo use.)
+  const nightScores = scores.map(function(s){
+    let n=0, d=0;
+    if(s.qty  != null){ n += (s.qty/50) *PESOS.qty;  d += PESOS.qty; }
+    if(s.qual != null){ n += (s.qual/20)*PESOS.qual; d += PESOS.qual; }
+    if(s.frag != null){ n += (s.frag/15)*PESOS.frag; d += PESOS.frag; }
+    return { date:s.date, total: d>0 ? Math.round(n/d*100) : null,
+             qty:s.qty, qual:s.qual, frag:s.frag, hrs:s.hrs };
+  });
+
+  const avgQty  = prom('qty')  || 0;
+  const avgFrag = prom('frag');
+  const avgQual = prom('qual');
+  // La discordancia entre lo medido y lo percibido. No entra en el score
+  // —se decidió mezclar— pero se calcula igual: es el hallazgo que
+  // distingue un insomnio paradójico de un sueño intermedio, y un SAHOS
+  // de alguien que duerme bien.
+  const _obj01 = (function(){
+    let n=0,d=0;
+    ['qty','frag','reg'].forEach(function(k){
+      if(_n01[k]==null) return; n += _n01[k]*PESOS[k]; d += PESOS[k];
+    });
+    return d>0 ? n/d : null;
+  })();
+  const objetivo = _obj01 != null ? Math.round(_obj01*100) : null;
+  const percibido = avgQual != null ? Math.round(avgQual/20*100) : null;
+  const brecha = (objetivo != null && percibido != null) ? (percibido - objetivo) : null;
   
   // ── SOCIAL JET LAG (bonus metric) ──
   // Difference between weekday and weekend sleep midpoints
@@ -24773,7 +24864,10 @@ function calcSleepScore(entries, ageYears){
   const insufficiencyPct = Math.round(insufficientNights / entries.length * 100);
   
   return {
-    total, avgQty: Math.round(avgQty), avgFrag: Math.round(avgFrag),
+    total, avgQty: Math.round(avgQty),
+    avgFrag: avgFrag != null ? Math.round(avgFrag) : null,
+    avgQual: avgQual != null ? Math.round(avgQual) : null,
+    pesos: PESOS, objetivo, percibido, brecha,
     regularity, nightScores, socialJetLag, insufficiencyPct,
     pediatric: _ped, sjlMin: _sjl,
     nNights: scores.length,
@@ -25174,6 +25268,112 @@ function dmDiarioSetModo(m){
   }catch(_){}
 }
 
+// ── El score, de dónde sale y dónde no coincide ────────────────
+//
+// Tres carriles sobre la MISMA escala 0-100, uno debajo del otro. La
+// primera versión los superponía en un único carril y fallaba justo en el
+// caso que importa: con lo medido en 100 y lo percibido en 0, la barra de
+// abajo queda en una astilla de cuatro píxeles que parece un error de
+// dibujo, y la de arriba ocupa todo el ancho. La brecha se veía bien sólo
+// cuando los dos valores eran parecidos — o sea, cuando no hacía falta.
+//
+// Apilados, la diferencia se lee como una DISTANCIA horizontal: no hay que
+// comparar dos números mentalmente.
+//
+// El mismo gráfico se dibuja para el paciente y para el profesional. Lo
+// único que cambia son las palabras: a uno se le habla de cómo durmió, al
+// otro de concordancia entre lo medido y lo reportado. Si fueran dos
+// funciones, un día el paciente y su profesional estarían mirando gráficos
+// que no coinciden.
+function dmScoreGrafico(sc, pro){
+  if(!sc) return '';
+  const obj = sc.objetivo, per = sc.percibido, tot = sc.total;
+  if(obj == null) return '';
+
+  const carril = function(rot, valor, color, fuerte){
+    const w = Math.max(0, Math.min(100, valor));
+    // El valor va ADENTRO de la barra si hay lugar, y afuera si no: a 0 %
+    // no entra nada adentro y el número quedaba tapado por el borde.
+    const dentro = w >= 22;
+    return '<div class="dm-sg-fila">'+
+      '<div class="dm-sg-et">'+rot+'</div>'+
+      '<div class="dm-sg-carril">'+
+        '<div class="dm-sg-barra" style="width:'+w+'%;background:'+color+'"></div>'+
+        '<div class="dm-sg-val" style="left:'+w+'%;'+
+          (dentro ? 'transform:translate(-100%,-50%);padding-right:8px;padding-left:0;color:'+(fuerte||'#fff')
+                  : 'color:'+color)+'">'+Math.round(valor)+'</div>'+
+      '</div></div>';
+  };
+
+  let h = '<div class="dm-sg">';
+  h += '<div class="dm-sg-tit">'+(pro ? 'Concordancia objetivo ↔ reportado' : 'De dónde sale')+'</div>';
+  h += carril(pro ? 'Medido' : 'Lo medido', obj, '#2D6B55', '#fff');
+  if(per != null) h += carril(pro ? 'Calidad subjetiva' : 'Cómo lo sentiste', per, '#C8A96E', '#2a2008');
+  // El tercer carril tiene el mismo grosor que los otros dos: con uno más
+  // fino el ojo lo lee como "menos importante", y es el número de arriba.
+  h += '<div class="dm-sg-fila">'+
+    '<div class="dm-sg-et" style="font-weight:700">'+(pro ? 'Score' : 'Tu score')+'</div>'+
+    '<div class="dm-sg-carril">'+
+      '<div class="dm-sg-marca" style="left:calc('+Math.max(0,Math.min(100,tot))+'% - 2px)"></div>'+
+      '<div class="dm-sg-val" style="left:'+Math.max(0,Math.min(100,tot))+'%;font-weight:700">'+tot+'</div>'+
+    '</div></div>';
+
+  // La lectura de la brecha. 25 puntos es el corte: por debajo de eso la
+  // diferencia entra dentro del ruido de una carita por mañana.
+  const br = sc.brecha;
+  if(br != null && Math.abs(br) >= 25){
+    const neg = br < 0;   // percibe PEOR de lo que mide
+    h += '<div class="dm-sg-nota">' + (pro
+      ? (neg
+        ? '<b>Percepción peor que lo medido ('+Math.abs(br)+' puntos).</b> Patrón compatible '+
+          'con mala percepción del sueño; en la ICSD-3 el insomnio paradójico se define '+
+          'por esta discrepancia. Conviene contrastarlo con el ISI y considerar el componente '+
+          'cognitivo en el abordaje.'
+        : '<b>Percepción mejor que lo medido ('+br+' puntos).</b> Subestimación de la '+
+          'alteración: típico de los cuadros respiratorios del sueño, donde la fragmentación '+
+          'no llega a la conciencia. Vale revisar STOP-BANG y Epworth.')
+      : (neg
+        ? '<b>Tus números dan mejor de lo que lo sentís.</b> Dormís las horas que te '+
+          'corresponden y no te despertás tanto, pero venís calificando tus noches como '+
+          'malas. Esa diferencia es un dato en sí mismo — contásela a tu profesional.'
+        : '<b>Sentís que descansás mejor de lo que muestran tus números.</b> Hay cosas que '+
+          'no se notan desde adentro, como despertarse muchas veces por un rato corto. '+
+          'Vale la pena comentarlo en la consulta.')
+    ) + '</div>';
+  } else if(per != null){
+    h += '<div class="dm-sg-nota dm-sg-ok">' + (pro
+      ? 'Lo medido y lo reportado concuerdan: el puntaje sirve como medida de seguimiento.'
+      : 'Lo que se mide y lo que sentís van de la mano. Cuando coinciden, este número es '+
+        'una buena brújula para saber si un cambio te sirvió.') + '</div>';
+  }
+
+  // ── Cuánto pesa cada cosa ──────────────────────────────
+  // El rótulo va CENTRADO en el tramo que le toca: con los cuatro
+  // repartidos a lo ancho hay que adivinar cuál es cuál.
+  const P = sc.pesos || {qty:40, qual:20, reg:25, frag:15};
+  const tramos = [
+    { k:'qty',  rot: pro ? 'Cantidad'      : 'Cantidad',          c:'#2D6B55' },
+    { k:'qual', rot: pro ? 'Calidad subjetiva' : 'Sentiste',     c:'#C8A96E' },
+    { k:'reg',  rot: pro ? 'Regularidad'   : 'Regularidad',       c:'#4a8a6f' },
+    // 'Fragmentación' no entra en un tramo del 15 %: se cortaba en
+    // 'Fragmentac'. Un rótulo centrado que no se lee entero es peor que
+    // uno abreviado.
+    { k:'frag', rot:'Fragm.',  c:'#7EC8A4' }
+  ];
+  h += '<div class="dm-sg-tit" style="margin-top:15px">Cuánto pesa cada cosa</div>';
+  h += '<div class="dm-sg-pesos">' + tramos.map(function(t){
+        return '<div style="width:'+P[t.k]+'%;background:'+t.c+'"></div>'; }).join('') + '</div>';
+  h += '<div class="dm-sg-pl">' + tramos.map(function(t){
+        return '<div style="width:'+P[t.k]+'%">'+t.rot+'<br><b>'+P[t.k]+'%</b></div>'; }).join('') + '</div>';
+  if(per == null){
+    h += '<div class="dm-sg-sindato">' + (pro
+      ? 'Sin calidad reportada en el período: el puntaje se renormaliza sobre los otros tres componentes.'
+      : 'Todavía no contestaste cómo dormiste. El puntaje se calcula con lo demás — no se rellena con un valor inventado.') + '</div>';
+  }
+  return h + '</div>';
+}
+window.dmScoreGrafico = dmScoreGrafico;
+
 function renderSleepScorePanel(entries, ageYears, audience){
   // Igual que en las métricas: la misma función se dibuja sobre verde
   // oscuro (paciente) y sobre blanco (profesional).
@@ -25198,10 +25398,16 @@ function renderSleepScorePanel(entries, ageYears, audience){
   }
   
   return `
-    <div style="background:${sc.bg};border-radius:16px;padding:20px;margin-bottom:14px;text-align:center">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${sc.color};margin-bottom:6px">Score de sueño</div>
-      <div style="font-size:64px;font-weight:300;color:${sc.color};line-height:1;letter-spacing:-0.03em">${sc.total}</div>
-      <div style="font-size:15px;color:${sc.color};font-weight:600;margin-top:6px">${sc.label}</div>
+    ${'' /* Del lado del paciente la app es verde oscuro con texto claro, y
+            esta tarjeta era la excepción: un recuadro casi blanco con el
+            número en verde, en medio de una pantalla oscura. Los colores
+            de calcSleepScore estan pensados para fondo claro —del lado del
+            profesional siguen igual— y para el paciente se traducen con
+            dmClaro, que es lo que el resto de la app ya hace. */}
+    <div style="background:${_claro ? sc.bg : 'rgba(255,255,255,0.05)'};${_claro?'':'border:1px solid rgba(126,200,164,0.18);'}border-radius:16px;padding:20px;margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${_claro ? sc.color : dmClaro(sc.color)};margin-bottom:6px">Score de sueño</div>
+      <div style="font-size:64px;font-weight:300;color:${_claro ? sc.color : dmClaro(sc.color)};line-height:1;letter-spacing:-0.03em">${sc.total}</div>
+      <div style="font-size:15px;color:${_claro ? sc.color : dmClaro(sc.color)};font-weight:600;margin-top:6px">${sc.label}</div>
       <div style="font-size:11px;color:#77776e;margin-top:8px">Basado en ${sc.nNights} noches de registro${(function(){
         // Sin esto, el número de arriba flota: el selector dice "7 d" y el
         // score puede estar calculado sobre tres meses.
@@ -25210,9 +25416,34 @@ function renderSleepScorePanel(entries, ageYears, audience){
       })()}</div>
     </div>
 
+    ${dmScoreGrafico(sc, _claro)}
+
     <details class="dm-expli${_claro?' dm-expli-claro':''}">
       <summary>¿Cómo se calcula este score?<span class="dm-expli-f">▾</span></summary>
       <div class="dm-expli-cuerpo">
+        ${(function(){
+          // Los pesos, a la vista. Un número compuesto del que no se sabe
+          // qué pesa cuánto no se puede discutir, y lo primero que una
+          // persona quiere saber al ver un 71 es de dónde salió.
+          const _P = (sc && sc.pesos) || {qty:40, qual:20, reg:25, frag:15};
+          const _fila = function(rot, peso, nota){
+            return '<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">'+
+              '<div style="width:92px;flex-shrink:0;font-weight:700">'+rot+'</div>'+
+              '<div style="flex:1;height:7px;background:rgba(127,127,127,.16);border-radius:4px;overflow:hidden">'+
+                '<div style="height:100%;width:'+peso+'%;background:currentColor;opacity:.55"></div></div>'+
+              '<div style="width:34px;text-align:right;font-variant-numeric:tabular-nums">'+peso+'%</div>'+
+            '</div>'+
+            (nota ? '<div style="margin:-3px 0 9px 101px;opacity:.75">'+nota+'</div>' : '');
+          };
+          return '<div style="margin-bottom:12px">'+
+            '<p style="margin-bottom:8px"><b>Cuánto pesa cada cosa</b> en el número de arriba:</p>'+
+            _fila('Cantidad', _P.qty, 'Cuánto dormís, comparado con lo esperable para tu edad.') +
+            _fila('Cómo lo sentiste', _P.qual, 'Tu respuesta de cada mañana. Un score que no se parece a cómo te sentiste no te sirve de nada, así que entra en la cuenta.') +
+            _fila('Regularidad', _P.reg, 'Qué tan parecidos son tus horarios de una noche a la otra.') +
+            _fila('Fragmentación', _P.frag, 'Cuánto tiempo estuviste despierta en medio de la noche.') +
+            '<p style="opacity:.8;margin-top:4px">Si alguna mañana no contestaste cómo dormiste, ese día el puntaje se calcula con lo demás y se reparte su peso — no se rellena con un valor inventado.</p>'+
+          '</div>';
+        })()}
         ${(function(){
           // El texto decía 7 a 9 horas SIEMPRE. En la ficha de un bebé de 9
           // meses eso es directamente falso: su rango es 12 a 15 en 24 h. Se
@@ -25240,7 +25471,8 @@ function renderSleepScorePanel(entries, ageYears, audience){
             h += '<p><b>Regularidad.</b> En chicos se mide por el <b>jet lag social</b>: ' +
                  'cuánto se corre el horario el fin de semana respecto de la semana.</p>';
           } else {
-            h += '<p><b>Fragmentación.</b> Baja con cada despertar que anotás durante la noche.</p>';
+            h += '<p><b>Fragmentación.</b> Cuántas veces te despertaste y <b>cuánto tiempo</b> '+
+                 'estuviste despierta: tres despertares de un minuto y uno de una hora no son lo mismo.</p>';
             h += '<p><b>Regularidad.</b> Qué tan parecidos son tus horarios de una noche a la otra.</p>';
           }
           h += '<p class="dm-expli-nota">El registro mide el tiempo entre que te acostás y te levantás, así que incluye los ratos en cama sin dormir. El sueño real suele ser algo menor.</p>';
