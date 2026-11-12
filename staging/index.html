@@ -32,7 +32,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer crossorigin="anonymous" onerror="window._chartFailed=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js" defer crossorigin="anonymous" onerror="console.warn('chartjs-adapter no cargó')"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js" defer crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/styles.css?v=stg295-c23f663e">
+<link rel="stylesheet" href="css/styles.css?v=stg296-c23f663e">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1393,11 +1393,11 @@
 
 <!-- Modularización (paso 1): helpers de métricas de sueño en archivo aparte.
      Debe cargar ANTES del script principal para que sus funciones existan. -->
-<script src="js/dormetria-sleep-metrics.js?v=stg295-e49c20eb"></script>
-<script src="js/dormetria-motor-orientacion.js?v=stg295-12dfcf83"></script>
-<script src="js/dormetria-summary-nuevo.js?v=stg295-e82cc1d4"></script>
-<script src="js/dormetria-render-resumen.js?v=stg295-b66c55a7"></script>
-<script src="js/dormetria-tcci.js?v=stg295-03c874bc"></script>
+<script src="js/dormetria-sleep-metrics.js?v=stg296-e49c20eb"></script>
+<script src="js/dormetria-motor-orientacion.js?v=stg296-12dfcf83"></script>
+<script src="js/dormetria-summary-nuevo.js?v=stg296-e82cc1d4"></script>
+<script src="js/dormetria-render-resumen.js?v=stg296-b66c55a7"></script>
+<script src="js/dormetria-tcci.js?v=stg296-03c874bc"></script>
 <script>
 
 // Detect file:// protocol - CDN scripts won't load, show helpful message
@@ -1416,11 +1416,11 @@ if(window.location.protocol === 'file:'){
 
 // v20260520-final
 const SU='https://sojvsbwpqdwjuvezdhby.supabase.co';
-const APP_VERSION='stg295';
+const APP_VERSION='stg296';
 (function(){ try{
   var d=document.createElement('div'); d.id='dm-banner-entorno';
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#9b1c1c;color:#fff;font:600 11.5px/1.35 system-ui,sans-serif;text-align:center;padding:6px 10px';
-  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg295 \u2014 <b>comparte la base con produccion</b>';
+  d.innerHTML='ENTORNO DE PRUEBA \u00b7 stg296 \u2014 <b>comparte la base con produccion</b>';
   function poner(){ if(!document.body) return; document.body.appendChild(d); document.body.style.paddingTop='26px'; }
   if(document.body) poner(); else document.addEventListener('DOMContentLoaded', poner);
 }catch(_){} })();
@@ -3150,6 +3150,48 @@ function computePillarScore(e, ageYears){
   const frag = dmFragPuntos(e);
   return{qty_pct:Math.round(qty/50*100),frag_pct:Math.round(frag/20*100)};
 }
+// ── De qué día es cada fila del actograma ────────────────────
+//
+// "Las siestas las pone en el día posterior y no el anterior. Si cargás la
+//  información del lunes y pusiste que dormiste siesta el domingo a la
+//  tarde, la anota para el lunes a la tarde."
+//
+// El dato estaba bien guardado y bien DIBUJADO. Lo que estaba mal era el
+// RÓTULO de la fila, y eso hacía leer mal el gráfico entero.
+//
+// Las dos convenciones de la app:
+//
+//   · `diary_date` es la fecha en que la persona SE DESPERTÓ. El
+//     formulario lo dice: "Poné la fecha del día en que te despertaste".
+//   · Todo lo del día —siesta, ejercicio, pantallas, café, alcohol— se
+//     pregunta por el día ANTERIOR a esa noche: "¿Dormiste siesta ayer?
+//     Durante el día anterior a esa noche".
+//
+// Y el eje del actograma va de mediodía a mediodía: el offset 0 es las
+// 12:00 de `diary_date - 1`. O sea que la mitad izquierda de cada fila
+// —todo lo anterior a la medianoche— es el día PREVIO al que decía el
+// rótulo. Una siesta de las 15:00 del domingo se dibujaba en el lugar
+// correcto, en una fila que decía "lun".
+//
+// No era sólo la siesta: el ejercicio, las pantallas, la cafeína y el
+// alcohol están todos en esa mitad.
+//
+// Se rotula con el día en que la fila EMPIEZA, que es la convención de
+// cualquier actograma publicado: una fila es "la noche del domingo", no
+// "el lunes". Cambia cómo se lee todo lo graficado hasta hoy.
+function dmNocheDe(diaryDate, largo){
+  try{
+    const d = new Date(String(diaryDate)+'T12:00:00');
+    d.setDate(d.getDate() - 1);          // la noche empieza el día anterior
+    return d.toLocaleDateString('es-AR', largo
+      ? {weekday:'long', day:'numeric', month:'long'}
+      : {weekday:'short', day:'2-digit', month:'2-digit'});
+  }catch(_){ return String(diaryDate||''); }
+}
+function dmFilaActograma(diaryDate){ return dmNocheDe(diaryDate, false); }
+window.dmNocheDe = dmNocheDe;
+window.dmFilaActograma = dmFilaActograma;
+
 // ── ¿Esa noche estaba menstruando? Una sola pregunta ──────────────────
 //
 // El dato está guardado DOS veces: en la columna `has_period` y como el
@@ -3712,7 +3754,9 @@ function dmVerNotaNoche(e, ev){
   const t = (typeof dmLimpiarNota==='function') ? dmLimpiarNota(e.notes) : '';
   const old=document.getElementById('dm-nota-noche'); if(old) old.remove();
   let f=e.diary_date;
-  try{ f=new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}); }catch(_){}
+  // La noche del domingo es la del domingo a la noche, no la del lunes
+  // en que se despertó. Misma convención que el actograma.
+  try{ f='noche del '+dmNocheDe(e.diary_date, true); }catch(_){}
   // Globo chico, pegado a donde se toco. Un modal centrado y oscurecido tapaba
   // el actograma y no dejaba claro de que noche se estaba hablando.
   const capa=document.createElement('div');
@@ -9242,7 +9286,7 @@ function renderClinicalMetricsHtml(entries, audience, ageYears){
       '<div style="margin-top:8px"><button onclick="var e=this.nextElementSibling;e.style.display=e.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'span\').textContent=e.style.display===\'none\'?\'▸\':\'▾\'" style="background:none;border:none;color:var(--label-2);font-size:12px;font-weight:600;cursor:pointer;padding:0;font-family:inherit;display:flex;align-items:center;gap:4px"><span>▸</span> ¿Qué significa cada métrica?</button>'+
       '<div style="display:none;margin-top:8px;font-size:11.5px;color:var(--label-2);line-height:1.55;padding:10px 12px;background:rgba(126,200,164,0.06);border-radius:8px;border-left:3px solid rgba(126,200,164,0.4)">'+
         '<p style="margin:0 0 8px"><strong style="color:var(--label)">SD del punto medio del sueño</strong> — Dispersión (en minutos) del centro de la noche del paciente. Métrica más interpretable y la que determina el score clínico. <em>Valor de referencia: en NHANES (n=9981 adultos sanos), el 80% tiene SD &lt;60 min, mediana ~30-40 min.</em></p>'+
-        '<p style="margin:0 0 8px"><strong style="color:var(--label)">SRI — Sleep Regularity Index</strong> (Phillips et al. 2017) — Probabilidad de que el paciente esté en el mismo estado (dormido/despierto) en un mismo minuto del día, en días consecutivos. Rango práctico 0-100: cuanto más alto, más regular. Captura siestas y despertares. <em>Referencia poblacional: UK Biobank (n=60.977 adultos): mediana 81, IQR [73.8–86.3]. Adultos mayores con SRI más bajo tienen mayor riesgo cardiometabólico y mayor mortalidad (Windred 2024).</em></p>'+
+        '<p style="margin:0 0 8px"><strong style="color:var(--label)">SRI — Sleep Regularity Index</strong> (Phillips et al. 2017) — Probabilidad de que el paciente esté en el mismo estado (dormido/despierto) en un mismo minuto del día, en días consecutivos. Rango práctico 0-100: cuanto más alto, más regular. <b>Acá se calcula sólo con el sueño nocturno</b>: el diario no registra la hora de inicio y fin de cada siesta con la precisión que el índice necesita, así que no entran en la señal. En un paciente que duerme siesta a diario, el SRI de acá queda por encima del que daría una actigrafía. <em>Referencia poblacional: UK Biobank (n=60.977 adultos): mediana 81, IQR [73.8–86.3]. Adultos mayores con SRI más bajo tienen mayor riesgo cardiometabólico y mayor mortalidad (Windred 2024).</em></p>'+
         '<p style="margin:0 0 8px"><strong style="color:var(--label)">CPD — Composite Phase Deviation</strong> (Fischer et al. 2016) — Métrica día a día. Combina dos componentes: (a) cuánto difiere el midsleep de hoy del cronotipo (midsleep promedio en días libres), y (b) cuánto difiere de la noche previa. Se expresa en horas. Mide desalineación con el reloj circadiano. <em>Por noche, valores &lt;1 h sugieren buena alineación; &gt;2 h sugieren desalineación marcada. La línea naranja del gráfico de pilares grafica el CPD por noche.</em></p>'+
         '<p style="margin:0;font-size:10.5px;color:var(--label-3)"><strong>Caveat clínico:</strong> No hay umbrales clínicos consensuados internacionalmente. Los cortes acá son derivados de distribuciones poblacionales. La revisión sistemática de Chaput et al. (2020) advierte que "no es posible identificar umbrales para gran variabilidad del sueño". Usar el conjunto de métricas como gradiente, no como diagnóstico binario.</p>'+
       '</div></div>';
@@ -14780,7 +14824,9 @@ async function showDiaryTab_(tab){
         const dur = e.no_sleep===true ? 'no durmió'
                   : (mins>0 ? (hrs+' h '+String(m).padStart(2,'0')+' m') : 'sin datos');
         let fecha=e.diary_date;
-        try{ fecha=new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}); }catch(_){}
+        // Misma convención que el actograma: si la lista dice una fecha
+        // y el gráfico otra para la misma noche, no se puede cruzar nada.
+        try{ fecha=dmNocheDe(e.diary_date, true); }catch(_){}
         return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(126,200,164,.18);'+
           'border-radius:17px;padding:15px 16px;margin-bottom:11px;display:flex;align-items:center;gap:14px">'+
           '<div style="font-size:26px;flex-shrink:0;line-height:1">'+cara+'</div>'+
@@ -14963,7 +15009,7 @@ async function showDiaryTab_(tab){
         // Se grafican todas las noches con horarios; las que quedan fuera de
         // los promedios se distinguen por el color, no se esconden.
         const sorted=[...entries].filter(e=>e.bedtime && e.wake_time).sort((a,b)=>a.diary_date>b.diary_date?1:-1);
-        const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
+        const actoLabels=sorted.map(e=>dmFilaActograma(e.diary_date));
         const weekendRows=sorted.map((e,i)=>{const d=new Date(e.diary_date+'T12:00:00');const isFreeDay=e.day_type==='free';const isWeekend=d.getDay()===0||d.getDay()===6;return(isFreeDay||isWeekend)?i:null;}).filter(i=>i!==null);
         // Noches con período menstrual (marcador en notes)
         const periodNights=sorted.map((e,i)=>dmEsPeriodo(e)?i:null).filter(i=>i!==null);
@@ -21485,7 +21531,7 @@ async function showDrPTab_(tab){
         <div class="dm-diary-right">
         <div class="dm-card dm-light dm-diary-acto">
           <div class="dm-card-title">🌙 Actograma — horarios de sueño</div>
-          <p style="font-size:12px;color:#6b6b76;margin-bottom:6px">La medianoche queda al centro. Cada fila es un día.</p>
+          <p style="font-size:12px;color:#6b6b76;margin-bottom:6px">Cada fila va del mediodía de ese día al mediodía del siguiente, con la medianoche al centro. <b>La fecha es la del día que empieza</b>: la siesta, el ejercicio y la cafeína de la izquierda son de ese día, y el despertar de la derecha es de la mañana siguiente.</p>
           <div class="dm-layer-bar">
             <span class="dm-layer-btn on" data-layer="exercise" onclick="toggleActoLayer('exercise',this)">🏃 Ejercicio</span>
             <span class="dm-layer-btn on" id="dr-layer-caffeine" data-layer="caffeine" onclick="toggleActoLayer('caffeine',this)">☕ Cafeína</span>
@@ -21665,7 +21711,7 @@ async function showDrPTab_(tab){
           }
         }catch(_dsc){}
         function toOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return(h>=12?h-12:h+12)+m/60;}
-        const actoLabels=sorted.map(e=>new Date(e.diary_date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}));
+        const actoLabels=sorted.map(e=>dmFilaActograma(e.diary_date));
         const sleepBars=sorted.map(e=>{if(!e.bedtime||!e.wake_time)return[0,0];const s=toOff(e.bedtime.slice(0,5));const w=toOff(e.wake_time.slice(0,5));if(w===s) return[0,0];const fin=(w>s?w:w+24);if(fin-s>16) return[0,0];return[s,fin];});
         const drPeriodNights=sorted.filter(dmEsPeriodo).length;
         const drFueraProm=sorted.map(e=>!!dmMotivoDescarte(e));
