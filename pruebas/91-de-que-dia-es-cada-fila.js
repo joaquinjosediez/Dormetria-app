@@ -65,10 +65,11 @@ r.ok(!/new Date\(e\.diary_date\+'T12:00:00'\)\.toLocaleDateString\('es-AR',\{wee
 // lista dijera una fecha y el gráfico otra para la misma noche, no se
 // podría cruzar nada entre los dos.
 r.ok(/function dmNocheDe\(diaryDate, largo\)\{/.test(app), 'hay una sola función para los dos formatos');
-r.ok(/f='noche del '\+dmNocheDe\(e\.diary_date, true\)/.test(app),
-     'el globo de la nota la usa');
-r.ok(/fecha=dmNocheDe\(e\.diary_date, true\)/.test(app),
-     'y la tarjeta de la lista de noches también');
+r.ok(/f='noche del '\+dmNocheRango\(e\.diary_date\)/.test(app),
+     'el globo de la nota nombra la noche entera');
+r.ok(/fecha=dmNocheRango\(e\.diary_date\)/.test(app),
+     'y la tarjeta de la lista también: esas filas se abren y adentro'+
+     ' el formulario muestra la fecha de despertar');
 
 r.seccion('Y el gráfico dice qué es una fila:');
 

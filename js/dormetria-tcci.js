@@ -1445,18 +1445,50 @@ function dmTcciCerrarSemanaYa(n){
     6:'Sumaste herramientas para bajar la activación. Te van a servir mucho después de que termine el programa.',
     7:'Terminaste el programa entero. Lo que sigue es sostenerlo — y ya sabés cómo.'
   };
+  // ── "A veces no funciona el botón de Ver la semana 3" ──────────
+  //
+  // No era "a veces": no funcionaba nunca en la mayoría de los
+  // navegadores. El botón buscaba su propio modal con un selector sobre el
+  // TEXTO del atributo style:
+  //
+  //     document.querySelector("[style*='z-index:10005']")?.remove()
+  //
+  // El modal se crea con `cssText`, y el navegador REESCRIBE esa cadena al
+  // guardarla: Chrome y Safari serializan `z-index: 10005`, con espacio.
+  // El selector busca `z-index:10005` sin espacio, no matchea, el `?.`
+  // se traga el null y no borra nada. Después `dmTcciAbrirSemana(n+1)`
+  // abre la semana DETRÁS del modal, que sigue tapando la pantalla: para
+  // la persona, el botón no hizo nada.
+  //
+  // Buscar un elemento por el texto de su style es frágil por
+  // construcción. Acá el elemento ya está en una variable: se usa esa.
   const w=document.createElement('div');
   w.style.cssText='position:fixed;inset:0;background:rgba(6,18,13,.9);z-index:10005;display:flex;align-items:center;justify-content:center;padding:24px';
   w.onclick=function(){ w.remove(); };
-  w.innerHTML='<div onclick="event.stopPropagation()" style="max-width:380px;background:#12302699;border:1px solid rgba(126,200,164,.35);border-radius:18px;padding:26px 24px;text-align:center;backdrop-filter:blur(8px)">'+
-    '<div style="font-size:42px;line-height:1;margin-bottom:10px">🌿</div>'+
+  w.innerHTML='<div data-caja="1" style="max-width:380px;background:#12302699;border:1px solid rgba(126,200,164,.35);border-radius:18px;padding:26px 24px;text-align:center;backdrop-filter:blur(8px)">'+
+    '<div style="font-size:42px;line-height:1;margin-bottom:10px">\ud83c\udf3f</div>'+
     '<div style="font-size:19px;font-weight:700;color:#fff;margin-bottom:8px">Semana '+n+' de '+total+', lista</div>'+
-    '<div style="font-size:14px;color:rgba(255,255,255,.92);line-height:1.6;margin-bottom:18px">'+(mensajes[n]||'Un paso más.')+'</div>'+
+    '<div style="font-size:14px;color:rgba(255,255,255,.92);line-height:1.6;margin-bottom:18px">'+(mensajes[n]||'Un paso m\u00e1s.')+'</div>'+
     (n<total
-      ? '<button onclick="document.querySelector(\'[style*=\\\'z-index:10005\\\']\')?.remove(); dmTcciAbrirSemana('+(n+1)+')" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Ver la semana '+(n+1)+'</button>'
+      ? '<button data-ir="'+(n+1)+'" style="width:100%;background:#7EC8A4;border:none;border-radius:12px;padding:13px;color:#0F2820;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Ver la semana '+(n+1)+'</button>'
       : '<div style="font-size:13px;color:#C8A96E;font-weight:600">Completaste el programa entero.</div>')+
-    '<div onclick="this.parentNode.parentNode.remove()" style="font-size:12.5px;color:rgba(255,255,255,.72);margin-top:12px;cursor:pointer">Cerrar</div>'+
+    '<div data-cerrar="1" style="font-size:12.5px;color:rgba(255,255,255,.72);margin-top:12px;cursor:pointer">Cerrar</div>'+
   '</div>';
+  // Los handlers se enganchan al NODO, no a una cadena: no hay selector que
+  // pueda no matchear ni comillas que escapar mal.
+  try{
+    const caja = w.querySelector('[data-caja]');
+    if(caja) caja.addEventListener('click', function(ev){ ev.stopPropagation(); });
+    const ir = w.querySelector('[data-ir]');
+    if(ir) ir.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      const sig = Number(ir.getAttribute('data-ir'));
+      w.remove();                       // primero se saca, despu\u00e9s se abre
+      try{ dmTcciAbrirSemana(sig); }catch(e){ console.error('[TCCI] abrir semana', e); }
+    });
+    const cerrar = w.querySelector('[data-cerrar]');
+    if(cerrar) cerrar.addEventListener('click', function(ev){ ev.stopPropagation(); w.remove(); });
+  }catch(e){ console.error('[TCCI] modal de fin de semana', e); }
   document.body.appendChild(w);
   try{ if(typeof openPatientCbtiView==='function' && document.getElementById('dm-tcci-lista')) openPatientCbtiView(); }catch(_){}
   // Última semana: el balance del programa entero. Va DESPUÉS del festejo,

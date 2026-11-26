@@ -126,6 +126,26 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
     const total   = t.total_semanas || 7;
     const cerrada = t.ultima_cerrada || 0;
     const enCurso = Math.min(total, cerrada + 1);
+    // ── El 33 % del paciente contra el 0 % de acá ───────────────
+    //
+    // "Hay discrepancias entre lo que marca de evolución de la TCC-I de los
+    //  pacientes y lo que me figura a mí."
+    //
+    // Los dos números eran correctos y medían cosas distintas:
+    //
+    //     el paciente ve    9 de 27 tareas  = 33 %
+    //     acá se mostraba   0 de 7 semanas = 0 %
+    //
+    // El mismo símbolo grande, en la misma pantalla, para dos magnitudes
+    // sin relación. Y `pct` —el del paciente— YA viaja en tcci_estado: se
+    // calculaba uno nuevo acá en vez de usarlo.
+    //
+    // Se muestra el MISMO que ve el paciente. Si en la consulta él dice
+    // "voy por el 33 %" y la ficha dice 0 %, la conversación arranca
+    // discutiendo cuál de los dos miente. Las semanas cerradas siguen
+    // estando, que es el dato clínico: en las barras y en la frase.
+    const pctTareas = (t.pct != null) ? t.pct
+                    : (t.tareas_total ? Math.round((t.tareas_hechas||0) / t.tareas_total * 100) : null);
     const pctSem  = Math.round(cerrada / total * 100);
     const dias    = Math.max(0, Math.floor((Date.now() - new Date(t.inicio).getTime()) / 86400000));
     const guiado  = t.modo === 'guiado';
@@ -153,14 +173,20 @@ function dmRenderSummaryResumen(motorResult, modo, email, diarioCompleto) {
     tarjetaTcci = dmCardResumen('🌿', 'Programa TCC-I',
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px">' +
         '<div style="font-size:15px;font-weight:600;color:#F4EFE5;line-height:1.3">' + titulo + '</div>' +
-        '<div style="font-size:20px;font-weight:700;color:' + color + ';flex-shrink:0">' + pctSem + '%</div>' +
+        (pctTareas != null
+          ? '<div style="text-align:right;flex-shrink:0">' +
+              '<div style="font-size:20px;font-weight:700;color:' + color + ';line-height:1">' + pctTareas + '%</div>' +
+              '<div style="font-size:10px;color:rgba(244,239,229,.6);margin-top:2px;white-space:nowrap">de las tareas</div>' +
+            '</div>'
+          : '<div style="font-size:20px;font-weight:700;color:' + color + ';flex-shrink:0">' + pctSem + '%</div>') +
       '</div>' +
       '<div style="display:flex;gap:4px;margin-bottom:8px">' + barras.join('') + '</div>' +
       '<div style="font-size:12.5px;color:rgba(244,239,229,.86);line-height:1.55">' +
         (cerrada >= total
           ? 'Completó las ' + total + ' semanas. Empezó hace ' + dias + ' días.'
           : 'Va por la <b>semana ' + enCurso + ' de ' + total + '</b>. ' +
-            'Cerró ' + cerrada + (cerrada === 1 ? ' semana' : ' semanas') + ' desde que empezó, hace ' + dias + ' días.') +
+            'Cerró ' + cerrada + (cerrada === 1 ? ' semana' : ' semanas') +
+            ' de ' + total + ' (' + pctSem + ' %) desde que empezó, hace ' + dias + ' días.') +
       '</div>' +
       (t.tareas_total
         ? '<div style="font-size:12px;color:rgba(244,239,229,.7);margin-top:5px">' +
